@@ -1,0 +1,20 @@
+# $Id: Makefile.hpux,v 1.5 2003/05/20 00:27:56 n8gray Exp $
+CC=cc
+AR=ar
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+# CFLAGS=-O -Ae -I/usr/include/X11R6 -I/usr/include/Motif1.2_R6
+CFLAGS=-O -Aa -I/usr/include/X11R5 -I/usr/include/Motif1.2 -D_HPUX_SOURCE
+ARFLAGS=-urs
+# LIBS=-Wl,-L /usr/lib/X11R6 -L /usr/lib/Motif1.2_R6 -lm -lXm -lXt -lX11
+LIBS=-L /usr/lib/X11R5 -L /usr/lib/Motif1.2 -lm -lXm -lXt -lX11
+BIGGER_STRINGS = -Wp,-H20000
+
+include Makefile.common
+
+verify_config:

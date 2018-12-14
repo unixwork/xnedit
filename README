@@ -1,0 +1,601 @@
+                    NEdit Version 5.7, January 2017
+
+NEdit is a multi-purpose text editor for the X Window System, which combines a
+standard, easy to use, graphical user interface with the thorough functionality
+and stability required by users who edit text eight hours a day.  It provides
+intensive support for development in a wide variety of languages, text
+processors, and other tools, but at the same time can be used productively by
+just about anyone who needs to edit text.
+
+
+As of version 5.1, NEdit may be freely distributed under the terms of the GNU
+General Public License:
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+In addition, as a special exception to the GNU GPL, the copyright holders give
+permission to link the code of this program with the Motif and Open Motif
+libraries (or with modified versions of these that use the same license), and
+distribute linked combinations including the two. You must obey the GNU General
+Public License in all respects for all of the code used other than linking with
+Motif/Open Motif. If you modify this file, you may extend this exception to your
+version of the file, but you are not obligated to do so. If you do not wish to
+do so, delete this exception statement from your version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License in the file
+COPYRIGHT as part of this distribution; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+
+NEdit sources, executables, additional documentation, and contributed software
+are available from the NEdit web site at http://nedit.org.
+
+
+AUTHORS
+
+NEdit was written by Mark Edel, Joy Kyriakopulos, Christopher Conrad,
+Jim Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max
+Vohlken, Yunliang Yu, Donna Reid, Arne Førlie, Eddy De Greef, Steve
+LoBasso, Alexander Mai, Scott Tringali, Thorsten Haude, Steve Haehn,
+Andrew Hood, Nathaniel Gray, and TK Soh.
+
+The regular expression matching routines used in NEdit are adapted (with
+permission) from original code written by Henry Spencer at the University of
+Toronto.
+
+The Microline widgets are inherited from the Mozilla project.
+
+Syntax highlighting patterns and smart indent macros were contributed
+by: Simon T. MacDonald,  Maurice Leysens, Matt Majka, Alfred Smeenk,
+Alain Fargues, Christopher Conrad, Scott Markinson, Konrad Bernloehr,
+Ivan Herman, Patrice Venant, Christian Denat, Philippe Couton, Max Vohlken, 
+Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp, Michael Turomsha, 
+John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, Mike Duigou, 
+Seak Teng-Fong, Joor Loohuis, Mark Jones, and Niek van den Berg.
+
+
+VERSION 5.6
+
+Version 5.6 is a maintenance release.
+
+See the ReleaseNotes file for a more detailed description of these new features
+and a list of bugs fixed in this version.
+
+
+BUILDING NEDIT
+
+Pre-built executables will be available for many operating systems, including
+most major Unix and VMS systems. Check out the NEdit web page at
+
+  http://nedit.org
+
+If you have downloaded a pre-built executable you can skip ahead to the section
+called INSTALLATION.  Otherwise, the requirements to build NEdit from the
+sources are:
+
+ - ANSI C89 system (compiler, headers, libraries)
+ - make utility (eg, GNU make)
+ - X11R5 development stuff (headers, libraries), or newer
+ - Motif 1.2 or above (Motif 1.1 might work, but is no longer supported)
+   This GUI library is a standard part on most systems which have an
+   X11 installation. Most commercial Unix systems feature this, others may
+   require a separate installation. 
+   A "free" (LGPL'ed) alternative to Motif, called LessTif, is available.
+   See the LessTif section under PLATFORM SPECIFIC ISSUES for details.
+ 
+Optionally one may use:
+ 
+ - yacc (or GNU bison)
+
+
+The two directories called 'source' and 'util' contain the sources for NEdit.
+'util' should be built first, followed by 'source'. The makefile in NEdit's
+root directory can be used to build both in sequence if your system is one of
+the supported machines and no modifications are necessary to the makefiles. To
+build NEdit from the root directory, issue the command: 'make <machine-type>';
+where <machine-type> is one of suffixes of a makefile in the directory
+'makefiles'. For example, to build the Silicon Graphics version, type:
+
+	make sgi
+
+If everything works properly, this will produce two executables called
+'nedit' and 'nc' in the directory called 'source'.
+
+
+The Source Directories
+
+Since executables are already available for the supported systems, you are
+probably not just rebuilding an existing configuration, and need to know more
+about how the directories are organized.
+
+The util directory builds a library file called libNUtil.a, which is later
+linked with the code in the source directory to create the nedit executable.
+
+The makefiles in both source directories consist of two parts, a machine
+dependent part and a machine independent part. The machine dependent makefiles
+can be found in the directory called 'makefiles', and contain machine specific
+header information. They invoke a common machine independent part called
+Makefile.common (which in turn includes also Makefile.dependencies).
+To compile the files in either of these directories, copy or link one of the
+system-specific makefiles from the directory 'makefiles' into the directory,
+and issue the command:
+
+    make -f Makefile.<machine-type>
+    
+(where <machine-type> is the makefile suffix).  Alternatively, you can
+name the file 'Makefile' and simply type "make".
+
+If no makefile exists for your system, you should start from Makefile.generic,
+which is extensively commented. Contact the developer at develop@nedit.org for
+help.
+
+ 
+Building NEdit on VMS Systems
+
+A command file is provided for compiling and linking files from all
+source directories. To build on OpenVMS change directory into 
+[.makefiles] and run 'buildvms.com'.
+
+Additional Settings
+
+Some C preprocessor macros may be used to en/disable certain parts
+of the code. Usually this correponds to some non-important features
+being selected or certain workarounds for platform-specifc problems.
+Those which might be useful on more than one platform are documented
+in makefiles/Makefile.generic.
+
+Note that a special compilation flag, namely REPLACE_SCOPE, is currently
+available. Its purpose is to allow the evaluation of two alternative
+(but functionally equivalent) Replace/Find dialog box layouts. 
+By default, NEdit is built with a Replace/Find dialog containing 2 rows
+of push buttons. Compiling with the REPLACE_SCOPE flag enables an 
+alternative layout with a row of radio buttons for selecting the scope of 
+the replace operations. Eventually, one of these alternatives will
+probably disappear, but up to now, the NEdit developers have not been able
+to decide which one to drop. Please give them both a try and let us know 
+which one you prefer (via the discuss mailing list, for instance).
+
+Another compilation flag, HAVE__XMVERSIONSTRING, adds additional
+information about the Motif version in the menu item "Help->Version" or
+the command line option "-version". Whether this is available on your
+system depends on the Motif implementation. It is known to work with
+OpenMotif 2.1.30, and Motif on Solaris 2.6 and AIX 4.3.3.
+
+INSTALLATION
+
+NEdit consists of a single, stand-alone executable file which does not require
+any special installation.  To install NEdit on Unix systems, simply put the
+nedit executable in your path.  
+
+To use NEdit in client/server mode (which is the recommended way of using it),
+you also need the nedit client program, nc, which, again, needs no special
+installation.  On some systems, the name nc may conflict with the 'netcat'
+program.  In that case, choose a different name for the executable and simply
+rename it.  The recommend alternative is 'ncl'.  Don't forget to put the
+man-pages for nedit and nc into a place where your man command is able to find
+them (e.g. /usr/man/man1/nedit.1), and don't forget to rename nc.man to ncl.man
+if you've renamed nc to ncl.
+
+On VMS systems, nedit and nc must be defined as a foreign commands so that they
+can process command line arguments. For example, if nedit.exe were in the
+directory mydir on the disk called mydev, adding the following line to your
+login.com file would define the nedit command:
+
+	$ ned*it :== $mydev:[mydir]nedit.exe
+
+RUNNING NEDIT
+
+To run NEdit, simply type 'nedit', optionally followed by the name of a file
+or files to edit. On-line help is available from the pulldown menu on the far
+right of the menu bar. For more information on the syntax of the nedit command
+line, look under the heading of "NEdit Command Line".
+
+The recommended way to use NEdit, though, is in client/server mode, invoked by
+the nc executable. It allows you to edit multiple files within the same
+instance of NEdit (but still in multiple windows). This saves memory (only one
+process keeps running), and enables additional functionality (such as find &
+replace accross multiple windows). See "Server Mode and nc" in the help menu
+for more information.
+
+If you are accessing a host Unix system from a remote workstation or X
+terminal, you need to set the Unix environment variable for your display:
+csh:
+        % setenv DISPLAY devicename:0
+sh, ksh, bash, zsh:
+        % export DISPLAY=devicename:0
+
+where devicename is the network node name (hostname) of the workstation or X
+terminal where you are typing.
+On VMS systems, the equivalent command is:
+
+        $ set display/create/node=devicename
+
+
+
+PLATFORM SPECIFIC ISSUES
+
+Systems with LessTif, rather than Motif libraries
+
+As of Lesstif 0.93.18, NEdit is very stable with Lesstif. 
+You can get the latest LessTif version from http://www.lesstif.org.
+If you are having trouble building or running NEdit with LessTif,
+remember there are pre-compiled statically linked executables available
+from our website.
+Known bugs which might show off in NEdit linked with LessTif include:
+
+  1) Some dialogs which are intended to be modal (prevent other activity
+     while up) are not, and doing other actions while these dialogs are
+     up can cause trouble (.89.9+)
+     
+  2) Switching to continuous wrap mode, sometimes the horizontal scroll
+     remains partially drawn after the change, rather than disappearing
+     completely as it should. (.89.9+)
+  
+  3) Secondary selection operations are not yet supported in text fields.
+
+  4) Status bar is blank after usage of Incremental Search field
+     (0.93.18+-)
+
+
+Linux Systems
+
+Red Hat Linux, as of version 8.0, no longer automatically reads X resources out
+of the ~/.Xdefaults file.  Instead, it reads a file named ~/.Xresources.  Any
+customizations stored in ~/.Xdefaults will not be honored, for all X
+applications.  To fix this, copy the resources into ~/.Xdefaults, or link the
+files together.
+
+The default key bindings for arrow keys in fvwm interfere with some of the
+arrow key bindings in NEdit, particularly, Ctrl+Arrow and Alt+Arrow.  You
+may want to re-bind them either in NEdit (see Customizing -> Key Binding
+in the Help menu) or in fvwm in your .fvwmrc file.
+
+Some older Linux distributions are missing the /usr/X11R6/lib/X11/XKeysymDB
+file, which is necessary for running Motif programs.  When XKeysymDB is
+missing, NEdit will spew screenfulls of messages about translation table syntax
+errors, and many keys won't work.  You can obtain a copy of the XKeysymDB file
+from the contrib sub-directory of the NEdit distribution directory.
+
+Linux binaries were built statically by default before NEdit 5.6. This has
+changed with 5.6 to make better use of distribution-specific features. The
+call 'make linux' will now create binaries dynamically linked to Motif or
+Lesstif; calling 'make linux-static' will create static binaries.
+
+
+Mac OS X Systems
+
+NEdit is an X Window application and thus requires an X Window server, such as 
+Apple's X11.app or XFree86.org's XDarwin, to be running.
+
+If you are building NEdit yourself, you will probably need to edit
+makefiles/Makefile.macosx to select the correct version of Motif.  There are
+comments in the makefile to help you do this correctly.  Note that the
+developers use the OpenMotif 2.1.30 package available (at the time of writing)
+at:  http://msg.ucsf.edu:8100/~eric/
+
+
+SGI Systems
+
+Beginning with IRIX 6.3, SGI is distributing a customized version of NEdit
+along with their operating system releases.  Their installation uses an
+app-defaults file (/usr/lib/X11/app-defaults/NEdit) which overrides the
+default settings in any new nedit version that you install, and may result in
+missing accelerator keys or cosmetic appearance glitches.  If you are
+re-installing NEdit for the entire system, just remove the existing app-
+defaults file.  If you want to run a newer copy individually, get a copy of
+the app-defaults file for this version the contrib sub-directory of the
+distribution directory for this version on ftp.nedit.org (/pub/<version>/
+contrib/nedit.app-defaults), and install it in your home directory or set
+the environment variables XAPPLRESDIR or XUSERFILESEARCHPATH to point
+to a directory and install it there.  In all cases, the file should be
+named simply 'NEdit'.
+
+No additional installation or resource settings are necessary on IRIX systems
+before 6.3
+
+
+HP-UX Systems
+
+If you are using HPVUE and have trouble setting colors, for example part
+of the menu bar stubornly remains at whatever HPVUE's default is, try setting:
+
+   nedit*useColorObj: False
+
+   
+IBM AIX Systems
+
+Due to an optimizer bug in IBM's C compiler, the file, textDisp.c, must be
+compiled without optimization on some AIX systems.
+
+
+Solaris (SunOS 5.3 and beyond) Systems
+
+The nedit_solaris executable may require the environment variable OPENWINHOME
+to be set to the directory where Open Windows is installed.  If this is not set
+properly, NEdit will spew screenfulls of messages about translation table
+syntax errors.
+
+Solaris 2.4 -- Add -DDONT_HAVE_GLOB to the CFLAGS line in Makefile.solaris.
+
+Solaris 2.5 -- Solaris 2.5 systems were shipped with a bad shared Motif
+library, in which the file selection dialog (Open, Save, Save As, Include,
+etc.) shows long path names in the file list, but no horizontal scroll bar,
+and no way to read the actual file names.  Depending on your system, the
+patch is one of ID# 103461-07, # 102226-19, or # 103186-21.  It affects all
+Motif based programs which use the library.  If you can't patch your system,
+you might want to just try the nedit_sunos executable (from ftp.nedit.org
+/pub/<version>), which is statically linked with a good Motif.  You can also
+set the X resource: nedit.stdOpenDialog to True, which at least gives you a
+text field where you can enter file names by hand.
+
+Solaris 2.6 -- If you're experiencing performance problems (windows come up
+slowly), the patch for Sun's shared Motif library is ID# 105284-04.  Installing
+the patch alone will improve nedit's performance dramatically.  The patch also
+enables a resource, *XmMenuReduceGrabs. Setting this to True will eliminate the
+delay completely.
+
+SunOS 4.x Systems
+
+On some SunOS systems, NEdit will also complain about translation table syntax
+errors.  This happens when Motif can't access the keysym database, usually
+located in the file /usr/lib/X11/XKeysymDB.  If this file exists on your
+system, but NEdit fails to locate it properly, you can set the environment
+variable XKEYSYMDB to point to the file.  If you can't find the file, or if
+some of the errors persist despite setting XKEYSYMDB, there is a XKeysymDB
+which you can use to update or replace your /usr/lib/X11/XKeysymDB file
+available in the contrib sub-directory of the NEdit distribution directory.
+If you don't want to change your existing XKeysymDB file, make a local copy
+and set XKEYSYMDB to point to it.
+
+If you find that some of the labeled keys on your keyboard are not properly
+bound to the corresponding action in NEdit, try the following:
+
+  1) Get a copy of motifbind.sun (for Sun standard keyboards), or
+     motifbind.sun_at (for Sun PC style keyboards) from the NEdit contrib
+     directory on ftp.nedit.org:/pub/<version>/contrib.
+  2) Copy it to a file called .motifbind in your home directory.
+  3) Shutdown and restart your X server.
+
+
+COMPATIBILITY WITH PREVIOUS VERSIONS
+
+Existing .nedit Files
+
+As of version 5.1, NEdit employs a built-in upgrade mechanism which will
+automatically detects .nedit files of older versions. In general, NEdit
+will try to convert and insert entries to match the latest version.
+However, in certain cases where the user has customized the default entries,
+NEdit will leave them untouched (except for possible syntactic conversions).
+As a result, the latest syntax highlighting patterns for certain languages may
+not get activated, for instance, if the user has customized the entries. The
+latest default patterns can always be activated through the
+Preferences->Syntax Highlighting->Recognition Patterns menu, though.
+
+Next, some version specific upgrading issues are listed. Note that 
+non-incremental upgrading (eg., from 5.0 to 5.2) is supported too.
+
+* Upgrading from 5.4 to 5.5
+  
+  - Changes in the widget hierarchy, possibly effecting resource settings
+  
+    In NEdit 5.4 and below, the widget hierarchy consisted of a separate
+    widget tree for each window. This was rather unconventional and caused
+    certain problems. In 5.5, the hierarchy was changed such that all widgets
+    belong to a single tree with a single root widget.
+    
+    For instance, with 5.4, the top of the widget hierarchy for a 2-window
+    NEdit session looks as follows:
+    
+      NEdit  nedit
+       +-- XmMainWindow  main
+
+      NEdit  nedit
+       +-- XmMainWindow  main
+      
+    In 5.5, the same session results in the following tree:
+    
+      NEdit  nedit
+       +-- TopLevelShell  textShell
+       |    +-- XmMainWindow  main
+       +-- TopLevelShell  textShell
+            +-- XmMainWindow  main
+            
+    Users with advanced X-resource settings may be affected by this
+    change and may have to adapt their resource specifications.        
+  
+  - Minor change to the regular expression word boundary semantics
+  
+    In 5.4, the semantics for word boundary regular expressions ('<', '>', 
+    and '\B') were changed to behave in a more intuitive way (see Upgrading
+    from 5.3 to 5.4 below). However, this introduced an inconsistency between
+    the regular expressions and several other places in NEdit where word
+    boundaries were taken into account. Therefore, the changes were partially
+    reverted to restore consistency, but without giving up the benefits of the
+    more intuitive word boundary definition. More in particular, a boundary
+    between two characters is now considered to be a word boundary only if
+    exactly one of the characters is a delimiter.
+    This change will have little or no consequences for most users.
+  
+* Upgrading from 5.3 to 5.4
+
+  - Resource syntax
+  
+    Basic colors, like the text foreground and background, are now true
+    preferences.  A new dialog (Preferences > Default Settings > Colors) is
+    provided to change them, previously only changeable from X resources. 
+    Upon starting, NEdit will migrate any custom colors you have set from
+    the old X resources.  Most users will not need to do anything.
+    
+    However, if you used X resources to dynamically change the colors on
+    different invocations, you will need to use the new application-level
+    resources instead.  See the .nedit file for details.
+      
+    In 5.3, color resources needed to be qualified by "nedit*" in order to
+    prevent problems when the deepest color visual was not the default. 
+    This is no longer necessary, and the qualification may be removed.
+    
+  - New location of configuration files
+  
+    The default location and name of NEdit's resource files has been changed.
+    The most important change is the fact that they can now be stored in a
+    custom directory, defined by the NEDIT_HOME environment variable. If the
+    variable is not set, the directory defaults to ~/.nedit.
+    The files have been renamed as follows:
+    
+       ~/.nedit        -> $NEDIT_HOME/nedit.rc
+       ~/.neditmacro   -> $NEDIT_HOME/autoload.nm
+       ~/.neditdb      -> $NEDIT_HOME/nedit.history
+       
+    For backward compatibility reasons, NEdit continues to use the old 
+    convention when these files are already present. No attempt is made
+    to force the user to adopt the new convention. 
+
+    Users that would like to migrate to the new setup can do so manually 
+    by moving and renaming the files.
+    
+  - Changed regular expression word boundary semantics and its effect
+    on the syntax highlighting patterns.
+  
+    During the 5.4 development cycle, it was noted that the implementation 
+    of NEdit's regular expression word boundary matching was rather
+    unconventional. More in particular, the '<', '>', and '\B' patterns
+    interpreted the boundary between any two characters of which at least
+    one was not a word character as a word boundary. A striking effect of this
+    was that the boundary between two spaces was considered to be a word
+    boundary, which is obviously rather unintuitive. This has been corrected 
+    in 5.4: the boundary between two characters is a word boundary, only if
+    exactly one of them is a word character.
+
+    Several of the built-in syntax highlighting patterns (implicitly) relied 
+    on the old word boundary interpretation and they have been corrected too.
+    
+    However, if the user has customized some of these buggy built-in
+    highlighting patterns, the automatic upgrading routines will NOT upgrade
+    them in order not to loose any customizations. It is left up to the user
+    to correct his/her customized patterns manually (using the corrected 
+    built-in patterns as a guideline). 
+
+    The following is a list of all language modes and patterns that have been
+    corrected:
+    
+      Ada:         Based Numeric Literals
+      Awk:         Numeric constant
+      C++:         numeric constant
+      C:           numeric constant
+      CSS:         property, selector pseudo class
+      Java:        decimal const, case numeric const
+      JavaScript:  Numeric
+      Lex:         numeric constant, markers
+      Matlab:      Numeric const
+      NEdit Macro: Built-in Vars, Numeric Const
+      Pascal:      TP Numeric Values:
+      Perl:        dq string, sq string, bq string, subroutine call, 
+                   numerics, re match
+      PostScript:  Number, Operator1
+      Python:      Number
+      SQL:         data types, keywords2
+      Sh Ksh Bash: keywords, built ins 
+      Tcl:         Keywords
+      VHDL:        Numeric Literals
+      Verilog:     Reserved WordsA, Numeric Literals, Delay Word, 
+                   Pins Declaration
+      XML:         element declaration keyword
+      Yacc:        numeric constant, percent keyword, markers
+
+    So, if the user has customized the highlighting definitions for any of 
+    these language modes (not restricted to the listed patterns), (s)he is 
+    strongly advised to restore the default patterns in the syntax 
+    highlighting dialog and to re-apply his/her customizations.
+    
+    Moreover, it is advised to check any custom language modes for potential
+    boundary matching problems as described above.
+
+* Upgrading from 5.2 to 5.3
+
+  There are no major changes in the format of the .nedit file for version
+  5.2. Users that have customized the X Resources syntax highlighting 
+  pattern may consider restoring the default patterns, as they resolve
+  a performance issue when editing the .nedit file itself, for instance.
+  
+* Upgrading from 5.1 to 5.2
+
+  There are no major changes in the format of the .nedit file for version
+  5.2. NEdit will try to insert additional entries for the newly supported
+  language modes and syntax highlighting patterns (CSS, Regex, and XML) and
+  highlight styles (Pointer, Regex, Warning).
+
+  Moreover, the formerly boolean 'showMatching' option will silently be
+  converted to a tri-state value.
+
+  Users that have customized some of the syntax highlighting patterns may
+  consider restoring the default patterns, as many of them have been improved
+  considerably.
+  
+* Upgrading from 5.0 to 5.1
+  
+  NEdit 5.1 makes significant changes to the syntax of regular expressions.
+  Mostly, these are upward compatible, but two changes; introducing the brace
+  operator, and changing the meaning of \0; are not. Brace characters must now
+  be escaped with backslash, and & must be used in place of \0 in
+  substitutions.
+
+  NEdit 5.1 employs a built-in upgrade mechanism which will automatically
+  detect pre-5.1 .nedit files and fix regular expressions which appear in
+  user-defined highlight patterns. The automatic upgrade mechanism, however,
+  can not fix regular expression problems within user-defined macros. If you
+  have a macro which is failing under NEdit 5.1, you will have to fix it by
+  hand.
+  
+* Upgrading from pre-5.0
+
+  If you are upgrading from a pre-5.0 version of NEdit, there are significant
+  changes to the macro language, and you are best off simply editing out the
+  nedit.macroCommands section of your .nedit file, generating a new .nedit
+  file, and then re-introducing your user-written commands into the new file.
+  Most macros written for previous versions will function properly under the
+  new macro language. The most common problems with old macros is lack of a
+  terminating newline on the last line of the macro, and the addition of "<",
+  ">", and now "{" to the regular expression syntax. These characters must now
+  be escaped with \ (backslash). Also, if you have been using a font other
+  than the default for the text portion of your NEdit windows, be sure to
+  check the Preferences -> Default Settings -> Text Font dialog, and select
+  highlighting fonts which match your primary font in size. Matching in height
+  is desirable, but not essential, and sometimes impossible to achive on some
+  systems. When fonts don't match in height, turning on syntax highlighting
+  will cause the window size to change slightly. NEdit can handle unmatched
+  font sizes (width), but leaving them unmatched means sometimes columns and
+  indentation don't line up (as with proportional fonts).
+
+FURTHER INFORMATION
+
+More information is available in the file nedit.doc in this kit, from NEdit's
+on-line help system, the man-pages and from the enclosed FAQ file. 
+There is also a web page for NEdit at: http://nedit.org.  For discussion with
+other NEdit users, or to receive notification of new releases you can
+subscribe to one or more of the NEdit mailing lists, announce@nedit.org,
+discuss@nedit.org or develop@nedit.org.  The NEdit on-line help has information
+on subscribing under Help -> Mailing Lists.
+
+
+REPORTING BUGS
+
+
+The preferred way to report bugs is to submit an entry on our web-based
+bug tracker at:
+
+  http://sourceforge.net/projects/nedit/
+
+The NEdit developers subscribe to both discuss@nedit.org and develop@nedit.org,
+either of which may be used for reporting bugs.  If you're not sure, or you
+think the report might be of interest to the general NEdit user community,
+send the report to discuss@nedit.org.  If it's something obvious and boring,
+like we misspelled "anemometer" in the on-line help, send it to develop.  If
+you don't want to subscribe to these lists, please add a note to your mail
+about cc'ing you on responses.

@@ -1,0 +1,21 @@
+# $Id: Makefile.common,v 1.1 2003/12/25 06:55:07 tksoh Exp $
+#
+# Platform independent part of make procedure for Nirvana utilities directory, 
+# included by machine specific makefiles.
+#
+
+.c.o:
+	$(CC) -c -I.. $(CFLAGS) -o $@ $<
+
+OBJS = Folder.o XmL.o 
+
+all: libXmL.a
+
+libXmL.a: $(OBJS)
+	$(AR) $(ARFLAGS) libXmL.a $(OBJS)
+
+clean:
+	rm -f $(OBJS) libXmL.a
+
+# Get the dependencies for all objects
+include Makefile.dependencies

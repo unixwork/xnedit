@@ -1,0 +1,27 @@
+# $Id: Makefile.sgi,v 1.5 2003/05/20 00:27:56 n8gray Exp $
+CC=cc
+AR=ar
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+# For systems older than IRIX 6.0, add -DUSE_MOTIF_GLOB to CFLAGS
+#
+# The flag NO_XMIM means that nedit will be using Motif composed-character
+# input routines in Motif text fields, and the basic X ones in the nedit
+# text widget.  This is not optimal because it leaves more room for user
+# configuration problems.  It's set this way because of a bug in the IRIX
+# 6.5 Motif XMIM routines which causes a crash on window closing.  As far
+# as I know, other versions of IRIX are ok, and this can safely be removed.
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -DSGI -DNO_XMIM -D__unix__
+ARFLAGS=-urs
+# For systems older than IRIX 6.0, add: BIGGER_STRINGS= -Wf,-XNl10000
+LIBS= -lm -lXm -lXt -lX11 -lPW
+
+include Makefile.common
+
+verify_config:

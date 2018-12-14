@@ -1,0 +1,33 @@
+# $Id: Makefile.aix,v 1.7 2003/05/20 00:27:55 n8gray Exp $
+CC=cc
+AR=ar
+# Note that -O is conspicuously absent from CFLAGS below due to an IBM
+# optimizer bug (which affects only textDisp.c).  For improved
+# performance you can optimize all of the other files by specifically
+# modifying Makefile.common.
+#
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# -DFUNCPROTO=15 is necessary for some AIX compilers (including xlC)
+# that do not #define __STDC__ when in ANSI mode.  This causes the X
+# headers to skip function prototypes and use char* in place of void*.
+# This causes a lot of unnecessary casts to avoid warnings.  See bug
+# #130164 at:
+#
+# http://sourceforge.net/bugs/?func=detailbug&bug_id=130164&group_id=11005
+#
+
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-DIBM -DIBM_FWRITE_BUG -DUSE_DIRENT -DFUNCPROTO=15
+ARFLAGS=-urs
+LIBS= -lm -lXm -lXt -lX11 -lPW
+
+include Makefile.common
+
+verify_config:

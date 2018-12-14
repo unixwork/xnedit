@@ -1,0 +1,14 @@
+# $Id: Makefile.minix,v 1.1 2009/09/19 09:17:59 edg Exp $
+# NEdit makefile for MINIX 3
+CC=/usr/gnu/bin/gcc
+AR=/usr/gnu/bin/gar
+
+CFLAGS=-O -DLC_MESSAGES=1 -DUSE_DIRENT -DMAXPATHLEN=255 -D_MINIX -D_POSIX_SOURCE -I/usr/local/include -I/usr/X11R6-gcc/include
+
+ARFLAGS=-urs
+
+LIBS= -L/usr/X11R6-gcc/lib -L/usr/local/lib/gcc -lXm -lXt -lX11 -lm -lSM -lICE
+
+include Makefile.common
+
+verify_config:

@@ -1,0 +1,195 @@
+! $Id: NEdit.ad,v 1.4 2003/11/22 13:03:38 edg Exp $
+! NEDIT IS NOT DESIGNED TO BE USED WITH AN APP-DEFAULTS FILE, and
+! installing this will only cause you grief.  This is provided for
+! documentation, and as recourse when you have no way of removing
+! a system app-defaults file which is preventing you from upgrading
+! your nedit version.
+!
+! Application defaults for NEdit 5.4
+!
+!
+!*FontList: -*-helvetica-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*XmText.FontList: -*-courier-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*XmTextField.FontList: -*-courier-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*XmList.FontList: -*-courier-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*XmFileSelectionBox*XmList.FontList: -*-courier-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*background: #b3b3b3
+!*foreground: black
+!*XmText.foreground: black
+!*XmText.background: rgb:e5/e5/e5
+!*XmList.foreground: black
+!*XmList.background: rgb:e5/e5/e5
+!*XmTextField.foreground: black
+!*XmTextField.background: rgb:e5/e5/e5
+!*XmText.translations: #override\n
+!    Ctrl~Alt~Meta<KeyPress>v: paste-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>c: copy-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>x: cut-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>u: delete-to-start-of-line()\n
+!*XmTextField.translations: #override\n
+!    Ctrl~Alt~Meta<KeyPress>v: paste-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>c: copy-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>x: cut-clipboard()\n
+!    Ctrl~Alt~Meta<KeyPress>u: delete-to-start-of-line()\n
+!*XmFileSelectionBox.resizePolicy: XmRESIZE_NONE
+!*XmFileSelectionBox.textAccelerators:
+!*text.lineNumForeground: black
+!*text.background: rgb:e5/e5/e5
+!*text.foreground: black
+!*text.highlightForeground: white
+!*text.highlightBackground: red
+!*textFrame.shadowThickness: 1
+!*menuBar.marginHeight: 0
+!*menuBar.shadowThickness: 1
+!*pane.sashHeight: 11
+!*pane.sashWidth: 11
+!*pane.marginWidth: 0
+!*pane.marginHeight: 0
+!*scrolledW*spacing: 0
+!*text.selectionArrayCount: 3
+!*helpText.background: rgb:cc/cc/cc
+!*helpText.foreground: black
+!*helpText.selectBackground: #b3b3b3
+!*statsLine.background: #b3b3b3
+!*statsLine.FontList: -*-helvetica-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*helpText.font: -*-courier-medium-r-normal-*-*-120-*-*-*-iso8859-1
+!*calltip.background: LemonChiffon1
+!*calltip.foreground: black
+!*iSearchForm*highlightThickness: 1
+!*fileMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*editMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*searchMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*preferencesMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*windowsMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*shellMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*macroMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*helpMenu.tearOffModel: XmTEAR_OFF_ENABLED
+!*fileMenu.mnemonic: F
+!*fileMenu.new.accelerator: Ctrl<Key>n
+!*fileMenu.new.acceleratorText: Ctrl+N
+!*fileMenu.open.accelerator: Ctrl<Key>o
+!*fileMenu.open.acceleratorText: Ctrl+O
+!*fileMenu.openSelected.accelerator: Ctrl<Key>y
+!*fileMenu.openSelected.acceleratorText: Ctrl+Y
+!*fileMenu.close.accelerator: Ctrl<Key>w
+!*fileMenu.close.acceleratorText: Ctrl+W
+!*fileMenu.save.accelerator: Ctrl<Key>s
+!*fileMenu.save.acceleratorText: Ctrl+S
+!*fileMenu.includeFile.accelerator: Alt<Key>i
+!*fileMenu.includeFile.acceleratorText: Alt+I
+!*fileMenu.print.accelerator: Ctrl<Key>p
+!*fileMenu.print.acceleratorText: Ctrl+P
+!*fileMenu.exit.accelerator: Ctrl<Key>q
+!*fileMenu.exit.acceleratorText: Ctrl+Q
+!*editMenu.mnemonic: E
+!*editMenu.undo.accelerator: Ctrl<Key>z
+!*editMenu.undo.acceleratorText: Ctrl+Z
+!*editMenu.redo.accelerator: Shift Ctrl<Key>z
+!*editMenu.redo.acceleratorText: Shift+Ctrl+Z
+!*editMenu.cut.accelerator: Ctrl<Key>x
+!*editMenu.cut.acceleratorText: Ctrl+X
+!*editMenu.copy.accelerator: Ctrl<Key>c
+!*editMenu.copy.acceleratorText: Ctrl+C
+!*editMenu.paste.accelerator: Ctrl<Key>v
+!*editMenu.paste.acceleratorText: Ctrl+V
+!*editMenu.pasteColumn.accelerator: Shift Ctrl<Key>v
+!*editMenu.pasteColumn.acceleratorText: Ctrl+Shift+V
+!*editMenu.delete.acceleratorText: Del
+!*editMenu.selectAll.accelerator: Ctrl<Key>a
+!*editMenu.selectAll.acceleratorText: Ctrl+A
+!*editMenu.shiftLeft.accelerator: Ctrl<Key>9
+!*editMenu.shiftLeft.acceleratorText: [Shift]Ctrl+9
+!*editMenu.shiftLeftShift.accelerator: Shift Ctrl<Key>9
+!*editMenu.shiftRight.accelerator: Ctrl<Key>0
+!*editMenu.shiftRight.acceleratorText: [Shift]Ctrl+0
+!*editMenu.shiftRightShift.accelerator: Shift Ctrl<Key>0
+!*editMenu.upperCase.accelerator: Ctrl<Key>6
+!*editMenu.upperCase.acceleratorText: Ctrl+6
+!*editMenu.lowerCase.accelerator: Shift Ctrl<Key>6
+!*editMenu.lowerCase.acceleratorText: Shift+Ctrl+6
+!*editMenu.fillParagraph.accelerator: Ctrl<Key>j
+!*editMenu.fillParagraph.acceleratorText: Ctrl+J
+!*editMenu.insertFormFeed.accelerator: Alt Ctrl<Key>l
+!*editMenu.insertFormFeed.acceleratorText: Alt+Ctrl+L
+!*editMenu.insertCtrlCode.accelerator: Alt Ctrl<Key>i
+!*editMenu.insertCtrlCode.acceleratorText: Alt+Ctrl+I
+!*searchMenu.mnemonic: S
+!*searchMenu.find.accelerator: Ctrl<Key>f
+!*searchMenu.find.acceleratorText: [Shift]Ctrl+F
+!*searchMenu.findShift.accelerator: Shift Ctrl<Key>f
+!*searchMenu.findAgain.accelerator: Ctrl<Key>g
+!*searchMenu.findAgain.acceleratorText: [Shift]Ctrl+G
+!*searchMenu.findAgainShift.accelerator: Shift Ctrl<Key>g
+!*searchMenu.findSelection.accelerator: Ctrl<Key>h
+!*searchMenu.findSelection.acceleratorText: [Shift]Ctrl+H
+!*searchMenu.findSelectionShift.accelerator: Shift Ctrl<Key>h
+!*searchMenu.findIncremental.accelerator: Ctrl<Key>i
+!*searchMenu.findIncrementalShift.accelerator: Shift Ctrl<Key>i
+!*searchMenu.findIncremental.acceleratorText: [Shift]Ctrl+I
+!*searchMenu.replace.accelerator: Ctrl<Key>r
+!*searchMenu.replace.acceleratorText: [Shift]Ctrl+R
+!*searchMenu.replaceShift.accelerator: Shift Ctrl<Key>r
+!*searchMenu.findReplace.accelerator: Ctrl<Key>r
+!*searchMenu.findReplace.acceleratorText: [Shift]Ctrl+R
+!*searchMenu.findReplaceShift.accelerator: Shift Ctrl<Key>r
+!*searchMenu.replaceFindAgain.accelerator: Ctrl<Key>t
+!*searchMenu.replaceFindAgain.acceleratorText: [Shift]Ctrl+T
+!*searchMenu.replaceFindAgainShift.accelerator: Shift Ctrl<Key>t
+!*searchMenu.replaceAgain.accelerator: Alt<Key>t
+!*searchMenu.replaceAgain.acceleratorText: [Shift]Alt+T
+!*searchMenu.replaceAgainShift.accelerator: Shift Alt<Key>t
+!*searchMenu.gotoLineNumber.accelerator: Ctrl<Key>l
+!*searchMenu.gotoLineNumber.acceleratorText: Ctrl+L
+!*searchMenu.gotoSelected.accelerator: Ctrl<Key>e
+!*searchMenu.gotoSelected.acceleratorText: Ctrl+E
+!*searchMenu.mark.accelerator: Alt<Key>m
+!*searchMenu.mark.acceleratorText: Alt+M a-z
+!*searchMenu.gotoMark.accelerator: Alt<Key>g
+!*searchMenu.gotoMark.acceleratorText: [Shift]Alt+G a-z
+!*searchMenu.gotoMarkShift.accelerator: Shift Alt<Key>g
+!*searchMenu.gotoMatching.accelerator: Ctrl<Key>m
+!*searchMenu.gotoMatching.acceleratorText: [Shift]Ctrl+M
+!*searchMenu.gotoMatchingShift.accelerator: Shift Ctrl<Key>m
+!*searchMenu.findDefinition.accelerator: Ctrl<Key>d
+!*searchMenu.findDefinition.acceleratorText: Ctrl+D
+!*searchMenu.showCalltip.accelerator: Ctrl<Key>apostrophe
+!*searchMenu.showCalltip.acceleratorText: Ctrl+'
+!*preferencesMenu.mnemonic: P
+!*preferencesMenu.statisticsLine.accelerator: Alt<Key>a
+!*preferencesMenu.statisticsLine.acceleratorText: Alt+A
+!*preferencesMenu.overtype.acceleratorText: Insert
+!*shellMenu.mnemonic: l
+!*shellMenu.filterSelection.accelerator: Alt<Key>r
+!*shellMenu.filterSelection.acceleratorText: Alt+R
+!*shellMenu.executeCommand.accelerator: Alt<Key>x
+!*shellMenu.executeCommand.acceleratorText: Alt+X
+!*shellMenu.executeCommandLine.accelerator: Ctrl<Key>KP_Enter
+!*shellMenu.executeCommandLine.acceleratorText: Ctrl+KP Enter
+!*shellMenu.cancelShellCommand.accelerator: Ctrl<Key>period
+!*shellMenu.cancelShellCommand.acceleratorText: Ctrl+.
+!*macroMenu.mnemonic: c
+!*macroMenu.learnKeystrokes.accelerator: Alt<Key>k
+!*macroMenu.learnKeystrokes.acceleratorText: Alt+K
+!*macroMenu.finishLearn.accelerator: Alt<Key>k
+!*macroMenu.finishLearn.acceleratorText: Alt+K
+!*macroMenu.cancelLearn.accelerator: Ctrl<Key>period
+!*macroMenu.cancelLearn.acceleratorText: Ctrl+.
+!*macroMenu.replayKeystrokes.accelerator: Ctrl<Key>k
+!*macroMenu.replayKeystrokes.acceleratorText: Ctrl+K
+!*macroMenu.repeat.accelerator: Ctrl<Key>comma
+!*macroMenu.repeat.acceleratorText: Ctrl+,
+!*windowsMenu.mnemonic: W
+!*windowsMenu.splitWindow.accelerator: Ctrl<Key>2
+!*windowsMenu.splitWindow.acceleratorText: Ctrl+2
+!*windowsMenu.closePane.accelerator: Ctrl<Key>1
+!*windowsMenu.closePane.acceleratorText: Ctrl+1
+!*helpMenu.mnemonic: H
+!*helpForm.sw.helpText*translations: #override\
+!    <Key>Tab: help-focus-buttons()\n\
+!    <Key>Return: help-button-action("dismiss")\n\
+!    <KeyPress>osfCancel: help-button-action("dismiss")\n\
+!    ~Meta~Ctrl~Shift<Btn1Down>: grab-focus() help-hyperlink()\n\
+!    ~Meta~Ctrl~Shift<Btn1Up>: help-hyperlink("current", "process-cancel", "extend-end")\n\
+!    ~Meta~Ctrl~Shift<Btn2Down>: process-bdrag() help-hyperlink()\n\
+!    ~Meta~Ctrl~Shift<Btn2Up>: help-hyperlink(\"new", "process-cancel", "copy-to")
+

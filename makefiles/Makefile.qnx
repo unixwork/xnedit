@@ -1,0 +1,22 @@
+# $Id: Makefile.qnx,v 1.3 2003/05/20 00:27:56 n8gray Exp $
+#
+# Makefile for QNX
+# (reference: NEdit develop mailinglist)
+#
+CC=cc 
+AR=ar
+
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O0 -I/usr/X11R6/include -DNO_XMIM 
+ARFLAGS=-urs
+LIBS=-L/x86/usr/X11R6/lib -lm -lsocket -lXm -lXt -lICE -lSM -lX11
+
+include Makefile.common
+
+verify_config:

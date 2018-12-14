@@ -1,0 +1,80 @@
+.\" ***** BEGIN LICENSE BLOCK *****
+.\" Version: MPL 1.1/GPL 2.0/LGPL 2.1
+.\"
+.\" The contents of this file are subject to the Mozilla Public License Version
+.\" 1.1 (the "License"); you may not use this file except in compliance with
+.\" the License. You may obtain a copy of the License at
+.\" http://www.mozilla.org/MPL/
+.\"
+.\" Software distributed under the License is distributed on an "AS IS" basis,
+.\" WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+.\" for the specific language governing rights and limitations under the
+.\" License.
+.\"
+.\" The Original Code is the Microline Widget Library, originally made available under the NPL by Neuron Data <http://www.neurondata.com>.
+.\"
+.\" The Initial Developer of the Original Code is
+.\" Netscape Communications Corporation.
+.\" Portions created by the Initial Developer are Copyright (C) 1998
+.\" the Initial Developer. All Rights Reserved.
+.\"
+.\" Contributor(s):
+.\"
+.\" Alternatively, the contents of this file may be used under the terms of
+.\" either the GNU General Public License Version 2 or later (the "GPL"), or
+.\" the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+.\" in which case the provisions of the GPL or the LGPL are applicable instead
+.\" of those above. If you wish to allow use of your version of this file only
+.\" under the terms of either the GPL or the LGPL, and not to allow others to
+.\" use your version of this file under the terms of the MPL, indicate your
+.\" decision by deleting the provisions above and replace them with the notice
+.\" and other provisions required by the GPL or the LGPL. If you do not delete
+.\" the provisions above, a recipient may use your version of this file under
+.\" the terms of any one of the MPL, the GPL or the LGPL.
+.\"
+.\" In addition, as a special exception to the GNU GPL, the copyright holders
+.\" give permission to link the code of this program with the Motif and Open
+.\" Motif libraries (or with modified versions of these that use the same
+.\" license), and distribute linked combinations including the two. You
+.\" must obey the GNU General Public License in all respects for all of
+.\" the code used other than linking with Motif/Open Motif. If you modify
+.\" this file, you may extend this exception to your version of the file,
+.\" but you are not obligated to do so. If you do not wish to do so,
+.\" delete this exception statement from your version.
+.\"
+.\" ***** END LICENSE BLOCK *****
+.TH XmLArrayNew 3X "R1" "XML1" "XML"
+.SH NAME
+XmLArrayNew \- creates an array object
+.SH SYNTAX
+XmLArray XmLArrayNew(\fIautonumber\fP, \fIgrowFast\fP)
+.br
+char \fIautonumber\fP;
+.br
+char \fIgrowFast\fP;
+.LP
+.SH ARGUMENTS
+.IP \fIautonumber\fP 1i
+If set to 1, the pointers in the array are assumed to be
+pointers to structures containing an integer as the first
+element which will be set to the position of the item
+in the array. The array will set this value with the
+current position of the element whenever position
+of the item changes.  If set to 0, the array will never
+dereference the pointers contained in the array.
+.IP \fIgrowFast\fP 1i
+If set to 1, the array will grow quickly as items are added
+to it.  This will cause the amount of memory the array takes
+up to usually be greater than the current space for elements.
+If set to 0, the array will always be the size of the current
+space for the elements contained in the array.
+.SH DESCRIPTION
+Creates an array object and returns it.  An array object is used to
+hold an array of pointers.  This object should be freed with XmLArrayFree()
+when it is no longer used.
+.SH RETURN VALUE
+The newly allocate array object.
+.SH "SEE ALSO"
+XmLArrayAdd(3X) XmLArrayDel(3X) XmLArrayFree(3X) XmLArrayGet(3X)
+XmLArrayGetCount(3X) XmLArrayMove(3X)
+XmLArrayReorder(3X) XmLArraySet(3X) XmLArraySort(3X)

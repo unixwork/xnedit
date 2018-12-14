@@ -1,0 +1,105 @@
+.\" ***** BEGIN LICENSE BLOCK *****
+.\" Version: MPL 1.1/GPL 2.0/LGPL 2.1
+.\"
+.\" The contents of this file are subject to the Mozilla Public License Version
+.\" 1.1 (the "License"); you may not use this file except in compliance with
+.\" the License. You may obtain a copy of the License at
+.\" http://www.mozilla.org/MPL/
+.\"
+.\" Software distributed under the License is distributed on an "AS IS" basis,
+.\" WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+.\" for the specific language governing rights and limitations under the
+.\" License.
+.\"
+.\" The Original Code is the Microline Widget Library, originally made available under the NPL by Neuron Data <http://www.neurondata.com>.
+.\"
+.\" The Initial Developer of the Original Code is
+.\" Netscape Communications Corporation.
+.\" Portions created by the Initial Developer are Copyright (C) 1998
+.\" the Initial Developer. All Rights Reserved.
+.\"
+.\" Contributor(s):
+.\"
+.\" Alternatively, the contents of this file may be used under the terms of
+.\" either the GNU General Public License Version 2 or later (the "GPL"), or
+.\" the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+.\" in which case the provisions of the GPL or the LGPL are applicable instead
+.\" of those above. If you wish to allow use of your version of this file only
+.\" under the terms of either the GPL or the LGPL, and not to allow others to
+.\" use your version of this file under the terms of the MPL, indicate your
+.\" decision by deleting the provisions above and replace them with the notice
+.\" and other provisions required by the GPL or the LGPL. If you do not delete
+.\" the provisions above, a recipient may use your version of this file under
+.\" the terms of any one of the MPL, the GPL or the LGPL.
+.\"
+.\" In addition, as a special exception to the GNU GPL, the copyright holders
+.\" give permission to link the code of this program with the Motif and Open
+.\" Motif libraries (or with modified versions of these that use the same
+.\" license), and distribute linked combinations including the two. You
+.\" must obey the GNU General Public License in all respects for all of
+.\" the code used other than linking with Motif/Open Motif. If you modify
+.\" this file, you may extend this exception to your version of the file,
+.\" but you are not obligated to do so. If you do not wish to do so,
+.\" delete this exception statement from your version.
+.\"
+.\" ***** END LICENSE BLOCK *****
+.TH XmLPixmapDraw 3X "R1" "XML1" "XML"
+.SH NAME
+XmLPixmapDraw \- draws a pixmap clipped and aligned in a widget
+.SH SYNTAX
+void XmLPixmapDraw(\fIwidget\fP, \fIpixmap\fP, \fIpixmask\fP, \
+\fIpixmapWidth\fP, \fIpixmapHeight\fP, \fIalignment\fP, \
+\fIgc\fP, \fIrect\fP, \fIclipRect\fP)
+.br
+Widget \fIwidget\fP;
+.br
+Pixmap \fIpixmap\fP;
+.br
+Pixmap \fIpixmask\fP;
+.br
+int \fIpixmapWidth\fP;
+.br
+int \fIpixmapHeight\fP;
+.br
+unsigned char \fIalignment\fP;
+.br
+GC \fIgc\fP;
+.br
+XRectangle *\fIrect\fP;
+.br
+XRectangle *\fIclipRect\fP;
+.LP
+.SH ARGUMENTS
+.IP \fIwidget\fP 1i
+drawing destination widget
+.IP \fIpixmap\fP 1i
+pixmap to draw
+.IP \fIpixmask\fP 1i
+pixmap mask for drawing
+.IP \fIpixmapWidth\fP 1i
+width of pixmap in pixels
+.IP \fIpixmapHeight\fP 1i
+height of pixmap in pixels
+.IP \fIalignment\fP 1i
+alignment
+.IP \fIgc\fP 1i
+graphics context for drawing
+.IP \fIrect\fP 1i
+source rectangle
+.IP \fIclipRect\fP 1i
+destination/clipping rectangle
+.SH DESCRIPTION
+Draws a \fIpixmap\fP of width \fIpixmapWidth\fP and height \fIpixmapHeight\fP
+using the GC \fIgc\fP in the window of the \fIwidget\fP given. The
+\fIpixmask\fP parameter must be either set to XmUNSPECIFIED_PIXMAP
+or a Pixmap of depth one.  If a Pixmap is specified, it is used as a
+mask to restrict the area drawn.
+The \fIrect\fP parameter indicates the rectangle used to
+determine alignment. The \fIclipRect\fP rectangle parameter given
+indicates the rectangle used to clip the drawing.
+\fIAlignment\fP must be one of the following:
+XmALIGNMENT_TOP_LEFT, XmALIGNMENT_TOP, XmALIGNMENT_TOP_RIGHT, 
+XmALIGNMENT_LEFT, XmALIGNMENT_CENTER, XmALIGNMENT_RIGHT,
+XmALIGNMENT_BOTTOM_LEFT, XmALIGNMENT_BOTTOM or XmALIGNMENT_BOTTOM_RIGHT
+.SH "SEE ALSO"
+XmLStringDraw(3X)

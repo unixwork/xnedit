@@ -1,0 +1,19 @@
+# $Id: Makefile.m88k.svr4,v 1.5 2003/05/20 00:27:56 n8gray Exp $
+# Makefile for Motorola SVR4 m88k
+#
+# Thanks to Mark Scott, Motorola Computer Group
+CC=cc
+AR=ar
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -s -DUSE_DIRENT -DSVR4 -DMOTOROLA
+LIBS= -lm -lXm -lXt -lX11 -lgen 
+
+include Makefile.common
+
+verify_config:

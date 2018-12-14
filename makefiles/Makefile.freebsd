@@ -1,0 +1,17 @@
+# $Id: Makefile.freebsd,v 1.6 2003/11/22 13:03:39 edg Exp $
+CC=cc
+AR=ar
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -I${PREFIX}/include -DUSE_DIRENT -DUSE_LPR_PRINT_CMD -DUSE_XMIM
+LIBS= ${MOTIFLIB} -L${PREFIX}/lib -lm -lXpm -lXext -lXt -lSM -lICE -lX11
+
+include Makefile.common
+

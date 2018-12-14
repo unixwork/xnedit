@@ -1,0 +1,48 @@
+# $Id: Makefile.macosx,v 1.7 2004/07/14 19:48:21 n8gray Exp $
+# Makefile for MacOS X
+# Based on a contribution from hopperj@macconnect.com
+# Maintained by n8gray@caltech.edu
+#
+# Note that there will probably be warnings about prebinding and/or 
+# duplicate symbol definitions, but the executable will work fine.
+
+# Change this line to point at the location your Motif libraries/headers are
+# installed.  (e.g. /usr/local or /sw)  Use "locate libXm." to find the
+# libraries, then remove the /lib suffix.
+MOTIFDIR=/usr/local
+
+# Use the first line if you're using OpenMotif, use the second if you're using
+# LessTif from Fink.
+EXTRALINKFLAGS=-bind_at_load
+# EXTRALINKFLAGS=-force_flat_namespace
+
+# Use the first line to link to Motif statically (highly recommended) or the 
+# second line to link dynamically.  With Fink you'll probably have to use
+# dynamic linking, since they don't normally distribute the static libraries.
+MOTIFLINK=${MOTIFDIR}/lib/libXm.a
+#MOTIFLINK=-L${MOTIFDIR}/lib -lXm.2
+
+
+############### You shouldn't need to edit anything below here ##############
+CC=cc
+AR=libtool
+ARFLAGS=-static -o 
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS\\
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -no-cpp-precomp -mdynamic-no-pic -DNO_XMIM -I/usr/X11R6/include \
+        -I${MOTIFDIR}/include -DUSE_DIRENT -DUSE_LPR_PRINT_CMD
+LIBS= ${EXTRALINKFLAGS} -L/usr/X11R6/lib ${MOTIFLINK} -lXp \
+        -lXpm -lXext -lXt -lSM -lICE -lX11
+
+#
+# generic part
+#
+include Makefile.common
+

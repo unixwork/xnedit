@@ -1,0 +1,65 @@
+# $Id: Makefile.depend,v 1.5 2003/05/20 00:27:55 n8gray Exp $
+#
+# This is a _generic_ Makefile to generate a dependency file
+# using GNUmake and gcc.
+# Advantage of this method (as compared to "makedepend(1)")
+# is that one can easily filter out dependencies on
+# non-application (i.e. system) headers using the -MM flag
+# of gcc. The reason to demand GNUMake is basically to have a nice,
+# simple rule for $(SRCS) as done below (and for the variable
+# transformations).
+# So one doesn't have to modify this file and manually add/update
+# the source file list!
+#
+# To use it just you probably just have to edit the
+# variables in the *CONFIG section* as you see fit.
+
+
+# ***************** CONFIG section *****************
+
+GCC=gcc
+DEFINES=
+CPPFLAGS=-I$(HOME)/include
+DEPENDFILE=dependencies
+SHELL=/bin/sh
+
+# Headers are required to determine _all_ files
+# on which the dependency file itself may depend
+SRCS=$(wildcard *.c)
+HDRS=$(wildcard ../source/*.h) $(wildcard ../util/*.h)
+
+# *************** End CONFIG section ************
+
+
+
+# ************** Now the generic part ***********
+
+.SUFFIXES: .c .o. deps
+.PHONY: all default deps new
+
+
+DEPS=$(SRCS:.c=.deps)
+
+default: all
+
+# This is the more conservative approach
+full: clean new deps
+
+# And this a more sophisticated one
+all: $(DEPENDFILE)
+
+# Remove old file, create new one and add CVS info line at top
+new:
+	/bin/rm -f $(DEPENDFILE)
+	echo '# $$''Id''$$' >$(DEPENDFILE)
+
+
+$(DEPENDFILE): new $(SRCS) $(HDRS)
+	$(GCC) $(CPPFLAGS) $(DEFINES) -MM $(SRCS) >>$(DEPENDFILE)
+
+deps: $(DEPS)
+
+%.deps: %.c
+	$(GCC) $(CPPFLAGS) $(DEFINES) -MM $< >>$(DEPENDFILE)
+
+verify_config:

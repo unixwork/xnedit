@@ -1,0 +1,27 @@
+<!ELEMENT html (body) >
+
+<!ELEMENT body (H1 | P | I | BLOCKQUOTE | PRE | UL)* >
+
+<!ELEMENT I (P | PRE | UL | BLOCKQUOTE)* >
+
+<!ELEMENT BLOCKQUOTE (P | PRE | UL | BLOCKQUOTE)* >
+
+<!ELEMENT H1 (#PCDATA) >
+<!ELEMENT P (#PCDATA) >
+<!ELEMENT PRE (#PCDATA) >
+<!ELEMENT UL (#PCDATA) >
+
+
+<!ATTLIST P node CDATA #IMPLIED
+			id ID #IMPLIED >
+
+<!ATTLIST I node CDATA #IMPLIED
+			id ID #IMPLIED >
+
+<!ATTLIST H1 node CDATA #IMPLIED
+			id ID #IMPLIED >
+
+<!ATTLIST BLOCKQUOTE node CDATA #IMPLIED
+			id ID #IMPLIED >
+
+<!-- $Id: faq-txt.dtd,v 1.3 2002/09/26 12:37:37 ajhood Exp $ -->

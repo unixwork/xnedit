@@ -1,0 +1,115 @@
+.\" ***** BEGIN LICENSE BLOCK *****
+.\" Version: MPL 1.1/GPL 2.0/LGPL 2.1
+.\"
+.\" The contents of this file are subject to the Mozilla Public License Version
+.\" 1.1 (the "License"); you may not use this file except in compliance with
+.\" the License. You may obtain a copy of the License at
+.\" http://www.mozilla.org/MPL/
+.\"
+.\" Software distributed under the License is distributed on an "AS IS" basis,
+.\" WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+.\" for the specific language governing rights and limitations under the
+.\" License.
+.\"
+.\" The Original Code is the Microline Widget Library, originally made available under the NPL by Neuron Data <http://www.neurondata.com>.
+.\"
+.\" The Initial Developer of the Original Code is
+.\" Netscape Communications Corporation.
+.\" Portions created by the Initial Developer are Copyright (C) 1998
+.\" the Initial Developer. All Rights Reserved.
+.\"
+.\" Contributor(s):
+.\"
+.\" Alternatively, the contents of this file may be used under the terms of
+.\" either the GNU General Public License Version 2 or later (the "GPL"), or
+.\" the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+.\" in which case the provisions of the GPL or the LGPL are applicable instead
+.\" of those above. If you wish to allow use of your version of this file only
+.\" under the terms of either the GPL or the LGPL, and not to allow others to
+.\" use your version of this file under the terms of the MPL, indicate your
+.\" decision by deleting the provisions above and replace them with the notice
+.\" and other provisions required by the GPL or the LGPL. If you do not delete
+.\" the provisions above, a recipient may use your version of this file under
+.\" the terms of any one of the MPL, the GPL or the LGPL.
+.\"
+.\" In addition, as a special exception to the GNU GPL, the copyright holders
+.\" give permission to link the code of this program with the Motif and Open
+.\" Motif libraries (or with modified versions of these that use the same
+.\" license), and distribute linked combinations including the two. You
+.\" must obey the GNU General Public License in all respects for all of
+.\" the code used other than linking with Motif/Open Motif. If you modify
+.\" this file, you may extend this exception to your version of the file,
+.\" but you are not obligated to do so. If you do not wish to do so,
+.\" delete this exception statement from your version.
+.\"
+.\" ***** END LICENSE BLOCK *****
+.TH XmLGridWritePos 3X "R1" "XML1" "XML"
+.SH NAME
+XmLGridWritePos \- write the string contents of cells in a Grid at a
+given location into a file
+.SH SYNTAX
+int XmLGridWritePos(\fIwidget\fP, \fIfile\fP, \fIformat\fP,
+\fIdelimiter\fP, \fIskipHidden\fP, \fIrowType\fP, \fIrow\fP, \
+\fIcolumnType\fP, \fIcolumn\fP, \fInrow\fP, \fIncolumn\fP)
+.br
+Widget \fIwidget\fP;
+.br
+FILE *\fIfile\fP;
+.br
+int \fIformat\fP;
+.br
+char \fIdelimiter\fP;
+.br
+Boolean \fIskipHidden\fP;
+.br
+unsigned char \fIrowType\fP;
+.br
+int \fIrow\fP;
+.br
+unsigned char \fIcolumnType\fP;
+.br
+int \fIcolumn\fP;
+.br
+int \fInrow\fP;
+.br
+int \fIncolumn\fP;
+.LP
+.SH ARGUMENTS
+.IP \fIwidget\fP 1i
+Grid widget ID
+.IP \fIfile\fP 1i
+file to write to
+.IP \fIformat\fP 1i
+format of the file
+.IP \fIdelimiter\fP 1i
+delimiter if format is XmFORMAT_DELIMITED
+.IP \fIskipHidden\fP 1i
+if True, skip hidden rows and columns
+.IP \fIrowType\fP 1i
+type of first row
+.IP \fIrow\fP 1i
+location of first row
+.IP \fIcolumnType\fP 1i
+type of first column
+.IP \fIcolumn\fP 1i
+location of first column
+.IP \fInrow\fP 1i
+number of rows
+.IP \fIncolumn\fP 1i
+number of columns
+.SH DESCRIPTION
+Writes the contents of cells in \fInrow\fP number of rows and
+\fIncolumn\fP number of columns to a \fIfile\fP in the given
+\fIformat\fP starting at the row and column specified by
+\fIrowType\fP, \fIrow\fP, \fIcolumnType\fP, and \fIcolumn\fP. If
+\fIskipHidden\fP is True, data in hidden rows or columns
+will not be included. Format must be one of the following:
+XmFORMAT_XL, where tabs separate columns and cell data is
+possibly surrounded by double-quotes, XmFORMAT_PAD,
+where columns are padded with spaces or XmFORMAT_DELIMITED,
+where data is delimited by the \fIdelimiter\fP given. 
+.SH RETURN VALUE
+A value of 0 is returned upon success, and a value of -1 is
+returned upon failure.
+.SH "SEE ALSO"
+XmLGridWrite(3X)

@@ -1,0 +1,19 @@
+# $Id: Makefile.convex,v 1.5 2003/05/20 00:27:55 n8gray Exp $
+# Makefile for Convex
+#
+# Thanks to Stephane Bortzmeyer, Conservatoire National des Arts et Metiers
+CC=/bin/cc
+AR=/bin/ar
+ARFLAGS = ur
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS= -O3 -nv
+LIBS= -L/usr/lib/X11 -lXm -lXt -lX11
+include Makefile.common
+
+verify_config:

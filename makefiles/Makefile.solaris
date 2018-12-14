@@ -1,0 +1,33 @@
+# $Id: Makefile.solaris,v 1.11 2006/02/05 18:29:22 yooden Exp $
+#
+# You may have to select the ANSI C compiler here
+#CC=gcc
+#CC=/opt/SUNWspro/bin/cc
+CC=cc
+AR=ar
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+# For Solaris 2.4, add -DDONT_USE_GLOB
+# On older Solaris systems, Motif may be in /opt/SUNWmotif or even in
+# /usr/local.  Some Solaris versions require explicit -I/usr/include
+# as the first include directory.
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+#CFLAGS=-g -I/usr/openwin/include -I/usr/dt/include \
+#    	-DUSE_DIRENT -DROWCOLPATCH -DNO_XMIM
+CFLAGS=-O -I/usr/openwin/include -I/opt/SUNWmotif/include -DUSE_DIRENT -DNO_XMIM
+
+ARFLAGS=-urs
+LIBS= -L/usr/lib -L/usr/openwin/lib -L/usr/dt/lib -lm -lXm -lXt -lX11 \
+    	-lsocket -lnsl  -R /usr/openwin/lib -R /usr/dt/lib -R /usr/ucblib
+#LIBS= -L/usr/openwin/lib -L/opt/SUNWmotif/lib -lm -lXm \
+#	-lXt -lX11 -lgen -R /usr/openwin/lib
+
+include Makefile.common
+
+verify_config:

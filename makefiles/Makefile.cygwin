@@ -1,0 +1,18 @@
+# $Id: Makefile.cygwin,v 1.8 2004/01/12 17:31:34 edg Exp $
+CC=gcc
+AR=ar
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -I/usr/X11R6/include -DDONT_HAVE_GLOB -DCYGWIN -DUSE_DIRENT -DUSE_LPR_PRINT_CMD -DNO_XMIM
+ARFLAGS=-urs
+LIBS= -L/usr/X11R6/lib -lXm -lXpm -lXext -lXt -lSM -lICE -lX11
+
+include Makefile.common
+

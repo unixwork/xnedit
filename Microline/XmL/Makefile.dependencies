@@ -1,0 +1,2 @@
+XmL.o: XmL.c XmL.h
+Folder.o: Folder.c Folder.h FolderP.h XmL.h

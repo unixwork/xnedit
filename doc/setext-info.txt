@@ -1,0 +1,472 @@
+
+  What is setext
+----------------
+
+  The following is extracted from text written by Ian Feldman.
+  
+  As originally explained in TidBITS#100 and mentioned there from 
+  now on, that publication now comes "wrapped as a setext." The noun
+  itself stands for both a method to wrap (format) texts according 
+  to specific layout rules and for a single _structure_enhanced_
+  text.  The latter is a text which has been formatted in such a
+  fashion that it contains clues as to the typographical and logical
+  structure of its source (word-processed) document(s), if any.
+  Those clues, which are called "typotags," facilitate later automatic
+  detection of that structure so it can be validated, extracted,
+  processed, transformed, enhanced as needed, if needed.
+
+  It follows that setexts, being nothing but pure text (albeit with a
+  special layout), are eminently readable using ANY editor or word
+  processor in existence today or tommorrow, on any computer with a
+  computer program that is capable of opening and reading text files. 
+  By default all properly setext-ized files will have an ".etx" or
+  ".ETX" suffix.  This stands for an "emailable/ enhanced text", the
+  ExtraTerrestrial overtones nothwistanding ;-))
+
+  Unlike other forms of text encoding that use explicit, visible tag
+  elements such as <this> and <\that>, the setext format relies
+  solely on the presence of _implicit_ typotags, carefully chosen
+  to be as visually unobtrusive as possible.  The underlined word
+  above is one such instance of the defacto "invisible" coding. 
+  Inserted typotags will at worst appear as mere "typos" in the text.
+
+  [Extensions made to the original set of typotags have muddied this
+  clarity a little bit, but they were necessary for NEdit development.]
+
+  Similarly, just to give an example, here is a short description
+  of the four types of word emphasis typotags that setexts MAY
+  contain, limited to one emphasis type ONLY per word or word group:
+
+ -------------------  ----------------------------  --------------
+!      **aBoldWord**  **multiple bold words**       ; bold-tt
+!_anUnderlinedWord_    _multiple_underlined_words_  ; underline-tt
+!    ~anItalicWord~    ~multiple italicized words~  ; italic-tt
+!         aHotWord_     multiple_hot_words_         ; hot-tt 
+ ----------------------------------------------------------------- 
+
+ What makes a setext?
+---------------------
+
+  Before any decoding can take place a text has first to be
+  verified whether it is a setext and not some arbitrarily-wrapped
+  stream of characters.  Although there are more ways than one to
+  achieve that goal there is one _primary_ test that has to be
+  passed with colors or else the text being tested cannot be a
+  setext. 
+
+  Chief among the typotags are two that signal presence of setext
+  titles and subheads inside the text.  A setext document can be
+  formatted more or less properly, may contain or lack any other of
+  its "native" elements but it has to have at least one proper
+  subhead or a title in order to be declared as "a certified
+  setext."
+
+    Column 1 of text line
+    |
+    V
+    Here are a few demo setext subheads:     
+    ------------------------------------
+
+    _ _ _ _ Which Share Just One _ _ _ _
+    ------------------------------------
+
+            ----------> UnifyinG FeaturE
+    ------------------------------------
+
+    of EQUAL RIGHTMOST VISIBLE character 
+    ------------------------------------
+
+      length as that of its subhead-tt's    
+    ------------------------------------
+
+    [this line is called subhead-string]
+    ------------------------------------
+
+    [the one below is called subhead-tt]
+    ------------------------------------
+
+    [together they make a valid subhead]
+    ------------------------------------
+
+       (!) and of course, subheads do not have to be of the same length ;-)
+    -----------------------------------------------------------------------
+
+      (nor have to begin in column 1)    
+    ---------------------------------
+
+     although it is recommended that they stay below 40 characters
+    --------------------------------------------------------------
+
+        Second Setext In This File
+    ==============================
+
+     ((end of examples))
+     -------------------
+     ((_not_ a subhead))
+    ^
+    |
+    Column 1 of text line
+
+  Note, the last 3 lines of the examples do not constitute a valid
+  subhead because they do not start in column 1.
+
+  Chief among the reasons why one should first look for presence of
+  subheads rather than titles is that it is fully conceivable that a
+  setext might have been created without an explicit title-tt in
+  order to allow decoder programs to distinguish between part one
+  and any subsequent ones in a possible multi-part mailing. This
+  absence of a title-tt could be enough of a signal to start looking
+  for possible "part x of y" message in either the subject line,
+  filename or anywhere "above" the first detected subhead of the
+  current text. 
+
+  Therefore, here's a formal definition of what makes a setext:
+
+ +-------------------------------------------------------------+
+ |  a text that contains at least one verified setext subhead  |
+ |  or setext title                                            |
+ +-------------------------------------------------------------+
+
+ Other considerations
+---------------------
+
+  A possibility arises to keep the paragraph text unwrapped, rather
+  than folded uniformly at say the 66th character mark.  After all,
+  if the setext is primarily to be displayed inside an editor,
+  rather than on an 80 character terminal screen, then there is not
+  much sense in prior folding of the lines to a specific
+  guaranteed-to-fit-on-a-TTY-screen length.  The editor/word
+  processor program will fit the unwrapped text to the available
+  display area, and might actually prefer to have to deal with
+  whole unwrapped paragraphs rather than with otherwise relatively
+  short lines. 
+
+  Most text-processing programs with native word-wrap capabilities
+  actually consider return-terminated lines to be paragraphs in
+  their own right.  Thus, if a setext is not to travel via email
+  anyway (because of it being distributed differently or making use
+  of accented characters) then it might as well arrive in unfolded
+  state so that no extra time need be spent on making the
+  paragraphs "whole again." [This is not the choice that is taken
+  with NEdit help because it is easier to visualize the final text
+  for those who do not use text wrapping.] 
+  
+  Observe that it is not the state of the paragraph text that makes
+  or breaks a setext.  No, the sole criterion of whether a text is
+  a setext is the presence of at least one verified subhead, as
+  described above. Thus even texts with unfolded paragraphs are
+  setexts if they contain at least one subhead-tt.
+
+  The sole mechanism used in setext to encode which of such lines
+  are in reality paragraphs (as opposed to those that shouldn't be
+  folded mechanically) is the character indent.  In fact, after the
+  subhead-tt the second most important typotag is the indent-tt,
+  made up of exactly two space characters, which denotes any such
+  indented lines as ready-candidates for reflowing by so inclined
+  front-ends (either on their own or as part of like-indented lines
+  above and below it).  So any potentially long line of a setext
+  that has been indent-tted will be understood (by any validated
+  setext front-end) as to be ready for wrapping-to-length if so
+  required. 
+
+.. All the following document by Steven Haehn
+
+Typotags Available
+------------------
+
+  The following table contains typotags recognized by the setext
+  utility. The "setext form" column in the table is formatted such
+  that the left most character of the column represents the first
+  character in a line of setext. The circumflex character (^) means
+  that the characters of the typotag are significant only when they
+  are anchored to the front of the setext line. Typotags marked
+  with an asterisk (*) are extensions added for NEdit help
+  generation.
+
+!! ============   ===================  ==================
+!!      name of   setext form          acted upon or
+!!  the typotag   of typotag           displayed as
+!! ============   ===================  ==================
+!!     title-tt  "Title                a title
+!!                ====="               in chosen style
+!! ------------   -------------------  ------------------
+!!   subhead-tt  "Subhead              a subhead
+!!                -------"             in chosen style
+!! ------------   -------------------  ------------------
+!!   section-tt  ^#> section-text      a section heading
+!!                                     with '#' from 1..9
+!!                                     in chosen style
+!! ------------   -------------------  ------------------
+!!    indent-tt  ^  lines indented     lines undented
+!!               ^  by 2 spaces        and unfolded
+!! ------------   -------------------  ------------------
+!!      bold-tt       **[multi]word**  1+ bold word(s)
+!!    italic-tt          ~multi word~  1+ italic word(s)
+!! underline-tt        [_multi]_word_  underlined text
+!!       hot-tt         [multi_]word_  1+ hot word(s)
+!!     quote-tt  ^>[space][text]       > [mono-spaced]
+!!    bullet-tt  ^*[space][text]       [bullet] [text]
+!!   untouch-tt   `_quoted typotag!_`  `_left alone!_`
+!!   notouch-tt* ^!followed by text    text-left-alone
+!!     field-tt*     |>name[=value]<|  value of name
+!!      line-tt* ^   ---               horizontal rule
+!! ------------   -------------------  ------------------
+!!      href-tt* ^.. _word URL         jump to address
+!!      note-tt  ^.. _word Note:("*")  ("cause error")
+!!    target-tt*     _[multi_]word     [multi ]word
+!! ------------   -------------------  ------------------
+!!   twobuck-tt   $$ [last on a line]  [parse another]
+!!  suppress-tt  ^..[space][not dot]   [line hidden]
+!!    twodot-tt  ^..[alone on a line]  [taken note of]
+!! ------------   -------------------  ------------------
+!!     maybe-tt* ^.. ? name[~] text    show text when
+!!                                     name defined
+!!  maybenot-tt* ^.. ! name[~] text    show text when
+!!                                     name NOT defined
+!!  endmaybe-tt* ^.. ~ name            end of a multi-
+!!                                     line maybe[not]-tt
+!! ------------   -------------------  ------------------
+!!  passthru-tt* ^!![text]             text emitted
+!!                                     without processing
+!! ------------   -------------------  ------------------
+!!    escape-tt*  @x where 'x'  is     x is what remains
+!!                escaped character    @@ needed for 1 @
+!! ============   ===================  ==================
+!!
+
+  The title-tt, subhead-tt and indent-tt have already been
+  discussed in length in the previous sections. All typotag
+  elements, but the subhead-tt, are optional, that is, not
+  necessary for a setext to be declared as such. The simple
+  character marking typotags, bold-tt, italic-tt, and underline-tt
+  have been used throughout the document and are used to mark text
+  with their obvious meanings.
+
+3>Section-tt (document divisions)
+
+  The section-tt allows subdividing of the setext into further
+  subsections for greater nesting capability. Typical usage starts
+  the numbering level at 3 because the title-tt and subhead-tt
+  basically represent sections 1 and 2, respectively.
+
+3>Bullet-tt (list marker)
+
+  The bullet-tt typotag is use to create a list of items. Note that
+  it can only be used to create single line entries, like the
+  following:
+  
+    Column 1 of text line
+    |
+    V
+    * This is the first bullet.
+    * This is the second bullet.
+  
+  Remember that you have to insert empty lines immediately before
+  and after the bullet list.
+
+3>Untouch-tt, Notouch-tt, Passthru-tt, Escape-tt (quoting text)
+
+  Each one of these leave-my-text-alone typotags offer varying
+  degrees of operation. The untouch-tt surrounds the text that
+  is not to be interpreted. The accent grave (`) character is
+  used to start and finish the untouchable text. (An extension
+  to this has been allowed in the setext utility. An untouch-tt
+  may be terminated by an apostrophe (').) The following are
+  all valid untouch-tt typotags.
+  
+    `this is the _original_ version of the untouch-tt`
+    `this is the _extended_ form of the untouch-tt'
+    `This couldn't _be_ a problem could it?'
+
+  Note that the third example has used the contraction "couldn't"
+  which did not terminate the untouch-tt because the apostrophe was
+  not followed by whitespace or punctuation.
+  
+  The notouch-tt typotag is used to take care of entire lines of
+  text. The difference between this and the untouch-tt is that there
+  is no visual residual typotag mark left in the output. It is
+  replaced by a space. For example,
+  
+    Column 1 of text line
+    |
+    V
+    ! This line of text will look like this sans the ! in column 1.
+
+  becomes,
+  
+      This line of text will look like this sans the ! in column 1.
+
+  The difference between the passthru-tt and the notouch-tt is
+  the subtle difference of not replacing the markers with space, but
+  totally removing them. (The original usage was to try to emit
+  special 'C' compiler directives directly into the help code
+  product). Thus,
+  
+    Column 1 of text line
+    |
+    V
+    !!#ifdef VMS
+
+  would turn into
+  
+    #ifdef VMS
+  
+  The escape-tt (@) is used to escape the special markers of 
+  the other typotags and itself. Here is an example of escaping
+  itself.
+  
+    develop@@nedit.org
+
+  This will become "develop@nedit.org" in resulting documents.
+  
+
+3>Suppress-tt, Twodot-tt (author annotations or comments)
+
+  The suppress-tt typotag allows an author to place annotations in a
+  setext document which will not appear in a generated product. Most
+  of the extensions to the original setext definition were placed
+  inside this form of typotag.
+  
+    Column 1 of text line
+    |
+    V
+    .. This is a document comment that would normally disappear
+    .. from generated text, html, or the like. These lines are
+    .. what constitute a suppress-tt. The following line is the
+    .. twodot-tt.
+    ..
+    
+3>Hot-tt, Href-tt, Target-tt (hyperlinking text)
+
+  These three typotags are used in conjunction to create
+  hypertext reference mechanism used int HTML and NEdit
+  help code generation. The hot-tt is an original typotag which
+  needed the additional two tags to be able create actual hyperlinks
+  to other sections of the document, or to external references that
+  could be exploited. These tags are ignored (stripped) when
+  generating simple text documents.
+  
+  The hot-tt typotag is used to mark the text which would be used as
+  the doorway to accessing other parts of the document. It either
+  references a title or subhead string directly, or an href-tt. An
+  href-tt (hypertext reference typotag) is used as an intermediary
+  for the hyperlink destination. Its value either specifies an
+  external document reference, or an internal document reference.
+  The target-tt is used to mark the internal document references
+  mentioned in a href-tt.
+  
+  Now for some examples. All the marked text will be inside
+  parenthesis so it will stand out as to what explicitly is being
+  marked. 
+  
+  This hot-tt directly references the (Typotags_Available_)
+  subheading above. Whereas, the following hot-tt (references_) 
+  the href-tt marked by this target-tt (_typotag).
+
+  Here is what the href-tt would look like:
+  
+    Column 1 of text line
+    |
+    V
+!   .. _references #typotsg
+
+.. The following line is the actual hypertext reference in this
+.. document. This annotation is an example of supress-tt usage. 
+.. _references #typotag
+
+3>Maybe[not]-tt, Endmaybe-tt (conditional text regions)
+
+  Multiple line maybe-tt or maybenot-tt (conditional text regions)
+  are introduced as follows:
+
+    Column 1 of text line
+    |
+    V
+    .. ? name~   (this is the maybe-tt)
+    .. ! name~   (this is the maybenot-tt)
+    
+  Both are terminated with an endmaybe-tt on a separate line.
+
+    Column 1 of text line
+    |
+    V
+    .. ~ name
+
+  The name* of the conditional region is left up to the text
+  author.  Single line maybe[not]-tt typotags do not use the '~'
+  character at the end of the name and are terminated at the end
+  of the line. 
+
+    Column 1 of text line
+    |
+    V
+    .. ? oneLine (This is a one line maybe-tt)
+    .. ! oneLine (This is a one line maybenot-tt)
+  
+  * There are some predefined conditional region names that are
+  already known to the setext parser: html, text, and (NEdit) help.
+  The special conditional text region named "html" allows a mixture
+  of setext and HTML tags.
+
+  Nesting of conditional text regions is allowed. For instance, if
+  there are three conditional regions, A, B, and C, C can be nested
+  inside B, which can be nested inside A. For example,
+  A-B-C...C-B-A. 
+
+      Column 1 of text line
+    |
+    V
+    .. ? A~    Example of legally nested conditional text regions
+    .. ? B~
+    .. ? C~
+    .. ~ C
+    .. ~ B
+    .. ~ A
+  
+  Note that a surrounding region cannot end before one of its inner
+  regions is terminated (eg. of illegal nesting A-B-C...C-A-B,
+  where A terminated prior to B).
+
+3>Field-tt (variable definition and substitution)
+
+  Field-tt typotags are used to define variables and reference
+  their values. Field definitions can only occur within a
+  suppress-tt.
+
+  For example, to define the variable 'author' and fill it
+  with the value "Steven Haehn":
+ 
+      Column 1 of text line
+    |
+    V
+    .. |>author=Steven Haehn<|
+
+  To use the value of the defined variable, place the field-tt,
+  |>author<|, in any printable text region. If there is no known
+  value for the  field, it will remain unchanged and appear as
+  written in the setext.
+
+  The following are predefined for use in a field-tt
+  for any setext document translated by the setext utility.
+
+    Date = <MonthName day, year>         (eg. December 6, 2001)
+    date = <MonthAbbreviation day, year> (eg. Dec 6, 2001)
+    year = <year>                        (eg. 2001)
+
+3>Line-tt (horizontal rule demarcation)
+
+  This typotag is used to place horizontal markers into generated
+  text documents. Like the following.
+
+   Column 4 of text line
+   |
+   V
+   -------------------------------------------------------------  
+
+3>Twobuck-tt (setext termination marker)
+
+  This typotag is used to mark the end of document parsing.
+  
+ $$
+
+$Id: setext-info.txt,v 1.3 2002/09/26 12:37:38 ajhood Exp $

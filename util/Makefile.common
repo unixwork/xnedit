@@ -1,0 +1,22 @@
+#
+# Platform independent part of make procedure for Nirvana utilities directory, 
+# included by machine specific makefiles.
+#
+
+OBJS = DialogF.o getfiles.o printUtils.o misc.o fileUtils.o \
+	prefFile.o fontsel.o managedList.o utils.o clearcase.o motif.o \
+	rbTree.o refString.o nedit_malloc.o
+
+all: libNUtil.a
+
+libNUtil.a: $(OBJS)
+	$(AR) $(ARFLAGS) libNUtil.a $(OBJS)
+
+printUtils.o: printUtils.c
+	$(CC) -c $(CFLAGS) $(PRINTFLAGS) -o $@ printUtils.c
+
+clean:
+	rm -f $(OBJS) libNUtil.a
+
+# Get the dependencies for all objects
+include Makefile.dependencies

@@ -1,0 +1,90 @@
+<!--
+  This DTD is based on QAML DTD. Modified by Florian Xhumari.
+  $Id: faq.dtd,v 1.3 2002/09/26 12:37:37 ajhood Exp $
+-->
+
+<!ENTITY % text-styles 'email | img | site | link | em | strong | tt | code' >
+
+<!ENTITY % paragraph-styles 'p | blockquote | ul | ol | pre' >
+
+
+<!ELEMENT faq           (head, body) >
+
+<!-- head -->
+
+<!ELEMENT head          (title, version?, maintainers?, keywords*, summary?, download?)>
+
+<!ELEMENT version       (#PCDATA) >
+<!ELEMENT keywords		(#PCDATA) >
+<!ELEMENT summary		(%paragraph-styles;)+ >
+<!ELEMENT download		(%paragraph-styles;)+ >
+
+<!-- body -->
+
+<!ELEMENT body          (about-section?, (section+ | qna+)) >
+<!ELEMENT about-section (title, (qna+ | q+ | (%paragraph-styles; | section)+)) >
+<!ELEMENT section       (title, maintainers*, (qna+ | q+ | (%paragraph-styles; | section)+)) >
+<!ELEMENT qna           (author?, q, long-q?, a+ )>
+<!ELEMENT a             (contributor*, (%paragraph-styles;)+) >
+<!ELEMENT q             (#PCDATA | %text-styles; )* >
+<!ELEMENT long-q		(%paragraph-styles;)+ >
+
+<!ELEMENT author        (name, email?) >
+<!ELEMENT contributor   (name, email?) >
+
+<!-- common for header and body -->
+
+<!ELEMENT title         (#PCDATA) >
+<!ELEMENT maintainers	(maintainer)+ >
+<!ELEMENT maintainer    (name, email, subject?, address?) >
+
+<!ELEMENT name          (#PCDATA) >
+<!ELEMENT address       (#PCDATA) >
+<!ELEMENT subject       (#PCDATA) >
+
+
+
+
+<!-- text styles -->
+
+<!ELEMENT email         (#PCDATA) >
+<!ELEMENT img           EMPTY >
+<!ELEMENT site			(#PCDATA) >
+<!ELEMENT link          (#PCDATA) >
+
+<!ELEMENT em            (#PCDATA) >
+<!ELEMENT strong        (#PCDATA) >
+<!ELEMENT tt            (#PCDATA) >
+<!ELEMENT code          (#PCDATA) >
+
+
+<!-- paragraph-like styles -->
+
+<!ELEMENT blockquote	(p | ul | ol | pre | blockquote)+ >
+<!ELEMENT p             (#PCDATA | %text-styles; )* >
+<!ELEMENT ul            (li)+ >
+<!ELEMENT ol            (li)+ >
+<!ELEMENT li			(#PCDATA | %text-styles; )* >
+<!ELEMENT pre			(#PCDATA) >
+
+
+
+
+<!ATTLIST a             gist     CDATA   #IMPLIED >
+<!ATTLIST about-section id       ID      #REQUIRED
+                        gist     CDATA   #IMPLIED >
+<!ATTLIST author        id       ID      #IMPLIED >
+<!ATTLIST blockquote    id       ID      #IMPLIED >
+<!ATTLIST contributor   id       ID      #IMPLIED >
+<!ATTLIST faq           id       ID      #IMPLIED
+                        xmlns:html CDATA #FIXED "http://www.w3.org/TR/REC-html40" >
+<!ATTLIST img           src      CDATA   #REQUIRED
+                        alt      CDATA   #IMPLIED >
+<!ATTLIST link          href     CDATA   #REQUIRED
+                        alt      CDATA   #IMPLIED >
+<!ATTLIST maintainer    id       ID      #IMPLIED >
+<!ATTLIST name          id       ID      #IMPLIED >
+<!ATTLIST qna           id       ID      #REQUIRED
+                        date     CDATA   #IMPLIED >
+<!ATTLIST section       id       ID      #REQUIRED
+                        gist     CDATA   #IMPLIED >

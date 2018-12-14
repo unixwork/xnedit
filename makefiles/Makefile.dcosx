@@ -1,0 +1,19 @@
+# $Id: Makefile.dcosx,v 1.5 2003/05/20 00:27:55 n8gray Exp $
+# Makefile for Pyramid
+#
+# Thanks to Koen D'Hondt and patrick@wombat.logica.co.uk
+CC=cc
+AR=ar
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O
+LIBS= -lXm -lXt -lX11
+
+include Makefile.common
+
+verify_config:

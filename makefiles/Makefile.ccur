@@ -1,0 +1,26 @@
+# $Id: Makefile.ccur,v 1.6 2003/11/22 13:03:39 edg Exp $
+# Makefile for Concurrent SVR4 using PowerMax OS 4.2 or later
+#  
+# Provided by Robert Yunk of the Boeing Company
+
+CC=cc
+AR=ar
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -DUSE_DIRENT -DEDITRES
+ARFLAGS=-urs
+LIBS=-lm -lXm -lXmu -lXt -lX11 -lnsl -lsocket -lXp -lSM -lICE -lXext
+
+include Makefile.common
+
+# Installation Notes:
+#   Remember to delete or update the old version of the app-defaults
+#   file(s) or you will have accelerator keys missing and File Open
+#   and File Save As errors.
+
+verify_config:

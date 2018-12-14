@@ -1,0 +1,111 @@
+.\" ***** BEGIN LICENSE BLOCK *****
+.\" Version: MPL 1.1/GPL 2.0/LGPL 2.1
+.\"
+.\" The contents of this file are subject to the Mozilla Public License Version
+.\" 1.1 (the "License"); you may not use this file except in compliance with
+.\" the License. You may obtain a copy of the License at
+.\" http://www.mozilla.org/MPL/
+.\"
+.\" Software distributed under the License is distributed on an "AS IS" basis,
+.\" WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+.\" for the specific language governing rights and limitations under the
+.\" License.
+.\"
+.\" The Original Code is the Microline Widget Library, originally made available under the NPL by Neuron Data <http://www.neurondata.com>.
+.\"
+.\" The Initial Developer of the Original Code is
+.\" Netscape Communications Corporation.
+.\" Portions created by the Initial Developer are Copyright (C) 1998
+.\" the Initial Developer. All Rights Reserved.
+.\"
+.\" Contributor(s):
+.\"
+.\" Alternatively, the contents of this file may be used under the terms of
+.\" either the GNU General Public License Version 2 or later (the "GPL"), or
+.\" the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+.\" in which case the provisions of the GPL or the LGPL are applicable instead
+.\" of those above. If you wish to allow use of your version of this file only
+.\" under the terms of either the GPL or the LGPL, and not to allow others to
+.\" use your version of this file under the terms of the MPL, indicate your
+.\" decision by deleting the provisions above and replace them with the notice
+.\" and other provisions required by the GPL or the LGPL. If you do not delete
+.\" the provisions above, a recipient may use your version of this file under
+.\" the terms of any one of the MPL, the GPL or the LGPL.
+.\"
+.\" In addition, as a special exception to the GNU GPL, the copyright holders
+.\" give permission to link the code of this program with the Motif and Open
+.\" Motif libraries (or with modified versions of these that use the same
+.\" license), and distribute linked combinations including the two. You
+.\" must obey the GNU General Public License in all respects for all of
+.\" the code used other than linking with Motif/Open Motif. If you modify
+.\" this file, you may extend this exception to your version of the file,
+.\" but you are not obligated to do so. If you do not wish to do so,
+.\" delete this exception statement from your version.
+.\"
+.\" ***** END LICENSE BLOCK *****
+.TH XmLStringDrawDirection 3X "R1" "XML1" "XML"
+.SH NAME
+XmLStringDrawDirection \- draws a string in the given direction
+.SH SYNTAX
+void XmLStringDrawDirection(\fIdpy\fP, \fIwin\fP, \fIfontList\fP, \
+\fIstring\fP, \fIgc\fP, \fIx\fP, \fIy\fP, \fIwidth\fP, \
+\fIalignment\fP, \fIlayout_direction\fP, \fIdrawing_direction\fP)
+.br
+Display *\fIdpy\fP;
+.br
+Window \fIwin\fP;
+.br
+XmFontList \fIfontList\fP;
+.br
+XmString \fIstring\fP;
+.br
+GC \fIgc\fP;
+.br
+int \fIx\fP;
+.br
+int \fIy\fP;
+.br
+Dimension \fIwidth\fP;
+.br
+unsigned char \fIalignment\fP;
+.br
+unsigned char \fIlayout_direction\fP;
+.br
+unsigned char \fIdrawing_direction\fP;
+.LP
+.SH ARGUMENTS
+.IP \fIdpy\fP 1i
+destination display
+.IP \fIwin\fP 1i
+destination window
+.IP \fIfontList\fP 1i
+font list used to draw string
+.IP \fIstring\fP 1i
+string to draw
+.IP \fIgc\fP 1i
+graphics context for drawing
+.IP \fIx\fP 1i
+x position
+.IP \fIy\fP 1i
+y position
+.IP \fIwidth\fP 1i
+width for alignment
+.IP \fIalignment\fP 1i
+alignment
+.IP \fIlayout_direction\fP 1i
+layout direction for drawing
+.IP \fIdrawing_direction\fP 1i
+direction to draw
+.SH DESCRIPTION
+Draws a \fIstring\fP in the direction \fIdrawing_direction\fP
+using the font list \fIfontList\fP and the GC \fIgc\fP in the window
+\fIwin\fP on the display \fIdpy\fP. The string is drawn at the
+\fIx\fP and \fIy\fP location given.  The \fIwidth\fP parameter is
+used solely for determining alignment.  The \fIalignment\fP parameter
+must be one of: XmALIGNMENT_BEGINNING, XmALIGNMENT_CENTER or
+XmALIGNMENT_END.  The \fIlayout_direction\fP parameter is used to
+draw the string right or left for internationalization (see
+XmStringDraw).  The \fIdrawing_direction\fP parameter must be one
+of: XmSTRING_UP, XmSTRING_DOWN, XmSTRING_LEFT or XmSTRING_RIGHT.
+.SH "SEE ALSO"
+XmLStringDraw(3x), XmLPixmapDraw(3X)

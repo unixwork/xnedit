@@ -1,0 +1,50 @@
+# Platform independent part of make procedure for NEdit directory, 
+# included by machine specific makefiles.
+#
+
+OBJS =	nedit.o file.o menu.o window.o selection.o search.o undo.o shift.o \
+	help.o preferences.o tags.o userCmds.o shell.o regularExp.o macro.o \
+	text.o textSel.o textDisp.o textBuf.o textDrag.o server.o highlight.o \
+	highlightData.o interpret.o parse.o smartIndent.o regexConvert.o \
+	windowTitle.o calltips.o server_common.o rangeset.o
+
+XLTLIB = ../Xlt/libXlt.a
+XMLLIB = ../Microline/XmL/libXmL.a
+
+.c.o:
+	$(CC) -c -I../Microline -I../Xlt $(CFLAGS) -o $@ $<
+
+all: nedit nc
+
+# Note there is no depedency for linkdate.c/o.  This is intentional,
+# we only want natural rebuilds to regenerate the link date.
+nedit: $(OBJS) ../util/libNUtil.a $(XMLLIB) $(XLTLIB)
+	$(CC) $(CFLAGS) -c linkdate.c -o linkdate.o
+	$(CC) $(CFLAGS) $(OBJS) linkdate.o $(XMLLIB) \
+	 $(XLTLIB) ../util/libNUtil.a $(LIBS) -o $@
+
+# Note LIBS isn't quite right here; it links unnecessarily against Motif
+nc: nc.o server_common.o ../util/libNUtil.a
+	$(CC) $(CFLAGS) nc.o server_common.o ../util/libNUtil.a $(LIBS) -o $@
+
+help.o: help.c
+	$(CC) $(CFLAGS) $(BIGGER_STRINGS) -c help.c -o $@
+
+smartIndent.o: smartIndent.c
+	$(CC) $(CFLAGS) $(BIGGER_STRINGS) -c smartIndent.c -o $@
+
+highlightData.o: highlightData.c
+	$(CC) $(CFLAGS) $(BIGGER_STRINGS) -c highlightData.c -o $@
+
+clean:
+	rm -f $(OBJS) nedit nc nc.o parse.c linkdate.o
+
+parse.c: parse.y
+	@echo "NOTE:  Don't worry about 'command not found' errors here"
+	@echo "       unless you have changed the parse.y file."
+	bison -o parse.c parse.y || ( yacc parse.y && mv y.tab.c parse.c ) || \
+		cp parse_noyacc.c parse.c
+
+
+# Get the dependencies for all objects
+include Makefile.dependencies

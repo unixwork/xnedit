@@ -1,0 +1,3292 @@
+eval 'exec perl -S $0 ${1+"$@"}'
+    if $running_under_some_shell;
+
+#-----------------------------------------------------------------------------
+#
+# setext.pl -- Structure Enhanced Text Converter (to HTML or simple text)
+# 
+# $Id: setext,v 1.14 2008/01/13 02:48:02 yooden Exp $
+# 
+# Copyright (c) 2000 Steven Haehn
+# 
+# This is free software; you can redistribute it and/or modify it under the   
+# terms of the GNU General Public License as published by the Free Software   
+# Foundation; either version 2 of the License, or (at your option) any later  
+# version.                                                                    
+#
+# In addition, as a special exception to the GNU GPL, the copyright holders
+# give permission to link the code of this program with the Motif and Open
+# Motif libraries (or with modified versions of these that use the same
+# license), and distribute linked combinations including the two. You must
+# obey the GNU General Public License in all respects for all of the code used
+# other than linking with Motif/Open Motif. If you modify this file, you may
+# extend this exception to your version of the file, but you are not obligated
+# to do so. If you do not wish to do so, delete this exception statement from
+# your version.
+#                                                                             
+# This software is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.                                                           
+#                                                                             
+# You should have received a copy of the GNU General Public License along with
+# software; if not, write to the Free Software Foundation, Inc., 59 Temple    
+# Place, Suite 330, Boston, MA  02111-1307 USA                                
+# 
+#-----------------------------------------------------------------------------
+#
+# The concept of setext documents is the brain child of Ian Feldman.
+# Some typotag terms used herein were originally implemented in a perl script
+# by Tony Sanders, which is the inspirational source for this work.
+# This perl script understands the original typotags, plus extras needed for 
+# hypertext links, conditional text, and variables.
+#
+# Samples of setext documents are regularly provided to those folks which
+# receive the TidBITS publication from www.tidbits.com in their e-mail.
+#
+# This program is really two programs crammed into one file. The two separate
+# pieces share lots of code. Instead of having 3 separate files, one of
+# them being a perl library with the shared code, there was a desire to keep
+# everything rolled up in one suitcase.
+#
+#-----------------------------------------------------------------------------
+#
+# GENERAL TRANSLATOR ROUTINES    NEDIT HELP SOURCE CODE GENERATION ROUTINES
+#
+# check_target_reference         collect_internal_hypertext_references
+# count                          emit_copyright
+# date                           emit_helpText
+# emit_paragraph                 emit_helpTitles
+# emit_setext_definition         emit_help_header
+# extract_fields                 emit_help_label
+# extract_menu_info              emit_help_menu
+# extract_menu_init              emit_help_menu_text
+# get_menu_item                  emit_help_topic
+# get_setext                     get_menu_text
+# is_member                      get_newline
+# parse_setext                   get_style
+# preserve_html                  get_style_name
+# recover_extractions            is_known_link
+# replace_underlines             locate_menu_text
+# show_usage                     make_NEdit_menu_code
+# to_state                       print_menu
+# translate_setext               
+#                                
+#                                
+# TYPOTAG TRANSLATION ROUTINES
+# 
+# help_bold_tt      text_bold_tt        html_bold_tt
+# help_bullet_tt    text_bullet_tt      html_bullet_tt
+# help_emit_line    text_emit_line      html_emit_line
+# help_final        text_final          html_final
+# help_finishing    text_finishing      html_finishing
+# help_hot_tt       text_hot_tt         html_hot_tt
+# help_indent       text_indent         html_indent
+# help_init         text_init           html_init,  html_init_title
+# help_italic_tt    text_italic_tt      html_italic_tt
+# help_line_break   text_line_break     html_line_break
+# help_list_tt      text_list_tt        html_list_tt
+# help_line_tt      text_line_tt        html_line_tt
+# help_quote_tt     text_quote_tt       html_quote_tt
+# help_section_tt   text_section_tt     html_section_tt
+# help_target_tt    text_target_tt      html_target_tt
+# help_title        text_title          html_title
+# help_underline_tt text_underline_tt   html_underline_tt
+#
+# help_fixed_styles                     html_enter_list,  html_leave_list
+# help_proportional_styles              html_enter_pre,   html_leave_pre
+# fix_target_tt                         html_enter_quote, html_leave_quote
+#                                       html_emit_header, html_emit_footer
+#                                       getHtmlAttributes
+#
+#-----------------------------------------------------------------------------
+
+use Getopt::Long;   # for parsing the program command line (GetOptions)
+use File::Basename; # for trimming off directory names from files (basename)
+use English;
+
+#-------------------------------------------------------------------------------
+
+sub emit_version
+{
+    my $version = "1.9";
+    my $date    = "Oct 01, 2003"; 
+    
+    print "$pgm: Version $version, $date.\n";
+    exit 0;
+}
+
+#-------------------------------------------------------------------------------
+
+sub show_usage
+{
+    print "\n";
+    print "Usage: $pgm [ -dhtTVw ][-D directory][-H [hfile]][-S [htmlExt]] \\\n";
+    print "              [-c conditional][-v name=value][setext_file [converted_file]]\n";
+    print "\n";
+    print "       $pgm {-mp} [-c conditional][-M menuSuffix][-v name=value] setext_file\n";
+    print "\n";
+    print "  The first form of $pgm is used to convert Structure Enhanced TEXT\n";
+    print "  documents into HTML or simple text documents.\n";
+    print "  The second form is specific to generating NEdit help menu code\n";
+    print "  from a setext document with Menu and Help directives.\n";
+    print "\n";
+    print "  -c conditional text definitions, separated by commas.\n";
+    print "  -d do not automatically make titles hypertext references (HTML only)\n";
+    print "  -D specify destination directory for separate HTML files. This also sets\n";
+    print "     the value for the variable HTML_DIR.\n";
+    print "  -h show this usage clause.\n";
+    print "  -H convert setext_file to HyperText Markup Language (HTML).\n";
+    print "     Optional file parameter specifies file containing HTML header\n";
+    print "     and footer definition overrides. The current defaults are:\n";
+    print "        \$htmlHeader = <HTML>\n";
+    print "                      <TITLE>\$HTML_TITLE</TITLE>\n";
+    print "                      <HEAD></HEAD>\n";
+    print "                      <BODY>\n";
+    print "        \$htmlFooter = </BODY>\n";
+    print "                      </HTML>\n";
+    print "     where \$HTML_TITLE is replaced with an appropriate title.\n\n";
+    print "  -m generate NEdit help menu code files.\n";
+    print "  -M name NEdit help code files with this suffix.\n";
+    print "  -p do option -m and print out NEdit help elements.\n";
+    print "  -S convert setext_file into separate HTML files.\n";
+    print "     (the default name extension is '$htmlExt', but it can be\n";
+    print "     changed by specifying it as an argument to this option)\n";
+    print "  -t convert setext_file to simple text (default).\n";
+    print "  -T emit setext typotag definitions in use.\n";
+    print "  -v defines variable name and assigns it the given value.\n";
+    print "     (more than one occurrence of -v can be made) The variables\n";
+    print "     are made available for use within the setext document parsing.\n";
+    print "  -V display the version of this setext script.\n";
+    print "  -w do not emit warnings about missing variables.\n";
+    print "\n";
+    print "  When the converted_file argument is missing, STDOUT is used.\n";
+    print "  When the setext_file argument is missing, STDIN is used.\n";
+    print "\n";
+    print "  To get conditional text within a setext document to be displayed,\n";
+    print "  supply a definition tag through the -c option. For example,\n";
+    print "\n";
+    print "          $pgm -c NEDITDOC help.etx nedit.doc\n";
+    print "\n";
+    print "  would generate a plain text document, nedit.doc, from the source\n";
+    print "  help.etx, including/excluding text marked with 'NEDITDOC'\n";
+    print "  conditional text markers, also known as 'maybe' typotags.\n";
+    print "\n";
+
+    exit 0;
+}
+
+#---------------------------------------------------------------------------
+# This is a GetOptions call back function for gleaning variables from
+# the command line so that they can be available to the setext parsing
+# without having to appear in the setext document. The expected form
+# on the command line is: -v variableName=value. For example, -v version=5.2
+#---------------------------------------------------------------------------
+sub declare_variable
+{
+    my $optionName  = shift;
+    my $optionValue = shift;
+    my ( $varName, $varValue ) = split( "=", $optionValue );
+    
+    $varValue or do { 
+       print STDERR "Missing value for variable '$varName'\n"; 
+       $Getopt::Long::error++; 
+       return 
+       };
+    
+    #-----------------------------------------------------
+    # By trimming off leading and trailing spaces allows
+    # data entry like this: "version = 5.2 of Oct. 2001".
+    #-----------------------------------------------------
+    $varName  =~ s/$trim_spaces/$2/o;
+    $varValue =~ s/$trim_spaces/$2/o;
+    
+    $variables{ $varName } = $varValue;
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_setext_definition
+{
+    print <<END_OF_DEFINITION_TEXT;
+
+Typotags Available
+------------------
+
+ The following table contains typotags recognized by
+ $pgm. The "setext form" column in the table
+ is formatted such that the left most character of
+ the column represents the first character in a line
+ of setext. The circumflex character (^) means that
+ the characters of the typotag are significant only
+ when they are anchored to the front of the setext
+ line. This definition is a sample of a setext document.
+ Consequently, it must be put through the program so
+ that you can view the actual "setext form" of some
+ of the typotags. Thus, issue the following commands
+ to get a proper text view of the table below.
+ 
+     $pgm -T > typotags.etx
+     $pgm -w typotags.etx
+
+ ============  ===================  ==================
+!     name of  setext form          acted upon or
+! the typotag  of typotag           displayed as
+!============  ===================  ==================
+!    title-tt "Title                a title
+!              ====="               in chosen style
+!------------  -------------------  ------------------
+!  subhead-tt "Subhead              a subhead
+!              -------"             in chosen style
+!------------  -------------------  ------------------
+!  section-tt ^#> section-text      a section heading
+!                                   with '#' from 1..9
+!                                   in chosen style
+!------------  -------------------  ------------------
+!   indent-tt ^  lines indented     lines undented
+!             ^  by 2 spaces        and unfolded
+!------------  -------------------  ------------------
+!     bold-tt      **[multi]word**  1+ bold word(s)
+!   italic-tt         ~multi word~  1+ italic word(s)
+!underline-tt       [_multi]_word_  underlined text
+!      hot-tt        [multi_]word_  1+ hot word(s)
+!    quote-tt ^>[space][text]       > [mono-spaced]
+!   bullet-tt ^*[space][text]       [bullet] [text]
+!  untouch-tt  `_quoted typotag!_`  `_left alone!_`
+!  notouch-tt ^!followed by text    text-left-alone
+!    field-tt     |>name[=value]<|  value of name
+!     line-tt ^   ---               horizontal rule
+!------------  -------------------  ------------------
+!     list-tt  .([space]list start  multiple line list
+!                                   element ends with
+!                                   empty line
+!  endlist-tt  .)                   denotes list end
+!------------  -------------------  ------------------
+!     href-tt ^.. \@_word URL         jump to address
+!     note-tt ^.. \@_word Note:("*")  ("cause error")
+!   target-tt     \@_[multi_]word     [multi ]word
+!------------  -------------------  ------------------
+!  twobuck-tt  \$\$ [last on a line]  [parse another]
+! suppress-tt ^..[space][not dot]   [line hidden]
+!   twodot-tt ^..[alone on a line]  [taken note of]
+!------------  -------------------  ------------------
+!    maybe-tt ^.. ? name[~] text    show text when
+!                                   name defined
+! maybenot-tt ^.. ! name[~] text    show text when
+!                                   name NOT defined
+! endmaybe-tt ^.. ~ name            end of a multi-
+!                                   line maybe[not]-tt 
+!------------  -------------------  ------------------
+! passthru-tt ^!![text]             text emitted
+!                                   without processing
+!------------  -------------------  ------------------
+!   escape-tt  @\@x where 'x'  is     x is what remains
+!              escaped character    @@@@ needed for 1 @@
+ ============  ===================  ==================
+
+ Only one instance of the element subhead-tt (or, in its
+ absence, title-tt) is absolutely _required_ for a text to
+ be considered a valid setext.
+
+ All the elements, but subhead-tt, are in effect optional,
+ that is, not necessary for a setext to be declared as
+ such. The target-tt element allows the hypertext link
+ definition of href-tt to be within the same setext. The
+ actual reference (href-tt) of the target would look like:
+
+    .. _word #reference_within_document
+
+!Multiple line maybe[not]-tt (conditional text regions)
+!are introduced as ".. ? name~" or ".. ! name~" and are
+!terminated with ".. ~ name", on a separate line. Single
+!line maybe[not]-tt do not use the '~' character and are
+!terminated with the end of the line. The special
+!conditional text region named "html" allows a mixture of
+!setext and HTML tags. Nesting of these typotags is
+!allowed. For instance, if there are three conditional
+!regions, A, B, and C, C can be nested inside B, which can
+!be nested inside A (eg. A-B-C...C-B-A). Note that a
+!surrounding region cannot end before one of its inner
+!regions is terminated (eg. of illegal nesting
+!A-B-C...C-A-B, where A terminated prior to B.
+
+ Multiple line list-tt are introduced as ".(". Each line
+ belongs to the current list element until an empty line
+ is encountered. Once a list-tt is encountered, line
+ separated paragraphs constitute list elements.  A list-tt
+ is terminated by endlist-tt. The list-tt/endlist-tt
+ typotags are allowed to be nested (unlike the bullet-tt).
+ These typo-tags do not have to start in the first column
+ of a line, but must have leading whitespace if they are
+ indented at all.
+
+ Field typotags are used to define and reference values.
+ Field definitions can only occur within a suppress-tt.
+ For example:  "..  `|>author=Steven Haehn<|`"
+ Field references (eg. |>author<|) can occur in any 
+ printable text. If there is no known value for the 
+ field, it will remain unchanged and appear as written
+ in the setext.
+END_OF_DEFINITION_TEXT
+
+    #---------------------------------------------------------------
+    # Emit any predefined variables so user knows what is available.
+    #---------------------------------------------------------------
+    if( %variables )
+    {
+        print "\n";
+        print " The following are predefined for use in a field-tt\n";
+        print " for any setext document translated by this utility.\n";
+        print "\n";
+        
+        foreach $key ( sort keys %variables )
+        {
+            print "    $key = $variables{$key}\n";
+        }
+    }
+    
+    print "\n \$\$\n";
+    exit 0;
+}
+
+#-------------------------------------------------------------------------------
+
+$pgm = basename( $PROGRAM_NAME );
+
+#==========================
+# Global shared definitions
+#==========================
+$um          = "\375"; # untouchable marker
+$vm          = "\374"; # variable marker
+$escMrk      = "\33";  # internal escape marker
+$trim_spaces = '(\s*)(.*?)(\s*)$';
+$list_level  = 0;
+$listIndent  = 2;
+@bullet_list = qw( * * o + * o + * o + );
+%variables   = ( date => &date(), Date => &date("D"), year => &date("y") );
+@cond_text_definitions = ();
+$make_title_href = 1;
+
+#---------------------------------------
+# Variables needed for HTML conversions.
+#---------------------------------------
+$lt      = "\376"; # "<" marker
+$gt      = "\377"; # ">" marker
+$amp     = "\373"; # "&" marker
+$htmlExt = "html"; # default HTML file name extension
+
+$htmlHeader =
+     "<HTML>\n<HEAD>\n" .
+     "<TITLE>\$HTML_TITLE</TITLE>\n" .
+     "</HEAD>\n" .
+     "<BODY>\n";
+     
+$htmlFooter = "</BODY>\n</HTML>\n";
+
+#---------------------------------------------------------
+# Look for following options, complain about unknown ones.
+#---------------------------------------------------------
+Getopt::Long::config( "noignorecase" );
+
+GetOptions( 
+
+    'c=s',  # conditional text definitions, separated by commas
+    'd',    # do not make titles hypertext references (HTML only)
+    'D=s',  # specify destination directory for separate HTML files
+    'h',      \&show_usage,
+    'H:s',  # create HTML from setext input
+    'm',    # create NEdit help menu code from setext input
+    'M=s',  # name NEdit help code files with this suffix
+    'p',    # same as 'm' but with debug printout
+    'S:s',  # generate separate HTML files for each subsection
+    't',    # create text from setext input
+    'T',    # emit setext typo-tag document
+    'v=s',    \&declare_variable,
+    'V',    # emit setext script version information
+    'w'     # do not emit warning messages.
+
+) || &show_usage;
+
+#-----------------------------------
+# Glean only those options specified
+#-----------------------------------
+$opt_c && (@cond_text_definitions = split( ",", $opt_c ));
+$opt_d && ($make_title_href=0);
+$opt_D && do { $variables{HTML_DIR}=$opt_D; $outputDirectory="$opt_D/" };
+$opt_h && show_usage();
+defined $opt_H && do { $convert_to = "html"; getHtmlAttributes( $opt_H ) };
+$opt_m && do { $make_menu = 1; $convert_to = "help" };
+$opt_M && ($helpSuffix = $opt_M );
+$opt_p && do { $make_menu = 1; $convert_to = "help"; $print_menu = 1 };
+defined $opt_S && do { 
+    $convert_to = "html";
+    $htmlExt = $opt_S if $opt_S; # user can specify file extension
+    $separate_html_files=1; 
+    $make_title_href=1 
+    };
+$opt_t && ($convert_to = "text");
+$opt_T && emit_setext_definition();
+$opt_V && (emit_version());
+$opt_w && ($noWarn = 1);
+
+#--------------------------------------------------------------
+# Setext Parser states.
+#
+# The names are used to construct "enter_" & "leave_" elements
+# in the state_change hash table required to be initialized
+# by language specific initialization routines (see html_init).
+#--------------------------------------------------------------
+$FMT     = "fmt";
+$LIST    = "list";
+$PRE_FMT = "pre";
+$QUOTE   = "quote";
+
+#----------------------------
+# Typotag Pattern Definitions
+#----------------------------
+$bold_tt       = '\*\*([^\*]+)\*\*([^\*]|$)';
+$bullet_tt     = '^\* ([^ ])';
+$empty_line    = '^\s*$';
+$fld_left      = '\|>';
+$fld_right     = '<\|';
+$field_tt      = "(${fld_left}.+?$fld_right)";
+$field_content = "${fld_left}(.+?)$fld_right";
+#$field_tt      = "(${fld_left}[^<]+$fld_right)";
+#$field_content = "${fld_left}([^<]+)$fld_right";
+$hot_tt        = '\b([\S]*)_\b';
+$href_tt       = '^\.\.\s+_([\S]*)\s+(.*)\s*';
+$indent_tt     = '^  ([^ ])';
+$intHrefMrk    = "#";
+$internal_href = "^$intHrefMrk(.*)\$";
+$italic_tt     = '~([^~]*)~';
+$line_tt       = '^   ---*$';
+$list_tt       = '^\s*\.([()])';
+$notouch_tt    = '^!';
+$passthru_tt   = '^!!';
+$quote_tt      = '^> ';
+$section_tt    = '^([1-6])>';
+$subtitle_tt   = '^---';
+$suppress_tt   = '^\.\.';
+$target_tt     = '(?!(^|\s)_[\S]+_(\s|\W|$))(^|\s)_([\S]+)'; # not underline, then target
+$title_tt      = '^===';
+$twobuck_tt    = '^\s*\$\$\s*$';
+$underline_tt  = '\b_([\S]*)_\b';
+$untouch_tt    = "\\s*(`[^`]+[`'])(?=\\s|\\W|\$)";
+$variable_def  = '\s*(\w+)\s*([^=]*(=(.*)))?'; # $1 = name, $4 = value
+
+$escape_tt     = "@"; # the character escape symbol (need @@ to escape @)
+$needEscaping  = "$escape_tt(.)";
+$escapedFound  = "$escMrk(\\d+)$escMrk";
+
+if( $make_menu )
+{
+    $setext_file = $ARGV[0];
+    open SETEXT, "<$setext_file" or die "Can't access $setext_file, $OS_ERROR";
+    make_NEdit_menu_code();
+}    
+else  # Global elements for parsing setext
+{
+    #-------------------------
+    # Program option defaults.
+    #-------------------------
+    $setext_file    = "-";  # STDIN, allows program to be used as a filter
+    $converted_file = "-";  # STDOUT
+    $convert_to     = "text" if $convert_to eq "";
+    
+    #--------------------------------------
+    # Begin processing file specifications.
+    #--------------------------------------
+    $setext_file = $ARGV[0] if $ARGV[0] ne "";
+    open SETEXT, "<$setext_file" or die "Can't access $setext_file, $OS_ERROR";
+
+    if( $ARGV[1] ne "" ) 
+    { 
+        $converted_file = $ARGV[1];
+        $convert_to = "html" if $converted_file =~ /\.$htmlExt$/; # in case -H forgotten
+        
+        if( $converted_file eq basename( $converted_file ) )
+        {
+            if( $outputDirectory )
+            {
+                $converted_file = "$outputDirectory/$converted_file";
+            }
+        }
+    }
+
+    open CONVERT, ">$converted_file" or die "Can't create $converted_file, $OS_ERROR";
+    translate_setext();
+}
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+sub translate_setext
+{
+    #--------------------------------------
+    # Adding conversion type to conditional
+    # text definitions for convenience.
+    #--------------------------------------
+    push @cond_text_definitions, $convert_to;
+
+    get_setext( SETEXT, \@cond_text_definitions, \@data );
+    
+    extract_menu_info( \@data )
+       if( $convert_to eq "html" && $separate_html_files );
+
+    chomp @data;        # remove the newline character from each line.
+    
+    register_tt_translationFunctions( $convert_to );
+
+    parse_setext( \@data );
+}
+
+#-------------------------------------------------------------------------------
+
+sub make_NEdit_menu_code
+{
+    #--------------------------------
+    # Supply a default NEdit version.
+    #--------------------------------
+    $neditDefaultMarker   = "NEdit release of ";
+    $variables{ version } = $neditDefaultMarker . date() 
+       if (not exists $variables{ version } or 
+          $variables{ version } eq "default");
+    
+    #--------------------------------------
+    # Adding conversion type to conditional
+    # text definitions for convenience.
+    #--------------------------------------
+    push @cond_text_definitions, $convert_to;
+
+    get_setext( SETEXT, \@cond_text_definitions, \@data );
+    extract_menu_info( \@data );
+    register_tt_translationFunctions( $convert_to );
+}
+
+#-------------------------------------------------------------------------------
+
+sub parse_setext
+{
+    my $setextData = shift;
+    
+    local($crnt_state, $fold, $a, $i, $unt, $lineNo);
+
+    $crnt_state    = $FMT;
+    $lineNo        = -1;
+    @untouchable   = ();
+    $fold          = 0;
+
+    foreach (@$setextData) 
+    {
+        $lineNo++;  # current location in data array
+        
+        #--------------------------
+        # process title information
+        #--------------------------
+        (/$title_tt/i or /$subtitle_tt/i) && do { 
+            &$do_title(); 
+            $fold = 0; 
+            next; 
+            };
+            
+        /$section_tt/o && do { 
+            &$do_section_tt($1); 
+            $fold = 0; 
+            next;
+            };
+        
+        /$passthru_tt/ && do { 
+            &$do_emit_line();
+            next;
+            };
+        
+        next if ( /$suppress_tt/ or /$twobuck_tt/ );
+
+        $list_level = 0 if $list_level < 0;  # paranoia protection
+        
+        #--------------------------------------------------
+        # handle line breaks, only one empty line gets out.
+        #--------------------------------------------------
+        if ( /$empty_line/o ) {
+            to_state( $FMT );
+            
+            if( $list_level and not $fold ) {
+                &$do_list_tt();
+                $fold = 1;
+            }
+            else {
+                $fold = &$do_line_break( $fold );
+            }
+            next; 
+        }
+        
+        $fold = 0;  # no more empty lines
+
+        /$line_tt/ && do { &$do_line_tt(); next; };
+        
+        #-----------------------------------
+        # No change to current state allowed
+        # during list processing.
+        #-----------------------------------
+        if( $list_level == 0 )
+        {
+            #------------------
+            # State transitions
+            #------------------
+            if    ( /$quote_tt/o  ) { &to_state( $QUOTE )   }
+            elsif ( /$bullet_tt/o ) { &to_state( $LIST )    }
+            elsif ( /$indent_tt/o ) { &to_state( $FMT )     }
+            elsif ( /$list_tt/o   ) { &to_state( $FMT )     }
+            else                    { &to_state( $PRE_FMT ) }
+        }
+
+        if( /$notouch_tt/o ) { s/$notouch_tt/ /o; }
+        else
+        {
+            #--------------------------------------------
+            # Handle the untouchables first.
+            # Mark their locations for later replacement.
+            # (see recover_extractions)
+            #--------------------------------------------
+            for( $i = scalar( @untouchable ); /$untouch_tt/o; $i++ )
+            {
+                $unt = $1;
+                $unlen = length( $unt );
+                $unloc = index( $_, $unt );
+                $untouchable[ $i ] = $unt; 
+                $front = substr( $_, 0, $unloc );
+                $back  = substr( $_, $unloc+$unlen );
+                $_ = $front . $um . $back; 
+            }
+
+            &$do_list_tt();
+            &$do_bullet_tt();
+            &$do_quote_tt();
+            &$do_bold_tt();
+            &$do_italic_tt();
+            &$do_underline_tt();
+            &$do_target_tt();
+            &$do_hot_tt();
+            &$do_indent_tt();
+        }
+        &$do_emit_line();
+    }
+    
+    &$do_final();
+}
+
+#-------------------------------------------------------------------------------
+
+sub register_tt_translationFunctions
+{
+    my $conversion_type = shift;
+    
+    #----------------------------------------------------
+    # Register call-back functions for typotag processing
+    #----------------------------------------------------
+    $do_bold_tt       = "${conversion_type}_bold_tt";
+    $do_bullet_tt     = "${conversion_type}_bullet_tt";
+    $do_emit_line     = "${conversion_type}_emit_line";
+    $do_final         = "${conversion_type}_final";
+    $do_hot_tt        = "${conversion_type}_hot_tt";
+    $do_indent_tt     = "${conversion_type}_indent";
+    $do_initialize    = "${conversion_type}_init";
+    $do_italic_tt     = "${conversion_type}_italic_tt";
+    $do_line_break    = "${conversion_type}_line_break";
+    $do_line_tt       = "${conversion_type}_line_tt";
+    $do_list_tt       = "${conversion_type}_list_tt";
+    $do_quote_tt      = "${conversion_type}_quote_tt";
+    $do_section_tt    = "${conversion_type}_section_tt";
+    $do_target_tt     = "${conversion_type}_target_tt";
+    $do_title         = "${conversion_type}_title";
+    $do_underline_tt  = "${conversion_type}_underline_tt";
+
+    &$do_initialize;  # do any necessary initialization
+}
+
+#-------------------------------------------------------------------------------
+
+sub date
+{
+    $format = $_[0];
+    
+    ( $sec,$min,$hour,$mday,$mon,$year,@ignore ) = localtime( time );
+    $month = (January,February,March,April,May,June,July,
+              August,September,October,November,December)[$mon];
+    $year  = $year + 1900;
+    
+    return $year if $format eq "y";
+    return "$month $mday, $year" if $format eq "D";
+    return substr($month,0,3) . " $mday, $year";
+}
+
+#-------------------------------------------------------------------------------
+
+sub to_state 
+{
+    my $given_state = shift;
+    
+    if ( $crnt_state ne $given_state ) 
+    {
+        if( exists  $state_change{ "leave_$crnt_state"  } )
+        {
+            $doStateChange = $state_change{ "leave_$crnt_state"  };
+            &$doStateChange();
+        }
+
+        if( exists  $state_change{ "enter_$given_state" } )
+        {
+            $doStateChange = $state_change{ "enter_$given_state"  };
+            &$doStateChange();
+        }
+
+        $crnt_state = $given_state;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub count
+{
+    my $whatToCount = shift;
+    my $line        = shift;
+    my $howMany     = 0;
+    
+    $howMany++ while( $line =~ /$whatToCount/g );
+    return $howMany;
+}
+
+#-------------------------------------------------------------------------------
+
+sub extract_fields
+{
+    local $_ = shift;
+    local $cond_text_region = shift;
+    
+    my ( $field, $variable, $flen, $floc, $front, $back, $v_name, $v_value );
+    my @variable_list = ();
+
+    #------------------------------------------
+    # Mark all the escaped character sequences.
+    #------------------------------------------
+    while( /$needEscaping/o )
+    {
+        $subChar = ord( $1 );
+        s/$needEscaping/$escMrk$subChar$escMrk/o;
+    }
+
+    #-----------------------------------------------------
+    # Collect any field typotags found for later expansion.
+    #-----------------------------------------------------
+    while( /$field_tt/o )
+    {
+        $field = $1;
+        $field =~ /$field_content/ && ( $variable = $1 );
+        
+        if( $variable =~ /$variable_def/ ) {
+        
+            $v_name = $1;
+            
+            #----------------------------------------------
+            # When fields 2 and 3 contain identical strings
+            # then a valid field has been encountered.
+            #----------------------------------------------
+            if( $2 eq $3 ) {
+                $v_value = $4;
+            }
+            else
+            {
+                #-----------------------------------
+                # This is NOT a variable definition.
+                # Have to recover original string.
+                #-----------------------------------
+                $v_name  = "_A_${v_name}_Z_"; #internal name
+                $v_value = $variable;
+            }
+            
+            #----------------------------------------
+            # Is this only a reference to a variable?
+            #----------------------------------------
+            if ( ! defined $v_value ) { 
+                #------------------------------------------------
+                # Only put definitions in the list when it is not
+                # part of a comment. (comments are not emitted)
+                #------------------------------------------------
+                push @variable_list, $v_name unless /$suppress_tt/o;
+            }
+            else {
+                #------------------------------------------------
+                # setting the variable ( |>varName = value<| )
+                # (here $v_value is the value assignment portion)
+                #------------------------------------------------
+                if( /$suppress_tt/o ) {
+                    $variables{ $v_name } = 
+                       preserve_html( $v_value, $cond_text_region );
+                } else {
+                    push @variable_list, $variable;
+                }
+            }
+        }
+        
+        #--------------------------------------
+        # Remove field and replace with marker.
+        #--------------------------------------
+        $flen  = length( $field );
+        $floc  = index( $_, $field );
+        $front = substr( $_, 0, $floc );
+        $back  = substr( $_, $floc+$flen );
+        $_ = $front . $vm . $back; 
+    }
+
+    #----------------------------
+    # Fill in any variables found
+    #----------------------------
+    foreach $element ( @variable_list ) 
+    {
+        if( exists $variables{ $element } ) {
+            $value = $variables{ $element }
+        } else {
+            $value = "|>$element<|";
+            print STDERR "$pgm: Undefined variable '$element' used in $setext_file.\n" unless $noWarn;
+        }
+        s/$vm/$value/;
+    }
+    
+    $_ = preserve_html( $_, $cond_text_region );
+
+    return $_;
+}
+
+#-------------------------------------------------------------------------------
+
+sub preserve_html
+{
+    my $text             = shift;
+    my $cond_text_region = shift;
+
+    #--------------------------------------------------------
+    # When in a conditional text region that only applies to
+    # HTML translation, change the angle brackets to internal
+    # definitions that will be fixed later. This should allow
+    # for a mixture of setext and HTML language together.
+    #--------------------------------------------------------
+    if ( $cond_text_region eq "html" )
+    {
+        $text =~ s/</${lt}/go;
+        $text =~ s/>/${gt}/go;
+        $text =~ s/\&/${amp}/go;
+    }
+    
+    return $text;
+}
+
+#===================================================================
+# Import setext data from given data stream and pay attention to
+# conditional text considerations, as described below.
+#
+#   ^.. ? name   Conditional text when 'name' is defined.
+#   ^.. ! name   Conditional text when 'name' is NOT defined.
+#
+#   ^.. ? name~
+#         Multiple line conditional text when 'name' is defined.
+#         (without suppress-tt, will always appear in translated
+#         document going through non-conditional setext conversion)
+#   ^.. ~ name
+#
+#   ^.. ! name~
+#         Multiple line conditional text when 'name' is NOT defined.
+#         (without suppress-tt, will always appear in translated
+#         document going through non-conditional setext conversion)
+#   ^.. ~ name
+#
+# This procedure also extracts and applies variable definitions
+# to the text to be emitted.
+#===================================================================
+
+sub get_setext
+{
+    my $stream = shift;
+    my $cond_text_definitions = shift;
+    my $data = shift;
+
+    my $conditional_text_marker = '^\.\. ([\?!~])\s*(\S+)\s?(.*)$';
+    my $lineNbr = 0;
+    my $i = 0;
+    my $element = "";
+    my ($tense,$def_nm,$text,$multi_line,$crnt_def);
+    my @cond_text_stack = ();
+
+    while( $_ = <$stream> )
+    {
+        $lineNbr++;
+        
+        if( /$conditional_text_marker/o )
+        {
+            $tense      = $1;  # positive, negative, or end-of conditional text
+            $def_nm     = $2;
+            $text       = $3;
+            
+            $multi_line = $def_nm =~ s/~//o;
+            
+            #---------------------------------------------
+            # Reach end of multiple line conditional text?
+            #---------------------------------------------
+            if( $tense eq "~" )
+            {
+                $crnt_def = substr( pop @cond_text_stack, 1 );
+                
+                if( $crnt_def ne $def_nm )
+                {
+                    print STDERR "Incorrectly nested conditinal text sections near line $lineNbr.\n";
+                    print STDERR "Expected end of '$crnt_def', but saw end of '$def_nm'\n";
+                    exit 1;
+                }
+            }
+            else
+            {
+                #-----------------------------------------
+                # Entering multiple line conditional text?
+                #-----------------------------------------
+                if( $multi_line ) {
+                    push @cond_text_stack, "$tense$def_nm";
+                }
+    
+                #------------------------------------------
+                # This will also catch any non-space 
+                # text found on multiple line conditionals.
+                #------------------------------------------
+                if( $text =~ /\S/o )
+                {
+                    $$data[$i++] = extract_fields( "$text\n", $def_nm ) 
+                       if ($tense eq "?") and is_member( $def_nm, $cond_text_definitions );
+                    $$data[$i++] = extract_fields( "$text\n", $def_nm ) 
+                       if ($tense eq "!") and not is_member( $def_nm, $cond_text_definitions );
+                }
+            }
+        }
+        elsif( scalar( @cond_text_stack ) == 0 )
+        {
+            $$data[$i++] = extract_fields( $_, "" );
+        }
+        else
+        {
+            #--------------------------------------------------------------------
+            # The top element of the conditional text stack is the current
+            # conditional text area. See if it exists in the definitions list.
+            # When present, we want this line of text, depending on 'tense'.
+            #--------------------------------------------------------------------
+            $element = $cond_text_stack[-1];
+            $tense   = substr( $element, 0, 1 );
+            $def_nm  = substr( $element, 1 );
+                
+            if( $tense eq "?") 
+            {
+                if( is_member( $def_nm, $cond_text_definitions ) ) {
+                    s/$suppress_tt //o; 
+                    $$data[$i++] = extract_fields( $_, $def_nm );
+                }
+            }
+            elsif( ! is_member( $def_nm, $cond_text_definitions ) )
+            {
+                s/$suppress_tt //o;
+                $$data[$i++] = extract_fields( $_, $def_nm );
+            }
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub extract_menu_init
+{
+    %MenuNames    = ();
+    @helpMenu     = ();
+    @menuStack    = \@helpMenu;
+    $crntMenu     = \@helpMenu;
+    @indentStack  = ( 0 );
+    $menuLevel    = 0;
+    $comment_ind  = "^\\.\\.";     # setext comment indicator ("..")
+    $menu_element = "${comment_ind} Menu: ";
+    $help_element = "${comment_ind} Help: ";
+    $drop_marker  = "_(.)_";
+    $separator    = "-";
+    $help_code    = 9; # special hide-it code indicating not part of help menu
+    $name_length  = 0; # determines padding alignment in HelpMenu data emission
+    $crntIndent   = 0;
+    $subMenuIndicator = "\377";
+}
+
+#-------------------------------------------------------------------------------
+
+sub extract_menu_info
+{
+    my $thisData  = shift;
+    my $dataIndex = 0;
+
+    extract_menu_init();
+    
+    #----------------------------------------------------------------------
+    # For each and every menu item found in the original data (*.etx) file.
+    #----------------------------------------------------------------------
+    while( $_ = get_menu_item( $thisData, \$dataIndex ) )
+    {
+        #----------------------------------------------------------------------
+        # Here we want to extract the menu title, help name, optional hideIt
+        # numerical indicator, and optional menu association name.
+        #
+        # Expecting:  MenuTitle # HelpName [[,]HideItIndicator] [# Association]
+        #----------------------------------------------------------------------
+        if( /^([^#]+)#\s*(\w*)(\s*,\s*)?(\d+)?(\s*#\s*)?(\w+)?/o )
+        {
+            $menuTitle = $1;
+            $helpName  = $2;
+            $hideItInd = ($4 eq "") ? "0" : $4;
+            $assocName = ($6 eq "") ? $helpName : $6;
+            $helpName  =~ s/$trim_spaces/$2/;
+            $assocName =~ s/$trim_spaces/$2/;
+
+            #------------------------------------------------
+            # Determine to which menu this menu item belongs
+            # using leading whitespace indentation.
+            # Extract menu character mneumonic.
+            #------------------------------------------------
+            $menuTitle =~ /^(\s*)/ && ($nextMenu = length($1)-$crntIndent);
+            $menuTitle =~ s/$trim_spaces/$2/o;
+
+            $mneumonic = (/$drop_marker/) ? $1 : substr( $menuTitle, 0, 1 );
+
+            #--------------------------------------------------
+            # Identation greater than previous menu element
+            # indicates that this element is part of a submenu.
+            #--------------------------------------------------
+            if( $nextMenu > 0 )
+            {
+                @$crntMenu[ $end ] .= $subMenuIndicator; # mark previous element
+                ($menu = $previousTitle) =~ s/ /_/g;
+                @$menu = ();
+                push @menuStack, \@$menu;
+                push @indentStack, $nextMenu;
+                $menuLevel++;
+            }
+            #--------------------------------------
+            # Indentation less than previous menu 
+            # element indicates leaving a submenu.
+            #--------------------------------------
+            elsif( $nextMenu < 0 )
+            {
+                $indentLevel = $indentStack[$menuLevel] + $nextMenu;
+                do {
+                    pop @menuStack;
+                    pop @indentStack;
+                    $menuLevel--;
+
+                } while( $indentLevel < $indentStack[$menuLevel] );
+            }
+
+            $crntIndent += $nextMenu;
+            $crntMenu    = $menuStack[ $#menuStack ];
+            $end = scalar( @$crntMenu );
+            @$crntMenu[ $end ] = "$mneumonic,$menuTitle,$helpName,$hideItInd";
+            $thisTitle = $menuTitle;
+            $thisTitle =~ s/$drop_marker/$1/;
+            $thisTitle =~ s/ /_/go;
+            $MenuNames{ $thisTitle } = "$menuLevel$assocName";
+            $previousTitle     = $menuTitle;
+
+            #---------------------------------
+            # update data for padding purposes
+            #---------------------------------
+            if( $mneumonic ne $separator and $name_length < length( $helpName ) )
+            {
+                $name_length = length( $helpName );
+            }
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_menu_item
+{
+    my $setext = shift;
+    my $line   = shift;
+
+    #-------------------------------------------
+    # Search each and every data line for either
+    # a '# Menu: ' line or a '# Help: ' line and
+    # return remainder of the line.
+    #-------------------------------------------
+    while( $$line < scalar( @$setext ) )
+    {
+        $_ = $$setext[ $$line++ ];
+        return $_               if s/$menu_element//o;
+        return "$_, $help_code" if s/$help_element//o;
+    }
+    
+    return "";
+}
+
+#-------------------------------------------------------------------------------
+
+sub check_target_reference
+{
+    local($_) = @_;
+    my $index;
+    my $target = "";
+    
+    if( /$target_tt/ ){
+        $target = $4;
+    }
+    #-----------------------------------
+    # Are all titles automatically being
+    # made into hypertext references?
+    #-----------------------------------
+    elsif( $make_title_href ) { 
+        /$title_tt/ && ( $target = $2 );
+        $target =~ s/$trim_spaces/$2/o;
+        $target =~ s/ /_/go;
+    }
+
+    if( $target ) {
+        print CONVERT "<A NAME=\"$target\"></A>\n";
+        
+        # only one target-tt reference of this kind allowed per file.
+        ($index = is_member( $target, \@nm_ref )) 
+            && do{ splice( @nm_ref, $index-1, 1 ); };
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub is_member
+{
+    $item      = shift;
+    $this_list = shift;
+    my $index  = 1;
+    
+    foreach $member ( @$this_list )
+    {
+        if( $item eq $member )
+        {
+            return $index;
+        }
+        $index++;
+    }
+    
+    return 0;
+}
+
+#-------------------------------------------------------------------------------
+
+sub replace_underlines
+{
+    my $pattern = shift;
+    s#$pattern#($text = $1) =~ s,_, ,go; $text; #eg;
+}
+
+#-------------------------------------------------------------------------------
+
+sub reclaim_escapes
+{
+    #-----------------------------------------
+    # Put back any escaped characters in text.
+    #-----------------------------------------
+    while( /$escapedFound/ )
+    {
+        $subChar = chr( $1 );
+        s/$escapedFound/$escape_tt$subChar/;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub recover_extractions
+{
+    my $element;
+
+    #------------------------------------
+    # Replace escaped characters in text.
+    #------------------------------------
+    while( /$escapedFound/ )
+    {
+        $subChar = chr( $1 );
+        s/$escapedFound/$subChar/;
+    }
+
+    foreach $element ( @untouchable )   { s/$um/$element/; }
+    @untouchable = ();
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_paragraph
+{
+    my $paragraph = shift;
+    my $line = $left_margin;
+    
+    @words = split ' ', $paragraph;
+
+    #-------------------------------------------------------------
+    # Flow words onto a line up until the right margin is reached.
+    #-------------------------------------------------------------
+    foreach $word ( @words )
+    {
+        if( length( $line ) + length( $word ) + 1 <= $right_margin )
+        {
+            $line = "$line$word ";
+        }
+        else
+        {
+            print CONVERT "$line\n";
+            $line = "$left_margin$word ";
+        }
+    }
+    
+    #--------------------
+    # emit any remainder.
+    #--------------------
+    print CONVERT "$line\n" if( length( $line ) > length( $left_margin ) );
+}
+
+#-------------------------------------------------------------------------------
+
+# This routine is used to override program defaults for HTML settings.
+# Two variables are expected to be defined; $htmlHeader and $htmlFooter
+
+sub getHtmlAttributes
+{
+    my $attrFile = shift;
+    
+    if( $attrFile )
+    {
+        unless( $return = do $attrFile )
+        {
+            warn "Could not parse $attrFile: $@" if $@;
+            warn "Could not do $attrFile: $!" unless defined $return;
+            warn "Could not run $attrFile" unless $return;
+            exit 1;
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+#                setext to text conversion call-back routines.
+#                         ( in alphabetical order )
+#-------------------------------------------------------------------------------
+
+sub text_bold_tt      { s/$bold_tt/$1$2/g }
+
+#-------------------------------------------------------------------------------
+
+sub text_bullet_tt
+{
+    #   don't do anything if this is no bulleted line.
+    if (/$bullet_tt/)
+    {
+        #   remove lead-in from paragraph and put the rest in an array
+        my $paragraph = $_;
+        $paragraph =~ s/$bullet_tt/$1/;
+        @words = split ' ', $paragraph;
+        $paragraph = "";
+        
+        #   start with text mode bullet character
+        my $line = '    * ';
+        foreach $word (@words)
+        {
+            if (length($line) + length($word) + 1 <= $right_margin)
+            {
+                #   put every word in a line if there's still room
+                $line = "$line$word ";
+            } else
+            {
+                #   append line to paragraph if full and start a new line
+                $paragraph = "$paragraph$line\n";
+                $line = "      $word ";
+            }
+        }
+        #   get last line
+        $paragraph = "$paragraph$line";
+
+        #   remove trailing white space
+        $paragraph =~ s/\s$//;
+        $_ = $paragraph;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_emit_line
+{
+    if( /$passthru_tt/ )
+    {
+        s/$passthru_tt//o;  # remove typotag and pass line out as is.
+        reclaim_escapes();
+        print CONVERT "$_\n";
+    }
+    else
+    {
+        #-----------------------------
+        # Handling nested lists first.
+        #-----------------------------
+        if( $list_level )
+        {
+            my $pad = " " x ($list_level * $listIndent);
+            my $bullet = ($atListStart) ? "$bullet_list[$list_level] " : "  ";
+            s/^\s*/  $pad$bullet/;
+            $atListStart = 0;
+        }
+        elsif( $crnt_state ne $FMT && $text_unfolded_line ne "" )
+        {
+            emit_paragraph( &text_finishing($text_unfolded_line) );
+            $text_unfolded_line = "";
+        }
+
+        #-------------------------------------------
+        # This keeps extra newlines from popping out
+        # when a list has been terminated.
+        #-------------------------------------------
+        unless( $terminatedList )
+        {
+            print CONVERT &text_finishing( $_ ), "\n" unless $_ eq $indentingMode;
+        }
+        else
+        {
+            $terminatedList = 0;
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_final { emit_paragraph( &text_finishing($text_unfolded_line) ) }
+
+#-------------------------------------------------------------------------------
+
+sub text_finishing
+{
+    local($_) = @_;
+    recover_extractions();
+    $_;
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_hot_tt
+{
+    if ( /$hot_tt/ ) {
+	#---------------------------------------------------------
+	# The heuristic to prevent Internet addresses from having
+	# underlines removed, is to check for an '@' character.
+	#---------------------------------------------------------
+	if (($text = $1) !~ /\@/ ) {
+	    $text =~ s/_/ /g;
+	}
+	s/$hot_tt/$text/;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_indent
+{ 
+    s/$indent_tt/$1/o && do {
+        $text_unfolded_line = "$text_unfolded_line$_ ";
+        $_ = $indentingMode;
+    };
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_init         
+{ 
+    %state_change = ();
+    $text_unfolded_line = ""; # to be used by text_indent & text_emit_line
+    $left_margin   = "  ";    # for emit_paragraph
+    $right_margin  = 79;      # for emit_paragraph
+    $indentingMode = "?#.";   # hopefully unique string not normally found
+    
+    #----------------------------------------------------------------
+    # Take all the titles, capitalize and remove title indicator.
+    #----------------------------------------------------------------
+    for ($i = 0; $i <= $#data; $i++) 
+    {
+        $_ = $data[$i];                 # $_ is default for searches
+
+        (/$title_tt/ or /$subtitle_tt/) && do {
+            $titleType = ( /$title_tt/ ) ? "=" : "-";
+            $data[$i--] = "..";       # suppress title indicator ( --- or === )
+            $data[$i]   =~ s/^\s*//o; # get rid of any leading space.
+            $this_title = $data[$i];
+
+            # Have to fix title if it also happens to be a target-tt.
+            $this_title =~ /$target_tt/ && do { ($tmp = $4) =~ s,_, ,go; $this_title = $tmp };
+            $data[$i] = "..$titleType \U$this_title";
+        };
+    }
+
+    #----------------------------------------------------
+    # NOTE: changing original subtitle-tt search pattern
+    #       to match what was done above.
+    #----------------------------------------------------
+    $subtitle_tt = "^\\.\\.- (.*)";
+    $title_tt    = "^\\.\\.= (.*)";
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_italic_tt    { s/$italic_tt/$1/g }
+
+#-------------------------------------------------------------------------------
+
+sub text_line_break
+{
+    my $fold = shift;
+    emit_paragraph( &text_finishing($text_unfolded_line) );
+    $text_unfolded_line = "";
+    print CONVERT "\n" unless $fold++;
+    return $fold;
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_line_tt      { }
+
+#-------------------------------------------------------------------------------
+
+sub text_list_tt
+{
+    if( /$list_tt/o )
+    {
+        if ( $1 eq '(' )
+        {
+            $list_level++;
+            s/$list_tt\s*//;
+            $atListStart = 1;
+        }
+        else
+        {
+            $list_level--;
+            s/$list_tt//;
+            $terminatedList = 1;
+        }
+    }
+    
+    #-----------------------------------------------------
+    # An empty line terminates a multiple line list entry.
+    #-----------------------------------------------------
+    elsif( /$empty_line/o )
+    {
+        print CONVERT "\n";
+        #text_line_break( 0 );
+        $atListStart = 1 if $list_level;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_quote_tt     { }
+
+#-------------------------------------------------------------------------------
+
+sub text_section_tt
+{
+    my $hdr_level = shift;
+
+    s/$section_tt//;
+    print CONVERT "\n  \U$_\n" if $hdr_level <= 3;  # converted to uppercase
+    print CONVERT "\n  $_\n" if $hdr_level > 3;     # left alone
+}
+
+
+#-------------------------------------------------------------------------------
+
+sub text_target_tt 
+{
+    s#$target_tt#($text = $4) =~ s,_, ,go; " $text"; #eg;
+}
+
+#-------------------------------------------------------------------------------
+
+sub text_title
+{
+    my $size;
+    my $line = "";
+    my $lc = substr( $_, 2, 1 );
+    
+    #-----------------------------------------------------------------
+    # Incoming text looks like ..= <title text> or ..- <subtitle text>
+    #-----------------------------------------------------------------
+    to_state( $FMT ); 
+    $_ = substr( $_, 4 );
+    text_target_tt();
+    $size = length( $_ );
+    
+    #-------------------------------------------------
+    # Going to wrap titles with lines as long as title
+    #-------------------------------------------------
+    for( $size = length( $_ ); $size > 0; $size-- )
+    {
+        $line="$line$lc";
+    }
+    print CONVERT "$line\n$_\n$line\n";
+}
+
+sub text_underline_tt { replace_underlines( $underline_tt ) }
+
+#-------------------------------------------------------------------------------
+#                setext to HTML conversion call-back routines.
+#                         ( in alphabetical order )
+#-------------------------------------------------------------------------------
+
+sub html_bold_tt
+{
+    #---------------------------------------
+    # Turn all "**text**" into "<B>text</B>"
+    #---------------------------------------
+    s#$bold_tt#${lt}B${gt}$1${lt}/B${gt}$2#g;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_bullet_tt
+{
+    s/$bullet_tt(.*)/    ${lt}li${gt}$1$2${lt}\/li${gt}/;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_emit_footer
+{
+    print CONVERT "</P>\n$htmlFooter";
+    $closePgf = "";
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_emit_header
+{
+    my $htitle = shift;
+    my $header = $htmlHeader;
+    
+    $header =~ s/\$HTML_TITLE/$htitle/o;
+    print CONVERT $header;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_emit_line
+{
+    print CONVERT "<LI>" if $atListStart == 1 and not /${lt}LI${gt}/o;
+    $atListStart = 0;
+
+    if( /$passthru_tt/ )
+    {
+        s/$passthru_tt//o;  # remove typotag and pass line out as is.
+        reclaim_escapes();
+        print CONVERT "$_\n"
+    }
+    else
+    {
+        print CONVERT &html_finishing( $_ ), "\n";
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_enter_list  { print CONVERT "<UL>\n"  }    # state change activities
+sub html_leave_list  { print CONVERT "</UL>\n" }
+
+sub html_enter_pre   { print CONVERT "<PRE>\n";  $insideNoFormatArea = 1 }
+sub html_leave_pre   { print CONVERT "</PRE>\n"; $insideNoFormatArea = 0 }
+
+sub html_enter_quote { print CONVERT "<BLOCKQUOTE><PRE>\n";   $insideNoFormatArea = 1 }
+sub html_leave_quote { print CONVERT "</PRE></BLOCKQUOTE>\n"; $insideNoFormatArea = 0 }
+
+#-------------------------------------------------------------------------------
+
+sub html_final
+{
+    &to_state( $FMT );
+    html_emit_footer();
+
+    #----------------------------------------------------
+    # Report on all internal name references not used up.
+    #----------------------------------------------------
+    if( scalar( @nm_ref ) > 0 )
+    {
+        print STDERR "\nMissing reference (target-tt) to the following:\n\n";
+        for( $i=0; $i < scalar( @nm_ref ); $i++ )
+        {
+            print STDERR "  $nm_ref[ $i ]\n";
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_finishing {
+    local($_) = @_;
+    my $unt;
+    s/\&/\&\#38\;/go; s/\</\&\#60\;/go; s/\>/\&\#62\;/go;
+    s/$lt/</go; s/$gt/>/go; s/$amp/\&/go;   # convert markers to real symbols
+
+    #-----------------------------------------------
+    # This fixes the case where an untouchable 
+    # string includes these special html characters.
+    #-----------------------------------------------
+    foreach $element ( @untouchable )
+    {
+        $element =~ s/\&/\&\#38\;/go;
+        $element =~ s/\</\&\#60\;/go;
+        $element =~ s/\>/\&\#62\;/go;
+    }
+    recover_extractions();
+    $_;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_hot_tt
+{
+    #----------------------------------------------------
+    # After finding a hot-tt, substitute all underlines
+    # with spaces and check to see if the hot-tt had
+    # a corresponding hypertext reference. Flag it in
+    # bright, bold red when no hypertext record found.
+    # Allow user to define the variable HTML_DIR as the
+    # destination directory for the HTML code. 
+    # Note, the files may have to actually be placed
+    # in such directory by hand after they are generated.
+    #----------------------------------------------------
+    s#$hot_tt#
+        $h = $href{$1}; ($text = $1) =~ s,_, ,go;
+        $h ? qq'${lt}A HREF="$variables{HTML_DIR}$h"${gt}$text${lt}/A${gt}' 
+           : "${lt}B${gt}${lt}font color=red${gt}--> $text <-- NO HREF!!${lt}/font${gt}${lt}/B${gt}"; #eg;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_indent { s/$indent_tt/$1/ } # get rid of indent-tt characters
+
+#-------------------------------------------------------------------------------
+
+sub html_init
+{
+    local $title, $aTitle;
+    my    $target;
+    
+    %state_change = (
+        
+        enter_list  => "html_enter_list",
+        leave_list  => "html_leave_list",
+        
+        enter_pre   => "html_enter_pre",
+        leave_pre   => "html_leave_pre",
+
+        enter_quote => "html_enter_quote",
+        leave_quote => "html_leave_quote",
+    );
+    
+    $veryFirstTime = 1;   # used to force table of content header out
+
+    #------------------------------------------
+    # Make a first pass over the data, looking 
+    # for hypertext linking information.
+    #------------------------------------------
+    for ($i = 0; $i <= $#data; $i++) 
+    {
+        $_ = $data[$i];                 # $_ is default for searches
+
+        #---------------------------------------------------------
+        # This will pick out targets found in the setext not
+        # hidden by a suppress-tt, that is, the href-tt below.
+        # With this check, it is unnecessary to have to include
+        # the href-tt which uses identical text for internal
+        # document references. External references need href-tt.
+        # Have to make sure the match does not pick up elements
+        # inside a notouch-tt ( eg. `_do_not_want_this_as_target`)
+        #---------------------------------------------------------
+        if( /$target_tt/ && substr($`,length($`)-1,1) ne "`" && 
+            (not /$suppress_tt/) )
+        {
+            $href{ $4 } = "$intHrefMrk$4";
+            push @nm_ref, $4;
+        }
+        
+        #-------------------------------------------------
+        # Locate HREF's and save. When no target is given,
+        # assume the target is internal, with same name.
+        #-------------------------------------------------
+        if( /$href_tt/  )
+        {
+            $hrefID = $1;
+            $target = ($2) ? $2 : "$intHrefMrk$hrefID"; # assume internal href.
+            $href{$hrefID} = $2; 
+                
+            #------------------------------
+            # Remember internal HREF's not 
+            # already seen for target-tt.
+            #------------------------------
+            if( $target =~ /$internal_href/ ) {
+                if( not is_member( substr( $target, 1), \@nm_ref ) ) {
+                    push @nm_ref, $1;
+                }
+            }
+            next; 
+        } 
+
+        #---------------------------------------------------------
+        # The first title-tt or subhead-tt gets <TITLE>...</TITLE>
+        #---------------------------------------------------------
+        /$title_tt/    && do { $htmlTitle = html_init_title("H1", $i); next; };
+        /$subtitle_tt/ && do { $htmlTitle = html_init_title("H2", $i); next; };
+    }
+
+    html_emit_header( $htmlTitle );
+    
+    #----------------------------------------------------
+    # NOTE: changing original title-tt search pattern
+    #       to match what was done in html_init_title.
+    #----------------------------------------------------
+    $title_tt = "^\\.\\.\\s+(<H.>)(.*)(<\\/H.>)";
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_init_title
+{
+    local($head, $i) = @_;
+    my $hyper_ref;
+    
+    $data[$i--] = "..";      # suppress title indicator ( --- or === )
+    $data[$i]   =~ s/^\s*//; # get rid of any leading space in actual title
+    $this_title = $data[$i];
+    
+    # Have to fix title if it also happens to be a target-tt.
+    $this_title =~ /$target_tt/ && do { ($tmp = $4) =~ s,_, ,go; $this_title = $tmp };
+    
+    #---------------------------------------------------
+    # Are all titles automatically considered target-tt?
+    #---------------------------------------------------
+    if( $make_title_href )
+    {
+        $hyper_ref = $this_title;
+        $hyper_ref =~ s/ /_/go;
+        $externalReference  =
+           ($separate_html_files) ? substr("$MenuNames{ $hyper_ref }.$htmlExt", 1) : "";
+
+        $href{ $hyper_ref } ="$externalReference$intHrefMrk$hyper_ref";
+
+        #------------------------------
+        # Remember internal HREF's not 
+        # already seen for target-tt.
+        #------------------------------
+        if( not is_member( $hyper_ref, \@nm_ref ) ) {
+            push @nm_ref, $hyper_ref;
+        }
+    }
+    
+    #-----------------------------------------------------------------
+    # Put out the HTML title and then suppress it for later processing
+    #-----------------------------------------------------------------
+    $aTitle   = "$this_title" unless $title++;
+    $data[$i] = ".. <$head> " . $data[$i] . " </$head>";
+    
+    return $aTitle;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_italic_tt
+{
+    #---------------------------------------
+    # Turn all "~text~" into "<I>text</I>"
+    #---------------------------------------
+    s#$italic_tt#${lt}I${gt}$1${lt}/I${gt}#g;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_line_break
+{
+    my $fold = shift;
+    
+    print CONVERT "$closePgf<P>\n" unless $fold++;
+    $closePgf = "</P>";
+    return $fold;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_line_tt
+{
+    if( not $insideNoFormatArea )
+    {
+        s/$line_tt/${lt}P${gt}${lt}HR${gt}/;
+        print CONVERT html_finishing( $_ ), "\n";
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_list_tt
+{
+    if( /$list_tt/o )
+    {
+        if ( $1 eq '(' ) # open list level
+        {
+            $list_level++;
+            s/$list_tt/${lt}UL${gt}${lt}LI${gt}/;
+        }
+        else             # close list level
+        {
+            $list_level--;
+            s,$list_tt,${lt}/LI${gt}${lt}/UL${gt},;
+            $atListStart = 2 if $list_level;
+            $terminatedList = 1;
+        }
+    }
+    
+    #-----------------------------------------------------
+    # An empty line terminates a multiple line list entry.
+    #-----------------------------------------------------
+    elsif( /$empty_line/o )
+    {
+        print CONVERT "</LI>\n" unless $terminatedList;
+        print CONVERT "</P><P>\n";
+        $atListStart    = 1 if $list_level;
+        $terminatedList = 0;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_quote_tt
+{
+    s/$quote_tt\s*//;
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_section_tt
+{
+    my $hdr_level = shift;
+    
+    print CONVERT "<H$_</H$hdr_level>\n";
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_target_tt
+{
+    check_target_reference( $_ );
+    /$target_tt/ && do { ($a = $4) =~ s,_, ,go; s/$target_tt/ $a/; };
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_title
+{
+    my $titleHolder = $_;
+    
+    to_state( $FMT ); 
+    /$target_tt/ && do { ($a = $4) =~ s,_, ,go; s/$target_tt/$a/; };
+    
+    if( /$title_tt/i  ) # this is the new title-tt from html_init
+    {
+        $frontMrk = $1; $thisTitle = $2; $backMrk = $3;
+        
+        if( not $separate_html_files or $veryFirstTime )
+        {
+            check_target_reference( $titleHolder ); 
+            print CONVERT $frontMrk, &html_finishing($thisTitle), $backMrk, "\n";
+            $veryFirstTime = 0;
+        }
+        elsif( $frontMrk eq "<H1>" )
+        {
+            $savedTitle = $thisTitle;
+            $savedTitleHolder = $titleHolder;
+        }
+        else
+        {
+            #--------------------------
+            # Create another HTML file?
+            #--------------------------
+            $hyper_ref = $thisTitle;
+            $hyper_ref =~ s/$trim_spaces/$2/o;
+            $hyper_ref =~ s/ /_/go;
+            $association = $MenuNames{ $hyper_ref };
+            
+            if( $association ne ""  )
+            {
+                $assocLevel  = substr( $association, 0, 1 );
+                $association = substr( $association, 1 );
+                $newFile     = "$outputDirectory$association.$htmlExt";
+            
+                if( $converted_file ne $newFile )
+                {
+                    #-----------------------------
+                    # Finish off the current file.
+                    #-----------------------------
+                    html_emit_footer();
+                    close CONVERT;
+
+                    #-----------------------------------------------------
+                    # This realigns title after nested sublevels complete.
+                    #-----------------------------------------------------
+                    if ( $assocLevel == 0 ) {
+                        $savedTitle = $thisTitle;
+                    }
+                    
+                    $converted_file = $newFile;
+                    open CONVERT, ">$converted_file" or die "Can't create $converted_file, $OS_ERROR";
+                    html_emit_header( $savedTitle );
+                    
+                    #--------------------------------------------
+                    # This puts target reference in correct file.
+                    #--------------------------------------------
+                    if( $savedTitleHolder )
+                    {
+                        check_target_reference( $savedTitleHolder );
+                        if( $savedTitleHolder =~ /$title_tt/i )
+                        {
+                            print CONVERT $1, &html_finishing($2), $3, "\n";
+                        } 
+                        $savedTitleHolder = "";
+                    }
+                }
+            }
+
+            check_target_reference( $titleHolder ); 
+            print CONVERT $frontMrk, &html_finishing($thisTitle), $backMrk, "\n";
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub html_underline_tt
+{
+    #--------------------------------------------
+    # Turn all "_text_" into "<I><U>text</U></I>"
+    # Remembering to substitute intervening 
+    # underlines with spaces.
+    #--------------------------------------------
+    s#$underline_tt#
+       ($text = $1) =~ s,_, ,go; 
+       "${lt}I${gt}${lt}U${gt}$text${lt}/U${gt}${lt}/I${gt}"; #eg;
+}
+
+#-------------------------------------------------------------------------------
+#                setext to NEdit HELP conversion call-back routines.
+#                         ( in alphabetical order )
+#-------------------------------------------------------------------------------
+
+sub help_bold_tt
+{
+    #----------------------------------------------------
+    # Turn all "**text**" into "<stlMrk_B>text<stlMrk_B>"
+    #----------------------------------------------------
+    s#$bold_tt#${stlMrk}$TKN_BOLD$1${stlMrk}$TKN_BOLD$2#g;
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_bullet_tt  { s/$bullet_tt/    * $1/ }
+
+#-------------------------------------------------------------------------------
+
+sub help_emit_line  
+{
+    #------------------------------------------------------
+    # The following is here to help us generate conditional
+    # compilation elements for the 'C' compiler.
+    #------------------------------------------------------
+    if( /$passthru_tt/ )
+    {
+        s/$passthru_tt//o;  # remove typotag and pass line out as is.
+        reclaim_escapes();
+        print HELP "$_\n"
+    }
+    else
+    {
+        #-------------------------------------------------
+        # This seems to be the only good place to take
+        # care of style changes that have occurred between
+        # usage of proportional and fixed font styles.
+        #-------------------------------------------------
+        if( $styleChanged )
+        {
+            $_ = $styleMark . get_style_name( $crntStyle ) . $_;
+            $styleChanged = "";
+        }
+
+        my $finishedLine = help_finishing( $_ );
+
+        print HELP "\"", $finishedLine, "\",\n";
+
+        #----------------------------------------------------------------
+        # To minimize newline output for the empty line elements,
+        # the algorithm remembers if its last line had a newline emitted.
+        #----------------------------------------------------------------
+        $newLinePresentInLastLine = $finishedLine =~ /\\n$/;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_final  {}
+
+#-------------------------------------------------------------------------------
+
+sub help_finishing  
+{
+    local($_) = @_;
+
+    #----------------------------
+    # When finishing a heading...
+    #----------------------------
+    if( $headingLevel )
+    {
+        #--------------------------------------------------
+        # ... destroy any styles inadvertantly placed there
+        #--------------------------------------------------
+        if( /$stlMrk/o )
+        {
+            my @line = split $stlMrk;
+            $_ = join '', @line;
+        }
+
+        #------------------------------------
+        # ... because only one style allowed.
+        #------------------------------------
+        $stlFront     = $styleMark . get_style_name( "" );
+        $headingLevel = 0;
+        $stlEnd       = $styleMark . get_style_name( $initialStyle );
+        $stlFront     = "" if /^$styleToken/ ; # remove redundancy when present
+        $_            = $stlFront . $_ .$stlEnd;
+    }
+    
+    #---------------------------------------------
+    # Any style markers found in the current line?
+    #---------------------------------------------
+    elsif( /$stlMrk/ )
+    {
+        #----------------------------------------
+        # Break line up into style word elements.
+        #----------------------------------------
+        my $line = "";
+        my @line = split $stlMrk;
+
+        foreach $element ( @line )
+        {
+            #--------------------------------------------------
+            # Extract word emphasis token and associated words.
+            # Embed style marker into text line.
+            #--------------------------------------------------
+            $element =~ /^($aStyleToken)?(.*)$/o && do { 
+
+                $token = ($1) ? $1 : $TKN_TEXT;  # $TKN_xxx
+                $words = $2;
+                my $nextStyle = get_style( $crntStyle, $token );
+
+                if( $crntStyle eq $nextStyle )
+                {
+                    $line .= $words;
+                }
+                else
+                {
+                    $stlNm = get_style_name( $nextStyle );
+                    $line .= "$styleMark$stlNm$words";
+                    $crntStyle = $nextStyle;
+                }
+            };
+        }
+        
+        $_ = $line;
+    }
+    
+    recover_extractions();
+    fix_target_tt();
+    
+    #-------------------------------------------
+    # Apply any initial style change introduced.
+    #-------------------------------------------
+    $_ = $newLeadStyle . $_;
+    $newLeadStyle = "";
+
+    #----------------------------------------------------------------
+    # Add newline element to all lines which are not being currently
+    # formatted into a flowing paragraph. It is done here because the
+    # character also has to get included in the character counts.
+    #----------------------------------------------------------------
+    $_ .= get_newline( 1 ) if $crnt_state ne $FMT;
+    
+    #----------------------------------------------------------------------
+    # Since 2 characters (\ and n) are occupying the space of one newline,
+    # we need to subract out the number of new lines from the total offset.
+    #----------------------------------------------------------------------
+    my $styleCount     = count( $styleToken, $_ );
+    my $newLineCount   = count( "\\\\n", $_ );
+    my $quoteCount     = count( '"', $_ );
+    my $backslashCount = count( "\\\\", $_ ) - $styleCount - 
+                         $newLineCount - $quoteCount;
+                         
+    my $adjustment     = ($styleCount * $styleTokenSize) + 
+                         ($backslashCount / 2) + $newLineCount + $quoteCount;
+                         
+    #-----------------------------------------------------------
+    # Now keep a running total of how many characters to emit.
+    # (Keep 2 forms, total number for compiler string length
+    # considerations, and another for target-tt section offsets.
+    #-----------------------------------------------------------
+    $sectionCharacterCnt += length( $_ );
+    $targetOffset        += length( $_ ) - $adjustment;
+    
+    $_;
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_fixed_styles
+{
+    #----------------------------------------------------------------
+    # All proportional styles in the style state transition table
+    # begin with the "_" character. If we are already in the
+    # proportional styles arena, a link, or header, no change occurs.
+    #----------------------------------------------------------------
+    if( $crntStyle =~ /^_/ )
+    {
+        $crntStyle =~ s/^_//o;
+        $styleChanged = $crntStyle unless $styleChanged;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_hot_tt
+{
+    my ( $text, $stlNm, $h );
+    
+    #--------------------------------------------------
+    # After finding a hot-tt, substitute all underlines
+    # with spaces and check to see if the hot-tt had
+    # a corresponding hypertext reference. Make it 
+    # unadorned text when no reference found.
+    #--------------------------------------------------
+    s#$hot_tt#
+        ($text = $1) =~ s,_, ,go; 
+        $h     = is_known_link( $text );
+        $stlNm = get_style_name( $crntStyle );
+ 
+        $h ? "$stlMrk$TKN_LINK$text$stlMrk$TKN_LINK"
+           : $text; 
+    #eg;
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_indent  
+{
+    if( /$indent_tt/ )
+    {
+        s/$indent_tt/$1/;            # get rid of indent-tt characters
+        /\S$/ && do { $_ .= ' ' };   # make sure space available for remaining
+    }                                #  text in this kind of paragraph
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_init
+{
+    %state_change = (
+        
+        enter_pre   => "help_fixed_styles",
+        leave_pre   => "help_proportional_styles",
+
+        enter_quote => "help_fixed_styles",
+        leave_quote => "help_proportional_styles",
+    );
+
+    #--------------------------------------------
+    # Global elements needed for making menu code
+    #--------------------------------------------
+    %href = ();
+
+    $copy_right_holder = "Mark Edel";
+    $hlptxt            = "help_data$helpSuffix.h";  # name of file holding help data structures
+    $hlphdr            = "help_topic$helpSuffix.h"; # name of file holding help definitions
+    $stlMrk            = "\01";          # this is the character code
+    $styleMark         = '\01';          # this is the text string
+    $styleToken        = "\\$styleMark"; # this for splitting strings on styleMark
+    $styleTokenSize    = length( $styleToken ); # accounts for '\01A'
+    $illegal_help      = "HELP_none";
+
+    $menu_record       = "(.),(.*),(.*),(\\d)";
+    $tgtIndx           = 0;  # target-tt index for hypertext reference array (@href)
+
+    #-------------------------------------------------------------------
+    # The following data is used to embed style data into the help text.
+    #-------------------------------------------------------------------
+
+    #                         TOKENS =>        text        bold        italic      underline
+    %styles_stt = (
+
+    # fixed font styles
+    
+      plain     => { style => "A", states => [ "plain",     "bold",      "italic",    "u_plain"    ] },
+      bold      => { style => "B", states => [ "bold",      "plain",     "b_ital",    "u_bold"     ] },
+      italic    => { style => "C", states => [ "italic",    "b_ital",    "plain",     "u_italic"   ] },
+      b_ital    => { style => "D", states => [ "b_ital",    "italic",    "bold",      "u_b_ital"   ] },
+
+      u_plain   => { style => "E", states => [ "u_plain",   "u_bold",    "u_italic",  "plain"      ] },
+      u_bold    => { style => "F", states => [ "u_bold",    "u_plain",   "u_b_ital",  "bold"       ] },
+      u_italic  => { style => "G", states => [ "u_italic",  "u_b_ital",  "u_plain",   "italic"     ] },
+      u_b_ital  => { style => "H", states => [ "u_b_ital",  "u_italic",  "u_bold",    "bold_ital"  ] },
+
+    #  proportional font styles
+    
+      _plain    => { style => "I", states => [ "_plain",    "_bold",     "_italic",   "_u_plain"   ] },
+      _bold     => { style => "J", states => [ "_bold",     "_plain",    "_b_ital",   "_u_bold"    ] },
+      _italic   => { style => "K", states => [ "_italic",   "_b_ital",   "_plain",    "_u_italic"  ] },
+      _b_ital   => { style => "L", states => [ "_b_ital",   "_italic",   "_bold",     "_u_b_ital"  ] },
+
+      _u_plain  => { style => "M", states => [ "_u_plain",  "_u_bold",   "_u_italic", "_plain"     ] },
+      _u_bold   => { style => "N", states => [ "_u_bold",   "_u_plain",  "_u_b_ital", "_bold"      ] },
+      _u_italic => { style => "O", states => [ "_u_italic", "_u_b_ital", "_u_plain",  "_italic"    ] },
+      _u_b_ital => { style => "P", states => [ "_u_b_ital", "_u_italic", "_u_bold",   "_bold_ital" ] },
+
+    #  hyperLink     style => "Q",
+    
+    #  header1       style => "R", --
+    #  header2       style => "S",   |_ MAX_HEADER
+    #  header3       style => "T", --
+    );
+
+    #-----------------------------------------------------------
+    # The link index is the position in a font style table
+    # where the linking font will reside. It appears immediately
+    # after the styles from the table above.
+    #-----------------------------------------------------------
+    $linkIndex   = scalar( keys %styles_stt );
+    $maxTokens   = scalar( @{ $styles_stt{plain}{states} } );
+
+    $STYLE_PLAIN = $styles_stt{plain}{style};
+    $STYLE_LINK  = "Q"; # link style marker, a continuation from style table
+    $STYLE_HDR   = "R"; # beginning of header style markers
+    $MAX_HEADER  = 3;   # the maximum number of header styles in use
+
+    $TKN_TEXT    = 0;   # used in style state transition, order important
+    $TKN_BOLD    = 1;   # used in style state transition, order important
+    $TKN_ITALIC  = 2;   # used in style state transition, order important
+    $TKN_ULINE   = 3;   # used in style state transition, order important
+    $TKN_LINK    = 4;
+    
+    $aStyleToken = "[$TKN_TEXT$TKN_BOLD$TKN_ITALIC$TKN_ULINE$TKN_LINK]";
+
+    $initialStyle = "_plain";  # the initial style for help text.
+    $crntStyle    = $initialStyle;
+    $headingLevel = 0;
+    
+    print_menu( $crntMenu, "" ) if $print_menu;  # sort of debug info
+
+    #----------------------------------
+    # Create help header (help_topic.h)
+    #----------------------------------
+    open HLPHDR, ">$hlphdr"  or die "Can't create $hlphdr,  $OS_ERROR";
+    emit_help_header( HLPHDR, $crntMenu );
+    close HLPHDR;
+    
+    #-------------------------------------------
+    # Create help text data header (help_data.h)
+    #-------------------------------------------
+    open HELP,   ">$hlptxt"  or die "Can't create $hlptxt,  $OS_ERROR";
+    emit_helpTitles( HELP, $crntMenu );
+
+    collect_internal_hypertext_references( \@data );
+    $whence = 0;
+    emit_helpText( HELP, $crntMenu, \@data );
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_italic_tt
+{
+    s/$italic_tt/${stlMrk}$TKN_ITALIC$1${stlMrk}$TKN_ITALIC/g
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_line_break    
+{
+    my $fold = shift;
+    $_ .= get_newline( 2 );
+    help_emit_line() unless $fold++;
+    return $fold;
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_line_tt       {}
+sub help_list_tt       { text_list_tt() }
+sub help_quote_tt      {}
+
+#-------------------------------------------------------------------------------
+
+sub help_proportional_styles
+{
+    #----------------------------------------------------------------
+    # All proportional styles in the style state transition table
+    # begin with the "_" character. If we are already in the
+    # proportional styles arena, a link, or header, no change occurs.
+    #----------------------------------------------------------------
+    unless( $crntStyle =~ /^_/   or 
+            $crntStyle eq "link" or 
+            $crntStyle eq "header" ) {
+
+        $crntStyle = "_$crntStyle";
+        $newLeadStyle = $styleMark . get_style_name( $crntStyle );
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_section_tt    
+{
+    $headingLevel = shift;
+    #----------------------------------------------------------
+    # Heading levels for sectioning are being required to start
+    # at level 3 (considered the first level). This keeps the
+    # X-resources down inside NEdit. So here is the mapping.
+    #  1> level-1
+    #  2> level-1
+    #  3> level-1
+    #  4> level-2
+    #  5> level-3
+    #----------------------------------------------------------
+    $headingLevel = ($headingLevel > 2 ) ? $headingLevel - 2 : 1;
+    $headingLevel = $MAX_HEADER if $headingLevel > $MAX_HEADER; #
+    s/$section_tt//;
+    &help_emit_line;
+    $crntStyle = $initialStyle;
+
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_target_tt { } # cannot process target-tt at this time because
+                       # calculation of the hypertext offset requires
+                       # a fully expanded text line (see help_finishing).
+
+sub fix_target_tt
+{
+    if( /$target_tt/ and exists $href{ $4 } )
+    {
+        my ( $text, $tgtOffset, $originalLine );
+        
+        #---------------------------------------------------
+        # Have to compute target's offset into help section.
+        # Need actual text sans styling information. Assuming
+        # all other text replacement has already occurred.
+        #---------------------------------------------------
+        $originalLine = $_;
+        
+        s/$styleToken.//g; # remove all styling markers
+        
+        #--------------------------------------------------------
+        # Inside this special substitution, a computation of the
+        # target's offset from the beginning of the section is
+        # being computed and applied to the hyper-reference array
+        # element which will be emitted after all text sections
+        # have been processed.
+        #--------------------------------------------------------
+        s#$target_tt#
+            ($text = $4) =~ s,_, ,go;
+            $tgtOffset  = index( $_, $text ) + $targetOffset -1;
+            $tgtOffset  = sprintf( "%6d", $tgtOffset );
+            $href[ $tgtIndx++ ] =~ s /^0/$tgtOffset/o;
+            " $text"; 
+        #eg;
+        
+        #-------------------------------------------------------
+        # Now fix hyper-references in actual line to be emitted.
+        #-------------------------------------------------------
+        $_ = $originalLine;
+        
+        s#$target_tt#
+            ($text = $4) =~ s,_, ,go;
+            " $text"; 
+        #eg;
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub help_title         {&help_emit_line}
+
+#-------------------------------------------------------------------------------
+
+sub help_underline_tt
+{
+    #--------------------------------------------------
+    # Turn all "_text_" into "<stlMrk_U>text<stlMrk_U>"
+    # Remembering to substitute intervening 
+    # underlines with spaces.
+    #--------------------------------------------------
+    s#$underline_tt#
+       ($text = $1) =~ s,_, ,go; 
+       "${stlMrk}$TKN_ULINE$text${stlMrk}$TKN_ULINE";
+    #eg;
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_newline
+{
+    $howMany = shift;
+    
+    $howMany-- if $newLinePresentInLastLine && $howMany > 1;
+    return '\n' x $howMany;
+}
+
+#-------------------------------------------------------------------------------
+
+sub is_known_link
+{
+    my $linkName = shift;
+    
+    for( $index = 0; $index < scalar( @hot_tt_links ); $index++ )
+    {
+        $element = $hot_tt_links[ $index ];
+        return 1 if( $hot_tt_links[ $index ] eq $linkName );
+    }
+    
+    return 0;
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_style
+{
+    my $crntStyle = shift;    # plain, bold, italic, etc.
+    my $token     = shift;    # $TKN_xxx
+    my $style     = "header"; # assume working on header
+    
+    if( $headingLevel == 0 )
+    {
+        if( $token == $TKN_LINK )
+        {
+            if( $crntStyle eq "link" )
+            {
+                $style = $prevStyle;
+            }
+            else
+            {
+                $prevStyle = $crntStyle;
+                $style = "link";
+            }
+        }
+        else
+        {
+            @transitions = @{ $styles_stt{$crntStyle}{states} };
+            $style = $transitions[ $token ];
+        }
+    }
+    
+    return $style;
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_style_name
+{
+    my $crntStyle = shift;    # plain, bold, italic, etc.
+    my $styleName;
+    
+    if( $headingLevel )
+    {
+        $styleName = chr(ord( $STYLE_HDR )+$headingLevel-1);
+    }
+    elsif( $crntStyle eq "link" )
+    {
+        $styleName = $STYLE_LINK;
+    }
+    else
+    {
+        $styleName = $styles_stt{$crntStyle}{style};
+    }
+    
+    return  $styleName;
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_menu_item
+{
+    my $setext = shift;
+    my $line   = shift;
+
+    
+    while( $$line < scalar( @$setext ) )
+    {
+        $_ = $$setext[ $$line++ ];
+        return $_               if s/$menu_element//o;
+        return "$_, $help_code" if s/$help_element//o;
+    }
+    
+    return "";
+}
+
+#-------------------------------------------------------------------------------
+
+sub print_menu
+{
+    my $crnt_menu = shift;
+    my $indent    = shift;
+    my ( $menuTitle, $mneumonic, $helpName, $hideit, $type );
+    
+    foreach $menuItem ( @$crnt_menu )
+    {
+        if ( $menuItem =~ /$menu_record/o ) 
+           { $mneumonic=$1; $menuTitle=$2; $helpName=$3; $hideit=($4) ? $4 : "" }
+        
+        if( $hideit eq $help_code ) {
+            $hideit = ""; 
+            $type = "Help"
+        } 
+        else { 
+            $hideit = ", ($hideit)" if $hideit;
+            $type = "Menu" 
+        }
+        
+        print "$type: $indent$mneumonic, $menuTitle [$helpName]$hideit\n";
+        
+        if( $menuItem =~ /$subMenuIndicator/o )
+        {
+            ($menu = $menuTitle) =~ s/ /_/og;
+            print_menu( \@$menu, "$indent  " );
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub collect_internal_hypertext_references
+{
+    my $setext = shift;
+    my $line   = 0;
+    my ($source, $destination );
+    
+    while( $line < scalar( @$setext ) )
+    {
+        $_ = $$setext[ $line++ ];
+        
+        if( /$href_tt/o )
+        {
+            $source      = $1;
+            $destination = $2;
+            if( $destination =~ /$internal_href/ )
+            {
+                $href{ $1 } = $source;
+            }
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_helpText
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    my $setext    = shift;
+    my $line      = 0;
+    my $index     = 1;
+    
+    $helpNameList = "";
+
+    emit_help_menu_text( $setext, $stream, $crnt_menu, \$line );
+
+    print $stream "static char **HelpText[] = {\n$helpNameList\n};\n\n";
+
+    print $stream "HelpMenu H_M [] =\n{\n";
+    emit_help_menu( $stream, $crnt_menu, 0, 1 );
+    print $stream "\n};\n";
+    
+    #------------------------------------
+    # Emit internal hypertext references.
+    #------------------------------------
+    print $stream "\nHref H_R [] =\n{\n";
+    $sep = "";
+    for ($index = 0; $index < scalar(@href); $index++)
+    {
+        $element = $href[$index];
+        $nextone = ($index == $#href) ? "NULL,    " : "&H_R[%2d],";
+        printf $stream "$sep    {$nextone$element}", $index+1;
+        $sep = ",\n"
+    }
+    print $stream "\n};\n";
+    
+    #-----------------------------
+    # Emit program version string.
+    #-----------------------------
+    $pgmVersion = $variables{ version };
+    $pgmVersion .= '\n' . date() if $pgmVersion !~ /$neditDefaultMarker/;
+    print $stream "\nstatic const char * NEditVersion = \"$pgmVersion\\n\";\n";
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_help_menu_text
+{
+    my $setext    = shift;
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    my $line      = shift;
+    
+    my ( $menuTitle, $mneumonic, $helpName, $prevLine );
+    
+    #----------------------------------------
+    # For every node of the menu tree...
+    #----------------------------------------
+    foreach $menuItem ( @$crnt_menu )
+    {
+        if ( $menuItem =~ /$menu_record/ ) 
+           {  $mneumonic=$1; $helpName=$3; ($menuTitle=$2) =~ s/_//; }
+        
+        #---------------------------------
+        # ... recursively expand sub-menus
+        #---------------------------------
+        if( $menuItem =~ /$subMenuIndicator/ )
+        {
+            ($menu = $menuTitle) =~ s/ /_/g;
+            emit_help_menu_text( $setext, $stream, \@$menu, $line );
+        }
+        
+        elsif( $mneumonic ne $separator ) # ... and not a menu separator
+        {
+            locate_menu_text( $setext, $menuTitle, $line )  
+              or die "Unable to find \"$menuTitle\" text!";
+
+            $remainder = "";
+            my @section = ();
+            my $lineNbr = 0;
+            $s_e_p = ($helpNameList) ? ",\n" : "";
+            $helpNameList .=  $s_e_p . "    htxt_$helpName";
+            $sectionCharacterCnt = 0;
+            $targetOffset        = 0;
+            
+            #------------------------
+            # ... emit help menu text
+            #------------------------
+            while( 1 )
+            {
+                ($_,$remainder) = get_menu_text( $setext, $remainder, $line );
+                
+                last if $_ eq "";
+                $lineNbr++;
+                next if /$empty_line/ and $lineNbr == 1;
+                chomp;
+                
+                #--------------------------------------------------
+                # Save all hypertext targets found in current topic
+                #--------------------------------------------------
+                if( /$target_tt/ and exists $href{ $4 } )
+                {
+                    $target = $4;
+                    $href   = $href{$target};
+                    $href   =~ s/_/ /go;
+                    $target =~ s/_/ /go;
+                    $topic  = "HELP_\U$helpName,";
+                    $nl1    = $name_length;  # for HELP_ and comma
+
+                    push @href, sprintf("0, %-${nl1}.${nl1}s \"$href\"", $topic);
+                    push @hot_tt_links, $href;  # collect for later verification.
+                }
+                
+                s/\\/\\\\/go;  # escape backslash any where in text
+                s/"/\\"/go;    # escape embedded double quotes
+                s/^\s*$//;     # redefine whitespace as empty line
+
+                push @section, $_ ;
+            }
+            print $stream "static char * htxt_$helpName [] = {\n";
+            $styleChanged = $initialStyle; # This forces initial style out
+            $crntStyle    = $initialStyle;
+            parse_setext( \@section );
+            print $stream "NULL\n};\n\n";
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub locate_menu_text
+{
+    my $setext    = shift;
+    my $menuTitle = shift;
+    my $line      = shift;
+
+    $menuTitle =~ s/_//go;   # removing drop key character markers
+    $menuTitle =~ s/ /./go;  # spaces could be underlines in titles
+    $menuTitle =~ s/\(/./go; # parens are special in regex searches...
+    $menuTitle =~ s/\)/./go; #  ... here they should be ignored
+
+    #-----------------------------------------------------
+    # When the whence value is set to zero, the search
+    # for the text that belongs with the given menu title
+    # is started at the beginning of the file. This allows
+    # the menu text to be in an order other than that
+    # specified by the menu itself. This gives freedom
+    # to the writer; inefficiency to the text processing.
+    #-----------------------------------------------------
+    $$line = 0 if ( $whence != 1 );
+
+    while( $$line < scalar( @$setext ) )
+    {
+        if( $$setext[ $$line++ ] =~ /$menuTitle/ )
+        {
+            if ( $$setext[ $$line ] =~ /$subtitle_tt/  or
+                 $$setext[ $$line ] =~ /$title_tt/ )
+            {
+                $$line++;
+                return 1; # the first line after the setext title marker
+            }
+        }
+    }
+    
+    return 0;
+}
+
+#-------------------------------------------------------------------------------
+
+sub get_menu_text
+{
+    my $setext    = shift;
+    my $crnt_line = shift;
+    my $line      = shift;
+    
+    #-------------------------------------
+    # Skip any setext comment lines found.
+    #-------------------------------------
+    while( $$setext[ $$line ] =~ /$suppress_tt/ ) { $$line ++ };
+
+    $crnt_line = $$setext[ $$line++ ] if $crnt_line eq "";
+    
+    if( $crnt_line =~ /$twobuck_tt/ )  # end of setext document?
+    {
+        return ("", "");
+    }
+    else
+    {
+        #--------------------------------------------
+        # Have to read ahead by one line to catch the
+        # title of the next section, or the end of
+        # the setext document.(Eat horizontal rulers)
+        #--------------------------------------------
+        do { $_ = $$setext[ $$line++ ] } until not /^   --/;
+
+        #--------------------------------
+        # Look ahead again, so that an
+        # empty last line is not emitted.
+        #--------------------------------
+        if( $crnt_line =~ /^\s*$/ and
+            ($$setext[ $$line ] =~ /$subtitle_tt/o or 
+             $$setext[ $$line ] =~ /$title_tt/o or 
+             $$setext[ $$line ] =~ /$twobuck_tt/o))
+        {
+            return ("", "");
+        }
+        
+        if( /$subtitle_tt/o or /$twobuck_tt/o )
+        {
+            $$line = $$line - 2;
+            return ("", "");
+        }
+    }
+    
+    return ( $crnt_line, $_ );
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_help_menu
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    my $level     = shift;
+    my $index     = shift;
+
+    my ( $menuTitle, $mneumonic, $helpName, $hideIt );
+    
+    if( $level == 0 )
+    {
+        $sep = "";
+        $end_index = scalar( @$crnt_menu );
+    }
+    
+    $level++;
+    $nl1 = $name_length+6;  # for HELP_ and comma
+    $nl2 = $name_length+3;  # for 2 double quotes and comma
+    
+    #----------------------------------------
+    # For every node of the menu tree...
+    #----------------------------------------
+    foreach $menuItem ( @$crnt_menu )
+    {
+        if ( $menuItem =~ /$menu_record/ ) 
+        {
+            $mneumonic = $1; 
+            $helpName  = $3; 
+            $hideIt    = $4; 
+            ($menuTitle=$2) =~ s/_//; 
+        }
+        
+        #---------------------------------
+        # ... recursively expand sub-menus
+        #---------------------------------
+        if( $menuItem =~ /$subMenuIndicator/ )
+        {
+            ($menu = $menuTitle) =~ s/ /_/g;
+            printf $stream "$sep    { &H_M[%2d], $level, %-${nl1}.${nl1}s %-${nl2}.${nl2}s $hideIt, '$mneumonic', \"$menuTitle\" }", 
+               $index, "$illegal_help,", "\"$helpName\",";
+            $index = emit_help_menu( $stream, \@$menu, $level, $index+1 );
+        }
+        
+        else
+        {
+            $topic    = ( $mneumonic eq $separator ) ? "$illegal_help," : "HELP_\U$helpName,";
+            $helpName = "\"$helpName\",";
+            $nptr     = ( $end_index == 1 && $level == 1 ) ? "NULL" : "&H_M[%2d]";
+            
+            #---------------------------
+            # are we at end of the menu?
+            #---------------------------
+            if( $end_index == 1 && $level == 1 ) {
+                print $stream "$sep    { NULL,     ";
+            }
+            else {
+                printf $stream "$sep    { &H_M[%2d], ", $index;
+            }
+            printf $stream "$level, %-${nl1}.${nl1}s %-${nl2}.${nl2}s $hideIt, '$mneumonic', NULL }", $topic, $helpName;
+            $sep = ",\n";
+            $index++;
+        }
+        
+        $end_index-- if $level == 1;
+    }
+    
+    return $index;
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_helpTitles
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    
+    emit_copyright( $stream, "$hlptxt --  Nirvana Editor help module data" );
+    print $stream "char *HelpTitles[] = {\n";
+    emit_help_label( $stream, $crnt_menu );
+    print $stream "    NULL\n};\n\n";
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_help_label
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    my ( $menuTitle, $mneumonic, $helpName );
+    
+    #-----------------------------------------------------------------
+    # Emit help title/labels for only the leaf nodes of the menu tree.
+    #-----------------------------------------------------------------
+    foreach $menuItem ( @$crnt_menu )
+    {
+        if ( $menuItem =~ /$menu_record/ ) 
+        {
+            $mneumonic  = $1;
+            $helpName   = $3; 
+            ($menuTitle = $2) =~ s/_//go;
+        }
+          
+        if( $menuItem =~ /$subMenuIndicator/ )
+        {
+            ($menu = $menuTitle) =~ s/ /_/go;
+            emit_help_label( $stream, \@$menu );
+        }
+        elsif( $mneumonic ne $separator ) # ... and not a menu separator
+        {
+            print $stream "    \"$menuTitle\",\n";
+            push @hot_tt_links, $menuTitle;  # collect for later verification.
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_help_header          # populates NEdit's help_topic.h
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    
+    emit_copyright( $stream, "$hlphdr --  Nirvana Editor help display" );
+    print $stream "#define MAX_HEADING   $MAX_HEADER\n";
+    print $stream "#define STL_HD        $linkIndex+1\n";
+    print $stream "#define STL_LINK      $linkIndex\n";
+    print $stream "#define STL_NM_HEADER '$STYLE_HDR'\n";
+    print $stream "#define STL_NM_LINK   '$STYLE_LINK'\n";
+    print $stream "#define STYLE_MARKER  '$styleMark'\n";
+    print $stream "#define STYLE_PLAIN   '$STYLE_PLAIN'\n";
+    print $stream "#define TKN_LIST_SIZE $maxTokens\n";
+    print $stream "\n";
+    print $stream "enum HelpTopic {\n";
+    emit_help_topic( $stream, $crnt_menu );
+    print $stream "    HELP_LAST_ENTRY,\n";
+    print $stream "    $illegal_help = 0x7fffffff  /* Illegal topic */ \n";
+    print $stream "};\n";
+    print $stream "\n";
+    print $stream "#define NUM_TOPICS HELP_LAST_ENTRY\n";
+    print $stream "\n";
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_help_topic
+{
+    my $stream    = shift;
+    my $crnt_menu = shift;
+    my ( $menuTitle, $mneumonic, $helpName );
+    
+    #-----------------------------------------------------------------
+    # Emit help topic name for only the leaf nodes of the menu tree.
+    #-----------------------------------------------------------------
+    foreach $menuItem ( @$crnt_menu )
+    {
+        if ( $menuItem =~ /$menu_record/ ) 
+        {
+            $mneumonic  = $1;
+            $helpName   = $3; 
+            ($menuTitle = $2) =~ s/_//go;
+        }
+          
+        if( $menuItem =~ /$subMenuIndicator/ )
+        {
+            ($menu = $menuTitle) =~ s/ /_/go;
+            emit_help_topic( $stream, \@$menu );
+        }
+        elsif( $mneumonic ne $separator ) # ... and not a menu separator
+        {
+            print $stream "    HELP_\U$helpName,\n";
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
+
+sub emit_copyright
+{
+    my $stream   = shift;
+    my $filename = shift;
+    
+    my $year     = date("y");
+    my $padlen1  = 76 - length( $filename );
+    my $padlen2  = 52 - length( $copy_right_holder );
+    my $blanks   = "                                                                                  ";
+    my $pad1      = substr( $blanks, 0, $padlen1 );
+    my $pad2      = substr( $blanks, 0, $padlen2 );
+    
+    print $stream "/*******************************************************************************\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* $filename$pad1 *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "                 Generated on " . date() . " (Do NOT edit!)\n";
+    print $stream "                 Source of content from file $setext_file\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* Copyright (c) 1999-$year $copy_right_holder$pad2 *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* This is free software; you can redistribute it and/or modify it under the    *\n";
+    print $stream "* terms of the GNU General Public License as published by the Free Software    *\n";
+    print $stream "* Foundation; either version 2 of the License, or (at your option) any later   *\n";
+    print $stream "* version.                                                                     *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* This software is distributed in the hope that it will be useful, but WITHOUT *\n";
+    print $stream "* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *\n";
+    print $stream "* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *\n";
+    print $stream "* for more details.                                                            *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* In addition, as a special exception to the GNU GPL, the copyright holders    *\n";
+    print $stream "* give permission to link the code of this program with the Motif and Open     *\n";
+    print $stream "* Motif libraries (or with modified versions of these that use the same        *\n";
+    print $stream "* license), and distribute linked combinations including the two. You must     *\n";
+    print $stream "* obey the GNU General Public License in all respects for all of the code used *\n";
+    print $stream "* other than linking with Motif/Open Motif. If you modify this file, you may   *\n";
+    print $stream "* extend this exception to your version of the file, but you are not obligated *\n";
+    print $stream "* to do so. If you do not wish to do so, delete this exception statement from  *\n";
+    print $stream "* your version.                                                                *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* You should have received a copy of the GNU General Public License along with *\n";
+    print $stream "* software; if not, write to the Free Software Foundation, Inc., 59 Temple     *\n";
+    print $stream "* Place, Suite 330, Boston, MA  02111-1307 USA                                 *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* Nirvana Text Editor                                                          *\n";
+    print $stream "* September 10, 1991                                                           *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "* Written by $copy_right_holder                                                         *\n";
+    print $stream "*                                                                              *\n";
+    print $stream "*******************************************************************************/\n";
+    print $stream "\n";
+
+}
+
+#-------------------------------------------------------------------------------
+
+
+__END__
+
+=head1 NAME
+
+Setext - convert Structured Enhanced TEXT into HTML or plain text.
+
+=head1 SYNOPSIS
+
+ Usage: setext [ -dhtTVw ][-D directory][-H [hfile]][-S [htmlExt]] \
+               [-c conditional][-v name=value][setext_file [converted_file]]
+
+        setext {-mp} [-c conditional][-M menuSuffix][-v name=value] setext_file
+
+  The first form of setext is used to convert Structure Enhanced TEXT
+  documents into HTML or simple text documents.
+  The second form is specific to generating NEdit help menu code
+  from a setext document with Menu and Help directives.
+
+  -c conditional text definitions, separated by commas.
+  -d do not automatically make titles hypertext references (HTML only)
+  -D specify destination directory for separate HTML files. This also sets
+     the value for the variable HTML_DIR.
+  -h show this usage clause.
+  -H convert setext_file to HyperText Markup Language (HTML).
+     Optional file parameter specifies file containing HTML header
+     and footer definition overrides. The current defaults are:
+        $htmlHeader = <HTML>
+                      <TITLE>$HTML_TITLE</TITLE>
+                      <HEAD></HEAD>
+                      <BODY>
+        $htmlFooter = </BODY>
+                      </HTML>
+     where $HTML_TITLE is replaced with an appropriate title.
+
+  -m generate NEdit help menu code files.
+  -M name NEdit help code files with this suffix.
+  -p do option -m and print out NEdit help elements.
+  -S convert setext_file into separate HTML files.
+     (the default name extension is 'html', but it can be
+     changed by specifying it as an argument to this option)
+  -t convert setext_file to simple text (default).
+  -T emit setext typotag definitions in use.
+  -v defines variable name and assigns it the given value.
+     (more than one occurrence of -v can be made) The variables
+     are made available for use within the setext document parsing.
+  -V display the version of this setext script.
+  -w do not emit warnings about missing variables.
+
+  When the converted_file argument is missing, STDOUT is used.
+  When the setext_file argument is missing, STDIN is used.
+
+  To get conditional text within a setext document to be displayed,
+  supply a definition tag through the -c option. For example,
+
+          setext -c NEDITDOC help.etx nedit.doc
+
+  would generate a plain text document, nedit.doc, from the source
+  help.etx, including/excluding text marked with 'NEDITDOC'
+  conditional text markers, also known as 'maybe' typotags.
+
+=head1 DESCRIPTION
+
+This Structured Enhanced TEXT converter produces either HTML or plain
+text files from a given setext source. The HTML files produced can
+include hypertext references to within itself, or to external 
+destinations. The setext converter also has the capability of providing
+different content in the resulting output files through a conditional 
+text mechanism, and variable data definitions. All this allows a 
+publisher to maintain a single, very readable, source while producing
+varying content for different output formats and audiences.
+
+When the converted_file argument is missing, STDOUT is used.
+When the setext_file argument is missing, STDIN is used. This gives
+setext the capability of being a filter to other programs.
+
+To get conditional text within a setext document to be displayed,
+supply a definition tag through the -c option. For example,
+
+        setext -c NEDITDOC help.etx nedit.doc
+
+would generate a plain text document, nedit.doc, from the source
+help.etx, including/excluding text marked with 'NEDITDOC'
+conditional text markers, also known as 'maybe' typotags.
+
+Use the -T option to see the set of typotags supported by this
+converter. Further explanations of typotags occurs there.
+
+=head2 HTML Generation Examples
+
+The simplest form of HTML generation is:
+
+        setext help.etx nedit.html
+        setext -H help.etx nedit.html
+
+The results will be stored in the current directory in the nedit.html
+file.
+
+When the user wants to break up the resulting html file into multiple
+files, with cross references between the files, the -S option should
+be used.
+
+        setext -S help.etx nedit.html
+
+The resulting files are broken up according to titled sections and 
+are placed into the current directory, along with the nedit.html file.
+
+To change the destination of the resulting files, two options are
+supplied, the -D and -S options. For instance,
+
+        setext -S shtml -D help/nedit help.etx nedit.shtml
+
+The -S option allows the name of the file extension to be altered.
+The -D option specifies where the resulting files are going to be
+stored. Thus, in the example, all the files will be placed in the
+help/nedit directory (relative to the current directory) and will
+have ".shtml" as the file extension.
+
+A final nuance has been added to help server side HTML capabilities.
+The -H option can be used to specify a file which contains the
+definitions of $htmlHeader and $htmlFooter. This will be used to
+override that which is supplied by the setext script. For example,
+
+        setext -S shtml -H NEdit.ssd help.etx nedit.html
+
+tells setext to use the file NEdit.ssd (server side definition) 
+to override the HTML header and footer generation. An example of
+the contents of this file follows.
+
+    $htmlHeader = 
+      '<!--#set var="menu" value="documentation" -->' . "\n" .
+      '<!--#include virtual="/head.shtml"-->' . "\n";
+
+    $htmlFooter =  
+       '<!--#include virtual="/tail.shtml"-->' . "\n";
+
+=head2 NEdit Help Menu
+
+When generating the NEdit help menu code, two files will be produced,
+help_data.h and help_topic.h (when the -M option is not used).
+These two files contain all the programmatic
+data needed to implement hypertext menus within the NEdit program.
+The following is an example of a setext invocation which assumes that
+the variable 'version' is being used within the help.etx file.
+
+        setext -m -v "version=6.0" help.etx
+
+If the -M option is used, its value is appended to the root portion
+of the two generated files. For example,
+
+        setext -m -c VMS -M _VMS help.etx
+
+will generate the files help_topic_VMS.h and help_data_VMS.h. The 
+conditional portion of the help menu specifically designated for VMS 
+will be extracted from the help.etx source.
+
+Below is what is used to guide the generation of 'C'-Motif menus.
+Indentation is SIGNIFICANT in the "Menu" directive lines below. It
+is used to determine under which menu element another item will belong.
+The number of spaces indented is not significant, but items to be placed
+in the same menu panel MUST line up at the same indent level.
+ALL nodes of this menu "tree" should have help name qualifiers.
+These are used to produce the internal lists used by NEdit help code.
+
+By default, the first character of the menu element will be used as a 
+menu mneumonic key. To use another character in the menu element for 
+this purpose, surround the character with underscores (eg. I w_a_nt 'a').
+
+The menu title MUST match the one found in the actual help text (sans
+special mneumonic key character marking). The help text title may include
+underlines (for spaces) when it is a hyperlink target.
+
+The Help-name is used to generate various data structure names. For
+instance, the 'start' help name will be used to generate the HelpTopic
+enumeration value HELP_START and the character array htxt_start which
+holds the actual help text used in the menu dialogs. Consequently, these
+names need to be unique and contain only the characters that a 'C'
+compiler can digest.
+
+Menu separator lines use a dash (-) character for the Menu Title. They
+should also have a unique Help-name.
+
+A numerical value following the Help-name (separated from the name by
+a comma and/or spaces) is part of a menu element hiding scheme implemented
+in buildHelpMenu (found in 'menu.c'). When the number matches the hideIt
+value found in the procedure, that element will effectively become invisible.
+This mechanism was created for particular menu features that are not
+available to all incarnations of NEdit (in this case, the VMS version).
+
+A "Help" directive is used for all other text used as NEdit help, but
+does not show up in the Help menu. The following is a sample of
+Menu and Help directives.
+
+..       Menu Title                         # Help-name
+.. ------------------------------------------------------------
+.. Menu: Getting Started                    # start
+.. Menu: Basic Operation                    # basicOp
+.. Menu:   Selecting Text                   # select
+.. Menu:   Finding and Replacing Text       # search
+.. Menu:   Cut and Paste                    # clipboard
+.. Menu:   Using the Mouse                  # mouse
+.. Menu:   Keyboard Shortcuts               # keyboard
+.. Menu:   S_h_ifting and Filling           # fill
+.. Menu:   F_i_le Format                    # format
+
+.. Menu: Features for Programming           # features
+.. Menu:   Programming with NEdit           # programmer
+.. Menu:   Tabs/Emulated Tabs               # tabs
+.. Menu:   Auto/Smart Indent                # indent
+.. Menu:   Syntax Highlighting              # syntax
+.. Menu:   Finding Declarations (ctags)     # tags
+
+.. Menu: Regular Expressions                # regex
+.. Menu:   Basic Syntax                     # basicSyntax
+.. Menu:   Metacharacters                   # escapeSequences
+.. Menu:   Parenthetical Constructs         # parenConstructs
+.. Menu:   Advanced Topics                  # advancedTopics
+.. Menu:   Examples                         # examples
+
+.. Menu: Macro/Shell Extensions             # extensions
+.. Menu:   Shell Commands and Filters       # shell, 1
+.. Menu:   Learn/Replay                     # learn
+.. Menu:   Macro Language                   # macro_lang
+.. Menu:   M_a_cro Subroutines              # macro_subrs
+.. Menu:   Action Routines                  # actions
+
+.. Menu: Customizing                        # customizing
+.. Menu:   Customizing NEdit                # customize
+.. Menu:   Preferences                      # preferences
+.. Menu:   X Resources                      # resources
+.. Menu:   Key Binding                      # binding
+.. Menu:   Highlighting Patterns            # patterns
+.. Menu:   Smart Indent Macros              # smart_indent
+
+.. Menu: NEdit Command Line                 # command_line
+.. Menu: Client/Server Mode                 # server
+.. Menu: Cr_a_sh Recovery                   # recovery
+.. Menu: ---------------------------------- # separator1
+.. Menu: Version                            # version
+.. Menu: Distribution Policy                # distribution
+.. Menu: Mailing _L_ists                    # mailing_list
+.. Menu: Problems/Defects                   # defects
+.. ------------------------------------------------------------
+.. Help: Tabs Dialog                        # tabs_dialog
+
+=cut

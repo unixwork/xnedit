@@ -1,0 +1,965 @@
+          Release Notes for NEdit Version 5.7, January 2017
+
+
+This file contains last minute notes to users about the release, which are not
+included in the documentation or README files included with the distribution
+kits.  It also contains change information, for users who are interested in
+what bugs have been fixed, and what features have been added in the current
+version.
+
+If you are upgrading NEdit from a version prior to 5.0, please see the notes in
+the README file which came with the (source or executable) distribution kit,
+about updating macros and font settings in your .nedit file.
+
+New Features in 5.6
+
+  - The macro variable $VERSION returns NEdit's version number.
+
+  - The new macro function filename_dialog() can be used to query a file
+    name from the user by using the usual file selection dialog.
+
+  - The value of $em_tab_dist has changed when the emulation is turned off.
+    It is now 0, which was anyway a value for 'turned off'. (See SF bug
+    #1560892 and #3290514)
+
+  - The Python syntax highlighting patterns have been updated to Python 2.6.
+
+
+Bugs fixed in 5.6
+
+  - Fix raising of windows from within nedit (e.g. when opening an already
+    opened document with nc). Patch is SF patch #2337783.
+
+  - Fix for SF bug #2858723: off-by-one error causing a crash
+
+  - Fix for SF bug #2687525: tipsfile parser error wrt to eof
+
+  - Fix for SF bug #2222159: File was not reload when type was changed
+    externaly
+
+  - Fix for SF bug #2149312: parse error with zero menu entries.
+
+  - Fix raising of windows from within nedit (e.g. when opening an already
+    opened document with nc). Patch is SF patch #2337783.
+
+  - Fix for SF bug #2858723: off-by-one error causing a crash
+
+  - Fix for SF bug #2687525: tipsfile parser error wrt to eof
+
+  - Fix for SF bug #2222159: File was not reload when type was changed
+    externaly
+
+  - Fix for SF bug #2149312: parse error with zero menu entries.
+
+  - Force a terminating \n on macro file load time, to prevent syntax errors
+    with statements on the last line. (util/fileUtils.c:ReadMacroFile())
+    (SF bug #2038921)
+
+  - Fix multiple memory leaks in interpret.c:PromoteToGlobal()
+    (SF bug #1894726)
+
+  - Fix for SF bug #1908890: window title not updated.
+
+  - Fix for SF bug #1730611: $match_syntax_based is not set.
+
+  - Crash on window close when a "File modified externally" dialog was up
+    (SF bug #1578869).
+
+  - Crashes and artifacts when using ARGB visuals (SF bugs #1579544, 
+    #1030467, #1030192, and #1458006).
+
+  - The text insertion cursor does no longer blink while typing
+    (SF bug #906878).
+
+  - The status bar reflects a changed keybinding in the shell command banner.
+
+  - There is now a pattern for highlighting nested command substitution in
+    shell scripts (SF patch #1010742).
+
+  - Duplicate display bugs SF#464967 and SF#1041077 are fixed.
+
+  - A typo in Ada's syntax highlighting patterns is fixed (SF bug #858874).
+
+  - The shell used to run programs from the shell_command() macro function
+    and from the Shell menu is now part of NEdit's normal settings, and no
+    longer in the X server's settings. It also defaults to the user's login
+    shell, not /bin/csh. This fixes SF#403738 and SF#880607.
+
+  - File history is now consistent across multiple sessions (SF bug #557032).
+
+  - If a macro file contains function definitions mixed with code segments
+    the code segments were excuted in the wrong order in certain cases. This
+    is fixed (SF bug #622291).
+
+  - The current file name is (again) displayed in the Save As dialog text
+    field. (SF bug #1451337)
+    
+  - A crash caused by highlighting patterns with complex regular expressions 
+    has been fixed. (SF bug #1536002)
+    
+  - Crashes when the maximum number of patterns in a hightlighting pattern
+    set was exceeded, have been fixed. (SF bug #1536451)
+
+  - Files are now optionally opened without format changes (SF bug #1003241).
+
+  - Replace operation where the result exceeded a fixed length silently
+    clipped the result. The limit has been increased and the behaviour on
+    failure is now configurable. (SF bug #1015499)
+
+  - NEdit can now optionally detect and avoid symlinks (SF bug #1027788).
+
+  - A minor visual glitch has been fixed (SF bug #1055649).
+
+  - NEdit asks the user with a dialog if it detects that a document's file
+    is no longer accessible on disk. This dialog is changed to better match
+    expected usage pattern (SF bug #1066144).
+
+  - Various documentation bugs are fixed (SF bugs #1066765, #1078397, #1110024,
+    #1471868)
+
+  - Some minor usability bugs have been fixed (SF bugs #1371896, #1508608,
+    #1515134, #1066692).
+
+  - New highlighting pattern are now used immediately (SF bug #1117848).
+
+  - Changes in case no longer modifiy the text if no change is actually
+    performed (SF bug #1333103).
+
+  - Some Linux distros ship with XKEYSYMDB set to a bogus filename which
+    breaks all Motif applications. NEdit ignores that, and let X fall back
+    on the default which is far more likely to work (SF bug #1564907).
+
+  - Fixed a problem in the macro language on 64-bit systems (SF bug #1625283).
+
+  - Long macro function names could cause a buffer overflow (SF bug #1640304).
+
+  - The built-in macro "Make C prototypes" choked on some comments (SF bug
+    #1574071).
+
+  - Fixed a small bug while inserting special characters (SF bug #682004).
+
+  - Fixed a translation bug which crashed NEdit on pressing osfInsert in the
+    help window (SF bug #1772468).
+
+  - Fixed bad exception handling of default macros (SF bug #1731384).
+
+
+New features in 5.5 
+
+  - The most important new feature is the introduction of window tabs
+    (SF patches #569287 and #893177).
+    
+  - More efficient string search operations for the macro language.
+  
+  - Auto-scrolling is now (partly) configurable through the preference menu.
+        
+  - Find and Clear buttons for i-search bar (SF patch #891884).
+  
+  - Faster user-defined menu creation (SF patch #891126).
+  
+  - Open documents on current desktop (SF patch #963120)
+  
+  - Superuser receives a warning when trying to overwrite a read-only file.
+  
+  - Simplified global font resources.
+  
+  - Macro language: added new $args[] array and removed 9 arguments limit 
+    for macros
+    
+  - Improved Latex & Python syntax highlighting patterns
+  
+Bugs fixed in 5.5
+
+  - If underscore (_) is among the word delimiters for a language mode then
+    word boundary regexes will work as expected.  (SF bug #1008656)
+
+  - Problem with writing history file on VMS (SF bug #933146).
+  
+  - Race condition fix for running NEdit in -sync mode (SF bug #978104).
+  
+  - Removed obsolete special window title treatment on SGI (SF bug #779454).
+  
+  - Forbid the deletion of the "Plain" Text Drawing Style (SF patch #970491).
+  
+  - File descriptor handling fix that allows shell commands to be invoked 
+    asynchronously. 
+    
+  - Crash on Solaris when dragging a calltip (SF bug #925951).
+  
+  - Preference resource name mistakes (SF bug #884862).
+  
+  - Don't delete incremental backup files when incremental backups are off 
+    (SF bug #878183).
+
+  - Allow zero-length ranges to be added to range sets (SF bug #871209).
+
+  - Improved shell syntax highlighting patterns (SF bug #770855).
+  
+  - Regular expression crash fix (SF bug #987102).
+  
+Changes since 5.5RC1
+
+  - Using exit() in macro no longer causes hang (SF bug #999021).
+
+  - Updated rangeset documentation (SF bug #1005442).
+
+  - Minor changes to the regular expression word boundary semantics
+    (SF bug #1008656).
+
+  - Tabs keep reasonable sizes when things get crowded (SF bug #1005064).
+
+  - Many unnecessary file status checks are avoided.
+
+  - Warn On Exit also affects closing of window with multiple tabs
+    (SF bug #1006830)
+
+  - "File Modified Externally" dialogs are only allowed for top tabs.
+
+  - Broken virtual key bindings workaround was restored (problems with
+    page-up and page-down).
+
+  - Preference file number was bumped.
+
+  - Dialogs' OK button layout fixes.
+
+  - Fix for SF bug #999820: spaces in dialog button mnemonics.
+
+  - Fix for SF bug #996786: problems with overtype mode
+  
+Changes since 5.5RC2
+
+  - Less confusing menu wording (SF bug #1023089).
+
+  - Shell command output is now sent to a new window or a new tab,
+    depending on the tabbed editing preference settings.
+
+  - Detaching/Moving non-top tab should not change top tab (SF bug #1020035).
+
+  - Opening new window from a tabbed window no longer diminishes size
+    (SF bug #1011233).
+
+New Features in 5.4
+
+  - Calltips (SF patch #495286)
+
+  - Rangesets (SF patch #529298, #628933)
+
+  - Backlighting (SF patch #529298)
+
+  - Highlighting information macros (SF patch #529298)
+
+  - Full mouse wheel support for XFree86 (SF patch #715941)
+
+  - Look-behind matching for regular expressions (SF patch #530308)
+
+  - Regular expression and syntax highlighting speed-ups
+
+  - Flexible resource file location (SF patch #484674)
+    See the section "Upgrading from 5.3 to 5.4" of the README file for 
+    more information.
+
+  - Color dialog (SF patch #595330)
+
+  - Option to auto-hide mouse pointer while typing
+
+  - Option to keep cursor away from top and bottom of the screen
+
+  - Check for real changes of externally modified files (SF patch #602426)
+
+  - Synchronized interaction between nc and nedit (SF patch #403647)
+
+  - Several smaller improvements on usability and speed
+
+  - Several smaller improvements to the macro language (SF patch #552760, ...)
+
+Bugs Fixed in 5.4
+
+  - Unconvential word boundary semantics for regular expressions have
+    been corrected (including affected syntax highlighting patterns). 
+    See the section "Upgrading from 5.3 to 5.4" of the README file for 
+    important information.
+    
+  - Config files didn't accept non-Unix file format (SF bug #411092)
+
+  - Removed regex search bugs (SF bug #429110, #515120)
+
+  - Smart-indent macros were unaffected by language mode renames (SF bug #439867)
+
+  - All dialogs have titles now (SF bug #480960)
+
+  - Giving long filenames at startup caused buffer overflows (SF bug #488412)
+
+  - Made sure that dialogs don't get wider than screen
+    (SF bug #488593, #489614, #713999)
+
+  - Workaround for Motif drag icon bug (SF bug #526981: Crash using btn2 on 
+    help window buttons and SF bug #582469: 5.3 crash when selecting stats 
+    line text).
+    
+  - Dragging a rectangular selection could delete characters (SF bug #557225)
+
+  - Show Matching Range bug (SF bug #559902)
+  
+  - Keyboard-based rectangular selections were forgotten if the selection ever
+    became zero-width.
+
+  - Workaround for KDE's FONTLIST bug (SF bug #561659)
+  
+  - Paths were still shown in current's window Windows menu after global option
+    was changed (SF bug #564782)
+
+  - Scrolling to searched or undone/redone section stopped short (SF bug #578551)
+
+  - Removed flicker in stats line due to bug prevention (SF bug #594838)
+
+  - Crash while dismissing a resized help window (SF bug #600175)
+
+  - Macro functions were evaluated in a wrong order (SF bug #602336, #628552)
+
+  - Syntax highlighting failures in LaTeX (SF bug #607072)
+
+  - Crash with wrong values for -tabs option (SF bug #608693)
+
+  - Macro shortcuts were sensitive to Lock and NumLock (SF bug #612558)
+
+  - Appending the terminating line break was not reflected in the buffer
+    (SF bug #617840)
+
+  - A new nc(1) hanged after a server was killed or crashed (SF bug #619231)
+
+  - Adds (short) list of deprecated macro functions (SF bug #619236)
+
+  - Removed hazardous command shortcut (SF bug #649442)
+
+  - Workaround for OpenMotif radio button bug (SF bug #678198: bug in 
+    Replace in multiple files).
+    
+  - Typo in SCO makefile (SF bug #689808)
+
+  - Syntax highlighting routines assumed ASCII encoding (SF bug #700823)
+
+  - Crash when starting up in a UTF-8 locale (SF bug #703246, 621972)
+
+  - Crash while manipulating highlighting pattern (SF bug #705495)
+
+  - Removed flicker in stats line during macro execution (SF bug #713780)
+
+  - Close pane resize bug (SF bug #715767)
+  
+  - Macro function goto_line_number() only accepted one argument (SF bug #726325)
+
+  - Newline macro inserting a string caused a crash when triggered
+    through smart indent
+
+  - Help text foreground was hard-coded to black (SF bug #723096)
+ 
+  - System default colors from CDE Style Manager were ignored (SF bug #544053)
+  
+Changes since 5.4RC1
+
+  - Panes didn't inherit the right colors (SF bug #780267)
+   
+  - Fixed Rangeset API usability issues and bugs.
+ 
+  - Plain KP Enter now inserts a newline, not <CR> (SF bug #779439).
+ 
+  - Enabled Motif version checking for xBSD.
+ 
+  - SGI: compilation problem (SF bug #780841)
+ 
+  - File modification issues (SF bug #782513, SF bug #784442)
+ 
+  - Documentation updates.
+   
+  - Color dialog button resize problem.
+   
+  - undoModifiesSelection is no longer saved in .nedit/nedit.rc
+ 
+  - Workaround for Lesstif's 'frozen windows' bug.
+ 
+  - Fixed calltip parsing problem (SF bug #779681)
+ 
+  - Macro language HL pattern updates.
+   
+  - nc -do ... no longer creates unwanted windows (SF bug #785738).
+
+  - Improved color resource migration.
+  
+  - File accessibility is now determined with access() (SF bug #782518)
+ 
+Changes since 5.4RC2
+
+  - Nc crash fix on VMS.
+  
+  - Fixes in highlighting information inspection macros.
+  
+  - Nc -lm command line option fix.
+
+New Features in 5.3
+
+  This is mainly a bug fix release. The list of new features is therefore 
+  limited:
+
+  - The built-in Help system was revamped. Most notably, a hyperlink
+    mechanism was added for following cross-references.
+
+  - Enhanced Exuberant ctags support (SF #491109).
+
+  - Line numbers are available in shell commands (SF #434451).
+
+  - Goto Line also accepts column numbers (SF #403435).
+  
+  - Automatic line-feed termination when saving is now optional (SF #503073).
+
+  - A customizable window title (SF #477875/#519092).
+ 
+  - Optional syntax based parenthesis matching (iso. purely character based)
+    (SF #513976).
+
+
+Bugs Fixed in 5.3
+
+  - Find Definition incorrectly reads the X selection when not needed 
+    (SF #520941).
+
+  - Background popup menu could lock up X-server when used with any of 
+    the lock keys on.
+
+  - Very wide windows when starting NEdit under fvwm (SF #496526).
+
+  - Workaround for illegal key bindings installed by other Motif applications,
+    causing PageUp/PageDown and arrow keys to stop responding in NEdit
+    (SF #493421/#525903). This is not an NEdit bug, it just looks like one.
+    
+  - Fix for PageUp/PageDown keys not responding (SF #508961).
+  
+  - Crash when running X on 2nd screen (SF #478234, #500353).
+
+  - Line number display updating in continous wrap mode (SF #516920).
+
+  - Performance problem with X Resources highlight patterns (SF #481290).
+
+  - Menu fonts showing up as blocks (SF #434383)
+
+  - Lockup's in syntax highlighting (especially Perl) (SF #512961).
+
+  - Crash when using characters with ASCII code >= 128 in syntax
+    highlighting patterns.
+
+  - Crash when modifying tab distance in continous wrap mode (SF #510631).
+
+  - Crash when running NEdit in low-depth color modes.
+
+  - Continous wrap mode + variable width font display bugs.
+
+  - Potential scroll bar corruption in continuous wrap mode (SF #510765).
+
+  - Workaround for selection copy/paste problems with recent versions
+    of gnome-terminal.
+
+  - Jump to tags only referenced by line number.
+
+  - Composed characters in learned sequence (SF #480966).
+
+  - Missing titles in some dialogs (SF #480960).
+
+  - Macro language: continue statement outside loop crash (SF #495293).
+
+  - Rectangular overstrike past fixes (SF #487945).
+
+  - Hard-coded statistics line font (SF #487153).
+
+  - Open filenames starting with a dash (SF #485610).
+
+  - Crash when closing window of non-existing file while error dialog is up.
+
+  - Bad CapsLock grab on certain keyboard configurations (SF #482504).
+
+  - Replacements in rectangular selections could sometimes fail.
+  
+  - Various buffer overflow fixes.
+
+  - Multiple selection dialog does not pop up on first find (SF #473602).
+  
+  - Tag not found (SF #466742).
+  
+  - Files opened with -read command line option could not be unlocked.
+
+New Features in 5.2
+
+ - Added built-in patterns for CSS, XML, and regular expressions (Regex).
+   Many other pattern updates.
+
+ - Support for high- and true-color systems.  NEdit now will automatically
+   select the best visual from your X server.  This reduces the chance of
+   running out of colors.
+
+ - New features in the Find and Replace dialogs:
+
+   o Replacement across multiple windows in a session.
+   o Case sensitivity may be set independently of regular expressions.
+   o Add "Replace and Find" command, which saves keystrokes when doing
+     a large-scale find & replace.
+
+ - ClearCase version-extended pathnames.
+
+ - Many new macro subroutines and variables.
+
+ - Array support in macros.
+
+ - Range highlighting of matching delimiters.
+
+ - Undo and Redo highlights the text that has changed, when visible.
+
+ - Support for wheel mouse scrolling on servers that support it (XFree86).
+
+ - Improved accelerator key handling.
+
+ - Insert Control Code dialog accepts value in any valid C notation
+
+ - Optional beeping when search operations wrap.
+
+ - Additional default search styles.
+
+ - Optional displaying of path names in the window list menu.
+
+
+Bug Fixes in 5.2
+
+ - Fix a crash when entering an invalid line number in "Goto Line".
+
+ - Ignore the Caps-Lock key when invoking accelerators.
+
+ - Fix problems when running NEdit on 64-bit platforms like Alpha
+
+ - NEdit failed to open files if some directories above were not "readable"
+
+ - Fix potential crashes if some system calls fail
+
+ - When no colors are left, attempt to reuse the closest matching color.  This
+   allows NEdit's syntax highlighting to better coexist with Netscape, which
+   unfortuntely takes all available colors.
+
+ - "Overtype" mode is now bound to the Insert key, to be consistent with
+   Motif text fields.
+
+ - Accelerators now available in confirmation dialogs, and may be invoked
+   without the Alt key.
+
+ - Don't even try to open a directory for editing
+
+ - Fix a couple of memory corruption problems
+
+
+New Features in 5.1
+
+ - Significant extensions to the regular expression syntax.  See details
+   below.
+
+ - Incremental search, and optional search bar.
+
+ - New ctags code with full support for Exuberant Ctags, better
+   handling of tag collisions, multiple tag file support, on-demand
+   loading of tag files, and automatic reload of modified tag files.
+
+ - Optional display of line numbers along the left side of the text.
+
+ - NEdit can now read and write MS DOS format files.
+
+ - New built-in syntax highlighting patterns for Lex, PostScript, SQL,
+   Many syntax highlighting pattern improvements.
+
+ - Improved international character set input
+
+ - New macro subroutines: list_dialog, getenv, set_language_mode.
+
+ - Optional warnings about external modifications to files
+
+ - Clearcase awareness
+
+ - Session manager restart capability
+
+ - Default language mode "*" for user-defined menu items, allows
+   per-language variations on a common base
+
+ - Allow additional modifiers like Sun diamond key in user defined
+   accelerators
+
+ - Option to sort open previous menu.
+
+ - -geometry and -iconic command line arguments act per-window, and
+   can be specified via nc
+
+ - -geometry now specified in characters, rather than pixels
+
+ - -lm (language mode) command line option
+
+ - Save As dialog defaults to same file name
+
+ - Better default fonts for Linux systems
+
+ - .nedit file version mechanism to make future upgrades easier
+
+
+Bug Fixes in 5.1
+
+ - Crash on large amounts of data fed to shell command which does not
+   take input
+
+ - Delayed secondary windows when executable statements specified in
+   users .neditmacro file
+
+ - Many corrections to online help
+
+ - Many highlight patterns corrections
+
+ - Using window close box in file open/save dialogs leaves nedit server
+   unresponsive
+
+ - escape in macro dialogs can cause macro hang
+
+ - Lesstif-specific fixes: attachment warnings in font selector,
+   Work around replace dialog focus bug.
+
+ - NEdit no longer maintains original protection settings on files.  It
+   allows them to be changed externally.
+
+
+Details of Regular Expression Changes in 5.1
+
+  Bug Fixes
+
+    o Fixed bug that caused character classes with a character range not to
+      work properly if one of the range characters was an escaped character.
+
+  Improvements In Existing Features
+
+    o Increased maximum number of capturing parentheses from 40 to 50.
+
+    o Removed optimization that uses `must match' strings (it didn't work and
+      caused more problems than it solved.)
+
+    o Improved error messages.
+
+    o Improved Start-Of-Line and End-Of-Line detection by the `^', `$', and the
+      new `\B' (see below) anchors.  The Start-Of-Word and End-Of-Word anchors
+      `<' and `>' where not enhanced due to syntax color highlighting pattern
+      compatibility issues.
+
+    o Changed code to use "unsigned char" in most cases instead of "signed
+      char". Also, use of ANSI character functions (e.g. isdigit(), isspace())
+      were added wherever possible.  These changes should improve support for
+      locales other than "C", for example character sets with accented
+      characters.
+
+    o Added character escapes for:
+      -  \e   ASCII escape character (for environments that use the EBCDIC
+              character set, set the EBCDIC_CHARSET compiler symbol to get the
+              EBCDIC equivalent escape character.)
+
+      -  \-   minus sign
+      -  \{   left brace
+      -  \}   right brace
+
+    o Removed the `\"' escape since `"' is not a meta character.
+
+    o In order to support numeric escapes, use of `\0' as a synonym for `&'
+      in replacement strings was removed.  `\0' now signals the start of a
+      numeric (octal) escape sequence (see below.)
+
+    o Minor tweaks for improved performance.
+
+  Enhancements
+
+    o Octal and Hexadecimal Escapes
+
+      Octal and hexadecimal escapes begin with \0 and \x (or \X) respectively.
+      For example, \052 and \X2A both specify the `*' character.  Escapes for
+      null (\00 or \x0) are not valid and will generate an error message.
+
+    o Shortcut Escapes for Common Character Classes
+
+      \d  digits            0-9
+      \l  letters           a-z and A-Z
+      \s  whitespace        \t, \r, \v, \f, and space
+      \w  word characters   a-z, A-Z, 0-9, and underscore, `_'
+
+      `\D', `\L', `\S', and `\W' are the same as the lowercase versions except
+      that the resulting character class is negated.
+
+    o Anchors
+
+      The `\B' non-word boundary anchor has been added as the logical opposite
+      of `<' and `>' collectively.  This anchor ensures that the left and
+      right characters are either both delimiter characters or both
+      non-delimiter characters.
+
+    o Word Delimiter Escape Sequences
+
+      \y   Word delimiter character
+      \Y   Not a word delimiter character
+
+      The `\y' token matches any single character that is one of the characters
+      that NEdit recognizes as a word delimiter character, while the `\Y' token
+      matches any character that is NOT a word delimiter character.  Note:
+      these are not anchors and DO consume one character of input.
+
+
+    o Quantifiers
+
+      +  Minimal (lazy) Matching Quantifiers
+
+	 *?   Match zero or more
+	 +?   Match one at least one
+	 ??   Match zero or one
+
+	 These quantifiers match only what is absolutely necessary to achieve
+	 a match.
+
+      +  Counting (or Brace) Quantifier
+
+	 {min,max}  Match from `min' to `max' times the previous regular
+                    expression atom.
+
+	 If `min' is omitted, it is assumed to be zero.  If `max' is omitted,
+	 it is assumed to be infinity.  Whether specified or assumed, `min'
+	 must be less than or equal to `max'.  If both are omitted, then the
+	 construct is the same as `*'.   Note that `{,}' and `{}' are both
+	 valid brace constructs.  A single number appearing without a comma,
+	 e.g. `{3}' is short for the `{min,min}' construct, or to match
+	 exactly `min' number of times.
+
+    o Non-Capturing Parentheses
+
+      Non-Capturing Parentheses are of the form `(?:<regex>)' and facilitate
+      grouping only and do not incur the overhead of normal capturing
+      parentheses.
+
+    o Positive Look-Ahead
+
+      Positive look-ahead constructs are of the form `(?=<regex>)' and
+      implement a zero width assertion of the enclosed regular expression. In
+      other words, a match of the regular expression contained in the positive
+      look-ahead construct is attempted.  If it succeeds, control is passed to
+      the next regular expression atom, but the text that was consumed by the
+      positive look-ahead is first unmatched (backtracked) to the place in the
+      text where the positive look-ahead was first encountered.
+
+    o Negative Look-Ahead
+
+      Negative look-ahead takes the form `(?!<regex>)' and is exactly the same
+      as positive look-ahead except that the enclosed regular expression must
+      NOT match.
+
+    o Case Sensitivity
+
+      (?i<regex>)   Case insensitive; `AbcD' and `aBCd' are equivalent.
+      (?I<regex>)   Case sensitive;   `AbcD' and `aBCd' are different.
+
+      Regular expressions are case sensitive by default, i.e `(?I<regex>)' is
+      assumed.  All regular expression meta characters respond appropriately to
+      case insensitivity including character classes and back-references.
+
+    o Matching Newlines
+
+      (?n<regex>)   `.', `[^...]', `\s', `\S' will match newlines
+      (?N<regex>)   `.', `[^...]', `\s', `\S' do not match newlines
+
+      `(?N<regex>)' is the default behavior.
+
+    o Comments
+
+      Comments are of the form `(?#<comment text>)' and can be inserted
+      anywhere and have no effect on the execution of the regular expression.
+
+    o Notes on New Parenthetical Constructs
+
+      Except for plain parentheses, none of the parenthetical constructs
+      capture text.  If that is desired, the construct must be wrapped with
+      capturing parentheses, e.g. `((?i<regex))'.
+
+      All parenthetical constructs can be nested as deeply as desired, except
+      for capturing parentheses which have a limit of 50 sets of parentheses,
+      regardless of nesting level.
+
+
+New Features in 5.0.2:
+
+ - Word-selection (double click) can be used to select ranges of delimiters
+
+ - New built-in macro variables: $line, $column, and $modified
+
+ - Smart-indent mode available for Python language
+
+ - Minor improvements in default pattern sets for NEdit Macros, X Resources,
+   and Sh/Ksh/Bash
+
+
+Bug Fixes in 5.0.2:
+
+ - -import did not work as advertised in 5.0.1.  When used, it re-set a
+   number of preferences back to default values.  Could also potentially
+   cause a crash.
+
+ - Macro -> Repeat crashes on some systems.
+
+ - Mouse state can get "stuck" on Alpha-based systems.
+
+ - Combination of auto-wrap, auto-indent, and unbreakable lines extending the
+   width of the window, caused nedit to unnecessarily insert blank lines.
+
+ - Incorrect case-insensitive comparison in character sets > 128 bits.
+
+ - in by-word drag-selection (double click then drag) when begun in the middle
+   of a whitespace selection, anchor would revert to original cursor position
+   rather than maintaining the entire whitespace block.
+
+ - Language mode names containing spaces could not be used in language
+   sensitive user-defined menu items.
+
+ - New windows did not always see existing learn/replay sequence, recorded
+   before the window was created.
+
+ - Possible crash in search_string and search_window macros, when used with
+   long search strings.
+
+ - Possible crash in get_selection("any") macro.
+
+ - Under Solaris, crashes on window opening, file dialog, and language mode
+   selection, when user-defined sub-menus were used.
+
+ - Filenames containing spaces could cause the .neditdb file to become
+   unreadable.
+
+ - Escape key could not be used to cancel file-selection dialogs when the
+   file list had keyboard focus (which it almost always does).
+
+
+New Features in 5.0.1:
+
+ - Repeat-over-range, and repeat-to-end capability for repeating last
+   command and learn/replay sequence.
+
+ - Import capability for loading macro/shell menu commands, highlight
+   patterns, and style sets created by other users.
+
+ - New macro language routines: string_to_clipboard, clipboard_to_string,
+   toupper, tolower, variables: $em_tab_dist.
+
+ - Additional default highlight patterns for sh and X resources.
+
+ - Sorted Open Previous menu.
+
+ - Numerous improvements to default highlighting patterns and smart indent
+   macros.
+
+
+Bug Fixes in 5.0.1:
+
+ - Various crashes on Motif 2.0 (Linux and FreeBSD) systems, usually
+   associated with opening files and changing language modes.  Usually,
+   but not necessarily, following changes to user-defined menu items.
+
+ - Background menu activation during drag operation could leave drag
+   unfinished, cause undo to malfunction, and eventually lead to a crash (which
+   was easy to trigger accidentally when the middle button is emulated with
+   mouse-chords on a two button mouse).
+
+ - X11R6 clients talking to X11R5 servers could crash on font dialog.
+
+ - Rapid repetition of long macros (such as binding to key and using keyboard
+   repeat) could cause crash.
+
+ - Several commands which put up dialogs were vulnerable to timing windows
+   where repeating the command could cause a crash.
+
+ - Calling macro close() routine could cause crash if used to close the window
+   in which the macro was executing.
+
+ - Using load_macro_file() as an "include" statement in macro files could
+   cause hang.
+
+ - Artifacts when using non-matching highlight fonts, and making certain types
+   of changes which change the fonts used to display other (not the line being
+   modified) lines in the file.
+
+ - Auto-newline wrap in overtype mode could duplicate part of wrapped text.
+
+ - Lower panes in split window mode allowed modification to read-only windows.
+
+ - Several minor dialog and window focus related problems for explicit (click
+   to focus) users.
+
+ - Paste Column ignored existing selection.
+
+ - After copying and re-naming language mode information, highlight patterns
+   and smart indent macros remained attached to the re-named pattern instead of
+   the original.
+
+ - Trailing newlines should not have been prohibited in Open Selected.
+
+ - Help for creating smart indent macros was missing.
+
+
+New Features in 5.0
+
+ - Completed macro extension language (Simple C/awk-like syntax, safe,
+   fully interruptable)
+
+ - Syntax highlighting.  Built-in patterns for C, C++, Java, Fortran, Pascal,
+   Ada, Perl, Python, Tcl, Awk, Csh, HTML, LaTeX, VHDL, Verilog, and more.
+
+ - Programmable Smart indent.  (Experimentally, at least.  There are only
+   macros for C and C++, and they may not fit everyone's programming style.)
+
+ - Language-sensitive preferences
+
+ - Continuous wrap mode (long line wrapping), in addition to existing
+   automatic-newline wrapping
+
+ - User-defined menus can be hierarchical and language-sensitive.
+
+ - Configurable right-button pop up menu
+
+ - Pan-scrolling
+
+ - Searchable on-line help
+
+ - Word boundary matching (<>) in regular expressions
+
+ - Repeat command
+
+ - More dialogs have up-arrow recall
+
+ - White-space selection via double-click
+
+
+Bug Fixes and Enhancements to Existing Features in 5.0
+
+ - No more limits on editing files containing ascii nul characters
+
+ - Fill Paragraph command handles leading indents
+
+ - Select to mark
+
+ - Better directory defaulting in Open Selected and shell commands
+
+ - Open Selected processes tilde (~) and wildcards
+
+ - Goto Mark centers scroll position better
+
+ - Multiple shell commands can be run simultaneously
+
+ - Shell command execution doesn't block server command processing
+
+ - Emulated-tab deletion treats auto-indent as emulated tabs
+
+ - Auto-wrapping of pasted text is optional (off by default)
+
+ - Notice that default preferences have changed and ask about saving
+   on exit
+
+ - Selections remain selected after shell command and filter execution
+
+ - Wrap margin and emulated tab distance preferences are properly
+   transferred to new panes in split window mode

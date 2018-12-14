@@ -1,0 +1,23 @@
+# $Id: Makefile.solarisx86,v 1.1 2004/07/15 02:03:16 yooden Exp $
+#
+# Solaris x86 makefile
+#
+CC=gcc
+AR=ar
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -I/usr/openwin/include -I/usr/dt/include -DUSE_DIRENT
+ARFLAGS=-urs
+LIBS= -L/usr/lib -L/usr/openwin/lib -L/usr/dt/lib -lm -lXm -lXt -lX11 \
+        -lsocket -lnsl  -R /usr/openwin/lib -R /usr/dt/lib
+
+include Makefile.common
+
+verify_config:

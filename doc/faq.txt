@@ -1,0 +1,1162 @@
+
+
+
+NEDIT FREQUENTLY ASKED QUESTIONS
+--------------------------------
+
+
+Version 2001/10/01
+
+NEdit is a popular GUI-style text editor for Unix and VMS systems. These
+are answers to the most frequently asked questions to discuss@nedit.org.
+This information is also available from:
+
+    ftp://ftp.nedit.org/pub/<current>/FAQ,
+
+and from the NEdit web page at:
+
+    http://nedit.org.
+
+FAQ Maintainers: Florian Xhumari (Florian.Xhumari@free.fr)
+
+
+
+ABOUT THE NEDIT FAQ
+-------------------
+
+
+This FAQ is written in XML and translated to HTML using an XSL stylesheet.
+The XML source is processed using James Clark's (http://www.jclark.com/)
+XSLT processor XT (http://www.jclark.com/xml/xt.html) and XML parser XP
+(http://www.jclark.com/xml/xp).
+
+The XSL stylesheet used to generate the HTML version is here (faq.xsl).
+
+The text version is generated in three steps: first, an XSL stylesheet
+(faq-txt.xsl) is used to generate a simple HTML. Then, a second XSL
+stylesheet (faq-txt-pass2.xsl) transforms the HTML into plain text. An awk
+script (faq-txt.awk) then performs the word wrapping.
+
+For any questions about or contributions to the FAQ, please send a mail to
+the maintainers (mailto:Florian.Xhumari@free.fr).
+
+
+
+WHERE TO GET INFORMATION
+------------------------
+
+
+> Where can I get information about NEdit?
+
+The NEdit web page is at:
+
+    http://nedit.org
+
+and it is mirrored in Australia at:
+
+    http://www.au.nedit.org/
+
+The primary ftp site for NEdit is:
+
+    ftp://ftp.nedit.org/pub
+
+which has a mirror in The Netherlands:
+
+    ftp://ftp.nl.nedit.org/pub/mirror/NEdit
+
+The NEdit ftp site has executables for most Unix and VMS systems, sources,
+documentation, and contributed software.
+
+The first and easiest place to look for help with NEdit is the NEdit Help
+menu. The bottom item in the menu (Problems/Bugs) has answers to the most
+commonly asked questions about NEdit, which are not duplicated here. Also
+check the platform specific information in the README file packaged in the
+NEdit distribution kits.
+
+If you have a problem that you really can't figure out, send mail to
+discuss@nedit.org, and see if anyone else might be having the same trouble.
+The nedit developers also subscribe to this list, and hopefully someone
+will be able to answer your question. If you are a Silicon Graphics user
+and NEdit came bundled on your system, you can also contact SGI's technical
+support.
+
+> Are there any mailing lists for NEdit users?
+
+There are two separate mailing lists for nedit users, and one for
+developers. Users may post to the developer mailing list to report bugs and
+communicate with the nedit developers.
+
+The lists are:
+
+    * discuss@nedit.org: general discussion, questions and answers among
+    nedit users and developers.
+
+    * develop@nedit.org: communication among and with nedit developers.
+    Developers should also subscribe to the discuss list.
+
+    * announce@nedit.org: a low-volume mailing list for announcing new
+    versions.
+
+Please note that only subscribers can send mail to the list.
+
+The nedit developers subscribe to both discuss@nedit.org and
+develop@nedit.org, either of which may be used for reporting bugs. If
+you're not sure, or you think the report might be of interest to the
+general nedit user community, send the report to discuss@nedit.org. If it's
+something obvious and boring, like we misspelled "anemometer" in the
+on-line help, send it to develop@nedit.org.
+
+Please do not cross post to both lists!
+
+In order to subscribe to a list, send mail to majordomo@nedit.org with one
+or more of the following in the body of the message:
+
+    subscribe announce
+    subscribe discuss
+    subscribe develop
+
+To unsubscribe do the same with the keyword unsubscribe.
+
+    unsubscribe announce
+    unsubscribe discuss
+    unsubscribe develop
+
+After subscribing, you will receive copies of all of the email submitted to
+the lists. You may submit mail to the discussion list by sending it to the
+appropriate list: discuss@nedit.org, develop@nedit.org or
+announce@nedit.org.
+
+The archives of the old mailing lists (nedit_discuss@fnal_gov and
+nedit_announce@fnal.gov) can be found on egroups.com:
+
+        * http://www.egroups.com/group/nedit_discuss/
+
+        * http://www.egroups.com/group/nedit_announce/
+
+For more information about the mailing lists, refer to the mailing lists
+section (http://nedit.org/community/mailing.shtml) in the NEdit site.
+
+> Where can I get binaries / executables for machines other than those
+> available at NEdit site?
+
+In past versions, we separated "supported" and "unsupported" executables
+and divided them between the binary and contrib directories. With more
+supported systems, you're less likely to find executables in the contrib
+directory, but it's worth a peek, anyhow. If you can't find anything
+appropriate, you can try asking in a usenet news group appropriate to your
+system. Other places to try are, the discuss@nedit.org mailing list, or
+news:comp.windows.x.apps or news:comp.editors.
+
+> What can I contribute?
+
+If you use and enjoy NEdit, and feel like giving something back to the
+NEdit user community, contact develop@nedit.org. If you have ported NEdit
+to a new machine, written a useful set of macros, or would like to
+contribute to an ongoing development project, we'd love to hear from you.
+
+
+
+DIAGNOSING AND REPORTING PROBLEMS
+---------------------------------
+
+
+> How do I report problems I've encountered using NEdit ?
+
+If you have a problem which is not covered in the on-line help, in this
+FAQ, or in the README file specific to your system, you can report it to
+discuss@nedit.org (usage questions) or, develop@nedit.org (error reports).
+Note that these lists only allow members to post, and if you are not a
+member, your post will probably de delayed in reaching the list.
+Alternatively you can use the bug tracker on Sourceforge
+(http://sourceforge.net/projects/nedit/) to report bugs and make feature
+requests. Below are some suggestions for information you can provide to
+help in diagnosing your problem.
+
+Because NEdit runs on a large number of different platforms and
+environments, many problems are platform-specific. It's always helpful to
+know what kind of system it's being run on. Sometimes, strange behavior can
+also be traced to the X server software or window manager, so you may want
+to include information on these as well.
+
+The origin of the NEdit executable is often important, particularly,
+whether it came from the NEdit site (http://www.nedit.org), was built
+locally, or came from some other ftp server or freeware distribution CD.
+Despite the fact that Motif appears on almost all Unix platforms, the Motif
+libraries still vary from one machine to another. Be sure to mention
+whether you're using Lesstif or Motif. As of version 5.2 a summary with
+build information is present under 'Version' in the Help menu.
+
+If you are having configuration or appearance problems, you should probably
+look at the output from the command:
+
+   appres NEdit nedit
+
+The 'appres' command will show you the resources that NEdit actually sees
+when it runs, including "stray" resources intended for other programs but
+not properly qualified by the program name. It will also give you a final
+objective check as to whether resource settings that you have made are
+actually readable by NEdit.
+
+
+
+BUILDING
+--------
+
+
+> When I build NEdit on my SunOS system, I get the fillowing undefined
+> symbols:
+> 
+> ld: Undefined symbol
+>    _memmove
+>    _atexit
+>    _strerror
+> *** Error code 1
+> make: Fatal error: Command failed for target `nedit'
+
+Older versions of the gcc C runtime library were missing these functions.
+You can either upgrade gcc, or get sources for these functions from
+ftp://ftp.nedit.org/pub/contrib/misc (which someone else with your very
+same problem kindly contributed).
+
+> I'd like to build NEdit, but my system seems to be missing the Xm...
+> include files and libXm.a
+
+Xm means Motif, which is an important part of NEdit's GUI interface. Motif
+is standard on commercial Unix workstations, but not on free Unix platforms
+like Linux and FreeBSD. On these systems, you can now use LessTif, the GPL
+clone of Motif, or purchase a copy of Motif, which is usually relatively
+inexpensive, but not free. You can find a list of companies selling Motif
+for Linux at:
+
+    http://www.cen.com/mw3/#providers
+
+As of this writing LessTif is very close to being a fully reliable and
+complete replacement for Motif, so it's definitely worth trying before
+shelling out any money for a commercial copy. Also remember that in most
+cases, you don't really need Motif libraries to use NEdit. There are plenty
+of versions available pre-built with the Motif libraries linked in
+statically. If you can't find one for your system, ask around, and you may
+find that someone else has already built one for you. Motif licensing
+allows free distribution of statically linked binaries. Executables for
+NEdit are available from
+ftp://ftp.nedit.org/pub/<current-version>/executables.
+
+> When I build NEdit, I get the yacc error:
+> 
+>   conflicts: 36 shift/reduce
+
+That's normal. NEdit's macro language has a very conflicted grammar, but
+the conflicts all resolve themselves correctly. The conflicts stem from
+allowing awk-style no-operator concatenation of strings.
+
+> I built NEdit on my Linux system, and it's full of bugs. What a horrible
+> editor!
+
+Several of the Linux distributions began including LessTif (a free version
+of the Motif GUI library) before it was really ready for general use
+(particularly for something which needs to be as reliable as a text
+editor). If you have a version of Lesstif prior to 0.92.26, you have to
+upgrade it, before it will support NEdit reliably. To get the newest
+version, go to http://lesstif.org. Alternatively, you can get pre-built,
+statically linked, executables from
+ftp://ftp.nedit.org/pub/<current-version>/executables.
+
+> While compiling NEdit on Linux, I get the following warning:
+> 
+>     file.o: In function `PrintString':
+>     file.o(.text+0x17b7): the use of `tmpnam' is dangerous, better use `mkstemp'
+> 
+> Is NEdit insecure?
+
+Not if you are using the glibc. The algorithm of mkstemp(3) consists of two
+parts: the first part is the one used in tmpnam(3) -- this is what NEdit
+accomplishes by calling tmpnam(3); the second part is done directly in
+NEdit.
+
+> NEdit fails to build on Linux, with messages
+> 
+>    undefined reference to `XpGetDocumentData'
+>    undefined reference to `XpGetPageDimensions'
+>    ...
+
+Edit makefiles/Makefile.Linux, and add '-lXp' to the line starting with
+'LIB', right before '-lXext'. At this time we are not sure whether libXp
+(the X print library) is installed on all Linux systems.
+
+
+
+CUSTOMIZATION
+-------------
+
+
+> I can't get the delete key to remap to a forward delete. I have re-bound it
+> in my .Xdefaults file, and that doesn't help.
+
+In your .Xdefaults file, add:
+
+    nedit.remapDeleteKey: False
+
+This is now the default, so you likely have an old resource file sitting
+around somewhere with this setting. When remapDeleteKey is True), NEdit
+forcibly maps the delete to backspace. This can be used when the X server
+and the client machine have different expectations about whether the key in
+the backspace position on the keyboard is a backspace key or a delete key.
+It also saves users in very heterogeneous environments from having to
+re-map keys on nearly every system they use just to be able to backspace.
+
+> My X resource settings don't work.
+
+It's harder to explain how to specify X resources than you might expect,
+since how they are set is often configured by your local system manager.
+They are either automatically attached to the server (your screen) by an X
+startup or login script, or they are left unspecified, and read from the
+.Xdefaults file whenever you run an X application. If they are attached to
+the server, you should find out the "normal" method for setting them on
+your system. If it's not the .Xdefaults file, then it is usually a file
+called .Xresources (also in your home directory). To make a change, you
+have to either run xrdb, or re-invoke the startup script that originally
+attached them, usually by exiting and re-starting X, or logging out and
+back in to your X session.
+
+Since setting resources is tricky, it's usually better to start with
+something simple, like:
+
+    nedit*foreground:green
+
+Then, once you have that working, try the more subtle or difficult ones.
+You can also use the appres command to find out what resources nedit
+actually sees ('appres NEdit nedit').
+
+> I am setting some X defaults in my $HOME/.nedit file but some of them don't
+> work.
+
+The .nedit file holds the NEdit Preferences menu options and is
+automatically overwritten whenever you select "Save Defaults". You really
+shouldn't put X resource settings there. Also, as you may have discovered,
+resources other than Preferences resources don't always work from there.
+
+How you set X resources depends on local system conventions. You usually
+put them in the .Xdefaults or .Xresources file in your home directory. You
+may also need to run xrdb to install them in the server. It depends on how
+your local system has been configured, so it's best to talk to the person
+who configured your system. If you're not sure whether your resources are
+set up correctly, the command:
+
+    appres NEdit nedit
+
+will tell you what settings NEdit will see when it runs.
+
+> If I install an "app-defaults" file for NEdit (empty too), all default
+> shortcuts are reset (only "Alt+B" and "Alt+Z" works). Without that file all
+> works fine. Now, how can I customize nedit with this problem ? Or, how can
+> I get a copy of all default shortcuts to add on my NEdit "app-defaults"
+> file ?
+
+NEdit uses the X fallback resources mechanism to provide default values for
+user-settable resources. When you provide a system-wide app- defaults file,
+it overrides the entire contents of the fallback resources, meaning all of
+the program defaults are lost, except for those which are also represented
+in the app-defaults file. To use an app-defaults file, therefore, you need
+to start from a complete one which provides all of the necessary default
+values. There is a complete app-defaults file in:
+
+    ftp://ftp.nedit.org/pub/contrib/misc/nedit.app-defaults
+
+We strongly discourage users from using system-wide app-defaults because
+once you install the file, you have to keep it up to date with every new
+release of the software. If you don't update it, users might not even
+notice the difference, but things will be increasingly wrong with each new
+release.
+
+> Where can I get the complete list of nedit resources?
+
+The way X is designed, there are a LOT of user settable resources in NEdit,
+most of them quite useless. You can see them all using the editres tool,
+which is available on most Unix systems. A more useful subset are the
+application default resources, which you can look at either in the source
+code (near the beginning of nedit.c, in the variable called
+fallbackResources) or in the app-defaults file in:
+
+    ftp://ftp.nedit.org/pub/contrib/misc/nedit.app-defaults
+
+> Can I use 'ispell' with NEdit instead of the less capable Unix 'spell'
+> command?
+
+'ispell' is actually the default spell checker for NEdit on Linux systems
+where 'spell' is not available. On other systems, enter the following in
+the Shell Commands dialog:
+
+  Command Input: Either
+  Command Output: Same Window
+  Output Replaces Input: ON
+  Shell Command: cat>spellTmp; xterm -e ispell -x spellTmp; cat spellTmp; rm spellTmp
+
+If you want to get fancy, the following puts the temporary file in the /tmp
+directory, and uses $$ (the process ID of the shell) in the file name so
+you don't have to worry about clashes between simultaneous ispell sessions:
+
+  cat > /tmp/ispell.$$; xterm -title "Spell Check" -e
+  ispell -S /tmp/ispell.$$; cat /tmp/ispell.$$; rm /tmp/ispell.$$
+
+> How can the display of hidden (eg .login) files in dialog boxes be
+> suppressed? We use nedit with for teaching programming with very naive and
+> inexperienced students. The display of these in dialogs such as the "Save
+> as..." one encourages them to screw up important login stuff, state files
+> etc.
+
+It depends on the system you are running how easy this is to do. Under
+Motif 2.0, which I think is still only found on Linux and Free-BSD systems,
+it's a simple resource setting:
+
+    nedit*XmFileSelectionBox.fileFilterStyle: FILTER_HIDDEN_FILES
+
+On other systems, unfortunately, it's a rather difficult source code
+change, involving creating a replacement file searching procedure to be
+spliced in to the file selection box widget.
+
+> Most Motif applications allow you to type in the file name in a separate
+> text field (as in the 'open file' dialog). Why doesn't NEdit? Can I make it
+> do that?
+
+Set the X resource nedit.stdOpenDialog to True. The field is disabled by
+default to get new users accustomed to typing the file name directly in to
+the list widget, which is not standard Motif behavior.
+
+> I would like to change NEdit's cursor from a bar to a block. I seem to lose
+> it sometimes in my text.
+
+The block cursor in NEdit is used to indicate overstrike mode, but you can
+turn on a resource to make the cursor thicker:
+
+    nedit*text.heavyCursor: true
+
+The only way to get a permanent block cursor, though is to hack the source
+code. This shouldn't be too difficult, since the code for drawing a block
+cursor is already there.
+
+> I'd like to see more than 8 files in the file selection dialogs (Open, Save
+> As, Include, etc.). I've tried to set the X-resources like
+> nedit*XmList.visibleItemCount: 20, but this did not work.
+
+The only effective way I've found to control the number of items in the
+highly temperamental Motif FileSelectionBox widget is through the height
+resource:
+
+    nedit*FileSelect.height: 900
+
+The X resource line above will make the file selection box 900 pixels tall.
+
+> I am trying to do key bindings such that, for example, Find is Alt+F rather
+> than Ctrl+F. However, this clashes with the find menu mnemonic. I realize
+> that the menu mnemonics can be changed to any letter, but they are always
+> bound to Alt-letter. I would like to just remove all menu mneumonics. Is
+> there any way to do this in an .Xdefaults file?
+
+You can turn mnemonics off by setting them to the ascii null character, for
+example:
+
+    nedit*fileMenu.mnemonic: \0
+
+> I have a PC-style 2-button mouse. Can I switch the 2nd and 3rd mouse
+> buttons so the more important functions like secondary selection are on the
+> right button instead of the middle (which is emulated by pressing 1+3
+> buttons simultaneously under Linux), like they were in version 4?
+
+It's somewhat involved and hard to figure out from the documentation, but
+yes you can. You have to reverse the translation table bindings for mouse
+buttons 2 and 3, AND reset the bgMenuButton resource. The translation table
+bindings can either be found in the source file source/text.c, or by adding
+and activating a temporary translation to the text widget for dumping the
+translation table itself (XtDisplayTranslations()).
+
+What it boils down to, though, is just add the following lines to your X
+resource file (.Xdefaults or .Xresources depending on your system):
+
+  NEdit*text.Translations: #override \n\
+     <Btn3Down>: secondary_or_drag_start()\n\
+     Shift Ctrl Button3<MotionNotify>: \
+         secondary_or_drag_adjust("rect", "copy", "overlay")\n\
+     Shift Button3<MotionNotify>: secondary_or_drag_adjust("copy")\n\
+     Ctrl Button3<MotionNotify>: secondary_or_drag_adjust("rect", "overlay")\n\
+     Button3<MotionNotify>: secondary_or_drag_adjust()\n\
+     Shift Ctrl<Btn3Up>: move_to_or_end_drag("copy", "overlay")\n\
+     Shift <Btn3Up>: move_to_or_end_drag("copy")\n\
+     Alt<Btn3Up>: exchange()\n\
+     Meta<Btn3Up>: exchange()\n\
+     Ctrl<Btn3Up>: copy_to_or_end_drag("overlay")\n\
+     <Btn3Up>: copy_to_or_end_drag()\n\
+     Ctrl~Meta~Alt<Btn2Down>: mouse_pan()\n\
+     Ctrl~Meta~Alt Button2<MotionNotify>: mouse_pan()\n\
+     <Btn2Up>: end_drag()
+  nedit.bgMenuButton: ~Shift~Ctrl~Meta~Alt<Btn2Down>
+
+> I'd like to send mail directly from my nedit window, but there's no good
+> way to make a shell command prompt me for input (for entering the recipient
+> and subject).
+
+Use a macro command instead to do the prompting:
+
+  to = string_dialog("Send mail to: (enter name below, along with any\n" \
+      "additional Unix Mail command parameters, -s for subject)", \
+      "Send", "Cancel")
+  if ($string_dialog_button == 2 || $string_dialog_button == 0)
+      return
+  if ($selection_start == -1)
+      body = get_range(0, $text_length)
+  else
+      body = get_selection()
+  cmdOutput = shell_command("Mail " to, body)
+  if ($shell_cmd_status != 0)
+      dialog("mail command returned failed exit status\n" cmdOutput)
+  else if (cmdOutput != "")
+      dialog(cmdOutput)
+
+> How I can set the foreground color for selected text to be always say grey1
+> even when syntax highlighting is applied?
+
+There's no equivalent to the nedit*text.selectForeground resource when you
+turn on syntax highlighting. You just have to choose a selection color that
+is compatible with all of your highlighting colors.
+
+
+
+FEATURES
+--------
+
+
+> I'm a little confused about what happend to drag and drop. I thought
+> drag-N-drop was supported by the Motif library.
+
+NEdit no longer uses the Motif text widget, so all of the functionality had
+to be duplicated in the new widget. Drag and drop between windows got left
+off due to time pressure of getting out the new release, but it will be
+back some day.
+
+> Why don't you integrate Max Vohlken's / Yunliang Yu's versions into the
+> official release of NEdit
+
+Many of their changes will eventually find their way in to the "official"
+version, but some will not. Max has really done quite a lot of stuff. I
+appreciate it, and I think it's kind of neat to have a "bleeding edge"
+version of NEdit around to try out new features.
+
+I can't just apply Max's patches to our version and release it. Some of
+them break the VMS version, some interfere with existing commands that are
+important to other users, and some are just customizations that I don't
+particularly agree with. Mostly, I want to do a lot of testing to make sure
+the changes are safe on all platforms, and I just don't have time right
+now. (Mark Edel)
+
+Update as of NEdit version 5.2RC1: The forthcoming NEdit version 5.2
+contains several functionalities of Max's patches.
+
+> I really like nedit and it would be nice to use on windows 95 or NT instead
+> of word or notepad. Is this possible?
+
+There is an NT version of NEdit, available at
+http://nedit.org/download/win32.shtml. A mini-FAQ is also available.
+
+> A feature which is found in in some Macintosh and PC programs, which I
+> like, is to provide pre-entered default values in text fields. For example,
+> the find and replace dialogs could show the last search/replace string, or
+> the currently selected text. These programs select the text, so simply
+> typing in the field automatically replaces the default without any extra
+> work from the user.
+
+X has a strict convention that there can be only one selection at a time on
+the whole display. This means that some of the tricks used in PC and
+Macintosh programs don't work in X. On PCs and Macs, programs can fill in
+default values in text fields, and select the text that they have inserted
+such that If the user types over the selection, it will automatically be
+erased. Under X, there is a price to pay for making an automatic selection.
+The selection must be "stolen" from some other window, maybe some other
+program. If the user's intent was to paste a selection that existed before
+the dialog popped up, once the automatic selection is made, they are out of
+luck.
+
+If NEdit automatically transferred the selection to the Find or Replace
+dialog, it would either have to steal the selection, or users would have to
+click or drag the mouse over the text to delete it before they could type
+anything different. Instead, NEdit has a "Find Selection" command, as well
+as various methods of pasting and copying the selection into dialog fields.
+It also allows you to recall of previous search strings in the Find and
+Replace dialogs via the up-arrow and down-arrow keys.
+
+> I would like to use (multiple fonts, special symbols) in my file, but NEdit
+> seems to allow just one single font.
+
+NEdit is a plain text editor, not a word processor. Plain text files have
+no font or formatting information contained in them, they are just a string
+of ascii characters. While you might find a font with limited symbols and
+greek letters, your troubles would just be beginning. You'd still have
+trouble getting the printer to agree and print out the characters as they
+appeared in NEdit. For anything involving font changes or special symbols,
+you need a word processor, such as Microsoft Word, or a text formatting
+program like LaTEX.
+
+> Auto-wrap doesn't work very well. When I type in the middle of a line, I
+> can push the end of the line beyond the right margin, and when I delete, It
+> doesn't keep the right edge of the text lined up.
+
+You probably want continuous wrap mode (Preferences -> Wrap -> Continuous).
+
+Because NEdit is not a word processor, it is stuck with the limits of the
+plain text format. In the default, auto-newline, wrapping mode, nedit does
+wrapping by inserting newline characters. Because there is only one newline
+character, NEdit can't distinguish a newline which can be "unwrapped" from
+one which the user intended to be permanent. While it might be possible for
+NEdit to temporarily make that distinction, for example while the cursor is
+on a particular line that the user is typing, ultimately, NEdit will have
+to forget this information, because there is no way to save it in the file.
+Users who work in auto-newline wrap mode tend to make liberal use of the
+Fill paragraph command.
+
+In continuous wrapping mode, you can intentionally leave out the newlines
+within paragraphs, and lines will be wrapped as needed to fit within the
+page. When you edit in the middle of a paragraph, the text will be
+continuously adjusted. However, continuous wrap mode has it's limitations
+too. All paragraphs must be lined up against the right margin to take
+advantage of continuous wrapping, and Unix systems have limited support for
+files of that format. You may have trouble printing and viewing the files
+outside of NEdit.
+
+> NEdit scrolls too fast when I extend a selection by dragging the mouse
+> outside of the window.
+
+NEdit features proportional auto-scrolling, where the speed is controlled
+by how far your mouse is beyond the edge of the window. If you want it to
+scroll slower, bring the mouse back closer to the text.
+
+> Is there a special symbol (as % for filename in the shell commands) that
+> can be used to represent the text that is selected, which can then be used
+> as an argument to a command? For instance, I want to feed the selection to
+> a script so that it can be used as the expression to a 'grep' command. Is
+> there any other way that I can accomplish this goal?
+
+Below is an example from the NEdit discussion list (from David L.
+Paterline) of a "Find All" command implemented by using the selection as an
+argument to the grep command:
+
+    I set up a command to list all lines in a file which contain the
+    highlighted selection as follows, using the Preferences -> Shell
+    Commands menu:
+
+        Menu Entry:           all <selection>
+        Command Input:        selection
+        Command Output:       new window
+        Save file before:     yes
+        Shell Command:        grep -n -- "`cat -`" %
+
+    The 'cat -' portion of the command echoes the selected text to the
+    'grep -n' command, which lists the lines containing the selection with
+    line numbers. The output of the command appears in a new window; I can
+    then highlight a line number in the new window and use the Search ->
+    Goto Selected menu in the original window to jump to the line in the
+    original file.
+
+> How can I print highlighted text on my printer as it appears in NEdit.
+
+In the current version, that's not possible, but there are external tools
+for highlighting, which are specifically designed for printing, including
+a2ps, enscript, and genscript.
+
+
+
+SERVER MODE AND NC
+------------------
+
+
+> I use a mailer which can invoke an external editor, but if I use nc, the
+> mailer process continues and assumes the editor has finished, when in fact
+> it hasn't.
+
+nc is actually finished communicating with the NEdit server when it
+returns. It's possible to create a shell command that invokes nc and then
+goes to sleep, and a second script to be run from the NEdit Shell menu,
+which looks for the sleeping process with a matching file name and kills
+it. Try the shell scripts in:
+
+    ftp://ftp.nedit.org/pub/contrib/misc/nc_and_wait.tar
+
+> I started nedit (via 'nc') as root, and then later tried to edit a file as
+> myself with 'nc'. I was very suprised to see that a new nedit wasn't
+> started--rather, I was given the old nedit window, with root permissions.
+> Isn't this a security hole?
+
+Actually, NEdit does check who the user is. When you use the su command,
+however, several Unix variants return the original user name in response to
+the standard C library calls for getting a user name, rather than the name
+to which you have su'd. Starting with version 5.1, a different mechanism is
+used for getting this information, so you shouldn't see this problem any
+more.
+
+In your case, my guess is that you used su to become root, then started an
+nedit server as root. On a system which returns the original user name,
+both the new server and the nc client program think the user name is your
+original user name, so the server accepts requests from both you as root
+and you as you.
+
+The security of an nedit session, depends upon the security of your X
+server. Only those with access to your screen can send commands to an nedit
+server, but they can also send keystrokes to any nedit, or a shell window,
+etc... Anyhow, just upgrade to the latest NEdit version.
+
+
+
+EDITING TECHNIQUES
+------------------
+
+
+> I'd like to select a large expanse of text without dragging all the way
+> through it with the mouse.
+
+Using the shift key with the left mouse button, you can select all of the
+text between the cursor (or an existing selection) and the mouse.
+
+    * Position the cursor at one end of the desired selection
+
+    * Use the scroll bar to make the other end visible
+
+    * Shift+Click with the left mouse button to select the text between the
+    cursor and the mouse
+
+Alternatively, using only keyboard navigation:
+
+    * Position the cursor at one end of the desired selection
+
+    * Type Alt-m and a letter to mark the position
+
+    * Use the keyboard to go to the other end of the desired selection
+
+    * Type Shift-Alt-g and the letter you used to mark the first end of the
+    selection
+
+> How can I select the text between two marks?
+
+    * Go to the first mark (Goto Mark).
+
+    * Hold the shift key while selecting Goto Mark or Alt+Shift+G to select
+    the text.
+
+
+
+BUGS
+----
+
+
+> The keyboard shortcuts (accelerator keys) are not working when 'Caps' or
+> 'Num Lock' are switched on. Have I overlooked something obvious?
+
+You haven't overlooked anything, it's a Motif design flaw. Netscape
+painfully works around this and the Alt/Meta key reversal on Sun
+workstations by internally re-implementing the Motif menu accelerator
+mechanism. NEdit will likely follow suit with the release of version 5.2.
+
+Another possibility (writes Peter Daifuku of SGI):
+
+    There's another answer which unfortunately isn't widespread as yet. For
+    an X11R6.3 X server supporting the XKB extension, there is a mechanism
+    to ignore the NumLock and CapsLock key as modifiers. The file
+    /usr/lib/X11/xkb/X0-config.keyboard should contain the string
+    IgnoreLockMods=NumLock+Lock . For systems with multiple displays,
+    display 1 would be controlled by the file X1-config.keyboard, etc.
+
+    On SGI systems, this mechanism is support on IRIX 6.2 with X server
+    patch 1574 or later, on IRIX 6.3 and IRIX 6.4 and all later releases.
+
+> Sometimes NEdit inserts <dc3> instead of saving the file when I type ^S.
+> Other keyboard shortcuts (accelerator keys) don't work either.
+You have probably NumLock or CapsLock ON. See the answer to this (#N900)
+question.
+> I use the numeric keypad really often, so I keep NumLock on. But NEdit
+> shortcuts don't work when NumLock is on.
+
+The bug is not in NEdit, but in Motif. This is fixed as of NEdit 5.2, but
+that might not help you much. Older versions have the same problem.
+
+Here's how you tell X to interpret the keypad keys as numbers without
+turning NumLock on. Create a file .Xmodmap in your home directory, and put
+the following lines in it:
+
+  keycode  79 = KP_7
+  keycode  80 = KP_8
+  keycode  81 = KP_9
+  keycode  83 = KP_4
+  keycode  84 = KP_5
+  keycode  85 = KP_6
+  keycode  87 = KP_1
+  keycode  88 = KP_2
+  keycode  89 = KP_3
+  keycode  90 = KP_0
+  keycode  91 = KP_Decimal
+
+Then make sure the script that starts your X session parses this file with
+the command:
+
+  xmodmap -merge ~/.Xmodmap
+
+This script can be ~/.xinitrc (called by startx) or something like Xsession
+if you use xdm/kdm/gdm. Then again, it might be an entirely different
+script on some systems.
+
+Then turn off numlock, and just continue using the keypad. The only thing
+is, you loose the alternate set of functions (cursor/home/pgdown/etc).
+
+> NEdit crashes I try to paste text in to a text field in a dialog (like Find
+> or Replace) on my SunOS system.
+
+On many SunOS systems, you have to set up an nls directory before various
+inter-client communication features of Motif will function properly. Before
+NEdit 4.0 this wasn't much of a problem, because users couldn't cut and
+paste at all, and Motif would sometimes print a warning about not finding
+an nls directory, so most users figured it out right away. But with 4.0,
+everything seems to be working fine, except when someone tries to move text
+in or out of a dialog field, then blamo.
+
+There are instructions in README.sun in
+ftp://ftp.nedit.org/pub/<current-version<, as well as a tar file containg a
+complete nls directory:
+ftp://ftp.nedit.org/pub/<current-version</individual/README.sun
+
+It contains directions for setting up an nls directory, which is required
+by Motif for handling copy and paste to Motif text fields.
+
+> NEdit crashes frequently, particularly on window closing.
+
+There is an obsolete resource in Motif called defaultFontList, which does
+nothing but cause random crashing. I don't know why NEdit users keep
+popping up with this resource set, maybe it looks enticing when you look at
+widget resources with editres. Anyhow, setting it to anything, whether it
+be a valid font or just garbage, causes random crashing in both Motif 1.2
+and 2.0, so just don't set it.
+
+> NEdit sometimes crashes when I execute a shell command menu item I just
+> added.
+
+Check the "Command Input" setting, in the Preferences->Shell Commands
+dialog for that menu item. If the shell command being executed does not
+take input, but "Command Input" is set to "selection" or "window", NEdit
+tries to write the input anyhow, and fails. Set "Command Input" to "none"
+to prevent this possibility. This is fixed in version 5.1 and later.
+
+> When NEdit starts up, I get errors:
+> 
+>    Cannot allocate colormap entry for "#b3b3b3"
+>    Cannot allocate colormap entry for "#e5e5e5"
+
+Most X displays are set up to operate in a mode which allocates 8 bits of
+video memory per-pixel, and requires a color mapping table to translate
+pixel values to screen colors. With just 8 bits there are only 256 possible
+colors, and programs must either allocate and share these pixel values, or
+swap in their own colormap and make all other windows flash to strange
+colors while their window is focused. Some programs, Netscape in
+particular, are bad neighbors in this environment and snarf up every free
+entry in the shared colormap, such that every program that runs after them
+gets the errors you're asking about.
+
+The solution is either to start Netscape last, after all other applications
+that you might want to run, or better, tell Netscape how many colors it is
+allowed to allocate. Fortunately, you can do this with a resource setting:
+
+    Netscape*maxImageColors: 80
+
+> Sometimes when I use regular expression replacement inside of a rectangular
+> selection, NEdit fails to match text which does legally match the
+> expression.
+
+The problem with REs and rectangular selections is that matching is bounded
+by the rectangular selection, but text outside of the selection is still
+fed to the matching routines, so ^, $, don't refer to the edges of the
+selection, they still refer to the beginning and ending of the line, and
+some legal matches are excluded because they continue outside of the
+selection are thereby excluded, or are shadowed by matches which begin or
+end outside of the selection.
+
+> When ever I execute an nedit shell command (such as spell or wc) I get
+> (extra junk, error messages, complaints from stty) inserted into my text,
+> or an Information dialog with (extra junk, error messages, complaints from
+> stty).
+
+You probably have printing commands in your shell startup file (.cshrc, or
+equivalent). These should either be skipped in non-interactive mode, or
+moved to your .login file. You can often see the problem outside of nedit
+by typing:
+
+    csh -c ls
+
+Error messages from stty are a result of it being executed from a process
+which isn't attached to a terminal. You can safely move stty statements and
+most other interactive commands to your .login file (calling stty from a
+.cshrc file is redundant because the terminal device doesn't change for
+each sub-shell). If you can't remove interactive commands, you should skip
+around them in non-interactive shells, I think the usual method is to put
+them at the end, preceded by something like:
+
+    if ($?prompt == 0) exit
+
+The manual entry on csh has more information on this.
+
+> On a Solaris system, when trying to open a file within nedit, you get the
+> listing of available file names. However, the sub-window (on the right)
+> containing the file names (not directory names) sometimes is too narrow so
+> that you can't see the filename part (i.e.
+> /usr/people/rainer/sometextfile.txt shows up as /usr/people/rain or so).
+> When resizing the dialog box, the filenames sub-window on the right doesn't
+> become larger. I know I can use nedit.stdOpenDialog to type a filename, but
+> that's annoying.
+
+It's a bug in the shared Motif library. Depending on your system, the patch
+is one of ID# 103461-07, # 102226-19, or # 103186-21. If you can't patch
+your system, you can set the resource:
+
+    nedit*XmFileSelectionBox.pathMode:  XmPATH_MODE_RELATIVE
+
+This will stop the dialog from displaying the path component of file names.
+Another possible workaround is to use the nedit_sunos executable (from
+ftp://ftp.nedit.org/pub/), which is statically linked with a good Motif.
+
+> When I try to open a file from the "Open" dialog nothing appears in the
+> "Filter" textfield. Instead, I get repeated message like:
+> 
+>     Name: Text
+>     Class: XmTextField
+>     Character '/' not supported in font.  Discarded.
+
+In some versions of S.u.S.E. Linux, there's apparently something wrong with
+their builds of NEdit and other Motif apps. I've been told you can make
+nedit work by seting the environment variable LD_PRELOAD to
+/lib/libBrokenLocale.so.1 before launching it. You can also use the
+statically linked version of NEdit for Linux from ftp://ftp.nedit.org/pub/
+
+> NEdit seems to be running very slowly on my Solaris 2.6 system.
+
+If you're running NEdit on a Solaris 2.6 system and experiencing
+performance problems (windows come up slowly), the patch for Sun's shared
+Motif library is ID# 105284-04. Installing the patch alone will improve the
+performance dramatically. The patch also enables a resource,
+*XmMenuReduceGrabs. Setting this to True will eliminate the delay
+completely.
+
+> I can't seem to enter accented characters on my system.
+
+This should be working properly on most systems as of NEdit 5.1 or later.
+If it's not, try re-building NEdit with -DNO_XMIM. If it still doesn't
+work, send mail to develop@nedit.org
+
+> When I try to use nc to start an nedit server, for instance using
+> 
+>     nc (filename)
+> 
+> I receive the following error message:
+> 
+>    (filename): forward host lookup failed:
+>                Host name lookup failure: Connection refused
+
+There is another program called 'nc' which is installed on some systems. In
+this case, 'nc' is for 'netcat', some kind of network diagnostic tool. You
+can safely rename NEdit's 'nc' to something else (we recommend ncl), or put
+it first in your path before 'netcat'.
+
+> Whenever I try to open existing files by using menu, nedit crashes, and
+> sometimes I get the following error message:
+> 
+>    X Error of failed request:  BadAlloc (insufficient resources for operation)
+>    Major opcode of failed request:  53 (X_CreatePixmap)
+> 
+> But if I type 'nedit filename' command, it works. So how can I open file by
+> using menu bar?
+
+Several users have reported this problem. Most of them were using S.u.S.E.
+Linux . A few others had different distributions, but always European. The
+problem appears to be related to how Motif searches for named pixmaps and
+bitmaps. My guess is that on some systems, this search encounters a match
+with a bad pixmap file, or tries to load something which is not a pixmap at
+all. One solution was to set the environment variable XBMLANGPATH to a
+random directory. For example:
+
+  XBMLANGPATH=.
+  export XBMLANGPATH
+
+The solution on S.u.S.E Linux systems was to remove an unnecessary line in
+the global /etc/profile (provided by S.u.S.E.):
+
+  export XAPPLRESDIR=
+      "$XAPPLRESDIR:/var/X11R6/app-defaults:/usr/X11R6/lib/X11/app-defaults"
+
+Another user who had the problem reported that the root cause appeared to
+be insufficient read permissions on some xm_* (e.g. xm_warning) pixmaps in
+"/usr/X11R6/include/X11/bitmaps". (Could someone else confirm this?)
+
+> I want to be able to spawn a command from NEdit. By this I mean that I want
+> to NEdit to launch another program without waiting for the program to
+> return. At the moment I'd like to be able to launch 'mctags', but I also
+> have a variety of other things I'd like to do. The shell command: 'mctags
+> &' continues to wait for mctags to finish, despite the "&". Is there any
+> way to do what I want?
+
+It's a bug/feature of NEdit that it considers a shell command process alive
+as long as any of it's file descriptors remain open. Forked processes
+generally copy and keep open the stdout and stderr descriptors from their
+parent process, so you have to add '>& /dev/null' to your shell command, so
+it reads:
+
+    mctags >& /dev/null &
+
+> NEdit flashes or matches the wrong parenthesis, bracket, or brace if there
+> is an intervening paren/bracket/brace quoted in between.
+
+Until version 5.0, NEdit had no way of even knowing what language you were
+operating in when making the flash/match decision, so it simply counted
+opening and closing instances, disregarding language syntax context
+(strings, comments, etc.) completely. Now that the feature is more possible
+to implement, it may be included in a future version, but I'm not entirely
+sure how best to do it yet.
+
+> I'd like to edit a file which is about 50 Megabytes long. Whenever I try to
+> read this file, there was always a message as following:
+> 
+>     Error: Cannot perform realloc
+
+How large a file you can edit with NEdit depends on how much swap space +
+RAM you have, since it loads your file into virtual memory and occasionally
+does a full copy of that memory space. NEdit can handle a 100MB file
+reasonably well if you increase your swap space, but I don't know how far
+beyond that it can go. To work with a 100MB file, you must have at least
+200MB of virtual memory available. Many Unix systems can be set up to
+temporarily increase swap space by creating a temporary swap file.
+
+> We installed NEdit Version 5.0 recently, and the accelerators Ctrl-G (Find
+> again) and Ctrl-L (Goto Line Number) are now missing
+
+You have an out-of-date app-defaults file. We strongly recommend not using
+such files for this exact reason. When you use an app-defaults file, it
+replaces ALL of the program defaults. If you do install an app-defaults
+file, it is your responsibility to keep it up to date with each new release
+of the executable. Otherwise, as you have observed, certain features will
+degrade with each release, as the app-defaults file and the executable get
+further and further out of sync with eachother.
+
+> On our PCs we have Windows 3.1 and we run XVision as X-Server. The problem
+> that we have is, that we cannot mark with the mouse within NEdit.
+> 
+> When you click and hold the left mouse button and then move the mouse, you
+> can see the mark-area flickering during the movement of the mouse. When
+> stopping the movement nothing is highlighted and nothing is marked.
+
+XVision is grabbing the selection immediately, as soon as it is made, not
+allowing applications to own it. This behavior is completely wrong, and I
+have no idea what they might have been thinking when they implemented it.
+It may be possible to turn it off, ask their technical support people if
+they're not already out of business.
+
+> My regular expression replacement got truncated! I wrote a regular
+> expression to nest additional braces around blocks of code (replace
+> {([^{}]|\n)*} with {\0}), which works for small blocks of text, but it
+> fails on large ones, truncating the replacement at around 512 bytes.
+
+A remnant of pre-regular-expression, pre-macro-language NEdit, is that
+replacement strings are limited to 511 bytes. This is high on the list to
+fix in a future upgrade.
+
+> NEdit is slow and pages continuously on my 8MB Linux system
+
+On most Unix workstations, 8MB of RAM is actually insufficient to run X and
+Motif properly. Some Linux users get by with it and Linux itself seems to
+be quite memory efficient, but you really should have 12 or 16 if you're
+going to be using X much. NEdit would not be my first choice in editors on
+an 8MB system.
+
+> Some of the special keys on my keyboard don't do what I expect.
+
+X systems are rife with this kind of problem because are just too many
+levels of re-settable bindings between the keyboard and the application
+program that reads it. Sun systems are the worst offenders, combining poor
+Motif support with a variety of strange keyboard arrangements.
+
+To diagnose these problems, you have to look at all three levels of key
+binding that affect Motif programs.
+
+At the bottom level are the modifier map and keymap table, where hardware
+key codes are bound to X keysyms. You can see the bindings on this level
+with the xmodmap program (see man xmodmap). A useful tool in debugging the
+xmodmap level is a program like xev, which can show you the keysyms it
+receives.
+
+The next level up from that is the motif virtual binding level (see man
+VirtualBindings). You can (usually) view the bindings at this level by
+looking at the value of the root window property: _MOTIF_DEFAULT_BINDINGS,
+using the xprop -root command, however what you see is not necessarily what
+you'll get. The defaults for these bindings are determined by an
+unbelievably complicated process involving not just the application in
+question, but Motif applications which have run before it attached to the
+same server. This process is described in detail in the VirtualBindings
+manual page (which is often not available on systems where the bindings are
+messed up). While it's usually better to attack system configuration
+problems at the source, this one is so contorted that you're better off
+with a patch. Luckily, the default Motif virtual bindings can be overridden
+by an application resource called defaultVirtualBindings. If you think the
+problem is at the Motif virtual binding level, define a
+defaultVirtualBindings resource in your .Xresources or .Xdefaults file,
+using the example below as a template, replacing the keysym names (to the
+right of the colon) with the keysyms shown by xev when you press the
+desired key:
+
+   !
+   ! Motif Virtual Key Bindings
+   !
+   nedit*defaultVirtualBindings: \
+        osfActivate     :               <Key>KP_Enter\n\
+        osfCancel       :               <Key>Escape\n\
+        osfHelp         :               <Key>Help\n\
+        osfMenu         :               <Key>F4\n\
+        osfMenuBar      :               <Key>F10\n\
+        osfLeft         :               <Key>Left\n\
+        osfUp           :               <Key>Up\n\
+        osfRight        :               <Key>Right\n\
+        osfDown         :               <Key>Down\n\
+        osfBeginLine    :               <Key>Home\n\
+        osfEndLine      :               <Key>End\n\
+        osfPageUp       :               <Key>Prior\n\
+        osfPageDown     :               <Key>Next\n\
+        osfBackSpace    :               <Key>BackSpace\n\
+        osfDelete       :               <Key>Delete\n\
+        osfInsert       :               <Key>Insert\n\
+        osfUndo         :               <Key>F14\n\
+        osfAddMode      :Shift          <Key>F8\n\
+        osfCopy         :               <Key>F16\n\
+        osfCut          :               <Key>F20\n\
+        osfPaste        :               <Key>F18\n
+
+If NEdit is having binding problems, chances are that other Motif-based
+programs are also having trouble. Removing the "nedit" from the resource
+name above (just *defaultVirtualBindings), will apply it to the other Motif
+programs that you run as well.
+
+The top level bindings in the key binding hierarchy, are the X toolkit
+translation tables (see the NEdit Help section called X Resources). To show
+the translations in use, you can add a binding which dumps the table
+itself:
+
+    nedit*text.Translations: #override \
+        Alt<Key>t: XtDisplayTranslations()\n
+
+Typing Alt+T will then display the contents of the translation table to
+stdout (the terminal from which you started NEdit). If you have the NEdit
+source, you can also look at the default bindings in the module text.c.
+
+Sometimes, even if you don't understand the problem, you can patch around
+it by supplying translations for the keysyms that NEdit actually sees,
+binding them to the action routines that you want activated when you press
+that key.
+
+> KP Enter does no longer executes the current line or selected text as a
+> shell command. How can I get this behavior back?
+
+It was considered dangerous to have a commonly used key potentially execute
+arbitrary shell commands unintentionally (think rm -Rf). Therefore the
+shortcut was changed to Ctrl+KP Enter. In case you want the old binding
+back, you can add the following lines to your .Xdefaults or .Xresources
+file:
+
+   nedit*shellMenu.executeCommandLine.accelerator: <Key>KP_Enter",
+   nedit*shellMenu.executeCommandLine.acceleratorText: KP Enter",

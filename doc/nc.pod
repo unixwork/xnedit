@@ -1,0 +1,229 @@
+# $Id: nc.pod,v 1.7 2005/03/03 14:49:37 edg Exp $
+=pod
+
+=head1 NAME
+
+nc - Client program for NEdit text editor
+
+=head1 SYNOPSYS
+
+nc [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-do> I<command>] 
+   [B<-ask>] [B<-noask>] [B<-svrname> I<name>] [B<-svrcmd> I<command>] 
+   [B<-lm> I<languagemode>] 
+   [B<-geometry> I<geometry> | B<-g> I<geometry>] [B<-icon> | B<-iconic>] 
+   [B<-display> I<[host]:server[.screen]>] 
+   [B<-timeout> I<seconds>] [B<-wait>] [B<-xrm> I<resourcestring>] 
+   [B<-tabbed>] [B<-untabbed>] [B<-group>] 
+   [B<-V> | B<-version>] [B<-h> | B<-help>] [B<-->] [file...]
+
+=head1 DESCRIPTION
+
+B<nc> is the client interface to the NEdit text editor. A server can be started
+explicitly by running NEdit in server mode:
+
+ nedit -server
+
+If no server is running, B<nc> will start one unless configured otherwise.
+Client/server mode is useful for integrating NEdit with software development
+environments, mailers, and other programs; or just as a quick way to open files
+from the shell command line without starting a new NEdit session.
+
+=head1 OPTIONS
+
+=over
+
+=item  B<-read>
+
+Open the file read-only regardless of the actual file protection.
+
+=item  B<-create>
+
+Don't warn about file creation when a file doesn't exist.
+
+=item  B<-line> I<n>, B<+>I<n>
+
+Go to line number I<n>.
+
+=item  B<-do> I<command>
+
+Execute an NEdit macro or action on the file following the -do argument on the
+command line.
+
+If you use this command without a filename, B<nc> would randomly choose one
+window to focus and execute the macro in.
+
+=item  B<-ask>, B<-noask>
+
+Instructs B<nc> whether to automatically start a server if one is not
+available. This overrides the X resource `nc.autoStart'.
+
+
+=item  B<-svrname> I<name>
+
+Explicitly instructs B<nc> which server to connect to, an instance of
+L<nedit(1)> with a corresponding B<-svrname> argument.  By naming servers, you
+can run several simultaneously, and direct files and commands specifically to
+any one.
+
+=item  B<-svrcmd> I<command>
+
+The command which B<nc> uses to start an NEdit server. It is also settable via
+the X resource `nc.serverCommand', by default, I<"nedit -server">.
+
+=item  B<-lm> I<languagemode>
+
+Initial language mode used for editing succeeding files.
+
+=item  B<-geometry> I<geometry>, B<-g> I<geometry>
+
+The initial size and/or location of editor windows. The argument geometry has
+the form:
+
+  [<width>x<height>][+|-][<xoffset>[+|-]<yoffset>]
+
+where `<width>' and `<height>' are the desired width and
+height of the window, and `<xoffset>' and `<yoffset>' are the
+distance from the edge of the screen to the window, + for top or left, - for
+bottom or right. B<-geometry> can be specified for individual files on the
+command line.
+
+=item  B<-icon>, B<-iconic>
+
+Initial window state for succeeding files.
+
+=item  B<-display> I<[host]:server[.screen]>
+
+The name of the X server to use. host specifies the machine, server specifies
+the display server number, and screen specifies the screen number.  host or
+screen can be omitted and default to the local machine, and screen 0.
+
+=item  B<-timeout> I<seconds>
+
+Basic time-out period (in seconds) used in communication with an NEdit server.
+Default: 10 seconds. Also settable via the X resource `nc.timeOut'.
+
+Under rare conditions (such as a slow connection), it may be necessary to
+increase the time-out period. In most cases, the default is fine. 
+
+=item B<-wait>
+
+Instructs B<nc> not to return to the shell until all files given
+are closed.
+
+Normally, B<nc> returns once the files given in its command line
+are opened by the server. When this option is given, nc returns
+only after the last file given in this call is closed.
+Note that this option affects all files, not only the ones
+following this option in the command line.
+
+
+=item  B<-xrm> I<resourcestring> 
+
+Set the value of an X resource to override a default value.
+
+=item  B<-tabbed>
+
+Open all subsequent files in new tabs. Resets B<-group> option.
+
+=item  B<-untabbed>
+
+Open all subsequent files in new windows. Resets B<-group> option.
+
+=item  B<-group>
+
+Open all subsequent files as tabs in a new window.
+
+
+=item  B<-V>, B<-version> 
+
+Prints version and build information, to be mentioned when reporting bugs and
+problems. 
+
+=item  B<-h>, B<-help> 
+
+Prints the command line help and then exits.
+
+=item B<-->
+
+Treats all subsequent arguments as file names, even if they start with a dash.
+This is so NEdit can access files that begin with the dash character. 
+
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item  DISPLAY
+
+NEdit requires an X-based workstation or X-Terminal. If you have used B<telnet>
+or B<rlogin> to access the host Unix system, set the Unix environment variable
+for your display:
+
+    % setenv DISPLAY devicename:0
+
+=back
+
+=head1 NOTES
+
+Communication between L<nc(1)> and L<nedit(1)> is through the X display. So as
+long as X windows is set up and working properly, B<nc> will work properly
+as well. B<nc> uses the `DISPLAY' environment variable, the machine name and
+your user name to find the appropriate server, meaning, if you have several
+machines sharing a common file system, B<nc> will not be able to find a server
+that is running on a machine with a different host name, even though it may be
+perfectly appropriate for editing a given file.
+
+In typical Unix style, arguments affect the files which follow them on the
+command line, for example:
+
+=over
+
+=item  incorrect:
+
+  nc file.c -line 25
+
+=item  correct:
+
+  nc -line 25 file.c
+
+=back
+
+For more information see NEdit's online help, or I<nedit.doc> in the NEdit
+distribution kit.
+
+=head1 SEE ALSO
+
+nedit(1), X(1), mwm(1), ctags(1), etags(1)
+
+=head1 AUTHORS
+
+NEdit was written by Mark Edel, Joy Kyriakopulos, Christopher Conrad, Jim
+Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max Vohlken,
+Yunliang Yu, Donna Reid, Arne Forlie, Eddy De Greef, Steve LoBasso, Alexander
+Mai, Scott Tringali, Thorsten Haude, Steve Haehn, Andrew Hood, Nathaniel Gray,
+and TK Soh.
+
+=head1 COPYRIGHT
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+In addition, as a special exception to the GNU GPL, the copyright holders give
+permission to link the code of this program with the Motif and Open Motif
+libraries (or with modified versions of these that use the same license), and
+distribute linked combinations including the two. You must obey the GNU General
+Public License in all respects for all of the code used other than linking with
+Motif/Open Motif. If you modify this file, you may extend this exception to your
+version of the file, but you are not obligated to do so. If you do not wish to
+do so, delete this exception statement from your version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License in the Help section
+"Distribution Policy" for more details. 
+
+=cut

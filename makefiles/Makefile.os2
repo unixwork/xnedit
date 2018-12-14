@@ -1,0 +1,93 @@
+# $Id: Makefile.os2,v 1.14 2003/05/20 00:27:56 n8gray Exp $
+#
+# Makefile for NEdit with XFree86 OS/2
+#
+# From the toplevel directory just call 
+#   make -f makefiles/Makefile.os2
+#
+
+.PHONY: init default clean
+
+# toplevel default target 
+default: init build
+
+init: util/Makefile.os2 source/Makefile.os2
+
+util/Makefile.os2 source/Makefile.os2: makefiles/Makefile.os2
+	cp $< $@
+
+build:
+	cd util   && $(MAKE) -f Makefile.os2 all BUILD=1
+	cd source && $(MAKE) -f Makefile.os2 all BUILD=1
+	
+clean-all:
+	cd util   && $(MAKE) -f Makefile.os2 clean-local
+	cd source && $(MAKE) -f Makefile.os2 clean-local
+
+doclean: init
+	cd util   && $(MAKE) -f Makefile.os2 clean-local
+	cd source && $(MAKE) -f Makefile.os2 clean-local
+
+CC=gcc
+AR=ar
+
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+DEFINES = -DUSE_DIRENT -DUSE_LPR_PRINT_CMD -DEDITRES -DNO_READLINK
+CFLAGS = -g -Zmt -O5 -mpentium -Wall -Wno-unused -W \
+        -I$(X11ROOT)/XFree86/include $(DEFINES)
+ARFLAGS=-urs
+# Using LessTif's libXm
+LIBS= -s -Zmtd -Zexe -Zbsd-signals -Zstack 0x4000 \
+      -L$(X11ROOT)/XFree86/lib -lXm -lXext -lXt -lXmu -lSM -lICE -lX11
+
+
+ifeq ($(BUILD),1)
+include Makefile.common
+endif
+
+#
+# An alternative method to build the executables with OMF objects.
+# Those can be debugged using sd386, and can benefit from link386
+# features like executable compression.
+# Usage: cd to source/ and type
+#   make -f Makefile.os2 BUILD=1 nedit.exe
+#
+OBJS2=$(OBJS:.o=.obj) linkdate.obj
+
+CFLAGS2=$(CFLAGS)
+LIBS2= -g -Zmt -Zcrtdll -Zbsd-signals -Zstack 0x4000 \
+       -Zlinker /PM:VIO -Zlinker /E:2 -Zlinker /DEBUG -Zmap -Zlinker /M \
+       -L$(X11ROOT)/XFree86/lib -lXm -lXext -lXt -lXmu -lSM -lICE -lX11
+
+nedit.exe: $(OBJS2) ..\util\libNUtil.lib
+	del nedit
+	$(CC) -o $@ $^ $(LIBS2) -Zomf
+
+nc.exe: nc.obj ..\util\libNUtil.lib
+	del nc
+	$(CC) -o $@ $^ $(LIBS2) -Zomf
+
+libNUtil.lib: ..\util\libNUtil.a
+	emxomf $<
+
+%.obj: %.o
+	emxomf $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.obj: %.c
+	$(CC) -Zomf $(CFLAGS2) -c -o $@ $<
+
+clean-local:
+	rm -f *.o *.a *.lib
+	rm -f *.exe core
+
+verify_config:

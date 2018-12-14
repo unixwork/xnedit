@@ -1,0 +1,18 @@
+# $Id: Makefile.unixware,v 1.6 2003/05/20 00:27:56 n8gray Exp $
+CC=/usr/ccs/bin/cc
+AR=ar
+# For editres, add -DEDITRES to CFLAGS and -lXmu to LIBS
+#
+# To evaluate an alternative layout for the Replace/Find dialog, add
+# -DREPLACE_SCOPE to the CFLAGS. See the README file for more information.
+#
+# To test if the Motif library exports the runtime version
+# add -DHAVE__XMVERSIONSTRING to CFLAGS
+#
+CFLAGS=-O -I/usr/X/include -DUSE_DIRENT -DROWCOLPATCH
+
+LIBS= -L/usr/X/lib -lXm -lXt -lX11 -lSM -lICE -lgen -lnsl -lm
+
+include Makefile.common
+
+verify_config:
