@@ -1,0 +1,14 @@
+*.o
+*.a
+Microline/XmL/Makefile.linux
+Microline/XmL/Makefile.linux-static
+Xlt/Makefile.linux
+Xlt/Makefile.linux-static
+source/Makefile.linux
+source/Makefile.linux-static
+source/nc
+source/nedit
+source/parse.c
+util/Makefile.linux
+util/Makefile.linux-static
+util/check_lin_tif
