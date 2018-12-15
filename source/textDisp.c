@@ -1800,7 +1800,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     }
     
     if(lineLen > 0) {
-        printf("line: [%.*s]\n", lineLen, lineStr);
+        //printf("A line: [%.*s]\n", lineLen, lineStr);
     }
     
     /* Space beyond the end of the line is still counted in units of characters
@@ -1844,7 +1844,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 : BufExpandCharacter(baseChar = lineStr[charIndex], outIndex,
                         expandedChar, buf->tabDist, buf->nullSubsChar);
     	style = styleOfPos(textD, lineStartPos, lineLen, charIndex,
-                outIndex + dispIndexOffset, baseChar);
+                outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
                 ? stdCharWidth
                 : stringWidth(textD, expandedChar, charLen, style);
@@ -2040,12 +2040,20 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
                 GCFont | GCForeground | GCBackground, &gcValues);
     }
 
-    /* Draw blank area rather than text, if that was the request */
-    if (style & FILL_MASK) {
-        /* wipes out to right hand edge of widget */
-	if (toX >= textD->left)
-	    clearRect(textD, bgGC, max(x, textD->left), y,
-		    toX - max(x, textD->left), textD->ascent + textD->descent);
+    /* Always draw blank area, because Xft AA text rendering needs a clean
+     * background */
+    
+    /* wipes out to right hand edge of widget */
+    if (toX >= textD->left) {
+        clearRect(
+                textD,
+                bgGC,
+                max(x, textD->left),
+                y,
+                toX - max(x, textD->left),
+                textD->ascent + textD->descent);
+    }
+    if(style & FILL_MASK) {
         return;
     }
 
@@ -2077,8 +2085,6 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
             DefaultColormap(dp, DefaultScreen(dp)));
     }
     
-    XFillRectangle(XtDisplay(textD->w), XtWindow(textD->w),
-                textD->highlightBGGC, x, y, 15*nChars, font->height);
     XftDrawStringUtf8(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     
     /* Underline if style is secondary selection */
@@ -2250,10 +2256,9 @@ static int stringWidth(const textDisp* textD, const char *string,
     	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].xftFont;
     else 
     	fs = textD->font;
-    //return XTextWidth(fs, (char*) string, (int) length);
     XGlyphInfo extents;
     XftTextExtentsUtf8(XtDisplay(textD->w), fs, string, length, &extents);
-    return extents.width;
+    return extents.xOff;
 }
 
 /*
