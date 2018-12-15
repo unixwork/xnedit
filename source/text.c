@@ -843,7 +843,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
 	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
-	    buf, new->text.fontStruct, new->core.background_pixel,
+	    buf, new->text.fontStruct, new->text.font, new->core.background_pixel,
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
 	    new->text.highlightBGPixel, new->text.cursorFGPixel,
@@ -1140,7 +1140,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if (new->text.fontStruct != current->text.fontStruct) {
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
-    	TextDSetFont(current->text.textD, new->text.fontStruct);
+    	TextDSetFont(current->text.textD, new->text.font);
     }
     
     if (new->text.wrapMargin != current->text.wrapMargin ||
@@ -1217,9 +1217,12 @@ static XtGeometryResult queryGeometry(Widget w, XtWidgetGeometry *proposed,
     
     int curHeight = tw->core.height;
     int curWidth = tw->core.width;
-    XFontStruct *fs = tw->text.textD->fontStruct;
-    int fontWidth = fs->max_bounds.width;
-    int fontHeight = fs->ascent + fs->descent;
+    //XFontStruct *fs = tw->text.textD->fontStruct;
+    //int fontWidth = fs->max_bounds.width;
+    //int fontHeight = fs->ascent + fs->descent;
+    XftFont *font = tw->text.textD->font;
+    int fontWidth = font->max_advance_width;
+    int fontHeight = font->height;
     int marginHeight = tw->text.marginHeight;
     int propWidth = (proposed->request_mode & CWWidth) ? proposed->width : 0;
     int propHeight = (proposed->request_mode & CWHeight) ? proposed->height : 0;
@@ -1450,7 +1453,7 @@ void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int fontWidth = textD->fontStruct->max_bounds.width;
+    int fontWidth = textD->font->max_advance_width;
     int replaceSel, singleLine, breakAt = 0;
 
     /* Don't wrap if auto-wrap is off or suppressed, or it's just a newline */
@@ -3139,7 +3142,7 @@ static void pageLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = textD->fontStruct->max_bounds.width;
+    int maxCharWidth = textD->font->max_advance_width;
     int lineStartPos, indent, pos;
     int horizOffset;
     int silent = hasKey("nobell", args, nArgs);
@@ -3176,7 +3179,7 @@ static void pageRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = textD->fontStruct->max_bounds.width;
+    int maxCharWidth = textD->font->max_advance_width;
     int oldHorizOffset = textD->horizOffset;
     int lineStartPos, indent, pos;
     int horizOffset, sliderSize, sliderMax;
@@ -4120,8 +4123,8 @@ static void autoScrollTimerProc(XtPointer clientData, XtIntervalId *id)
     TextWidget w = (TextWidget)clientData;
     textDisp *textD = w->text.textD;
     int topLineNum, horizOffset, newPos, cursorX, y;
-    int fontWidth = textD->fontStruct->max_bounds.width;
-    int fontHeight = textD->fontStruct->ascent + textD->fontStruct->descent;
+    int fontWidth = textD->font->max_advance_width;
+    int fontHeight = textD->font->ascent + textD->font->descent;
 
     /* For vertical autoscrolling just dragging the mouse outside of the top
        or bottom of the window is sufficient, for horizontal (non-rectangular)

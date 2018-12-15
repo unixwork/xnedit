@@ -308,7 +308,7 @@ static void initHelpStyles (Widget parent)
         {
             HelpStyleInfo[ styleIndex ].color     = fg;
             HelpStyleInfo[ styleIndex ].underline = StyleUnderlines[styleIndex];
-            HelpStyleInfo[ styleIndex ].font      = NULL;
+            HelpStyleInfo[ styleIndex ].xftFont      = NULL;
         }
 
         styleTableInitialized  = True;
@@ -377,17 +377,23 @@ static void initHelpStyles (Widget parent)
 */
 static void loadFontsAndColors(Widget parent, int style)
 {
-    XFontStruct *font;
+    Display *dp = XtDisplay(parent);
+    
+    //XFontStruct *font;
+    XftFont *font;
     int r,g,b;
-    if (HelpStyleInfo[STYLE_INDEX(style)].font == NULL)
+    if (HelpStyleInfo[STYLE_INDEX(style)].xftFont == NULL)
     {
-        font = XLoadQueryFont(XtDisplay(parent),
+        font = XftFontOpenName(
+                dp,
+                DefaultScreen(dp),
                 GetPrefHelpFontName(StyleFonts[STYLE_INDEX(style)]));
+        
         if (font == NULL)
         {
             fprintf(stderr, "NEdit: help font, %s, not available\n",
                     GetPrefHelpFontName(StyleFonts[STYLE_INDEX(style)]));
-            font = XLoadQueryFont(XtDisplay(parent), "fixed");
+            font = XftFontOpenName(dp, DefaultScreen(dp), "Monospace");
             if (font == NULL)
             {
                 fprintf(stderr, "NEdit: fallback help font, \"fixed\", not "
@@ -395,7 +401,7 @@ static void loadFontsAndColors(Widget parent, int style)
                 exit(EXIT_FAILURE);
             }
         }
-        HelpStyleInfo[STYLE_INDEX(style)].font = font;
+        HelpStyleInfo[STYLE_INDEX(style)].xftFont = font;
 
         if (style == STL_NM_LINK)
             HelpStyleInfo[STYLE_INDEX(style)].color =
@@ -725,7 +731,7 @@ static Widget createHelpPanel(enum HelpTopic topic)
     loadFontsAndColors(sw, 'A');
     HelpTextPanes[topic] = XtVaCreateManagedWidget("helpText",
             textWidgetClass, sw,
-            textNfont, HelpStyleInfo[0].font, /* MUST correspond to 'A' above */
+            textNXftFont, HelpStyleInfo[0].xftFont, /* MUST correspond to 'A' above */
             textNrows, 30,
             textNcolumns, 65,
             textNbacklightCharTypes, NULL,

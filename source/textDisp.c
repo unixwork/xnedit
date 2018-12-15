@@ -183,7 +183,7 @@ static void textDRedisplayRange(textDisp *textD, int start, int end);
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        XFontStruct *fontStruct, Pixel bgPixel, Pixel fgPixel,
+        XFontStruct *fontStruct, XftFont *font, Pixel bgPixel, Pixel fgPixel,
         Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
         Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
@@ -193,8 +193,11 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     XGCValues gcValues;
     int i;
     
+    Display *dp = XtDisplay(widget);
+    
     textD = (textDisp *)NEditMalloc(sizeof(textDisp));
     textD->w = widget;
+    textD->d = NULL;
     textD->top = top;
     textD->left = left;
     textD->width = width;
@@ -217,7 +220,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->visibility = VisibilityUnobscured;
     textD->hScrollBar = hScrollBar;
     textD->vScrollBar = vScrollBar;
-    textD->fontStruct = fontStruct;
+    textD->fontStruct2 = fontStruct;
+    textD->font = font;
     textD->ascent = fontStruct->ascent;
     textD->descent = fontStruct->descent;
     textD->fixedFontWidth = fontStruct->min_bounds.width ==
@@ -375,7 +379,7 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     
     /* Call TextDSetFont to combine font information from style table and
        primary font, adjust font-related parameters, and then redisplay */
-    TextDSetFont(textD, textD->fontStruct);
+    TextDSetFont(textD, textD->font);
 }
 
 
@@ -403,7 +407,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->highlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
-    allocateFixedFontGCs(textD, textD->fontStruct, textBgP, textFgP, selectFgP,
+    allocateFixedFontGCs(textD, textD->fontStruct2, textBgP, textFgP, selectFgP,
             selectBgP, hiliteFgP, hiliteBgP, lineNoFgP);
     
     /* Change the cursor GC (the cursor GC is not shared). */
@@ -419,7 +423,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
 /*
 ** Change the (non highlight) font
 */
-void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
+void TextDSetFont(textDisp *textD, XftFont *fontStruct)
 {
     Display *display = XtDisplay(textD->w);
     int i, maxAscent = fontStruct->ascent, maxDescent = fontStruct->descent;
@@ -427,7 +431,7 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
     Pixel bgPixel, fgPixel, selectFGPixel, selectBGPixel;
     Pixel highlightFGPixel, highlightBGPixel, lineNumFGPixel;
     XGCValues values;
-    XFontStruct *styleFont;
+    XftFont *styleFont;
     
     /* If font size changes, cursor will be redrawn in a new position */
     blankCursorProtrusions(textD);
@@ -435,7 +439,7 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
     /* If there is a (syntax highlighting) style table in use, find the new
        maximum font height for this text display */
     for (i=0; i<textD->nStyles; i++) {
-        styleFont = textD->styleTable[i].font;
+        styleFont = textD->styleTable[i].xftFont;
         if (styleFont != NULL && styleFont->ascent > maxAscent)
             maxAscent = styleFont->ascent;
         if (styleFont != NULL && styleFont->descent > maxDescent)
@@ -445,16 +449,20 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
     textD->descent = maxDescent;
     
     /* If all of the current fonts are fixed and match in width, compute */
-    fontWidth = fontStruct->max_bounds.width;
-    if (fontWidth != fontStruct->min_bounds.width)
+    fontWidth = fontStruct->max_advance_width;
+    if (fontWidth != 0)
         fontWidth = -1;
     else {
         for (i=0; i<textD->nStyles; i++) {
-            styleFont = textD->styleTable[i].font;
+            styleFont = textD->styleTable[i].xftFont;
+            // TODO: fix
+            /*
             if (styleFont != NULL && 
                     (styleFont->max_bounds.width != fontWidth ||
                     styleFont->max_bounds.width != styleFont->min_bounds.width))
                 fontWidth = -1;
+            */
+            fontWidth = -1;
         }
     }
     textD->fixedFontWidth = fontWidth;
@@ -467,7 +475,7 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
        affected GCs (they are shared with other widgets, and if the primary
        font changes, must be re-allocated to change it). Unfortunately,
        this requres recovering all of the colors from the existing GCs */
-    textD->fontStruct = fontStruct;
+    textD->font = fontStruct;
     XGetGCValues(display, textD->gc, GCForeground|GCBackground, &values);
     fgPixel = values.foreground;
     bgPixel = values.background;
@@ -485,9 +493,9 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
     releaseGC(textD->w, textD->selectBGGC);
     releaseGC(textD->w, textD->highlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
-    allocateFixedFontGCs(textD, fontStruct, bgPixel, fgPixel, selectFGPixel,
+    allocateFixedFontGCs(textD, textD->fontStruct2, bgPixel, fgPixel, selectFGPixel,
             selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel);
-    XSetFont(display, textD->styleGC, fontStruct->fid);
+    //XSetFont(display, textD->styleGC, fontStruct->fid);
     
     /* Do a full resize to force recalculation of font related parameters */
     width = textD->width;
@@ -512,28 +520,33 @@ void TextDSetFont(textDisp *textD, XFontStruct *fontStruct)
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = textD->fontStruct->max_bounds.width;
+    int fontWidth = textD->font->max_advance_width;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
+            XftFont *font = textD->styleTable[i].xftFont;
+            /*
             int thisWidth = (textD->styleTable[i].font)->min_bounds.width;
             if (thisWidth < fontWidth) {
                 fontWidth = thisWidth;
             }
+            */
         }
     }
-    return(fontWidth);
+    //return(fontWidth); // TODO
+    return 20;
 }
 
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = textD->fontStruct->max_bounds.width;
+    int fontWidth = textD->font->max_advance_width;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
-            int thisWidth = (textD->styleTable[i].font)->max_bounds.width;
+            XftFont *font = textD->styleTable[i].xftFont;
+            int thisWidth = font->max_advance_width;
             if (thisWidth > fontWidth) {
                 fontWidth = thisWidth;
             }
@@ -1786,12 +1799,16 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
     }
     
+    if(lineLen > 0) {
+        printf("line: [%.*s]\n", lineLen, lineStr);
+    }
+    
     /* Space beyond the end of the line is still counted in units of characters
        of a standardized character width (this is done mostly because style
        changes based on character position can still occur in this region due
        to rectangular selections).  stdCharWidth must be non-zero to prevent a
        potential infinite loop if x does not advance */
-    stdCharWidth = textD->fontStruct->max_bounds.width;
+    stdCharWidth = textD->font->max_advance_width;
     if (stdCharWidth <= 0) {
     	fprintf(stderr, "nedit: Internal Error, bad font measurement\n");
     	NEditFree(lineStr);
@@ -1947,10 +1964,17 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
 {
     GC gc, bgGC;
     XGCValues gcValues;
-    XFontStruct *fs = textD->fontStruct;
+    //XFontStruct *fs = textD->fontStruct;
+    XftFont *font = textD->font;
     Pixel bground = textD->bgPixel;
     Pixel fground = textD->fgPixel;
     int underlineStyle = FALSE;
+    
+    XftColor color;
+    color.color.red = 0x0;
+    color.color.green = 0x0;
+    color.color.blue = 0x0;
+    color.color.alpha = 0xFFFF;
     
     /* Don't draw if widget isn't realized */
     if (XtWindow(textD->w) == 0)
@@ -1982,14 +2006,15 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         if (style & STYLE_LOOKUP_MASK) {
             styleRec = &textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A];
             underlineStyle = styleRec->underline;
-            fs = styleRec->font;
-            gcValues.font = fs->fid;
+            // TODO: fix
+            //fs = styleRec->font;
+            //gcValues.font = fs->fid;
             fground = styleRec->color;
             /* here you could pick up specific select and highlight fground */
         }
         else {
             styleRec = NULL;
-            gcValues.font = fs->fid;
+            //gcValues.font = fs->fid; // TODO
             fground = textD->fgPixel;
         }
         /* Background color priority order is:
@@ -2027,11 +2052,11 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     /* If any space around the character remains unfilled (due to use of
        different sized fonts for highlighting), fill in above or below
        to erase previously drawn characters */
-    if (fs->ascent < textD->ascent)
-    	clearRect(textD, bgGC, x, y, toX - x, textD->ascent - fs->ascent);
-    if (fs->descent < textD->descent)
-    	clearRect(textD, bgGC, x, y + textD->ascent + fs->descent, toX - x,
-    		textD->descent - fs->descent);
+    if (font->ascent < textD->ascent)
+    	clearRect(textD, bgGC, x, y, toX - x, textD->ascent - font->ascent);
+    if (font->descent < textD->descent)
+    	clearRect(textD, bgGC, x, y + textD->ascent + font->descent, toX - x,
+    		textD->descent - font->descent);
 
     /* set up gc for writing text (set foreground properly) */
     if (bgGC == textD->styleGC) {
@@ -2040,8 +2065,21 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     }
 
     /* Draw the string using gc and font set above */
-    XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
-    	    y + textD->ascent, string, nChars);
+    //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
+    //	    y + textD->ascent, string, nChars);
+    
+    if(!textD->d) {
+        Display *dp = XtDisplay(textD->w);
+        textD->d = XftDrawCreate(
+            dp,
+            XtWindow(textD->w),
+            DefaultVisual(dp, DefaultScreen(dp)),
+            DefaultColormap(dp, DefaultScreen(dp)));
+    }
+    
+    XFillRectangle(XtDisplay(textD->w), XtWindow(textD->w),
+                textD->highlightBGGC, x, y, 15*nChars, font->height);
+    XftDrawStringUtf8(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
@@ -2083,8 +2121,10 @@ static void drawCursor(textDisp *textD, int x, int y)
 {
     XSegment segs[5];
     int left, right, cursorWidth, midY;
-    int fontWidth = textD->fontStruct->min_bounds.width, nSegs = 0;  
+    //int fontWidth = textD->fontStruct->min_bounds.width, nSegs = 0;
+    int fontWidth = textD->font->max_advance_width; // TODO: get min width
     int fontHeight = textD->ascent + textD->descent;
+    int nSegs = 0;
     int bot = y + fontHeight - 1;
     
     if (XtWindow(textD->w) == 0 || x < textD->left-1 ||
@@ -2204,13 +2244,16 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 static int stringWidth(const textDisp* textD, const char *string,
         int length, int style)
 {
-    XFontStruct *fs;
+    XftFont *fs;
     
     if (style & STYLE_LOOKUP_MASK)
-    	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font;
+    	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].xftFont;
     else 
-    	fs = textD->fontStruct;
-    return XTextWidth(fs, (char*) string, (int) length);
+    	fs = textD->font;
+    //return XTextWidth(fs, (char*) string, (int) length);
+    XGlyphInfo extents;
+    XftTextExtentsUtf8(XtDisplay(textD->w), fs, string, length, &extents);
+    return extents.width;
 }
 
 /*
@@ -2295,7 +2338,7 @@ static void xyToUnconstrainedPos(textDisp *textD, int x, int y, int *row,
 	int *column, int posType)
 {
     int fontHeight = textD->ascent + textD->descent;
-    int fontWidth = textD->fontStruct->max_bounds.width;
+    int fontWidth = textD->font->max_advance_width;
 
     /* Find the visible line number corresponding to the y coordinate */
     *row = (y - textD->top) / fontHeight;
@@ -2833,7 +2876,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
     int y, line, visLine, nCols, lineStart;
     char lineNumString[12];
     int lineHeight = textD->ascent + textD->descent;
-    int charWidth = textD->fontStruct->max_bounds.width;
+    int charWidth = textD->font->max_advance_width;
     XRectangle clipRect;
     Display *display = XtDisplay(textD->w);
     
@@ -2866,9 +2909,10 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         if (lineStart != -1 && (lineStart==0 ||
                 BufGetCharacter(textD->buffer, lineStart-1)=='\n')) {
             sprintf(lineNumString, "%*d", nCols, line);
-            XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w),
-                    textD->lineNumGC, textD->lineNumLeft, y + textD->ascent,
-                    lineNumString, strlen(lineNumString));
+            // TODO: enable
+            //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w),
+            //        textD->lineNumGC, textD->lineNumLeft, y + textD->ascent,
+            //        lineNumString, strlen(lineNumString));
             line++;
         } else {
             XClearArea(XtDisplay(textD->w), XtWindow(textD->w),
@@ -2951,7 +2995,15 @@ static int measureVisLine(textDisp *textD, int visLineNum)
 	for (i=0; i<lineLen; i++) {
     	    len = BufGetExpandedChar(textD->buffer, lineStartPos + i,
     		    charCount, expandedChar);
-    	    width += XTextWidth(textD->fontStruct, expandedChar, len);
+    	    //width += XTextWidth(textD->fontStruct, expandedChar, len);
+            XGlyphInfo extents;
+            XftTextExtentsUtf8(
+                    XtDisplay(textD->w),
+                    textD->font,
+                    expandedChar,
+                    len,
+                    &extents);
+            width += extents.width;
     	    charCount += len;
 	}
     } else {
@@ -2960,8 +3012,14 @@ static int measureVisLine(textDisp *textD, int visLineNum)
     		    charCount, expandedChar);
     	    style = (unsigned char)BufGetCharacter(textD->styleBuffer,
 		    lineStartPos+i) - ASCII_A;
-    	    width += XTextWidth(textD->styleTable[style].font, expandedChar,
-    	    	    len);
+            XGlyphInfo extents;
+            XftTextExtentsUtf8(
+                    XtDisplay(textD),
+                    textD->styleTable[style].xftFont,
+                    expandedChar,
+                    len,
+                    &extents);
+    	    width += extents.width;
     	    charCount += len;
 	}
     }
@@ -2986,7 +3044,7 @@ static int emptyLinesVisible(textDisp *textD)
 static void blankCursorProtrusions(textDisp *textD)
 {
     int x, width, cursorX = textD->cursorX, cursorY = textD->cursorY;
-    int fontWidth = textD->fontStruct->max_bounds.width;  
+    int fontWidth = textD->font->max_advance_width;
     int fontHeight = textD->ascent + textD->descent;
     int cursorWidth, left = textD->left, right = left + textD->width;
     
@@ -3597,7 +3655,7 @@ static int wrapUsesCharacter(textDisp *textD, int lineEndPos)
 static void hideOrShowHScrollBar(textDisp *textD)
 {
     if (textD->continuousWrap && (textD->wrapMargin == 0 || textD->wrapMargin *
-    	    textD->fontStruct->max_bounds.width < textD->width))
+    	    textD->font->max_advance_width < textD->width))
     	XtUnmanageChild(textD->hScrollBar);
     else
     	XtManageChild(textD->hScrollBar);
