@@ -141,7 +141,7 @@ Widget TheAppShell;
                                 "Ctrl~Alt~Meta<KeyPress>x: cut-clipboard()\\n" \
                                 "Ctrl~Alt~Meta<KeyPress>u: delete-to-start-of-line()\\n"
 
-#define NEDIT_XFT_FIXED_FONT "Monospace"
+#define NEDIT_XFT_FIXED_FONT "Monospace:size=10"
 
 static char *fallbackResources[] = {
     /* Try to avoid Motif's horrificly ugly default colors and fonts,
