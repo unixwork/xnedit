@@ -2037,7 +2037,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         /* set up gc for clearing using the foreground color entry */
         gcValues.foreground = gcValues.background = bground;
         XChangeGC(XtDisplay(textD->w), gc,
-                GCFont | GCForeground | GCBackground, &gcValues);
+                GCForeground | GCBackground, &gcValues);
     }
 
     /* Always draw blank area, because Xft AA text rendering needs a clean
