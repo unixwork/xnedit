@@ -1018,6 +1018,19 @@ int BufEndOfLine(textBuffer *buf, int pos)
     return endPos;
 }
 
+static int utf8charlen(const unsigned char *u) {
+    unsigned char u0 = u[0];
+    int ulen = 1;
+    if(u0 > 240) {
+        ulen = 4;
+    } else if(u0 > 224) {
+        ulen = 3;
+    } else if(u0 > 192) {
+        ulen = 2;
+    }
+    return ulen;
+}
+
 /*
 ** Get a character from the text buffer expanded into it's screen
 ** representation (which may be several characters for a tab or a
@@ -1029,8 +1042,18 @@ int BufEndOfLine(textBuffer *buf, int pos)
 int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
         char* outStr)
 {
-    return BufExpandCharacter(BufGetCharacter(buf, pos), indent, outStr,
-    	    buf->tabDist, buf->nullSubsChar);
+    char utf8[4];
+    int i;
+    
+    utf8[0] = BufGetCharacter(buf, pos);
+    int charlen = utf8charlen((unsigned char*)utf8);
+    if(charlen > 1) {
+        for(i=1;i<charlen;i++) {
+            utf8[i] = BufGetCharacter(buf, pos+i);
+        }
+    }
+    return BufExpandCharacter(utf8, charlen, indent, outStr,
+    	    buf->tabDist, buf->nullSubsChar, NULL);
 }
 
 /*
@@ -1041,10 +1064,13 @@ int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
 ** for figuring tabs.  Output string is guranteed to be shorter or
 ** equal in length to MAX_EXP_CHAR_LEN
 */
-int BufExpandCharacter(char c, int indent, char *outStr,
-        int tabDist, char nullSubsChar)
+int BufExpandCharacter(const char *cp, int clen, int indent, char *outStr,
+        int tabDist, char nullSubsChar, int *isMB)
 {
+    int c = *cp;
     int i, nSpaces;
+    if(isMB)
+        *isMB = 0;
     
     /* Convert tabs to spaces */
     if (c == '\t') {
@@ -1074,6 +1100,24 @@ int BufExpandCharacter(char c, int indent, char *outStr,
     	return 5;
     }
 #endif
+    
+    if(c < 0) {
+        if(isMB)
+            *isMB = 1;
+        
+        int ulen = 1;
+        unsigned char u0 = ((const unsigned char*)cp)[0];
+        if(u0 > 240) {
+            ulen = 4;
+        } else if(u0 > 224) {
+            ulen = 3;
+        } else {
+            ulen = 2;
+        }
+        ulen = ulen > clen ? 1 : ulen;
+        memmove(outStr, cp, ulen);
+        return ulen;
+    }
     
     /* Otherwise, just return the character */
     *outStr = c;
@@ -2102,9 +2146,10 @@ static void callModifyCBs(textBuffer *buf, int pos, int nDeleted,
 {
     int i;
     
-    for (i=0; i<buf->nModifyProcs; i++)
+    for (i=0; i<buf->nModifyProcs; i++) {
     	(*buf->modifyProcs[i])(pos, nInserted, nDeleted, nRestyled,
     		deletedText, buf->cbArgs[i]);
+    }
 }
 
 /*
@@ -2489,6 +2534,7 @@ static char *expandTabs(const char *text, int startIndent, int tabDist,
 {
     char *outStr, *outPtr;
     const char *c;
+    int isMB;
     int indent, len, outLen = 0;
 
     /* rehearse the expansion to figure out length for output string */
@@ -2513,7 +2559,8 @@ static char *expandTabs(const char *text, int startIndent, int tabDist,
     indent = startIndent;
     for (c=text; *c!= '\0'; c++) {
     	if (*c == '\t') {
-    	    len = BufExpandCharacter(*c, indent, outPtr, tabDist, nullSubsChar);
+    	    len = BufExpandCharacter(
+                    c, 1, indent, outPtr, tabDist, nullSubsChar, &isMB);
     	    outPtr += len;
     	    indent += len;
     	} else if (*c == '\n') {
@@ -2539,15 +2586,16 @@ static char *unexpandTabs(const char *text, int startIndent, int tabDist,
 {
     char *outStr, *outPtr, expandedChar[MAX_EXP_CHAR_LEN];
     const char *c;
-    int indent, len;
+    int indent, len, isMB;
     
     outStr = (char*)NEditMalloc(strlen(text)+1);
     outPtr = outStr;
     indent = startIndent;
     for (c=text; *c!='\0';) {
     	if (*c == ' ') {
-    	    len = BufExpandCharacter('\t', indent, expandedChar, tabDist,
-		    nullSubsChar);
+            char tabChar = '\t';
+    	    len = BufExpandCharacter(&tabChar, 1, indent, expandedChar, tabDist,
+		    nullSubsChar, &isMB);
     	    if (len >= 3 && !strncmp(c, expandedChar, len)) {
     	    	c += len;
     	    	*outPtr++ = '\t';

@@ -693,7 +693,7 @@ static XtResource resources[] = {
       XtOffset(TextWidget, text.delimiters), XmRString,
       ".,/\\`'!@#%^&*()-=+{}[]\":;<>?"},
     {textNblinkRate, textCBlinkRate, XmRInt, sizeof(int),
-      XtOffset(TextWidget, text.cursorBlinkRate), XmRString, "2000"}, // default: 500
+      XtOffset(TextWidget, text.cursorBlinkRate), XmRString, "500"},
     {textNemulateTabs, textCEmulateTabs, XmRInt, sizeof(int),
       XtOffset(TextWidget, text.emulateTabs), XmRString, "0"},
     {textNfocusCallback, textCFocusCallback, XmRCallback, sizeof(caddr_t),

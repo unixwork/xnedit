@@ -967,7 +967,7 @@ void TextDXYToUnconstrainedPosition(textDisp *textD, int x, int y, int *row,
 */
 int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 {
-    int i, lineEnd, charIndex, outIndex;
+    int i, lineEnd, charIndex, outIndex, isMB;
     int lineStart=0, charLen=0;
     char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
 
@@ -994,9 +994,9 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
       lineStr = BufGetRange(textD->buffer, lineStart, lineEnd);
       outIndex = 0;
       for(i=lineStart; i<lineEnd; i++, charIndex++) {
-          charLen = BufExpandCharacter(lineStr[charIndex], outIndex,
-                  expandedChar, textD->buffer->tabDist,
-                  textD->buffer->nullSubsChar);
+          charLen = BufExpandCharacter(lineStr+charIndex, lineEnd-charIndex,
+                  outIndex, expandedChar, textD->buffer->tabDist,
+                  textD->buffer->nullSubsChar, &isMB);
           if ( outIndex+charLen >= column ) break;
           outIndex+=charLen;
       }
@@ -1025,7 +1025,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 */
 int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 {
-    int charIndex, lineStartPos, fontHeight, lineLen;
+    int charIndex, lineStartPos, fontHeight, lineLen, isMB;
     int visLineNum, charLen, outIndex, xStep, charStyle;
     char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
     
@@ -1056,8 +1056,8 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
     for(charIndex=0; charIndex<pos-lineStartPos; charIndex++) {
-    	charLen = BufExpandCharacter(lineStr[charIndex], outIndex, expandedChar,
-    		textD->buffer->tabDist, textD->buffer->nullSubsChar);
+    	charLen = BufExpandCharacter(lineStr+charIndex, lineLen-charIndex, outIndex, expandedChar,
+    		textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
    	    	outIndex, lineStr[charIndex]);
     	xStep += stringWidth(textD, expandedChar, charLen, charStyle);
@@ -1765,7 +1765,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	int rightClip, int leftCharIndex, int rightCharIndex)
 {
     textBuffer *buf = textD->buffer;
-    int i, x, y, startX, charIndex, lineStartPos, lineLen, fontHeight;
+    int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, isMB;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
@@ -1799,7 +1799,9 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
     }
     
+    int dbg = 0;
     if(lineLen > 0) {
+        dbg = 1;
         //printf("A line: [%.*s]\n", lineLen, lineStr);
     }
     
@@ -1837,12 +1839,17 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     x = textD->left - textD->horizOffset;
     outIndex = 0;
 
-    for (charIndex = 0; ; charIndex++) {
-        baseChar = '\0';
-        charLen = charIndex >= lineLen
-                ? 1
-                : BufExpandCharacter(baseChar = lineStr[charIndex], outIndex,
-                        expandedChar, buf->tabDist, buf->nullSubsChar);
+    for (charIndex = 0; ; charIndex++) { 
+        if(charIndex >= lineLen) {
+            baseChar = '\0';   
+            charLen = 1;
+        } else {
+            baseChar = lineStr[charIndex];
+            charLen = BufExpandCharacter(lineStr + charIndex,
+                    lineLen - charIndex, outIndex,
+                    expandedChar, buf->tabDist, buf->nullSubsChar, &isMB);
+        }
+        
     	style = styleOfPos(textD, lineStartPos, lineLen, charIndex,
                 outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
@@ -1857,6 +1864,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
     	x += charWidth;
     	outIndex += charLen;
+        
+        if(charLen == isMB) {
+            charIndex += charLen-1;
+        }
     }
 
     /* Scan character positions from the beginning of the clipping range, and
@@ -1866,7 +1877,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     outPtr = outStr;
     outIndex = outStartIndex;
     x = startX;
-    for (charIndex = startIndex; charIndex < rightCharIndex; charIndex++) {
+    for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += charLen) {
     	if (lineStartPos+charIndex == cursorPos) {
     	    if (charIndex < lineLen
                     || (charIndex == lineLen && cursorPos >= buf->length)) {
@@ -1879,46 +1890,57 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	    	}
     	    }
     	}
-
-        baseChar = '\0';
-     	charLen = charIndex >= lineLen
-                ? 1
-                : BufExpandCharacter(baseChar = lineStr[charIndex], outIndex,
-                        expandedChar, buf->tabDist, buf->nullSubsChar);
+        
+        if(charIndex >= lineLen) {
+            baseChar = '\0';   
+            charLen = 1;
+        } else {
+            baseChar = lineStr[charIndex];
+            charLen = BufExpandCharacter(lineStr + charIndex,
+                    lineLen - charIndex, outIndex,
+                    expandedChar, buf->tabDist, buf->nullSubsChar, &isMB);
+            //if(charLen > 1) {
+            //    printf("expanded: [%.*s]\n", charLen, expandedChar);
+            //}
+        }
+        
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
                 outIndex + dispIndexOffset, baseChar);
-   	for (i = 0; i < charLen; i++) {
-            if (i != 0 && charIndex < lineLen && lineStr[charIndex] == '\t') {
-                charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
-                        outIndex + dispIndexOffset, '\t');
+        
+        memcpy(outPtr, expandedChar, charLen);
+        
+        if (charStyle != style) {
+            //printf("draw len: %d\n", outPtr - outStr);
+            drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
+            outPtr = outStr;
+            startX = x;
+            style = charStyle;
+    	}
+        
+        if (charIndex < lineLen) {
+            //*outPtr = expandedChar[i];
+            charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
+            if(charWidth == 0) {
+                printf("fuck: %d[%s] [%d][%d]\n", charLen, expandedChar, (int)expandedChar[charIndex], (int)expandedChar[charIndex+1]);
+            } else {
+                //printf("width: %d\n", charWidth);
             }
-
-     	    if (charStyle != style) {
-    		drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
-    		outPtr = outStr;
-    		startX = x;
-    		style = charStyle;
-    	    }
-
-    	    if (charIndex < lineLen) {
-    		*outPtr = expandedChar[i];
-    		charWidth = stringWidth(textD, &expandedChar[i], 1, charStyle);
-    	    } else {
-    		charWidth = stdCharWidth;
-            }
-
-    	    outPtr++;
-    	    x += charWidth;
-    	    outIndex++;
-	}
-
+        } else {
+            charWidth = stdCharWidth;
+        }
+        
+        outPtr += charLen;
+        x += charWidth;
+        outIndex += charLen;
+               
         if (outPtr - outStr + MAX_EXP_CHAR_LEN >= MAX_DISP_LINE_LEN
                 || x >= rightClip) {
-    	    break;
+            break;
         }
     }
     
     /* Draw the remaining style segment */
+    //printf("final draw len: %d\n", outPtr - outStr);
     drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
@@ -2284,7 +2306,7 @@ static int inSelection(selection *sel, int pos, int lineStartPos, int dispIndex)
 */
 static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
-    int charIndex, lineStart, lineLen, fontHeight;
+    int charIndex, lineStart, lineLen, fontHeight, isMB;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex;
     char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
 
@@ -2312,8 +2334,8 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
     for(charIndex=0; charIndex<lineLen; charIndex++) {
-    	charLen = BufExpandCharacter(lineStr[charIndex], outIndex, expandedChar,
-    		textD->buffer->tabDist, textD->buffer->nullSubsChar);
+    	charLen = BufExpandCharacter(lineStr+charIndex, lineLen-charIndex, outIndex, expandedChar,
+    		textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
    	charStyle = styleOfPos(textD, lineStart, lineLen, charIndex, outIndex,
 				lineStr[charIndex]);
     	charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
@@ -3573,12 +3595,13 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
 static int measurePropChar(const textDisp* textD, char c,
     int colNum, int pos)
 {
-    int charLen, style;
+    int charLen, style, isMB;
     char expChar[MAX_EXP_CHAR_LEN];
     textBuffer *styleBuf = textD->styleBuffer;
     
-    charLen = BufExpandCharacter(c, colNum, expChar, 
-	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+    // fix the function signature
+    charLen = BufExpandCharacter(&c, 1, colNum, expChar, 
+	    textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
     if (styleBuf == NULL) {
 	style = 0;
     } else {

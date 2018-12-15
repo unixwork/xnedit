@@ -151,8 +151,8 @@ int BufStartOfLine(textBuffer *buf, int pos);
 int BufEndOfLine(textBuffer *buf, int pos);
 int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
         char* outStr);
-int BufExpandCharacter(char c, int indent, char *outStr, int tabDist,
-	char nullSubsChar);
+int BufExpandCharacter(const char *c, int clen, int indent, char *outStr, int tabDist,
+	char nullSubsChar, int *isMB);
 int BufCharWidth(char c, int indent, int tabDist, char nullSubsChar);
 int BufCountDispChars(const textBuffer* buf, int lineStartPos,
         int targetPos);
