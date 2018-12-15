@@ -36,6 +36,9 @@
 /* Resource strings */
 #define textNfont "font"
 #define textCFont "Font"
+#define textNXftFont "XftFont"
+#define textCXftFont "XftFont"
+#define textTXftFont "TextXftFont"
 #define textNrows "rows"
 #define textCRows "Rows"
 #define textNcolumns "columns"
@@ -135,6 +138,8 @@ typedef struct {
     int indentRequest;
     char *charsTyped;
 } smartIndentCBStruct;
+
+void TextWidgetClassInit(Display *dp, const char *fontname);
 
 /* User callable routines */
 void TextSetBuffer(Widget w, textBuffer *buffer);

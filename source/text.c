@@ -611,6 +611,8 @@ static XtActionsRec actionsList[] = {
 	select-end()
 */
 
+static XftFont *defaultFont;
+
 static XtResource resources[] = {
     {XmNhighlightThickness, XmCHighlightThickness, XmRDimension,
       sizeof(Dimension), XtOffset(TextWidget, primitive.highlight_thickness),
@@ -619,6 +621,8 @@ static XtResource resources[] = {
       XtOffset(TextWidget, primitive.shadow_thickness), XmRInt, 0},
     {textNfont, textCFont, XmRFontStruct, sizeof(XFontStruct *),
       XtOffset(TextWidget, text.fontStruct), XmRString, "fixed"},
+    {textNXftFont, textCXftFont, textTXftFont, sizeof(XftFont *),
+      XtOffset(TextWidget, text.font), textTXftFont, &defaultFont},
     {textNselectForeground, textCSelectForeground, XmRPixel, sizeof(Pixel),
       XtOffset(TextWidget, text.selectFGPixel), XmRString, 
       NEDIT_DEFAULT_SEL_FG},
@@ -767,6 +771,23 @@ WidgetClass textWidgetClass = (WidgetClass)&textClassRec;
 #define NEDIT_SHOW_CURSOR_MASK (FocusChangeMask | PointerMotionMask | ButtonMotionMask | ButtonPressMask | ButtonReleaseMask)
 static char empty_bits[] = {0x00, 0x00, 0x00, 0x00};
 static Cursor empty_cursor = 0;
+
+#define FALLBACK_FONTNAME "Monospace"
+
+/*
+ * must be called at program start
+ */
+void TextWidgetClassInit(Display *dp, const char *fontname)
+{
+    defaultFont = XftFontOpenName(dp, DefaultScreen(dp), fontname);
+    if(!defaultFont && strcmp(fontname, FALLBACK_FONTNAME)) {
+        TextWidgetClassInit(dp, FALLBACK_FONTNAME);
+        if(!defaultFont) {
+            fprintf(stderr, "Cannot open default font\n");
+            exit(1);
+        }
+    }
+}
 
 /*
 ** Widget initialize method

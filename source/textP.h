@@ -37,6 +37,8 @@
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
+#include <Xft/Xft.h>
+
 enum dragStates {NOT_CLICKED, PRIMARY_CLICKED, SECONDARY_CLICKED,
 	CLICKED_IN_SELECTION,  PRIMARY_DRAG, PRIMARY_RECT_DRAG, SECONDARY_DRAG,
 	SECONDARY_RECT_DRAG, PRIMARY_BLOCK_DRAG, DRAG_CANCELED, MOUSE_PAN};
@@ -59,6 +61,7 @@ typedef struct _TextPart {
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
     Pixel cursorFGPixel, lineNumFGPixel, calltipFGPixel, calltipBGPixel;
     XFontStruct *fontStruct;
+    XftFont *font;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;
     Boolean autoWrap;

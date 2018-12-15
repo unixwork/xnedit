@@ -47,6 +47,7 @@
 #include "interpret.h"
 #include "parse.h"
 #include "help.h"
+#include "text.h" /* TextWidgetClassInit */
 #include "../util/misc.h"
 #include "../util/printUtils.h"
 #include "../util/fileUtils.h"
@@ -139,6 +140,8 @@ Widget TheAppShell;
                                 "Ctrl~Alt~Meta<KeyPress>c: copy-clipboard()\\n" \
                                 "Ctrl~Alt~Meta<KeyPress>x: cut-clipboard()\\n" \
                                 "Ctrl~Alt~Meta<KeyPress>u: delete-to-start-of-line()\\n"
+
+#define NEDIT_XFT_FIXED_FONT "Monospace"
 
 static char *fallbackResources[] = {
     /* Try to avoid Motif's horrificly ugly default colors and fonts,
@@ -509,6 +512,9 @@ int main(int argc, char **argv)
     /* Initialize global symbols and subroutines used in the macro language */
     InitMacroGlobals();
     RegisterMacroSubroutines();
+    
+    /* Initialize TextWidget */
+    TextWidgetClassInit(TheDisplay, NEDIT_XFT_FIXED_FONT);
 
     /* Store preferences from the command line and .nedit file, 
        and set the appropriate preferences */
