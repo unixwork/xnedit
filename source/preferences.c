@@ -290,6 +290,12 @@ static struct prefData {
     XFontStruct *boldFontStruct;
     XFontStruct *italicFontStruct;
     XFontStruct *boldItalicFontStruct;
+    
+    XftFont *font;
+    XftFont *boldFont;
+    XftFont *italicFont;
+    XftFont *boldItalicFont;
+    
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -1409,7 +1415,12 @@ static void translatePrefFormats(int convertOld, int fileVer)
     	    PrefData.italicFontString);
     PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.boldItalicFontString);
-
+    
+    PrefData.font = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
+    PrefData.boldFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
+    PrefData.italicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
+    PrefData.boldItalicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
+    
     /*
     **  The default set for the comand shell in PrefDescrip ("DEFAULT") is
     **  only a place-holder, the actual default is the user's login shell
@@ -2064,19 +2075,24 @@ XmFontList GetPrefFontList(void)
     return PrefData.fontList;
 }
 
-XFontStruct *GetPrefBoldFont(void)
+XftFont *GetPrefFont(void)
 {
-    return PrefData.boldFontStruct;
+    return PrefData.font;
 }
 
-XFontStruct *GetPrefItalicFont(void)
+XftFont *GetPrefBoldFont(void)
 {
-    return PrefData.italicFontStruct;
+    return PrefData.boldFont;
 }
 
-XFontStruct *GetPrefBoldItalicFont(void)
+XftFont *GetPrefItalicFont(void)
 {
-    return PrefData.boldItalicFontStruct;
+    return PrefData.italicFont;
+}
+
+XftFont *GetPrefBoldItalicFont(void)
+{
+    return PrefData.boldItalicFont;
 }
 
 char *GetPrefHelpFontName(int index)

@@ -33,6 +33,7 @@
 #include <X11/Intrinsic.h>
 #include <Xm/Xm.h>
 #include <Xm/XmStrDefs.h>
+#include <Xft/Xft.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -477,9 +478,15 @@ typedef struct _WindowInfo {
     char	boldFontName[MAX_FONT_LEN];
     char	boldItalicFontName[MAX_FONT_LEN];
     XmFontList	fontList;		/* fontList for the primary font */
-    XFontStruct *italicFontStruct;	/* fontStructs for highlighting fonts */
-    XFontStruct *boldFontStruct;
-    XFontStruct *boldItalicFontStruct;
+    //XFontStruct *italicFontStruct;	/* fontStructs for highlighting fonts */
+    //XFontStruct *boldFontStruct;
+    //XFontStruct *boldItalicFontStruct;
+    
+    XftFont     *font;
+    XftFont     *italicFont;
+    XftFont     *boldFont;
+    XftFont     *boldItalicFont;
+    
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-
     					   zero val. means highlight is drawn */

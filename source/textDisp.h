@@ -51,7 +51,7 @@ typedef struct {
     unsigned short blue;
     Pixel color;
     Boolean underline;
-    XFontStruct *font;
+    //XFontStruct *font;
     XftFont *xftFont;
     char *bgColorName;      /* background style coloring (name may be NULL) */
     unsigned short bgRed;

@@ -379,7 +379,6 @@ static void loadFontsAndColors(Widget parent, int style)
 {
     Display *dp = XtDisplay(parent);
     
-    //XFontStruct *font;
     XftFont *font;
     int r,g,b;
     if (HelpStyleInfo[STYLE_INDEX(style)].xftFont == NULL)

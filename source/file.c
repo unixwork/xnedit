@@ -1387,8 +1387,12 @@ void PrintString(const char *string, int length, Widget parent, const char *jobN
 	    1. Create a filename
 	    2. Open the file with the O_CREAT|O_EXCL flags
 	So all an attacker can do is a DoS on the print function. */
+#ifdef __GLIBC__
+    mkstemp(tmpFileName);
+#else
     tmpnam(tmpFileName);
-
+#endif
+    
     /* open the temporary file */
 #ifdef VMS
     if ((fp = fopen(tmpFileName, "w", "rfm = stmlf")) == NULL)

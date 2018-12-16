@@ -526,6 +526,7 @@ int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
             XftFont *font = textD->styleTable[i].xftFont;
+            printf("implement me\n");
             /*
             int thisWidth = (textD->styleTable[i].font)->min_bounds.width;
             if (thisWidth < fontWidth) {
@@ -535,7 +536,7 @@ int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
         }
     }
     //return(fontWidth); // TODO
-    return 20;
+    return fontWidth;
 }
 
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles)

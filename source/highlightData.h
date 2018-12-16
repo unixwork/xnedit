@@ -42,7 +42,7 @@ void EditHighlightStyles(const char *initialStyle);
 void EditHighlightPatterns(WindowInfo *window);
 void UpdateLanguageModeMenu(void);
 int LMHasHighlightPatterns(const char *languageMode);
-XFontStruct *FontOfNamedStyle(WindowInfo *window, const char *styleName);
+XftFont *FontOfNamedStyle(WindowInfo *window, const char *styleName);
 int FontOfNamedStyleIsBold(char *styleName);
 int FontOfNamedStyleIsItalic(char *styleName);
 char *ColorOfNamedStyle(const char *styleName);
