@@ -1865,11 +1865,11 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	x += charWidth;
     	outIndex += charLen;
         
-        if(charLen == isMB) {
+        if(isMB) {
             charIndex += charLen-1;
         }
     }
-
+    
     /* Scan character positions from the beginning of the clipping range, and
        draw parts whenever the style changes (also note if the cursor is on
        this line, and where it should be drawn to take advantage of the x
@@ -1921,6 +1921,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             //*outPtr = expandedChar[i];
             charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
             if(charWidth == 0) {
+                printf("line: [%s]\n", lineStr);
                 printf("fuck: %d[%s] [%d][%d]\n", charLen, expandedChar, (int)expandedChar[charIndex], (int)expandedChar[charIndex+1]);
             } else {
                 //printf("width: %d\n", charWidth);
