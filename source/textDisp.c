@@ -1292,9 +1292,10 @@ int TextDMoveLeft(textDisp *textD)
     if (textD->cursorPos <= 0)
     	return False;
     
-    int left = textD->cursorPos >= 4 ? textD->cursorPos - 4 : 0;
-    int pos = left;
-    while(pos < textD->cursorPos) {
+    int right = textD->cursorPos;
+    int pos = BufStartOfLine(textD->buffer, textD->cursorPos);
+    int left = pos;
+    while(pos < right) {
         left = pos;
         pos += BufCharLen(textD->buffer, pos);
     }
