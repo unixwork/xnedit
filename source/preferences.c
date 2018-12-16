@@ -1416,10 +1416,10 @@ static void translatePrefFormats(int convertOld, int fileVer)
     PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.boldItalicFontString);
     
-    PrefData.font = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
-    PrefData.boldFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
-    PrefData.italicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
-    PrefData.boldItalicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace");
+    PrefData.font = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
+    PrefData.boldFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
+    PrefData.italicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
+    PrefData.boldItalicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
     
     /*
     **  The default set for the comand shell in PrefDescrip ("DEFAULT") is

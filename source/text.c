@@ -772,7 +772,7 @@ WidgetClass textWidgetClass = (WidgetClass)&textClassRec;
 static char empty_bits[] = {0x00, 0x00, 0x00, 0x00};
 static Cursor empty_cursor = 0;
 
-#define FALLBACK_FONTNAME "Monospace"
+#define FALLBACK_FONTNAME "Monospace:size=10"
 
 /*
  * must be called at program start
