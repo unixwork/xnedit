@@ -1906,11 +1906,9 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
                 outIndex + dispIndexOffset, baseChar);
-        
-        memcpy(outPtr, expandedChar, charLen);
+
         
         if (charStyle != style) {
-            //printf("draw len: %d\n", outPtr - outStr);
             drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
             outPtr = outStr;
             startX = x;
@@ -1918,7 +1916,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
         
         if (charIndex < lineLen) {
-            //*outPtr = expandedChar[i];
+            memcpy(outPtr, expandedChar, charLen);
             charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
             if(charWidth == 0) {
                 printf("line: [%s]\n", lineStr);
