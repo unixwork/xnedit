@@ -2098,14 +2098,26 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
     //	    y + textD->ascent, string, nChars);
     
+    Display *dp = XtDisplay(textD->w);
     if(!textD->d) {
-        Display *dp = XtDisplay(textD->w);
         textD->d = XftDrawCreate(
             dp,
             XtWindow(textD->w),
             DefaultVisual(dp, DefaultScreen(dp)),
             DefaultColormap(dp, DefaultScreen(dp)));
     }
+    
+    // this is not very efficient, but it works and it will be fixed
+    // later when the port to xft is complete
+    XColor xcolor;
+    XGCValues qv;
+    XGetGCValues(dp, gc, GCForeground, &qv);
+    xcolor.pixel = qv.foreground;
+    Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
+    XQueryColor(dp, colormap, &xcolor);
+    color.color.red = xcolor.red;
+    color.color.green = xcolor.green;
+    color.color.blue = xcolor.blue;
     
     XftDrawStringUtf8(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     
