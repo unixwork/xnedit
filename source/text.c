@@ -876,9 +876,18 @@ static void initialize(TextWidget request, TextWidget new)
 
 #ifndef NO_XMIM
     /* Register the widget to the input manager */
-    XmImRegister((Widget)new, 0);
+    //XmImRegister((Widget)new, 0);
     /* In case some Resources for the IC need to be set, add them below */
-    XmImVaSetValues((Widget)new, NULL);
+    //XmImVaSetValues((Widget)new, NULL);
+    
+    char *name;
+    char *wclass;
+    XtGetApplicationNameAndClass(XtDisplay(new), &name, &wclass); 
+    new->text.xim = XOpenIM(
+            XtDisplay(new),
+            XtDatabase(XtDisplay(new)),
+            name,
+            wclass);
 #endif
 
     XtAddEventHandler((Widget)new, GraphicsExpose, True,
@@ -1205,6 +1214,25 @@ static void realize(Widget w, XtValueMask *valueMask,
         
     /* Continue with realize method from superclass */
     (xmPrimitiveClassRec.core_class.realize)(w, valueMask, attributes);
+    
+    /* create X input context */
+    TextWidget text = (TextWidget)w;
+    text->text.xim = XmImGetXIM(w);
+    if(!text->text.xim) {
+        fprintf(stderr, "Cannot get X Input Manager\n");
+    } else {
+        Window win = XtWindow(w);
+        XIMStyle style = XIMPreeditNothing | XIMStatusNothing;
+        text->text.xic = XCreateIC(
+                text->text.xim,
+                XNInputStyle,
+                style,
+                XNClientWindow,
+                win, 
+                XNFocusWindow,
+                win,
+                NULL);
+    }
 }
 
 /*
@@ -2271,11 +2299,12 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (nChars == 0)
     	return;
 #else
-    nChars = XmImMbLookupString(w, &event->xkey, chars, 19, &keysym,
+    nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 19, &keysym,
      	   &status);
     if (nChars == 0 || status == XLookupNone ||
      	   status == XLookupKeySym || status == XBufferOverflow)
     	return;
+    printf("lookup: [%.*s]\n", nChars, chars);
 #endif
     cancelDrag(w);
     if (checkReadOnly(w))
@@ -3379,6 +3408,8 @@ static void focusInAP(Widget widget, XEvent* event, String* unused1,
 
     /* Call any registered focus-in callbacks */
     XtCallCallbacks((Widget) widget, textNfocusCallback, (XtPointer) event);
+    
+    XSetICFocus(textwidget->text.xic);
 }
 
 static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)

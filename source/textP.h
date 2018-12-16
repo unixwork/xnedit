@@ -129,6 +129,9 @@ typedef struct _TextPart {
     int dragSourceDeleted;  	    	/* # of chars. deleted "" */
     int dragNLines; 	    	    	/* # of newlines in text being drag'd */
     XmString backlightCharTypes;	/* background class string to parse */
+    
+    XIM xim;
+    XIC xic;
 } TextPart;
 
 typedef struct _TextRec {
