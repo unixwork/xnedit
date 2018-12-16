@@ -2288,7 +2288,7 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int status;
 #endif
     XKeyEvent *e = &event->xkey;
-    char chars[20];
+    char chars[128];
     KeySym keysym;
     int nChars;
     smartIndentCBStruct smartIndent;
@@ -2299,12 +2299,11 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (nChars == 0)
     	return;
 #else
-    nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 19, &keysym,
+    nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
      	   &status);
     if (nChars == 0 || status == XLookupNone ||
      	   status == XLookupKeySym || status == XBufferOverflow)
     	return;
-    printf("lookup: [%.*s]\n", nChars, chars);
 #endif
     cancelDrag(w);
     if (checkReadOnly(w))

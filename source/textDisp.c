@@ -1279,7 +1279,11 @@ int TextDMoveRight(textDisp *textD)
 {
     if (textD->cursorPos >= textD->buffer->length)
     	return False;
-    TextDSetInsertPosition(textD, textD->cursorPos + 1);
+    
+    
+    TextDSetInsertPosition(
+            textD,
+            textD->cursorPos + BufCharLen(textD->buffer, textD->cursorPos));
     return True;
 }
 
@@ -1287,7 +1291,15 @@ int TextDMoveLeft(textDisp *textD)
 {
     if (textD->cursorPos <= 0)
     	return False;
-    TextDSetInsertPosition(textD, textD->cursorPos - 1); 
+    
+    int left = textD->cursorPos >= 4 ? textD->cursorPos - 4 : 0;
+    int pos = left;
+    while(pos < textD->cursorPos) {
+        left = pos;
+        pos += BufCharLen(textD->buffer, pos);
+    }
+    
+    TextDSetInsertPosition(textD, left); 
     return True;
 }
 

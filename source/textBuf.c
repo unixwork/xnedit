@@ -2617,6 +2617,13 @@ static char *unexpandTabs(const char *text, int startIndent, int tabDist,
     return outStr;
 }
 
+int BufCharLen(const textBuffer *buf, int pos)
+{
+    char utf8[4];
+    utf8[0] = BufGetCharacter(buf, pos);
+    return utf8charlen((unsigned char*)utf8);
+}
+
 static int max(int i1, int i2)
 {
     return i1 >= i2 ? i1 : i2;
