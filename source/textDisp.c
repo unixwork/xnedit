@@ -2041,15 +2041,12 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         if (style & STYLE_LOOKUP_MASK) {
             styleRec = &textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A];
             underlineStyle = styleRec->underline;
-            // TODO: fix
-            //fs = styleRec->font;
-            //gcValues.font = fs->fid;
+            font = styleRec->xftFont;
             fground = styleRec->color;
             /* here you could pick up specific select and highlight fground */
         }
         else {
             styleRec = NULL;
-            //gcValues.font = fs->fid; // TODO
             fground = textD->fgPixel;
         }
         /* Background color priority order is:
