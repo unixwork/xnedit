@@ -307,6 +307,19 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 }
 
 /*
+ * Initialize the XftDraw object. This should be called after the widget
+ * is realized.
+ */
+void TextDInitXft(textDisp *textD) {
+    Display *dp = XtDisplay(textD->w);
+    textD->d = XftDrawCreate(
+            dp,
+            XtWindow(textD->w),
+            DefaultVisual(dp, DefaultScreen(dp)),
+            DefaultColormap(dp, DefaultScreen(dp)));
+}
+
+/*
 ** Free a text display and release its associated memory.  Note, the text
 ** BUFFER that the text display displays is a separate entity and is not
 ** freed, nor are the style buffer or style table.
@@ -657,7 +670,7 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     
     /* draw the line numbers if exposed area includes them */
     if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth)
-	redrawLineNumbers(textD, False);
+	redrawLineNumbers(textD, True);
 }
 
 /*
@@ -1646,12 +1659,12 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
            have changed. If only one line is altered, line numbers cannot
            be affected (the insertion or removal of a line break always 
            results in at least two lines being redrawn). */
-	if (linesInserted > 1) redrawLineNumbers(textD, False);
+	if (linesInserted > 1) redrawLineNumbers(textD, True);
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
     	if (origCursorPos >= pos)
     	    blankCursorProtrusions(textD);
-	redrawLineNumbers(textD, False);
+	redrawLineNumbers(textD, True);
     }
     
     /* If there is a style buffer, check if the modification caused additional
@@ -1999,7 +2012,6 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
 {
     GC gc, bgGC;
     XGCValues gcValues;
-    //XFontStruct *fs = textD->fontStruct;
     XftFont *font = textD->font;
     Pixel bground = textD->bgPixel;
     Pixel fground = textD->fgPixel;
@@ -2109,13 +2121,6 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     //	    y + textD->ascent, string, nChars);
     
     Display *dp = XtDisplay(textD->w);
-    if(!textD->d) {
-        textD->d = XftDrawCreate(
-            dp,
-            XtWindow(textD->w),
-            DefaultVisual(dp, DefaultScreen(dp)),
-            DefaultColormap(dp, DefaultScreen(dp)));
-    }
     
     // this is not very efficient, but it works and it will be fixed
     // later when the port to xft is complete
@@ -2821,7 +2826,7 @@ static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
     /* Refresh line number/calltip display if its up and we've scrolled 
         vertically */
     if (lineDelta != 0) {
-        redrawLineNumbers(textD, False);
+        redrawLineNumbers(textD, True);
         TextDRedrawCalltip(textD, 0);
     }
 
@@ -2949,6 +2954,12 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
                 textD->top, textD->lineNumWidth, textD->height, False);
     
+    XftColor color;
+    color.color.red = 0x0;
+    color.color.green = 0x0;
+    color.color.blue = 0x0;
+    color.color.alpha = 0xFFFF;
+    
     /* Draw the line numbers, aligned to the text */
     nCols = min(11, textD->lineNumWidth / charWidth);
     y = textD->top;
@@ -2957,11 +2968,19 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         lineStart = textD->lineStarts[visLine];
         if (lineStart != -1 && (lineStart==0 ||
                 BufGetCharacter(textD->buffer, lineStart-1)=='\n')) {
-            sprintf(lineNumString, "%*d", nCols, line);
+            snprintf(lineNumString, 12, "%*d\0", nCols, line);
             // TODO: enable
             //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w),
             //        textD->lineNumGC, textD->lineNumLeft, y + textD->ascent,
             //        lineNumString, strlen(lineNumString));
+            XftDrawStringUtf8(
+                    textD->d,
+                    &color,
+                    textD->font,
+                    textD->lineNumLeft,
+                    y + textD->ascent,
+                    lineNumString,
+                    strlen(lineNumString));
             line++;
         } else {
             XClearArea(XtDisplay(textD->w), XtWindow(textD->w),

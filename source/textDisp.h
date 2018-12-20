@@ -175,6 +175,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString, 
         Pixel calltipFGPixel, Pixel calltipBGPixel);
+void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,

@@ -1206,7 +1206,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
 */
 static void realize(Widget w, XtValueMask *valueMask,
 	XSetWindowAttributes *attributes)
-{
+{    
     /* Set bit gravity window attribute.  This saves a full blank and redraw
        on window resizing */
     *valueMask |= CWBitGravity;
@@ -1233,6 +1233,8 @@ static void realize(Widget w, XtValueMask *valueMask,
                 win,
                 NULL);
     }
+    
+    TextDInitXft(text->text.textD);
 }
 
 /*
