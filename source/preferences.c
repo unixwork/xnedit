@@ -5153,9 +5153,9 @@ static void updateLanguageModeSubmenu(WindowInfo *window)
     XtAddCallback(btn, XmNvalueChangedCallback, setLangModeCB, window);
     for (i=0; i<NLanguageModes; i++) {
         btn = XtVaCreateManagedWidget("languageMode",
-            	xmToggleButtonGadgetClass, menu,
+            	xmToggleButtonGadgetClass, menu, 
             	XmNlabelString, s1=XmStringCreateSimple(LanguageModes[i]->name),
- 	    	XmNmarginHeight, 0,
+ 	    	/* XmNmarginHeight, 0, */
    		XmNuserData, (void *)(intptr_t)i,
     		XmNset, window->languageMode==i, NULL);
         XmStringFree(s1);
