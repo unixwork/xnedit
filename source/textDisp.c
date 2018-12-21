@@ -193,8 +193,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     XGCValues gcValues;
     int i;
     
-    Display *dp = XtDisplay(widget);
-    
     textD = (textDisp *)NEditMalloc(sizeof(textDisp));
     textD->w = widget;
     textD->d = NULL;
@@ -224,8 +222,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->font = font;
     textD->ascent = fontStruct->ascent;
     textD->descent = fontStruct->descent;
-    textD->fixedFontWidth = fontStruct->min_bounds.width ==
-    	    fontStruct->max_bounds.width ? fontStruct->min_bounds.width : -1;
+    /* TODO: think about renabling textD->fixedFontWidth */
+    textD->fixedFontWidth = -1;
     textD->styleBuffer = NULL;
     textD->styleTable = NULL;
     textD->nStyles = 0;
@@ -508,7 +506,6 @@ void TextDSetFont(textDisp *textD, XftFont *fontStruct)
     releaseGC(textD->w, textD->lineNumGC);
     allocateFixedFontGCs(textD, textD->fontStruct2, bgPixel, fgPixel, selectFGPixel,
             selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel);
-    //XSetFont(display, textD->styleGC, fontStruct->fid);
     
     /* Do a full resize to force recalculation of font related parameters */
     width = textD->width;
@@ -1792,7 +1789,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	int rightClip, int leftCharIndex, int rightCharIndex)
 {
     textBuffer *buf = textD->buffer;
-    int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, isMB;
+    int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, isMB, inc;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
@@ -1839,7 +1836,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
        potential infinite loop if x does not advance */
     stdCharWidth = textD->font->max_advance_width;
     if (stdCharWidth <= 0) {
-    	fprintf(stderr, "nedit: Internal Error, bad font measurement\n");
+    	fprintf(stderr, "xnedit: Internal Error, bad font measurement\n");
     	NEditFree(lineStr);
     	return;
     }
@@ -1904,7 +1901,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     outPtr = outStr;
     outIndex = outStartIndex;
     x = startX;
-    for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += charLen) {
+    inc = 1;
+    for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += inc) {
     	if (lineStartPos+charIndex == cursorPos) {
     	    if (charIndex < lineLen
                     || (charIndex == lineLen && cursorPos >= buf->length)) {
@@ -1926,9 +1924,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             charLen = BufExpandCharacter(lineStr + charIndex,
                     lineLen - charIndex, outIndex,
                     expandedChar, buf->tabDist, buf->nullSubsChar, &isMB);
-            //if(charLen > 1) {
-            //    printf("expanded: [%.*s]\n", charLen, expandedChar);
-            //}
+            inc = isMB ? charLen : 1;
         }
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
@@ -1948,8 +1944,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             if(charWidth == 0) {
                 printf("line: [%s]\n", lineStr);
                 printf("fuck: %d[%s] [%d][%d]\n", charLen, expandedChar, (int)expandedChar[charIndex], (int)expandedChar[charIndex+1]);
-            } else {
-                //printf("width: %d\n", charWidth);
             }
         } else {
             charWidth = stdCharWidth;
@@ -1966,7 +1960,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     }
     
     /* Draw the remaining style segment */
-    //printf("final draw len: %d\n", outPtr - outStr);
+    //printf("final draw len: %d\n", outPtr - outStr);;
     drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
