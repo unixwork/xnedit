@@ -2328,7 +2328,7 @@ static int inSelection(selection *sel, int pos, int lineStartPos, int dispIndex)
 static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
     int charIndex, lineStart, lineLen, fontHeight, isMB;
-    int charWidth, charLen, charStyle, visLineNum, xStep, outIndex;
+    int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
     char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
 
     /* Find the visible line number corresponding to the y coordinate */
@@ -2354,9 +2354,11 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
        to find the character position corresponding to the x coordinate */
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
-    for(charIndex=0; charIndex<lineLen; charIndex++) {
+    inc = 1;
+    for(charIndex=0; charIndex<lineLen; charIndex+=inc) {
     	charLen = BufExpandCharacter(lineStr+charIndex, lineLen-charIndex, outIndex, expandedChar,
     		textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
+        inc = isMB ? charLen : 1;
    	charStyle = styleOfPos(textD, lineStart, lineLen, charIndex, outIndex,
 				lineStr[charIndex]);
     	charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
