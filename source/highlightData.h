@@ -33,6 +33,8 @@
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
 
+#include "textDisp.h"
+
 patternSet *FindPatternSet(const char *langModeName);
 int LoadHighlightString(char *inString, int convertOld);
 char *WriteHighlightString(void);
@@ -42,7 +44,7 @@ void EditHighlightStyles(const char *initialStyle);
 void EditHighlightPatterns(WindowInfo *window);
 void UpdateLanguageModeMenu(void);
 int LMHasHighlightPatterns(const char *languageMode);
-XftFont *FontOfNamedStyle(WindowInfo *window, const char *styleName);
+fontList *FontOfNamedStyle(WindowInfo *window, const char *styleName);
 int FontOfNamedStyleIsBold(char *styleName);
 int FontOfNamedStyleIsItalic(char *styleName);
 char *ColorOfNamedStyle(const char *styleName);

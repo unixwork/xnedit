@@ -69,8 +69,8 @@ void BeginBlockDrag(TextWidget tw)
 {
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int fontHeight = textD->font->ascent + textD->font->descent;
-    int fontWidth = textD->font->max_advance_width;
+    int fontHeight = textD->font->font->ascent + textD->font->font->descent;
+    int fontWidth = textD->font->font->max_advance_width;
     selection *sel = &buf->primary;
     int nLines, mousePos, lineStart;
     int x, y, lineEnd;
@@ -168,8 +168,8 @@ void BlockDragSelection(TextWidget tw, int x, int y, int dragType)
 {
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int fontHeight = textD->font->ascent + textD->font->descent;
-    int fontWidth = textD->font->max_advance_width;
+    int fontHeight = textD->font->font->ascent + textD->font->font->descent;
+    int fontWidth = textD->font->font->max_advance_width;
     textBuffer *origBuf = tw->text.dragOrigBuf;
     int dragXOffset = tw->text.dragXOffset;
     textBuffer *tempBuf;

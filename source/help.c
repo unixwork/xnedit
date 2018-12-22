@@ -308,7 +308,7 @@ static void initHelpStyles (Widget parent)
         {
             HelpStyleInfo[ styleIndex ].color     = fg;
             HelpStyleInfo[ styleIndex ].underline = StyleUnderlines[styleIndex];
-            HelpStyleInfo[ styleIndex ].xftFont      = NULL;
+            HelpStyleInfo[ styleIndex ].font      = NULL;
         }
 
         styleTableInitialized  = True;
@@ -381,7 +381,7 @@ static void loadFontsAndColors(Widget parent, int style)
     
     XftFont *font;
     int r,g,b;
-    if (HelpStyleInfo[STYLE_INDEX(style)].xftFont == NULL)
+    if (HelpStyleInfo[STYLE_INDEX(style)].font == NULL)
     {
         font = XftFontOpenName(
                 dp,
@@ -400,7 +400,7 @@ static void loadFontsAndColors(Widget parent, int style)
                 exit(EXIT_FAILURE);
             }
         }
-        HelpStyleInfo[STYLE_INDEX(style)].xftFont = font;
+        HelpStyleInfo[STYLE_INDEX(style)].font = FontListCreate(font);
 
         if (style == STL_NM_LINK)
             HelpStyleInfo[STYLE_INDEX(style)].color =
@@ -730,7 +730,7 @@ static Widget createHelpPanel(enum HelpTopic topic)
     loadFontsAndColors(sw, 'A');
     HelpTextPanes[topic] = XtVaCreateManagedWidget("helpText",
             textWidgetClass, sw,
-            textNXftFont, HelpStyleInfo[0].xftFont, /* MUST correspond to 'A' above */
+            textNXftFont, HelpStyleInfo[0].font, /* MUST correspond to 'A' above */
             textNrows, 30,
             textNcolumns, 65,
             textNbacklightCharTypes, NULL,

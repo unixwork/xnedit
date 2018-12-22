@@ -792,7 +792,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
         p->bgGreen = g; \
         p->bgBlue = b; \
       } \
-      p->xftFont = FontOfNamedStyle(window, pat->style); \
+      p->font = FontOfNamedStyle(window, pat->style); \
     } while (0)
 
     /* PLAIN_STYLE (pass 1) */

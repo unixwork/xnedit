@@ -28,6 +28,7 @@
 #define NEDIT_NEDIT_H_INCLUDED
 
 #include "textBuf.h"
+#include "textDisp.h"
 #include <sys/types.h>
 
 #include <X11/Intrinsic.h>
@@ -482,10 +483,10 @@ typedef struct _WindowInfo {
     //XFontStruct *boldFontStruct;
     //XFontStruct *boldItalicFontStruct;
     
-    XftFont     *font;
-    XftFont     *italicFont;
-    XftFont     *boldFont;
-    XftFont     *boldItalicFont;
+    fontList    *font;
+    fontList    *italicFont;
+    fontList    *boldFont;
+    fontList    *boldItalicFont;
     
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-
