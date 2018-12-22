@@ -1293,7 +1293,7 @@ int TextDMoveRight(textDisp *textD)
     
     TextDSetInsertPosition(
             textD,
-            textD->cursorPos + BufCharLen(textD->buffer, textD->cursorPos));
+            BufRightPos(textD->buffer, textD->cursorPos));
     return True;
 }
 
@@ -1302,15 +1302,7 @@ int TextDMoveLeft(textDisp *textD)
     if (textD->cursorPos <= 0)
     	return False;
     
-    int right = textD->cursorPos;
-    int pos = BufStartOfLine(textD->buffer, textD->cursorPos);
-    int left = pos;
-    while(pos < right) {
-        left = pos;
-        pos += BufCharLen(textD->buffer, pos);
-    }
-    
-    TextDSetInsertPosition(textD, left); 
+    TextDSetInsertPosition(textD, BufLeftPos(textD->buffer, textD->cursorPos)); 
     return True;
 }
 
@@ -2395,7 +2387,7 @@ static void xyToUnconstrainedPos(textDisp *textD, int x, int y, int *row,
     if (*row < 0) *row = 0;
     if (*row >= textD->nVisibleLines) *row = textD->nVisibleLines - 1;
     *column = ((x-textD->left) + textD->horizOffset +
-    	    (posType == CURSOR_POS ? fontWidth/2 : 0)) / fontWidth;
+    	    (posType == CURSOR_POS ? fontWidth/2 : 0)) / fontWidth; 
     if (*column < 0) *column = 0;
 }
 

@@ -2492,18 +2492,19 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
 
     if (deleteEmulatedTab(w, event))
     	return;
-
+    
+    int prevPos = BufLeftPos(textD->buffer, insertPos);
     if (((TextWidget)w)->text.overstrike) {
-    	c = BufGetCharacter(textD->buffer, insertPos - 1);
+    	c = BufGetCharacter(textD->buffer, prevPos);
     	if (c == '\n')
-    	    BufRemove(textD->buffer, insertPos - 1, insertPos);
+    	    BufRemove(textD->buffer, prevPos, insertPos);
     	else if (c != '\t')
-    	    BufReplace(textD->buffer, insertPos - 1, insertPos, " ");
+    	    BufReplace(textD->buffer, prevPos, insertPos, " ");
     } else {
-    	BufRemove(textD->buffer, insertPos - 1, insertPos);
+    	BufRemove(textD->buffer, prevPos, insertPos);
     }
 
-    TextDSetInsertPosition(textD, insertPos - 1);
+    TextDSetInsertPosition(textD, prevPos);
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
 }
@@ -2526,7 +2527,8 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
         ringIfNecessary(silent, w);
     	return;
     }
-    BufRemove(textD->buffer, insertPos , insertPos + 1);
+    int nextPos = BufRightPos(textD->buffer, insertPos);
+    BufRemove(textD->buffer, insertPos , nextPos);
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
 }

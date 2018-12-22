@@ -691,7 +691,7 @@ void BufRectSelect(textBuffer *buf, int start, int end, int rectStart,
         int rectEnd)
 {
     selection oldSelection = buf->primary;
-
+    
     setRectSelect(&buf->primary, start, end, rectStart, rectEnd);
     redisplaySelection(buf, &oldSelection, &buf->primary);
 }
@@ -2622,6 +2622,22 @@ int BufCharLen(const textBuffer *buf, int pos)
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
     return utf8charlen((unsigned char*)utf8);
+}
+
+int BufLeftPos(textBuffer *buf, int pos)
+{
+    int cur = BufStartOfLine(buf, pos);
+    int left = cur;
+    while(cur < pos) {
+        left = cur;
+        cur += BufCharLen(buf, cur);
+    }
+    return left;
+}
+
+int BufRightPos(textBuffer *buf, int pos)
+{
+    return pos + BufCharLen(buf, pos);
 }
 
 static int max(int i1, int i2)

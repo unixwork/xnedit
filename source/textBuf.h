@@ -170,5 +170,7 @@ void BufUnsubstituteNullChars(char *string, textBuffer *buf);
 int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText);
 
 int BufCharLen(const textBuffer *buf, int pos);
+int BufLeftPos(textBuffer *buf, int pos);
+int BufRightPos(textBuffer *buf, int pos);
 
 #endif /* NEDIT_TEXTBUF_H_INCLUDED */
