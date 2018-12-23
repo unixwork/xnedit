@@ -3986,12 +3986,10 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 
 NFont *FontCreate(Display *dp, FcPattern *pattern)
 {
-    //FcConfig* config = FcInitLoadConfigAndFonts();
-    FcPattern *p = FcPatternDuplicate(pattern);
-    FcConfigSubstitute(NULL, p, FcMatchPattern);
-    FcDefaultSubstitute(p);
     FcResult result;
-    FcPattern* match = FcFontMatch(NULL, p, &result);
+    pattern = FcPatternDuplicate(pattern);
+    FcPattern *match = XftFontMatch (dp, DefaultScreen(dp), pattern, &result);
+    
     XftFont *defaultFont = XftFontOpenPattern(dp, match);
     if(!defaultFont) {
         return NULL;
@@ -4013,6 +4011,7 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
 NFont *FontFromName(Display *dp, const char *name)
 {
     FcPattern *pattern = FcNameParse(name);
+    
     NFont *font = FontCreate(dp, pattern);
     FcPatternDestroy(pattern);
     return font;
@@ -4020,28 +4019,17 @@ NFont *FontFromName(Display *dp, const char *name)
 
 XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
 {
-    //FcConfig* config = FcInitLoadConfigAndFonts();
-    FcConfig *config = NULL;
-    
-    FcPattern *pattern = FcPatternDuplicate(f->pattern); // doesn't work yet
-    //FcPattern* pattern = FcNameParse((const FcChar8*)"Monospace");
+    FcPattern *pattern = FcPatternDuplicate(f->pattern);
     FcCharSet *charset = FcCharSetCreate();
     FcValue value;
     value.type = FcTypeCharSet;
     value.u.c = charset;
     FcCharSetAddChar(charset, c);
     FcPatternAdd(pattern, FC_CHARSET, value, 0);
-    //FcPatternAddCharSet(pattern, FC_CHARSET, charset);
-    //FcDefaultSubstitute(pattern);
 
-    FcDefaultSubstitute(pattern);
     FcResult result;
-    FcPattern* font = FcFontMatch(config, pattern, &result);
-    
-    XftFont *newFont = XftFontOpenPattern(f->display, font);
-    
-    FcPatternDestroy(pattern);
-    FcPatternDestroy(font);
+    FcPattern *match = XftFontMatch (f->display, DefaultScreen(f->display), pattern, &result);
+    XftFont *newFont = XftFontOpenPattern(f->display, match);
     
     if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
         FontAddFail(f, charset);
