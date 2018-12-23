@@ -400,7 +400,7 @@ static void loadFontsAndColors(Widget parent, int style)
                 exit(EXIT_FAILURE);
             }
         }
-        HelpStyleInfo[STYLE_INDEX(style)].font = FontListCreate(font);
+        HelpStyleInfo[STYLE_INDEX(style)].font = FontListCreate(dp, font);
 
         if (style == STL_NM_LINK)
             HelpStyleInfo[STYLE_INDEX(style)].color =

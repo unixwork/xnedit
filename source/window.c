@@ -301,10 +301,10 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
     window->fontList = GetPrefFontList();
-    window->font = FontListCreate(GetPrefFont());
-    window->italicFont = FontListCreate(GetPrefItalicFont());
-    window->boldFont = FontListCreate(GetPrefBoldFont());
-    window->boldItalicFont = FontListCreate(GetPrefBoldItalicFont());
+    window->font = FontListCreate(TheDisplay, GetPrefFont());
+    window->italicFont = FontListCreate(TheDisplay, GetPrefItalicFont());
+    window->boldFont = FontListCreate(TheDisplay, GetPrefBoldFont());
+    window->boldItalicFont = FontListCreate(TheDisplay, GetPrefBoldItalicFont());
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;
@@ -1831,11 +1831,11 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     }
     if (highlightChanged) {
         strcpy(window->italicFontName, italicName);
-        window->italicFont = FontListCreate(XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), italicName));
+        window->italicFont = FontListCreate(TheDisplay, XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), italicName));
         strcpy(window->boldFontName, boldName);
-        window->boldFont = FontListCreate(XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), boldName));
+        window->boldFont = FontListCreate(TheDisplay, XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), boldName));
         strcpy(window->boldItalicFontName, boldItalicName);
-        window->boldItalicFont = FontListCreate(XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), boldItalicName));
+        window->boldItalicFont = FontListCreate(TheDisplay, XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), boldItalicName));
     }
 
     /* Change the primary font in all the widgets */
@@ -3335,9 +3335,9 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
     window->fontList = GetPrefFontList();
-    window->italicFont = FontListCreate(GetPrefItalicFont());
-    window->boldFont = FontListCreate(GetPrefBoldFont());
-    window->boldItalicFont = FontListCreate(GetPrefBoldItalicFont());
+    window->italicFont = FontListCreate(TheDisplay, GetPrefItalicFont());
+    window->boldFont = FontListCreate(TheDisplay, GetPrefBoldFont());
+    window->boldItalicFont = FontListCreate(TheDisplay, GetPrefBoldItalicFont());
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;

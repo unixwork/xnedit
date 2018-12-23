@@ -781,7 +781,7 @@ void TextWidgetClassInit(Display *dp, const char *fontname)
 {
     XftFont *def = XftFontOpenName(dp, DefaultScreen(dp), fontname);
     if(def) {
-        defaultFont = FontListCreate(def);
+        defaultFont = FontListCreate(dp, def);
     } else if(strcmp(fontname, FALLBACK_FONTNAME)){
         TextWidgetClassInit(dp, FALLBACK_FONTNAME);
         if(!def) {

@@ -125,7 +125,8 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 static int stringWidth(const textDisp* textD, const char* string,
         int length, int style);
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
-        int length, int style);
+        int length, fontList *font);
+static fontList* styleFontList(const textDisp* textD, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
         int dispIndex);
 static int xyToPos(textDisp *textD, int x, int y, int posType);
@@ -1786,7 +1787,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	int rightClip, int leftCharIndex, int rightCharIndex)
 {
     textBuffer *buf = textD->buffer;
-    int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, isMB, inc;
+    int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, inc;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
@@ -1795,7 +1796,11 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     FcChar32 *outPtr;
     char *lineStr;
     char baseChar;
-    FcChar32 uc;
+    FcChar32 uc = 0;
+    fontList *styleFL = textD->font;
+    fontList *charFL;
+    XftFont *styleFont;
+    XftFont *charFont;
     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
@@ -1890,21 +1895,21 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
                 ? stdCharWidth
-                : stringWidth4(textD, expandedChar, charLen, style);
+                : stringWidth4(
+                        textD,
+                        expandedChar,
+                        charLen,
+                        styleFL = styleFontList(textD, style));
 
     	if (x + charWidth >= leftClip && charIndex >= leftCharIndex) {
     	    startIndex = charIndex;
     	    outStartIndex = outIndex;
     	    startX = x;
+            styleFont = FindFont(styleFL, uc);
     	    break;
     	}
     	x += charWidth;
     	outIndex += charLen;
-        
-        //if(isMB) {
-        //    charIndex += charLen-1;
-        //}
-        //inc = isMB ? charLen : 1;
     }
     
     /* Scan character positions from the beginning of the clipping range, and
@@ -1949,18 +1954,20 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
                 outIndex + dispIndexOffset, baseChar);
-
+        charFL = styleFontList(textD, charStyle);
+        charFont = FindFont(charFL, uc);
         
-        if (charStyle != style) {
+        if (charStyle != style || charFont != styleFont) {
             drawString(textD, style, startX, y, x, outStr, outPtr - outStr);
             outPtr = outStr;
             startX = x;
             style = charStyle;
+            styleFont = charFont;
     	}
         
         if (charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
-            charWidth = stringWidth4(textD, expandedChar, charLen, charStyle);
+            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
             if(charWidth == 0) {
                 printf("line: [%s]\n", lineStr);
             }
@@ -2025,7 +2032,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
 {
     GC gc, bgGC;
     XGCValues gcValues;
-    XftFont *font = textD->font->font;
+    fontList *fontList = textD->font;
     Pixel bground = textD->bgPixel;
     Pixel fground = textD->fgPixel;
     int underlineStyle = FALSE;
@@ -2066,7 +2073,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         if (style & STYLE_LOOKUP_MASK) {
             styleRec = &textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A];
             underlineStyle = styleRec->underline;
-            font = styleRec->font->font;
+            fontList = styleRec->font;
             fground = styleRec->color;
             /* here you could pick up specific select and highlight fground */
         }
@@ -2113,6 +2120,13 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     if(style & FILL_MASK) {
         return;
     }
+    
+    /* We assume the string should be rendered with just one font, because
+     * redisplayLine breaks the strings when a different font is required.
+     * The first character in the string determines the charset and FindFont
+     * returns a Font for this.
+     */
+    XftFont *font = FindFont(fontList, string[0]);
 
     /* If any space around the character remains unfilled (due to use of
        different sized fonts for highlighting), fill in above or below
@@ -2328,17 +2342,22 @@ static int stringWidth(const textDisp* textD, const char *string,
 ** Find the width of a string in the font of a particular style
 */
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
-        int length, int style)
+        int length, fontList *fontList)
 {
-    XftFont *fs;
-    
-    if (style & STYLE_LOOKUP_MASK)
-    	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font->font;
-    else 
-    	fs = textD->font->font;
     XGlyphInfo extents;
-    XftTextExtents32(XtDisplay(textD->w), fs, string, length, &extents);
+    XftFont *font = FindFont(fontList, string[0]);
+    XftTextExtents32(XtDisplay(textD->w), font, string, length, &extents);
     return extents.xOff;
+}
+
+static fontList* styleFontList(const textDisp* textD, int style)
+{
+    fontList *font;
+    if (style & STYLE_LOOKUP_MASK)
+    	font = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font;
+    else 
+    	font = textD->font;
+    return font;
 }
 
 /*
@@ -3965,10 +3984,67 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 
 /* font list functions */
 
-fontList *FontListCreate(XftFont *xftFont)
+fontList *FontListCreate(Display *dp, XftFont *xftFont)
 {
     fontList *list = NEditMalloc(sizeof(fontList));
     list->font = xftFont;
+    list->display = dp;
     list->next = NULL;
     return list;
 }
+
+XftFont *FontListAddFontForChar(fontList *f, FcChar32 c)
+{
+    FcConfig* config = FcInitLoadConfigAndFonts();
+    
+    //FcPattern *pattern = FcPatternDuplicate(f->font->pattern); // doesn't work yet
+    FcPattern* pattern = FcNameParse((const FcChar8*)"Monospace");
+    FcCharSet *charset = FcCharSetCreate();
+    FcValue value;
+    value.type = FcTypeCharSet;
+    value.u.c = charset;
+    FcCharSetAddChar(charset, c);
+    FcPatternAdd(pattern, FC_CHARSET, value, 0);
+    //FcPatternAddCharSet(pattern, FC_CHARSET, charset);
+    FcDefaultSubstitute(pattern);
+
+    FcDefaultSubstitute(pattern);
+    FcResult result;
+    FcPattern* font = FcFontMatch(config, pattern, &result);
+    
+    XftFont *newFont = XftFontOpenPattern(f->display, font);
+    
+    FcPatternDestroy(pattern);
+    FcCharSetDestroy(charset);
+    FcPatternDestroy(font);
+    
+    if(!newFont) {
+        return f->font;
+    }
+    
+    fontList *newElm = FontListCreate(f->display, newFont);
+    fontList *elm = f;
+    fontList *last = NULL;
+    while(elm) {
+        last = elm;
+        elm = elm->next;
+    }
+    last->next = newElm;
+    return newFont;
+}
+
+XftFont *FindFont(fontList *f, FcChar32 c)
+{
+    if(c == 0) {
+        return f->font;
+    }
+    fontList *elm = f;
+    while(elm) {
+        if(FcCharSetHasChar(elm->font->charset, c)) {
+            return elm->font;
+        }
+        elm = elm->next;
+    }
+    return FontListAddFontForChar(f, c);
+}
+

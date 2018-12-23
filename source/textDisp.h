@@ -43,6 +43,7 @@ enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
 typedef struct fontList fontList;
 struct fontList{
     XftFont *font;
+    Display *display;
     fontList *next;
 };
 
@@ -239,7 +240,9 @@ void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
 
-fontList *FontListCreate(XftFont *xftFont);
+fontList *FontListCreate(Display *dp, XftFont *xftFont);
+XftFont *FontListAddFontForChar(fontList *f, FcChar32 c);
+XftFont *FindFont(fontList *f, FcChar32 c);
 
 #ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
 #define TextDImposeGraphicsExposeTranslation TextDGraphicsExposeTranslation
