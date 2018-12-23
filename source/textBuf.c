@@ -2681,6 +2681,9 @@ int BufCharLen(const textBuffer *buf, int pos)
 int BufLeftPos(textBuffer *buf, int pos)
 {
     int cur = BufStartOfLine(buf, pos);
+    if(cur == pos) {
+        return pos-1;
+    }
     int left = cur;
     while(cur < pos) {
         left = cur;
