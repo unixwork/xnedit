@@ -291,10 +291,10 @@ static struct prefData {
     XFontStruct *italicFontStruct;
     XFontStruct *boldItalicFontStruct;
     
-    XftFont *font;
-    XftFont *boldFont;
-    XftFont *italicFont;
-    XftFont *boldItalicFont;
+    NFont *font;
+    NFont *boldFont;
+    NFont *italicFont;
+    NFont *boldItalicFont;
     
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
@@ -1416,10 +1416,10 @@ static void translatePrefFormats(int convertOld, int fileVer)
     PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.boldItalicFontString);
     
-    PrefData.font = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
-    PrefData.boldFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
-    PrefData.italicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
-    PrefData.boldItalicFont = XftFontOpenName(TheDisplay, DefaultScreen(TheDisplay), "Monospace:size=10");
+    PrefData.font = FontFromName(TheDisplay, "Monospace:size=10");
+    PrefData.boldFont = FontFromName(TheDisplay, "Monospace:size=10");
+    PrefData.italicFont = FontFromName(TheDisplay, "Monospace:size=10");
+    PrefData.boldItalicFont = FontFromName(TheDisplay, "Monospace:size=10");
     
     /*
     **  The default set for the comand shell in PrefDescrip ("DEFAULT") is
@@ -2075,22 +2075,22 @@ XmFontList GetPrefFontList(void)
     return PrefData.fontList;
 }
 
-XftFont *GetPrefFont(void)
+NFont *GetPrefFont(void)
 {
     return PrefData.font;
 }
 
-XftFont *GetPrefBoldFont(void)
+NFont *GetPrefBoldFont(void)
 {
     return PrefData.boldFont;
 }
 
-XftFont *GetPrefItalicFont(void)
+NFont *GetPrefItalicFont(void)
 {
     return PrefData.italicFont;
 }
 
-XftFont *GetPrefBoldItalicFont(void)
+NFont *GetPrefBoldItalicFont(void)
 {
     return PrefData.boldItalicFont;
 }

@@ -611,7 +611,7 @@ static XtActionsRec actionsList[] = {
 	select-end()
 */
 
-static fontList *defaultFont;
+static NFont *defaultFont;
 
 static XtResource resources[] = {
     {XmNhighlightThickness, XmCHighlightThickness, XmRDimension,
@@ -621,7 +621,7 @@ static XtResource resources[] = {
       XtOffset(TextWidget, primitive.shadow_thickness), XmRInt, 0},
     {textNfont, textCFont, XmRFontStruct, sizeof(XFontStruct *),
       XtOffset(TextWidget, text.fontStruct), XmRString, "fixed"},
-    {textNXftFont, textCXftFont, textTXftFont, sizeof(fontList *),
+    {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *),
       XtOffset(TextWidget, text.font2), textTXftFont, &defaultFont},
     {textNselectForeground, textCSelectForeground, XmRPixel, sizeof(Pixel),
       XtOffset(TextWidget, text.selectFGPixel), XmRString, 
@@ -779,12 +779,11 @@ static Cursor empty_cursor = 0;
  */
 void TextWidgetClassInit(Display *dp, const char *fontname)
 {
-    XftFont *def = XftFontOpenName(dp, DefaultScreen(dp), fontname);
-    if(def) {
-        defaultFont = FontListCreate(dp, def);
-    } else if(strcmp(fontname, FALLBACK_FONTNAME)){
-        TextWidgetClassInit(dp, FALLBACK_FONTNAME);
-        if(!def) {
+    defaultFont = FontFromName(dp, fontname);
+    if(!defaultFont) {
+        if(strcmp(fontname, FALLBACK_FONTNAME)) {
+            TextWidgetClassInit(dp, FALLBACK_FONTNAME);
+        } else {
             fprintf(stderr, "Cannot open default font\n");
             exit(1);
         }
@@ -1252,7 +1251,7 @@ static XtGeometryResult queryGeometry(Widget w, XtWidgetGeometry *proposed,
     //XFontStruct *fs = tw->text.textD->fontStruct;
     //int fontWidth = fs->max_bounds.width;
     //int fontHeight = fs->ascent + fs->descent;
-    XftFont *font = tw->text.textD->font->font;
+    XftFont *font = FontDefault(tw->text.textD->font);
     int fontWidth = font->max_advance_width;
     int fontHeight = font->height;
     int marginHeight = tw->text.marginHeight;
@@ -1485,7 +1484,7 @@ void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int fontWidth = textD->font->font->max_advance_width;
+    int fontWidth = FontDefault(textD->font)->max_advance_width;
     int replaceSel, singleLine, breakAt = 0;
 
     /* Don't wrap if auto-wrap is off or suppressed, or it's just a newline */
@@ -3176,7 +3175,7 @@ static void pageLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = textD->font->font->max_advance_width;
+    int maxCharWidth = FontDefault(textD->font)->max_advance_width;
     int lineStartPos, indent, pos;
     int horizOffset;
     int silent = hasKey("nobell", args, nArgs);
@@ -3213,7 +3212,7 @@ static void pageRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = textD->font->font->max_advance_width;
+    int maxCharWidth = FontDefault(textD->font)->max_advance_width;
     int oldHorizOffset = textD->horizOffset;
     int lineStartPos, indent, pos;
     int horizOffset, sliderSize, sliderMax;
@@ -4158,9 +4157,10 @@ static void autoScrollTimerProc(XtPointer clientData, XtIntervalId *id)
 {
     TextWidget w = (TextWidget)clientData;
     textDisp *textD = w->text.textD;
+    XftFont *xftFont = FontDefault(textD->font);
     int topLineNum, horizOffset, newPos, cursorX, y;
-    int fontWidth = textD->font->font->max_advance_width;
-    int fontHeight = textD->font->font->ascent + textD->font->font->descent;
+    int fontWidth = xftFont->max_advance_width;
+    int fontHeight = xftFont->ascent + xftFont->descent;
 
     /* For vertical autoscrolling just dragging the mouse outside of the top
        or bottom of the window is sufficient, for horizontal (non-rectangular)

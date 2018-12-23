@@ -1274,12 +1274,12 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
 ** This routine must only be called with a valid styleName (call
 ** NamedStyleExists to find out whether styleName is valid).
 */
-fontList *FontOfNamedStyle(WindowInfo *window, const char *styleName)
+NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
 {   
     // TODO: this function is just a workaround and not fully converted to Xft
     int styleNo=lookupNamedStyle(styleName);
     int fontNum;
-    fontList *font;
+    NFont *font;
     
     if (styleNo<0)
         return window->font;

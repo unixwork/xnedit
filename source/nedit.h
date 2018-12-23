@@ -483,10 +483,10 @@ typedef struct _WindowInfo {
     //XFontStruct *boldFontStruct;
     //XFontStruct *boldItalicFontStruct;
     
-    fontList    *font;
-    fontList    *italicFont;
-    fontList    *boldFont;
-    fontList    *boldItalicFont;
+    NFont    *font;
+    NFont    *italicFont;
+    NFont    *boldFont;
+    NFont    *boldItalicFont;
     
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-

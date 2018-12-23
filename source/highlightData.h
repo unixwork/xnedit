@@ -44,7 +44,7 @@ void EditHighlightStyles(const char *initialStyle);
 void EditHighlightPatterns(WindowInfo *window);
 void UpdateLanguageModeMenu(void);
 int LMHasHighlightPatterns(const char *languageMode);
-fontList *FontOfNamedStyle(WindowInfo *window, const char *styleName);
+NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName);
 int FontOfNamedStyleIsBold(char *styleName);
 int FontOfNamedStyleIsItalic(char *styleName);
 char *ColorOfNamedStyle(const char *styleName);

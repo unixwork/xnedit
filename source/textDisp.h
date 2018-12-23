@@ -40,11 +40,24 @@ enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
 
 #define NO_HINT -1
         
-typedef struct fontList fontList;
-struct fontList{
+typedef struct NFont NFont;
+typedef struct NFontList NFontList;
+typedef struct NCharSetList NCharSetList;
+struct NFontList {
     XftFont *font;
+    NFontList *next;
+};
+
+struct NCharSetList {
+    FcCharSet *charset;
+    NCharSetList *next;
+};
+
+struct NFont {
+    NFontList *fonts;
+    NCharSetList *fail;
     Display *display;
-    fontList *next;
+    FcPattern *pattern;
 };
 
 typedef struct {
@@ -60,7 +73,7 @@ typedef struct {
     Boolean underline;
     //XFontStruct *font;
     //XftFont *xftFont;
-    fontList *font;
+    NFont *font;
     char *bgColorName;      /* background style coloring (name may be NULL) */
     unsigned short bgRed;
     unsigned short bgGreen;
@@ -136,7 +149,7 @@ typedef struct _textDisp {
     void *highlightCBArg;   	    	/* Arg to unfinishedHighlightCB */
     XFontStruct *fontStruct2;		/* Font structure for primary font */
     //XftFont *font;                      /* primary font */
-    fontList *font;
+    NFont *font;
     int ascent, descent;		/* Composite ascent and descent for
     					   primary font + all-highlight fonts */
     int fixedFontWidth;			/* Font width if all current fonts are
@@ -179,7 +192,7 @@ typedef struct _textDisp {
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 	Position left, Position top, Position width, Position height,
 	Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-	XFontStruct *fontStruct, fontList *font, Pixel bgPixel, Pixel fgPixel,
+	XFontStruct *fontStruct, NFont *font, Pixel bgPixel, Pixel fgPixel,
 	Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
 	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString, 
@@ -193,7 +206,7 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
 void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
         Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
         Pixel lineNoFgP, Pixel cursorFgP);
-void TextDSetFont(textDisp *textD, fontList *fontStruct);
+void TextDSetFont(textDisp *textD, NFont *fontStruct);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);
@@ -240,9 +253,12 @@ void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
 
-fontList *FontListCreate(Display *dp, XftFont *xftFont);
-XftFont *FontListAddFontForChar(fontList *f, FcChar32 c);
-XftFont *FindFont(fontList *f, FcChar32 c);
+NFont *FontCreate(Display *dp, FcPattern *pattern);
+NFont *FontFromName(Display *dp, const char *name);
+XftFont *FontListAddFontForChar(NFont *f, FcChar32 c);
+XftFont *FontDefault(NFont *f);
+void FontAddFail(NFont *f, FcCharSet *c);
+XftFont *FindFont(NFont *f, FcChar32 c);
 
 #ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
 #define TextDImposeGraphicsExposeTranslation TextDGraphicsExposeTranslation

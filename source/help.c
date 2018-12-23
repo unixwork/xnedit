@@ -379,20 +379,19 @@ static void loadFontsAndColors(Widget parent, int style)
 {
     Display *dp = XtDisplay(parent);
     
-    XftFont *font;
+    NFont *font;
     int r,g,b;
     if (HelpStyleInfo[STYLE_INDEX(style)].font == NULL)
     {
-        font = XftFontOpenName(
+        font = FontFromName(
                 dp,
-                DefaultScreen(dp),
                 GetPrefHelpFontName(StyleFonts[STYLE_INDEX(style)]));
         
         if (font == NULL)
         {
             fprintf(stderr, "NEdit: help font, %s, not available\n",
                     GetPrefHelpFontName(StyleFonts[STYLE_INDEX(style)]));
-            font = XftFontOpenName(dp, DefaultScreen(dp), "Monospace");
+            font = FontFromName(dp, "Monospace");
             if (font == NULL)
             {
                 fprintf(stderr, "NEdit: fallback help font, \"fixed\", not "
@@ -400,7 +399,7 @@ static void loadFontsAndColors(Widget parent, int style)
                 exit(EXIT_FAILURE);
             }
         }
-        HelpStyleInfo[STYLE_INDEX(style)].font = FontListCreate(dp, font);
+        HelpStyleInfo[STYLE_INDEX(style)].font = font;
 
         if (style == STL_NM_LINK)
             HelpStyleInfo[STYLE_INDEX(style)].color =

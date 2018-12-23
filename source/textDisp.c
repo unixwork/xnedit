@@ -125,8 +125,8 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 static int stringWidth(const textDisp* textD, const char* string,
         int length, int style);
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
-        int length, fontList *font);
-static fontList* styleFontList(const textDisp* textD, int style);
+        int length, NFont *font);
+static NFont* styleFontList(const textDisp* textD, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
         int dispIndex);
 static int xyToPos(textDisp *textD, int x, int y, int posType);
@@ -186,7 +186,7 @@ static void textDRedisplayRange(textDisp *textD, int start, int end);
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        XFontStruct *fontStruct, fontList *font, Pixel bgPixel, Pixel fgPixel,
+        XFontStruct *fontStruct, NFont *font, Pixel bgPixel, Pixel fgPixel,
         Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
         Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
@@ -437,9 +437,9 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
 /*
 ** Change the (non highlight) font
 */
-void TextDSetFont(textDisp *textD, fontList *font)
+void TextDSetFont(textDisp *textD, NFont *font)
 {
-    XftFont *fontStruct = font->font;
+    XftFont *fontStruct = FontDefault(font);
     Display *display = XtDisplay(textD->w);
     int i, maxAscent = fontStruct->ascent, maxDescent = fontStruct->descent;
     int width, height, fontWidth;
@@ -447,7 +447,7 @@ void TextDSetFont(textDisp *textD, fontList *font)
     Pixel highlightFGPixel, highlightBGPixel, lineNumFGPixel;
     XGCValues values;
     XftFont *styleFont;
-    fontList *styleFontList;
+    NFont *styleFontList;
     
     /* If font size changes, cursor will be redrawn in a new position */
     blankCursorProtrusions(textD);
@@ -456,7 +456,7 @@ void TextDSetFont(textDisp *textD, fontList *font)
        maximum font height for this text display */
     for (i=0; i<textD->nStyles; i++) {
         styleFontList = textD->styleTable[i].font;
-        styleFont = styleFontList ? styleFontList->font : NULL;
+        styleFont = styleFontList ? FontDefault(styleFontList) : NULL;
         if (styleFont != NULL && styleFont->ascent > maxAscent)
             maxAscent = styleFont->ascent;
         if (styleFont != NULL && styleFont->descent > maxDescent)
@@ -471,7 +471,7 @@ void TextDSetFont(textDisp *textD, fontList *font)
         fontWidth = -1;
     else {
         for (i=0; i<textD->nStyles; i++) {
-            styleFont = textD->styleTable[i].font->font;
+            styleFont = FontDefault(textD->styleTable[i].font);
             // TODO: fix
             /*
             if (styleFont != NULL && 
@@ -536,12 +536,12 @@ void TextDSetFont(textDisp *textD, fontList *font)
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = textD->font->font->max_advance_width;
+    int fontWidth = FontDefault(textD->font)->max_advance_width;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
-            fontList *font = textD->styleTable[i].font;
+            NFont *font = textD->styleTable[i].font;
             printf("implement me\n");
             /*
             int thisWidth = (textD->styleTable[i].font)->min_bounds.width;
@@ -557,12 +557,12 @@ int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = textD->font->font->max_advance_width;
+    int fontWidth = FontDefault(textD->font)->max_advance_width;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
-            XftFont *font = textD->styleTable[i].font->font;
+            XftFont *font = FontDefault(textD->styleTable[i].font);
             int thisWidth = font->max_advance_width;
             if (thisWidth > fontWidth) {
                 fontWidth = thisWidth;
@@ -1797,8 +1797,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     char *lineStr;
     char baseChar;
     FcChar32 uc = 0;
-    fontList *styleFL = textD->font;
-    fontList *charFL;
+    NFont *styleFL = textD->font;
+    NFont *charFL;
     XftFont *styleFont;
     XftFont *charFont;
     
@@ -1839,7 +1839,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
        changes based on character position can still occur in this region due
        to rectangular selections).  stdCharWidth must be non-zero to prevent a
        potential infinite loop if x does not advance */
-    stdCharWidth = textD->font->font->max_advance_width;
+    stdCharWidth = FontDefault(textD->font)->max_advance_width;
     if (stdCharWidth <= 0) {
     	fprintf(stderr, "xnedit: Internal Error, bad font measurement\n");
     	NEditFree(lineStr);
@@ -2032,7 +2032,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
 {
     GC gc, bgGC;
     XGCValues gcValues;
-    fontList *fontList = textD->font;
+    NFont *fontList = textD->font;
     Pixel bground = textD->bgPixel;
     Pixel fground = textD->fgPixel;
     int underlineStyle = FALSE;
@@ -2204,7 +2204,7 @@ static void drawCursor(textDisp *textD, int x, int y)
     XSegment segs[5];
     int left, right, cursorWidth, midY;
     //int fontWidth = textD->fontStruct->min_bounds.width, nSegs = 0;
-    int fontWidth = textD->font->font->max_advance_width; // TODO: get min width
+    int fontWidth = FontDefault(textD->font)->max_advance_width; // TODO: get min width
     int fontHeight = textD->ascent + textD->descent;
     int nSegs = 0;
     int bot = y + fontHeight - 1;
@@ -2330,9 +2330,9 @@ static int stringWidth(const textDisp* textD, const char *string,
     XftFont *fs;
     
     if (style & STYLE_LOOKUP_MASK)
-    	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font->font;
+    	fs = FontDefault(textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font);
     else 
-    	fs = textD->font->font;
+    	fs = FontDefault(textD->font);
     XGlyphInfo extents;
     XftTextExtentsUtf8(XtDisplay(textD->w), fs, string, length, &extents);
     return extents.xOff;
@@ -2342,7 +2342,7 @@ static int stringWidth(const textDisp* textD, const char *string,
 ** Find the width of a string in the font of a particular style
 */
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
-        int length, fontList *fontList)
+        int length, NFont *fontList)
 {
     XGlyphInfo extents;
     XftFont *font = FindFont(fontList, string[0]);
@@ -2350,9 +2350,9 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
     return extents.xOff;
 }
 
-static fontList* styleFontList(const textDisp* textD, int style)
+static NFont* styleFontList(const textDisp* textD, int style)
 {
-    fontList *font;
+    NFont *font;
     if (style & STYLE_LOOKUP_MASK)
     	font = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font;
     else 
@@ -2444,7 +2444,7 @@ static void xyToUnconstrainedPos(textDisp *textD, int x, int y, int *row,
 	int *column, int posType)
 {
     int fontHeight = textD->ascent + textD->descent;
-    int fontWidth = textD->font->font->max_advance_width;
+    int fontWidth = FontDefault(textD->font)->max_advance_width;
 
     /* Find the visible line number corresponding to the y coordinate */
     *row = (y - textD->top) / fontHeight;
@@ -2982,7 +2982,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
     int y, line, visLine, nCols, lineStart;
     char lineNumString[12];
     int lineHeight = textD->ascent + textD->descent;
-    int charWidth = textD->font->font->max_advance_width;
+    int charWidth = FontDefault(textD->font)->max_advance_width;
     XRectangle clipRect;
     Display *display = XtDisplay(textD->w);
     
@@ -3028,7 +3028,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
             XftDrawStringUtf8(
                     textD->d,
                     &color,
-                    textD->font->font,
+                    FontDefault(textD->font),
                     textD->lineNumLeft,
                     y + textD->ascent,
                     lineNumString,
@@ -3119,7 +3119,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             XGlyphInfo extents;
             XftTextExtentsUtf8(
                     XtDisplay(textD->w),
-                    textD->font->font,
+                    FontDefault(textD->font),
                     expandedChar,
                     len,
                     &extents);
@@ -3135,7 +3135,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             XGlyphInfo extents;
             XftTextExtentsUtf8(
                     XtDisplay(textD),
-                    textD->styleTable[style].font->font,
+                    FontDefault(textD->styleTable[style].font),
                     expandedChar,
                     len,
                     &extents);
@@ -3164,7 +3164,7 @@ static int emptyLinesVisible(textDisp *textD)
 static void blankCursorProtrusions(textDisp *textD)
 {
     int x, width, cursorX = textD->cursorX, cursorY = textD->cursorY;
-    int fontWidth = textD->font->font->max_advance_width;
+    int fontWidth = FontDefault(textD->font)->max_advance_width;
     int fontHeight = textD->ascent + textD->descent;
     int cursorWidth, left = textD->left, right = left + textD->width;
     
@@ -3776,7 +3776,7 @@ static int wrapUsesCharacter(textDisp *textD, int lineEndPos)
 static void hideOrShowHScrollBar(textDisp *textD)
 {
     if (textD->continuousWrap && (textD->wrapMargin == 0 || textD->wrapMargin *
-    	    textD->font->font->max_advance_width < textD->width))
+    	    FontDefault(textD->font)->max_advance_width < textD->width))
     	XtUnmanageChild(textD->hScrollBar);
     else
     	XtManageChild(textD->hScrollBar);
@@ -3984,21 +3984,47 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 
 /* font list functions */
 
-fontList *FontListCreate(Display *dp, XftFont *xftFont)
+NFont *FontCreate(Display *dp, FcPattern *pattern)
 {
-    fontList *list = NEditMalloc(sizeof(fontList));
-    list->font = xftFont;
-    list->display = dp;
+    //FcConfig* config = FcInitLoadConfigAndFonts();
+    FcPattern *p = FcPatternDuplicate(pattern);
+    FcConfigSubstitute(NULL, p, FcMatchPattern);
+    FcDefaultSubstitute(p);
+    FcResult result;
+    FcPattern* match = FcFontMatch(NULL, p, &result);
+    XftFont *defaultFont = XftFontOpenPattern(dp, match);
+    if(!defaultFont) {
+        return NULL;
+    }
+    
+    NFont *font = NEditMalloc(sizeof(NFont));
+    font->display = dp;
+    font->pattern = pattern;
+    font->fail = NULL;
+
+    NFontList *list = NEditMalloc(sizeof(NFontList));
+    list->font = defaultFont;
     list->next = NULL;
-    return list;
+    font->fonts = list;
+    
+    return font;
 }
 
-XftFont *FontListAddFontForChar(fontList *f, FcChar32 c)
+NFont *FontFromName(Display *dp, const char *name)
 {
-    FcConfig* config = FcInitLoadConfigAndFonts();
+    FcPattern *pattern = FcNameParse(name);
+    NFont *font = FontCreate(dp, pattern);
+    FcPatternDestroy(pattern);
+    return font;
+}
+
+XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
+{
+    //FcConfig* config = FcInitLoadConfigAndFonts();
+    FcConfig *config = NULL;
     
-    //FcPattern *pattern = FcPatternDuplicate(f->font->pattern); // doesn't work yet
-    FcPattern* pattern = FcNameParse((const FcChar8*)"Monospace");
+    FcPattern *pattern = FcPatternDuplicate(f->pattern); // doesn't work yet
+    //FcPattern* pattern = FcNameParse((const FcChar8*)"Monospace");
     FcCharSet *charset = FcCharSetCreate();
     FcValue value;
     value.type = FcTypeCharSet;
@@ -4006,7 +4032,7 @@ XftFont *FontListAddFontForChar(fontList *f, FcChar32 c)
     FcCharSetAddChar(charset, c);
     FcPatternAdd(pattern, FC_CHARSET, value, 0);
     //FcPatternAddCharSet(pattern, FC_CHARSET, charset);
-    FcDefaultSubstitute(pattern);
+    //FcDefaultSubstitute(pattern);
 
     FcDefaultSubstitute(pattern);
     FcResult result;
@@ -4015,36 +4041,80 @@ XftFont *FontListAddFontForChar(fontList *f, FcChar32 c)
     XftFont *newFont = XftFontOpenPattern(f->display, font);
     
     FcPatternDestroy(pattern);
-    FcCharSetDestroy(charset);
     FcPatternDestroy(font);
     
-    if(!newFont) {
-        return f->font;
+    if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
+        FontAddFail(f, charset);
+        return f->fonts->font;
     }
     
-    fontList *newElm = FontListCreate(f->display, newFont);
-    fontList *elm = f;
-    fontList *last = NULL;
+    FcCharSetDestroy(charset);
+    
+    NFontList *newElm = NEditMalloc(sizeof(NFontList));
+    newElm->font = newFont;
+    newElm->next = NULL;
+    
+    NFontList *elm = f->fonts;
+    NFontList *last = NULL;
     while(elm) {
         last = elm;
         elm = elm->next;
     }
     last->next = newElm;
+    
+    
     return newFont;
 }
 
-XftFont *FindFont(fontList *f, FcChar32 c)
+XftFont *FindFont(NFont *f, FcChar32 c)
 {
     if(c == 0) {
-        return f->font;
+        return f->fonts->font;
     }
-    fontList *elm = f;
+    
+    /* make sure the char is not in the fail list, because we don't
+     * want to retry font lookups */
+    NCharSetList *fail = f->fail;
+    while(fail) {
+        if(FcCharSetHasChar(fail->charset, c)) {
+            return f->fonts->font;
+        }
+        fail = fail->next;
+        
+    }
+    
+    /* find a font that has this char */
+    NFontList *elm = f->fonts;
     while(elm) {
         if(FcCharSetHasChar(elm->font->charset, c)) {
             return elm->font;
         }
         elm = elm->next;
     }
+    
+    /* open a new font for this char */
     return FontListAddFontForChar(f, c);
 }
 
+XftFont *FontDefault(NFont *f) {
+    return f->fonts->font;
+}
+
+void FontAddFail(NFont *f, FcCharSet *c)
+{
+    NCharSetList *elm = f->fail;
+    NCharSetList *last = elm;
+    while(elm) {
+        last = elm;
+        elm = elm->next;
+    }
+    
+    NCharSetList *newElm = NEditMalloc(sizeof(NCharSetList));
+    newElm->charset = c;
+    newElm->next = NULL;
+    if(last) {
+        last->next = newElm;
+    } else {
+        f->fail = newElm;
+    }
+}
