@@ -116,13 +116,15 @@ static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int x, int y, int toX,
-        char *string, int nChars);
+        FcChar32 *string, int nChars);
 static void clearRect(textDisp *textD, GC gc, int x, int y, 
         int width, int height);
 static void drawCursor(textDisp *textD, int x, int y);
 static int styleOfPos(textDisp *textD, int lineStartPos,
         int lineLen, int lineIndex, int dispIndex, int thisChar);
 static int stringWidth(const textDisp* textD, const char* string,
+        int length, int style);
+static int stringWidth4(const textDisp* textD, const FcChar32* string,
         int length, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
         int dispIndex);
@@ -1788,10 +1790,13 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
-    char expandedChar[MAX_EXP_CHAR_LEN], outStr[MAX_DISP_LINE_LEN];
-    char *lineStr, *outPtr;
+    FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
+    FcChar32 outStr[MAX_DISP_LINE_LEN];
+    FcChar32 *outPtr;
+    char *lineStr;
     char baseChar;
-
+    FcChar32 uc;
+    
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -1857,23 +1862,35 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
        that character */
     x = textD->left - textD->horizOffset;
     outIndex = 0;
-
-    for (charIndex = 0; ; charIndex++) { 
+    
+    inc = 1;
+    for (charIndex = 0; ; charIndex+=inc) { 
         if(charIndex >= lineLen) {
             baseChar = '\0';   
             charLen = 1;
+            inc = 1;
         } else {
             baseChar = lineStr[charIndex];
-            charLen = BufExpandCharacter(lineStr + charIndex,
-                    lineLen - charIndex, outIndex,
-                    expandedChar, buf->tabDist, buf->nullSubsChar, &isMB);
+            char *line = lineStr + charIndex;
+            int remainingLen = lineLen - charIndex;
+            
+            inc = FcUtf8ToUcs4(line, &uc, remainingLen);
+            if(inc > 1) {
+                charLen = 1;
+                expandedChar[0] = uc;
+            } else {
+                charLen = BufExpandCharacter4(lineStr[charIndex],
+                        outIndex,
+                        expandedChar,
+                        buf->tabDist, buf->nullSubsChar);
+            }
         }
         
     	style = styleOfPos(textD, lineStartPos, lineLen, charIndex,
                 outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
                 ? stdCharWidth
-                : stringWidth(textD, expandedChar, charLen, style);
+                : stringWidth4(textD, expandedChar, charLen, style);
 
     	if (x + charWidth >= leftClip && charIndex >= leftCharIndex) {
     	    startIndex = charIndex;
@@ -1884,9 +1901,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	x += charWidth;
     	outIndex += charLen;
         
-        if(isMB) {
-            charIndex += charLen-1;
-        }
+        //if(isMB) {
+        //    charIndex += charLen-1;
+        //}
+        //inc = isMB ? charLen : 1;
     }
     
     /* Scan character positions from the beginning of the clipping range, and
@@ -1916,10 +1934,17 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             charLen = 1;
         } else {
             baseChar = lineStr[charIndex];
-            charLen = BufExpandCharacter(lineStr + charIndex,
-                    lineLen - charIndex, outIndex,
-                    expandedChar, buf->tabDist, buf->nullSubsChar, &isMB);
-            inc = isMB ? charLen : 1;
+            
+            inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
+            if(inc > 1) {
+                charLen = 1;
+                expandedChar[0] = uc;
+            } else {
+                charLen = BufExpandCharacter4(lineStr[charIndex],
+                        outIndex,
+                        expandedChar,
+                        buf->tabDist, buf->nullSubsChar);
+            }
         }
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
@@ -1934,11 +1959,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
         
         if (charIndex < lineLen) {
-            memcpy(outPtr, expandedChar, charLen);
-            charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
+            memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
+            charWidth = stringWidth4(textD, expandedChar, charLen, charStyle);
             if(charWidth == 0) {
                 printf("line: [%s]\n", lineStr);
-                printf("fuck: %d[%s] [%d][%d]\n", charLen, expandedChar, (int)expandedChar[charIndex], (int)expandedChar[charIndex+1]);
             }
         } else {
             charWidth = stdCharWidth;
@@ -1997,7 +2021,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** the maximum y extent of the current font(s).
 */
 static void drawString(textDisp *textD, int style, int x, int y, int toX,
-	char *string, int nChars)
+	FcChar32 *string, int nChars)
 {
     GC gc, bgGC;
     XGCValues gcValues;
@@ -2123,7 +2147,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     color.color.green = xcolor.green;
     color.color.blue = xcolor.blue;
     
-    XftDrawStringUtf8(textD->d, &color, font, x, y + textD->ascent, string, nChars);
+    XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
@@ -2283,8 +2307,9 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 }
 
 /*
-** Find the width of a string in the font of a particular style
-*/
+ * deprecated
+ * TODO: remove
+ */
 static int stringWidth(const textDisp* textD, const char *string,
         int length, int style)
 {
@@ -2296,6 +2321,23 @@ static int stringWidth(const textDisp* textD, const char *string,
     	fs = textD->font->font;
     XGlyphInfo extents;
     XftTextExtentsUtf8(XtDisplay(textD->w), fs, string, length, &extents);
+    return extents.xOff;
+}
+
+/*
+** Find the width of a string in the font of a particular style
+*/
+static int stringWidth4(const textDisp* textD, const FcChar32* string,
+        int length, int style)
+{
+    XftFont *fs;
+    
+    if (style & STYLE_LOOKUP_MASK)
+    	fs = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font->font;
+    else 
+    	fs = textD->font->font;
+    XGlyphInfo extents;
+    XftTextExtents32(XtDisplay(textD->w), fs, string, length, &extents);
     return extents.xOff;
 }
 

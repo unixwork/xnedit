@@ -27,6 +27,8 @@
 #ifndef NEDIT_TEXTBUF_H_INCLUDED
 #define NEDIT_TEXTBUF_H_INCLUDED
 
+#include <fontconfig/fontconfig.h>
+
 /* Maximum length in characters of a tab or control character expansion
    of a single buffer character */
 #define MAX_EXP_CHAR_LEN 20
@@ -153,6 +155,8 @@ int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
         char* outStr);
 int BufExpandCharacter(const char *c, int clen, int indent, char *outStr, int tabDist,
 	char nullSubsChar, int *isMB);
+int BufExpandCharacter4(char c, int indent, FcChar32 *outStr,
+        int tabDist, char nullSubsChar);
 int BufCharWidth(char c, int indent, int tabDist, char nullSubsChar);
 int BufCountDispChars(const textBuffer* buf, int lineStartPos,
         int targetPos);

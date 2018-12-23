@@ -1125,6 +1125,60 @@ int BufExpandCharacter(const char *cp, int clen, int indent, char *outStr,
 }
 
 /*
+** Expand a single character from the text buffer into it's screen
+** representation (which may be several characters for a tab or a
+** control code).  Returns the number of characters added to "outStr".
+** "indent" is the number of characters from the start of the line
+** for figuring tabs.  Output string is guranteed to be shorter or
+** equal in length to MAX_EXP_CHAR_LEN
+*/
+int BufExpandCharacter4(char c, int indent, FcChar32 *outStr,
+        int tabDist, char nullSubsChar)
+{
+    int i, nSpaces;
+    
+    /* Convert tabs to spaces */
+    if (c == '\t') {
+	nSpaces = tabDist - (indent % tabDist);
+	for (i=0; i<nSpaces; i++)
+	    outStr[i] = ' ';
+	return nSpaces;
+    }
+    
+    /* Convert ASCII (and EBCDIC in the __MVS__ (OS/390) case) control
+       codes to readable character sequences */
+    if (c == nullSubsChar) {
+        outStr[0] = '<';
+        outStr[1] = 'n';
+        outStr[2] = 'u';
+        outStr[3] = 'l';
+        outStr[4] = '>';
+    	return 5;
+    }
+    if (((unsigned char)c) <= 31) {
+        outStr[0] = '<';
+        const char *cc = ControlCodeTable[(unsigned char)c];
+        size_t len = strlen(cc);
+        for(int i=0;i<len;i++) {
+            outStr[i+1] = cc[i];
+        }
+    	outStr[len+1] = '>';
+        return len+2;
+    } else if (c == 127) {
+    	outStr[0] = '<';
+        outStr[1] = 'd';
+        outStr[2] = 'e';
+        outStr[3] = 'l';
+        outStr[4] = '>';
+    	return 5;
+    }
+    
+    /* Otherwise, just return the character */
+    *outStr = c;
+    return 1;
+}
+
+/*
 ** Return the length in displayed characters of character "c" expanded
 ** for display (as discussed above in BufGetExpandedChar).  If the
 ** buffer for which the character width is being measured is doing null
