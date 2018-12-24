@@ -2385,8 +2385,11 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
     int charIndex, lineStart, lineLen, fontHeight, isMB;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
-    char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
-
+    char *lineStr;
+    FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
+    FcChar32 uc = 0;
+    NFont *font;
+    
     /* Find the visible line number corresponding to the y coordinate */
     fontHeight = textD->ascent + textD->descent;
     visLineNum = (y - textD->top) / fontHeight;
@@ -2412,12 +2415,22 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     outIndex = 0;
     inc = 1;
     for(charIndex=0; charIndex<lineLen; charIndex+=inc) {
-    	charLen = BufExpandCharacter(lineStr+charIndex, lineLen-charIndex, outIndex, expandedChar,
-    		textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
-        inc = isMB ? charLen : 1;
+        inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen-charIndex);
+        if(inc > 1) {
+            /* not ascii */
+            charLen = 1;
+            expandedChar[0] = uc;
+        } else {
+            charLen = BufExpandCharacter4(lineStr[charIndex],
+                        outIndex,
+                        expandedChar,
+                        textD->buffer->tabDist, textD->buffer->nullSubsChar);
+        }
+        
    	charStyle = styleOfPos(textD, lineStart, lineLen, charIndex, outIndex,
 				lineStr[charIndex]);
-    	charWidth = stringWidth(textD, expandedChar, charLen, charStyle);
+        font = styleFontList(textD, charStyle);
+    	charWidth = stringWidth4(textD, expandedChar, charLen, font);
     	if (x < xStep + (posType == CURSOR_POS ? charWidth/2 : charWidth)) {
     	    NEditFree(lineStr);
     	    return lineStart + charIndex;
@@ -4019,6 +4032,7 @@ NFont *FontFromName(Display *dp, const char *name)
 
 XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
 {
+    /* charset for char c */
     FcCharSet *charset = FcCharSetCreate();
     FcValue value;
     value.type = FcTypeCharSet;
@@ -4028,7 +4042,8 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
         FcCharSetDestroy(charset);
         return f->fonts->font;
     }
-
+    
+    /* font lookup based on the NFont pattern */ 
     FcPattern *pattern = FcPatternDuplicate(f->pattern);
     FcPatternAdd(pattern, FC_CHARSET, value, 0);
     FcResult result;
@@ -4039,6 +4054,7 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
         FontAddFail(f, charset);
         return f->fonts->font;
     }
+    
     XftFont *newFont = XftFontOpenPattern(f->display, match);   
     if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
         FcPatternDestroy(pattern);
