@@ -2,10 +2,10 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jan 14, 2017 (Do NOT edit!)
+                 Generated on Dec 24, 2018 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2017 Mark Edel                                            *
+* Copyright (c) 1999-2018 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
@@ -5069,7 +5069,7 @@ NULL
 static char * htxt_version [] = {
 "\01A%s\n",
 "\01I\n",
-"Active developers: Tony Balinski, Arne Førlie, Nathaniel Gray, Eddy De ",
+"Active developers: Tony Balinski, Arne FÃ¸rlie, Nathaniel Gray, Eddy De ",
 "Greef, Thorsten Haude, Andrew Hood, Scott Tringali, and TK Soh. ",
 "\n\n",
 "Retired developers: Mark Edel, Joy Kyriakopulos, Christopher Conrad, Jim ",
@@ -5748,4 +5748,4 @@ Href H_R [] =
     {NULL,     14799, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "NEdit 5.7\nJan 14, 2017\n";
+static const char * NEditVersion = "NEdit release of Dez 24, 2018\n";
