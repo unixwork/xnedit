@@ -295,6 +295,7 @@ static const char *getBuildInfo(void)
 static void initHelpStyles (Widget parent) 
 {
     static int styleTableInitialized = False;
+    Display *dp = XtDisplay(parent);
     
     if (! styleTableInitialized) 
     {
@@ -306,7 +307,7 @@ static void initHelpStyles (Widget parent)
 
         for (styleIndex = 0; styleIndex < STL_HD + MAX_HEADING; styleIndex++) 
         {
-            HelpStyleInfo[ styleIndex ].color     = fg;
+            HelpStyleInfo[ styleIndex ].xcolor     = PixelToColor(dp, fg);
             HelpStyleInfo[ styleIndex ].underline = StyleUnderlines[styleIndex];
             HelpStyleInfo[ styleIndex ].font      = NULL;
         }
@@ -402,8 +403,8 @@ static void loadFontsAndColors(Widget parent, int style)
         HelpStyleInfo[STYLE_INDEX(style)].font = font;
 
         if (style == STL_NM_LINK)
-            HelpStyleInfo[STYLE_INDEX(style)].color =
-                AllocColor(parent, GetPrefHelpLinkColor(), &r, &g, &b);
+            HelpStyleInfo[STYLE_INDEX(style)].xcolor = PixelToColor(dp,
+                AllocColor(parent, GetPrefHelpLinkColor(), &r, &g, &b));
     }
 }
 

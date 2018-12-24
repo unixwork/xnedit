@@ -955,6 +955,33 @@ void TextDOverstrike(textDisp *textD, char *text)
     NEditFree(paddedText);
 }
 
+
+XftColor PixelToColor(Display *dp, Pixel p)
+{
+    XColor xcolor;
+    xcolor.pixel = p;
+    Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
+    XQueryColor(dp, colormap, &xcolor);
+    
+    XftColor color;
+    color.pixel = p;
+    color.color.red = xcolor.red;
+    color.color.green = xcolor.green;
+    color.color.blue = xcolor.blue;
+    color.color.alpha = 0xFFFF;
+    return color;
+}
+
+XftColor RGBToColor(short r, short g, short b)
+{
+    XftColor color;
+    color.color.red = r;
+    color.color.green = g;
+    color.color.blue = b;
+    color.color.alpha = 0xFFFF;
+    return color;
+}
+
 /*
 ** Translate window coordinates to the nearest text cursor position.
 */
@@ -2081,6 +2108,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     color.color.green = 0x0;
     color.color.blue = 0x0;
     color.color.alpha = 0xFFFF;
+    int colorSet = 0;
     
     /* Don't draw if widget isn't realized */
     if (XtWindow(textD->w) == 0)
@@ -2113,7 +2141,9 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
             styleRec = &textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A];
             underlineStyle = styleRec->underline;
             fontList = styleRec->font;
-            fground = styleRec->color;
+            //fground = styleRec->color;
+            color = styleRec->xcolor;
+            colorSet = 1;
             /* here you could pick up specific select and highlight fground */
         }
         else {
@@ -2190,15 +2220,17 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     
     // this is not very efficient, but it works and it will be fixed
     // later when the port to xft is complete
-    XColor xcolor;
-    XGCValues qv;
-    XGetGCValues(dp, gc, GCForeground, &qv);
-    xcolor.pixel = qv.foreground;
-    Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
-    XQueryColor(dp, colormap, &xcolor);
-    color.color.red = xcolor.red;
-    color.color.green = xcolor.green;
-    color.color.blue = xcolor.blue;
+    if(!colorSet) {
+        XColor xcolor;
+        XGCValues qv;
+        XGetGCValues(dp, gc, GCForeground, &qv);
+        xcolor.pixel = qv.foreground;
+        Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
+        XQueryColor(dp, colormap, &xcolor);
+        color.color.red = xcolor.red;
+        color.color.green = xcolor.green;
+        color.color.blue = xcolor.blue;
+    }
     
     XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     

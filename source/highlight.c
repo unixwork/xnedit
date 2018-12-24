@@ -776,7 +776,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       p->isBold = FontOfNamedStyleIsBold(pat->style); \
       p->isItalic = FontOfNamedStyleIsItalic(pat->style); \
       /* And now for the more physical stuff */ \
-      p->color = AllocColor(window->textArea, p->colorName, &r, &g, &b); \
+      p->xcolor = PixelToColor(XtDisplay(window->textArea), AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
       p->red = r; \
       p->green = g; \
       p->blue = b; \
@@ -787,7 +787,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
         p->bgBlue = b; \
       } \
       else { \
-        p->bgColor = p->color; \
+        p->bgColor = p->xcolor.pixel; \
         p->bgRed = r; \
         p->bgGreen = g; \
         p->bgBlue = b; \
@@ -1210,6 +1210,7 @@ char *HighlightStyleOfCode(WindowInfo *window, int hCode)
     return entry ? entry->styleName : "";
 }
 
+// TODO: return XftColor
 Pixel HighlightColorValueOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b)
 {
@@ -1218,7 +1219,7 @@ Pixel HighlightColorValueOfCode(WindowInfo *window, int hCode,
         *r = entry->red;
         *g = entry->green;
         *b = entry->blue;
-        return entry->color;
+        return entry->xcolor.pixel;
     }
     else
     {

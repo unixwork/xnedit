@@ -69,10 +69,9 @@ typedef struct {
     unsigned short red;
     unsigned short green;
     unsigned short blue;
-    Pixel color;
+    //Pixel color;
+    XftColor xcolor;
     Boolean underline;
-    //XFontStruct *font;
-    //XftFont *xftFont;
     NFont *font;
     char *bgColorName;      /* background style coloring (name may be NULL) */
     unsigned short bgRed;
@@ -259,6 +258,9 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c);
 XftFont *FontDefault(NFont *f);
 void FontAddFail(NFont *f, FcCharSet *c);
 XftFont *FindFont(NFont *f, FcChar32 c);
+
+XftColor PixelToColor(Display *dp, Pixel p);
+XftColor RGBToColor(short r, short g, short b);
 
 #ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
 #define TextDImposeGraphicsExposeTranslation TextDGraphicsExposeTranslation
