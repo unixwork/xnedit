@@ -825,7 +825,10 @@ void TextDBlankCursor(textDisp *textD)
     
     blankCursorProtrusions(textD);
     textD->cursorOn = False;
-    textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos+1);
+    textDRedisplayRange(
+            textD,
+            BufLeftPos(textD->buffer, textD->cursorPos),
+            BufRightPos(textD->buffer, textD->cursorPos));
 }
 
 void TextDUnblankCursor(textDisp *textD)
