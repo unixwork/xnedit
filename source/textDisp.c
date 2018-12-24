@@ -4019,14 +4019,18 @@ NFont *FontFromName(Display *dp, const char *name)
 
 XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
 {
-    FcPattern *pattern = FcPatternDuplicate(f->pattern);
     FcCharSet *charset = FcCharSetCreate();
     FcValue value;
     value.type = FcTypeCharSet;
     value.u.c = charset;
     FcCharSetAddChar(charset, c);
-    FcPatternAdd(pattern, FC_CHARSET, value, 0);
+    if(!FcCharSetHasChar(charset, c)) {
+        FcCharSetDestroy(charset);
+        return f->fonts->font;
+    }
 
+    FcPattern *pattern = FcPatternDuplicate(f->pattern);
+    FcPatternAdd(pattern, FC_CHARSET, value, 0);
     FcResult result;
     FcPattern *match = XftFontMatch (
             f->display, DefaultScreen(f->display), pattern, &result);
