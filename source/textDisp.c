@@ -1043,8 +1043,11 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 {
     int charIndex, lineStartPos, fontHeight, lineLen, isMB;
-    int visLineNum, charLen, outIndex, xStep, charStyle;
-    char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
+    int visLineNum, charLen, outIndex, xStep, charStyle, inc;
+    char *lineStr;
+    FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
+    FcChar32 uc;
+    NFont *font;
     
     /* If position is not displayed, return false */
     if (pos < textD->firstChar ||
@@ -1072,12 +1075,22 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
        to "pos" to calculate the x coordinate */
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
-    for(charIndex=0; charIndex<pos-lineStartPos; charIndex++) {
-    	charLen = BufExpandCharacter(lineStr+charIndex, lineLen-charIndex, outIndex, expandedChar,
-    		textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
+    for(charIndex=0; charIndex<pos-lineStartPos; charIndex+=inc) {
+        inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
+        if(inc > 1) {
+            charLen = 1;
+            expandedChar[0] = uc;
+        } else {
+            charLen = BufExpandCharacter4(lineStr[charIndex],
+                    outIndex,
+                    expandedChar,
+                    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+        }
+        
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
    	    	outIndex, lineStr[charIndex]);
-    	xStep += stringWidth(textD, expandedChar, charLen, charStyle);
+        font = styleFontList(textD, charStyle);
+    	xStep += stringWidth4(textD, expandedChar, charLen, font);
     	outIndex += charLen;
     }
     *x = xStep;
