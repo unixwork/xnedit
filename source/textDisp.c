@@ -1851,7 +1851,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         dbg = 1;
         //printf("A line: [%.*s]\n", lineLen, lineStr);
     }
-    
+     
     /* Space beyond the end of the line is still counted in units of characters
        of a standardized character width (this is done mostly because style
        changes based on character position can still occur in this region due
@@ -1928,6 +1928,27 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
     	x += charWidth;
     	outIndex += charLen;
+    }
+    
+    /* Set Xrender clipping to prevent text rendering beyond the line borders.
+     * Sometimes with anti aliasing transparent pixels are above the glyph
+     */
+    if(textD->d) {
+        Picture pic = XftDrawPicture(textD->d);
+        if(pic != 0) {
+            XRectangle rect;
+            rect.x = 0;
+            rect.y = 0;
+            rect.width = rightClip;
+            rect.height = textD->ascent + textD->descent;
+            XRenderSetPictureClipRectangles(
+                    XtDisplay(textD->w),
+                    pic,
+                    x,
+                    y,
+                    &rect,
+                    1);
+        }
     }
     
     /* Scan character positions from the beginning of the clipping range, and

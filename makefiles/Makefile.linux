@@ -21,7 +21,7 @@ CFLAGS=-O -I/usr/X11R6/include -DUSE_DIRENT -DUSE_LPR_PRINT_CMD
 
 ARFLAGS=-urs
 
-LIBS=-L/usr/X11R6/lib -lXm -lXt -lX11 -lm -lfontconfig
+LIBS=-L/usr/X11R6/lib -lXm -lXt -lX11 -lXrender -lXft -lfontconfig -lm
 
 include Makefile.common
 
