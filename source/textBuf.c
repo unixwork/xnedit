@@ -2510,11 +2510,13 @@ static void findRectSelBoundariesForCopy(textBuffer *buf, int lineStartPos,
 	int rectStart, int rectEnd, int *selStart, int *selEnd)
 {
     int pos, width, indent = 0;
+    int inc;
     char c;
     
     /* find the start of the selection */
-    for (pos=lineStartPos; pos<buf->length; pos++) {
+    for (pos=lineStartPos; pos<buf->length; pos+=inc) {
     	c = BufGetCharacter(buf, pos);
+        inc = BufCharLen(buf, pos);
     	if (c == '\n')
     	    break;
     	width = BufCharWidth(c, indent, buf->tabDist, buf->nullSubsChar);
@@ -2530,8 +2532,9 @@ static void findRectSelBoundariesForCopy(textBuffer *buf, int lineStartPos,
     *selStart = pos;
     
     /* find the end */
-    for (; pos<buf->length; pos++) {
+    for (; pos<buf->length; pos+=inc) {
     	c = BufGetCharacter(buf, pos);
+        inc = BufCharLen(buf, pos);
     	if (c == '\n')
     	    break;
     	width = BufCharWidth(c, indent, buf->tabDist, buf->nullSubsChar);

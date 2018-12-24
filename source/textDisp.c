@@ -3037,6 +3037,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
                 textD->top, textD->lineNumWidth, textD->height, False);
     
+    // TODO: use textD->lineNumGC color
     XftColor color;
     color.color.red = 0x0;
     color.color.green = 0x0;
@@ -3052,10 +3053,6 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         if (lineStart != -1 && (lineStart==0 ||
                 BufGetCharacter(textD->buffer, lineStart-1)=='\n')) {
             snprintf(lineNumString, 12, "%*d\0", nCols, line);
-            // TODO: enable
-            //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w),
-            //        textD->lineNumGC, textD->lineNumLeft, y + textD->ascent,
-            //        lineNumString, strlen(lineNumString));
             XftDrawStringUtf8(
                     textD->d,
                     &color,
