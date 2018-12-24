@@ -3988,10 +3988,11 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
 {
     FcResult result;
     pattern = FcPatternDuplicate(pattern);
-    FcPattern *match = XftFontMatch (dp, DefaultScreen(dp), pattern, &result);
+    FcPattern *match = XftFontMatch(dp, DefaultScreen(dp), pattern, &result);
     
     XftFont *defaultFont = XftFontOpenPattern(dp, match);
     if(!defaultFont) {
+        FcPatternDestroy(match);
         return NULL;
     }
     
@@ -4011,7 +4012,6 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
 NFont *FontFromName(Display *dp, const char *name)
 {
     FcPattern *pattern = FcNameParse(name);
-    
     NFont *font = FontCreate(dp, pattern);
     FcPatternDestroy(pattern);
     return font;
@@ -4028,10 +4028,20 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
     FcPatternAdd(pattern, FC_CHARSET, value, 0);
 
     FcResult result;
-    FcPattern *match = XftFontMatch (f->display, DefaultScreen(f->display), pattern, &result);
-    XftFont *newFont = XftFontOpenPattern(f->display, match);
-    
+    FcPattern *match = XftFontMatch (
+            f->display, DefaultScreen(f->display), pattern, &result);
+    if(!match) {
+        FcPatternDestroy(pattern);
+        FontAddFail(f, charset);
+        return f->fonts->font;
+    }
+    XftFont *newFont = XftFontOpenPattern(f->display, match);   
     if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
+        FcPatternDestroy(pattern);
+        FcPatternDestroy(match);
+        if(newFont) {
+            XftFontClose(f->display, newFont);
+        }
         FontAddFail(f, charset);
         return f->fonts->font;
     }
