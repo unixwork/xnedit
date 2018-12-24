@@ -196,6 +196,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     XGCValues gcValues;
     int i;
     
+    XftFont *xftFont = FontDefault(font);
+    
     textD = (textDisp *)NEditMalloc(sizeof(textDisp));
     textD->w = widget;
     textD->d = NULL;
@@ -223,8 +225,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->vScrollBar = vScrollBar;
     textD->fontStruct2 = fontStruct;
     textD->font = font;
-    textD->ascent = fontStruct->ascent;
-    textD->descent = fontStruct->descent;
+    textD->ascent = xftFont->ascent;
+    textD->descent = xftFont->descent;
     /* TODO: think about renabling textD->fixedFontWidth */
     textD->fixedFontWidth = -1;
     textD->styleBuffer = NULL;
@@ -2119,10 +2121,10 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         XChangeGC(XtDisplay(textD->w), gc,
                 GCForeground | GCBackground, &gcValues);
     }
-
+    
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
-    
+       
     /* wipes out to right hand edge of widget */
     if (toX >= textD->left) {
         clearRect(
@@ -2136,14 +2138,14 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     if(style & FILL_MASK) {
         return;
     }
-    
+     
     /* We assume the string should be rendered with just one font, because
      * redisplayLine breaks the strings when a different font is required.
      * The first character in the string determines the charset and FindFont
      * returns a Font for this.
      */
     XftFont *font = FindFont(fontList, string[0]);
-
+    
     /* If any space around the character remains unfilled (due to use of
        different sized fonts for highlighting), fill in above or below
        to erase previously drawn characters */
