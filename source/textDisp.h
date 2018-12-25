@@ -69,8 +69,7 @@ typedef struct {
     unsigned short red;
     unsigned short green;
     unsigned short blue;
-    //Pixel color;
-    XftColor xcolor;
+    XftColor color;
     Boolean underline;
     NFont *font;
     char *bgColorName;      /* background style coloring (name may be NULL) */
@@ -147,8 +146,7 @@ typedef struct _textDisp {
     	    unfinishedHighlightCB;  	/*     regions */
     void *highlightCBArg;   	    	/* Arg to unfinishedHighlightCB */
     XFontStruct *fontStruct2;		/* Font structure for primary font */
-    //XftFont *font;                      /* primary font */
-    NFont *font;
+    NFont *font;                        /* primary font */
     int ascent, descent;		/* Composite ascent and descent for
     					   primary font + all-highlight fonts */
     int fixedFontWidth;			/* Font width if all current fonts are
@@ -168,6 +166,7 @@ typedef struct _textDisp {
     Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
     Pixel cursorFGPixel;
     Pixel *bgClassPixel;		/* table of colors for each BG class */
+    XftColor fgColor;                   /* Foreground color */
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Widget calltipW;                    /* The Label widget for the calltip */

@@ -234,6 +234,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->nStyles = 0;
     textD->bgPixel = bgPixel;
     textD->fgPixel = fgPixel;
+    textD->fgColor = PixelToColor(XtDisplay(widget), fgPixel);
     textD->selectFGPixel = selectFGPixel;
     textD->highlightFGPixel = highlightFGPixel;
     textD->selectBGPixel = selectBGPixel;
@@ -409,6 +410,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     
     /* Update the stored pixels */
     textD->fgPixel = textFgP;
+    textD->fgColor = PixelToColor(d, textFgP);
     textD->bgPixel = textBgP;
     textD->selectFGPixel = selectFgP;
     textD->selectBGPixel = selectBgP;
@@ -2103,11 +2105,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
     Pixel fground = textD->fgPixel;
     int underlineStyle = FALSE;
     
-    XftColor color;
-    color.color.red = 0x0;
-    color.color.green = 0x0;
-    color.color.blue = 0x0;
-    color.color.alpha = 0xFFFF;
+    XftColor color = textD->fgColor;
     int colorSet = 0;
     
     /* Don't draw if widget isn't realized */
@@ -2142,8 +2140,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
             underlineStyle = styleRec->underline;
             fontList = styleRec->font;
             //fground = styleRec->color;
-            color = styleRec->xcolor;
-            colorSet = 1;
+            color = styleRec->color;
             /* here you could pick up specific select and highlight fground */
         }
         else {
@@ -2212,26 +2209,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         XChangeGC(XtDisplay(textD->w), gc, GCForeground, &gcValues);
     }
 
-    /* Draw the string using gc and font set above */
-    //XDrawImageString(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
-    //	    y + textD->ascent, string, nChars);
-    
-    Display *dp = XtDisplay(textD->w);
-    
-    // this is not very efficient, but it works and it will be fixed
-    // later when the port to xft is complete
-    if(!colorSet) {
-        XColor xcolor;
-        XGCValues qv;
-        XGetGCValues(dp, gc, GCForeground, &qv);
-        xcolor.pixel = qv.foreground;
-        Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
-        XQueryColor(dp, colormap, &xcolor);
-        color.color.red = xcolor.red;
-        color.color.green = xcolor.green;
-        color.color.blue = xcolor.blue;
-    }
-    
+    /* Draw the string using color and font set above */
     XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
     
     /* Underline if style is secondary selection */

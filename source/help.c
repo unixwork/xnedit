@@ -307,7 +307,7 @@ static void initHelpStyles (Widget parent)
 
         for (styleIndex = 0; styleIndex < STL_HD + MAX_HEADING; styleIndex++) 
         {
-            HelpStyleInfo[ styleIndex ].xcolor     = PixelToColor(dp, fg);
+            HelpStyleInfo[ styleIndex ].color     = PixelToColor(dp, fg);
             HelpStyleInfo[ styleIndex ].underline = StyleUnderlines[styleIndex];
             HelpStyleInfo[ styleIndex ].font      = NULL;
         }
@@ -403,7 +403,7 @@ static void loadFontsAndColors(Widget parent, int style)
         HelpStyleInfo[STYLE_INDEX(style)].font = font;
 
         if (style == STL_NM_LINK)
-            HelpStyleInfo[STYLE_INDEX(style)].xcolor = PixelToColor(dp,
+            HelpStyleInfo[STYLE_INDEX(style)].color = PixelToColor(dp,
                 AllocColor(parent, GetPrefHelpLinkColor(), &r, &g, &b));
     }
 }
