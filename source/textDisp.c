@@ -3173,7 +3173,6 @@ static int measureVisLine(textDisp *textD, int visLineNum)
 	for (i=0; i<lineLen; i++) {
     	    len = BufGetExpandedChar(textD->buffer, lineStartPos + i,
     		    charCount, expandedChar);
-    	    //width += XTextWidth(textD->fontStruct, expandedChar, len);
             XGlyphInfo extents;
             XftTextExtentsUtf8(
                     XtDisplay(textD->w),
@@ -3192,7 +3191,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
 		    lineStartPos+i) - ASCII_A;
             XGlyphInfo extents;
             XftTextExtentsUtf8(
-                    XtDisplay(textD),
+                    XtDisplay(textD->w),
                     FontDefault(textD->styleTable[style].font),
                     expandedChar,
                     len,
