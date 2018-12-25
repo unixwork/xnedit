@@ -34,8 +34,8 @@
 #include <X11/Xlib.h>
 
 /* Resource strings */
-#define textNfont "font"
-#define textCFont "Font"
+//define textNfont "font"
+//define textCFont "Font"
 #define textNXftFont "XftFont"
 #define textCXftFont "XftFont"
 #define textTXftFont "TextXftFont"

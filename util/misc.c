@@ -1041,7 +1041,7 @@ XFontStruct *GetDefaultFontStruct(Display *d, XmFontList font)
         
     return fs;
 }
-   
+ 
 /*
 ** Create a string table suitable for passing to XmList widgets
 */

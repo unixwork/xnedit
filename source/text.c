@@ -619,8 +619,6 @@ static XtResource resources[] = {
       XmRInt, 0},
     {XmNshadowThickness, XmCShadowThickness, XmRDimension, sizeof(Dimension),
       XtOffset(TextWidget, primitive.shadow_thickness), XmRInt, 0},
-    {textNfont, textCFont, XmRFontStruct, sizeof(XFontStruct *),
-      XtOffset(TextWidget, text.fontStruct), XmRString, "fixed"},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *),
       XtOffset(TextWidget, text.font2), textTXftFont, &defaultFont},
     {textNselectForeground, textCSelectForeground, XmRPixel, sizeof(Pixel),
@@ -795,7 +793,8 @@ void TextWidgetClassInit(Display *dp, const char *fontname)
 */
 static void initialize(TextWidget request, TextWidget new)
 {
-    XFontStruct *fs = new->text.fontStruct;
+    NFont *font = new->text.font2;
+    XftFont *xfont = FontDefault(font);
     char *delimiters;
     textBuffer *buf;
     Pixel white, black;
@@ -804,7 +803,7 @@ static void initialize(TextWidget request, TextWidget new)
     int marginWidth;
     int lineNumCols;
 
-    charWidth = fs->max_bounds.width;
+    charWidth = xfont->max_advance_width;
     marginWidth = new->text.marginWidth;
     lineNumCols = new->text.lineNumCols;
     
@@ -813,7 +812,7 @@ static void initialize(TextWidget request, TextWidget new)
     	new->core.width = charWidth * new->text.columns + marginWidth*2 +
 	       (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
     if (request->core.height == 0)
-   	new->core.height = (fs->ascent + fs->descent) * new->text.rows +
+   	new->core.height = (xfont->ascent + xfont->descent) * new->text.rows +
    		new->text.marginHeight * 2;
     
     /* The default colors work for B&W as well as color, except for
@@ -844,7 +843,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
 	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
-	    buf, new->text.fontStruct, new->text.font2, new->core.background_pixel,
+	    buf,new->text.font2, new->core.background_pixel,
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
 	    new->text.highlightBGPixel, new->text.cursorFGPixel,
@@ -1000,14 +999,14 @@ static void destroy(TextWidget w)
 */
 static void resize(TextWidget w)
 {
-    XFontStruct *fs = w->text.fontStruct;
+    XftFont *fs = FontDefault(w->text.font2);
     int height = w->core.height, width = w->core.width;
     int marginWidth = w->text.marginWidth, marginHeight = w->text.marginHeight;
     int lineNumAreaWidth = w->text.lineNumCols == 0 ? 0 : w->text.marginWidth +
-		fs->max_bounds.width * w->text.lineNumCols;
+		fs->max_advance_width * w->text.lineNumCols;
 
     w->text.columns = (width - marginWidth*2 - lineNumAreaWidth) /
-    	    fs->max_bounds.width;
+    	    fs->max_advance_width;
     w->text.rows = (height - marginHeight*2) / (fs->ascent + fs->descent);
     
     /* Reject widths and heights less than a character, which the text
@@ -1019,7 +1018,7 @@ static void resize(TextWidget w)
        Fixing it here is 100x easier than re-designing textDisp.c */
     if (w->text.columns < 1) {
     	w->text.columns = 1;
-    	w->core.width = width = fs->max_bounds.width + marginWidth*2 +
+    	w->core.width = width = fs->max_advance_width + marginWidth*2 +
 		lineNumAreaWidth;
     }
     if (w->text.rows < 1) {
@@ -1137,6 +1136,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
 	TextWidget new)
 {
     Boolean redraw = False, reconfigure = False;
+    XftFont *fs = FontDefault(new->text.font2);
     
     if (new->text.overstrike != current->text.overstrike) {
     	if (current->text.textD->cursorStyle == BLOCK_CURSOR)
@@ -1147,7 +1147,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     	    TextDSetCursorStyle(current->text.textD, BLOCK_CURSOR);
     }
     
-    if (new->text.fontStruct != current->text.fontStruct) {
+    if (new->text.font2 != current->text.font2) {
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
     	TextDSetFont(current->text.textD, new->text.font2);
@@ -1175,7 +1175,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if (new->text.lineNumCols != current->text.lineNumCols || reconfigure)
     {
         int marginWidth = new->text.marginWidth;
-        int charWidth = new->text.fontStruct->max_bounds.width;
+        int charWidth = fs->max_advance_width;
         int lineNumCols = new->text.lineNumCols;
         if (lineNumCols == 0)
         {

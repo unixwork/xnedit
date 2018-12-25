@@ -186,7 +186,7 @@ static void textDRedisplayRange(textDisp *textD, int start, int end);
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        XFontStruct *fontStruct, NFont *font, Pixel bgPixel, Pixel fgPixel,
+        NFont *font, Pixel bgPixel, Pixel fgPixel,
         Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
         Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
@@ -223,7 +223,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->visibility = VisibilityUnobscured;
     textD->hScrollBar = hScrollBar;
     textD->vScrollBar = vScrollBar;
-    textD->fontStruct2 = fontStruct;
     textD->font = font;
     textD->ascent = xftFont->ascent;
     textD->descent = xftFont->descent;
@@ -243,9 +242,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->cursorFGPixel = cursorFGPixel;
     textD->wrapMargin = wrapMargin;
     textD->continuousWrap = continuousWrap;
-    allocateFixedFontGCs(textD, fontStruct, bgPixel, fgPixel, selectFGPixel,
+    allocateFixedFontGCs(textD, NULL, bgPixel, fgPixel, selectFGPixel,
             selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel);
-    textD->styleGC = allocateGC(textD->w, 0, 0, 0, fontStruct->fid,
+    textD->styleGC = allocateGC(textD->w, 0, 0, 0, 0,
             GCClipMask|GCForeground|GCBackground, GCArcMode);
     textD->lineNumLeft = lineNumLeft;
     textD->lineNumWidth = lineNumWidth;
@@ -294,7 +293,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     if (hScrollBar != NULL) {
 	XtVaSetValues(hScrollBar, XmNminimum, 0, XmNmaximum, 1,
     		XmNsliderSize, 1, XmNrepeatDelay, 10, XmNvalue, 0,
-    		XmNincrement, fontStruct->max_bounds.width, NULL);
+    		XmNincrement, xftFont->max_advance_width, NULL);
 	XtAddCallback(hScrollBar, XmNdragCallback, hScrollCB, (XtPointer)textD);
 	XtAddCallback(hScrollBar, XmNvalueChangedCallback, hScrollCB,
 		(XtPointer)textD);
@@ -425,7 +424,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->highlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
-    allocateFixedFontGCs(textD, textD->fontStruct2, textBgP, textFgP, selectFgP,
+    allocateFixedFontGCs(textD, NULL, textBgP, textFgP, selectFgP,
             selectBgP, hiliteFgP, hiliteBgP, lineNoFgP);
     
     /* Change the cursor GC (the cursor GC is not shared). */
@@ -514,7 +513,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
     releaseGC(textD->w, textD->selectBGGC);
     releaseGC(textD->w, textD->highlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
-    allocateFixedFontGCs(textD, textD->fontStruct2, bgPixel, fgPixel, selectFGPixel,
+    allocateFixedFontGCs(textD, NULL, bgPixel, fgPixel, selectFGPixel,
             selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel);
     
     /* Do a full resize to force recalculation of font related parameters */
@@ -3249,20 +3248,20 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
         Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel, Pixel selectBGPixel,
         Pixel highlightFGPixel, Pixel highlightBGPixel, Pixel lineNumFGPixel)
 {
-    textD->gc = allocateGC(textD->w, GCFont | GCForeground | GCBackground,
-            fgPixel, bgPixel, fontStruct->fid, GCClipMask, GCArcMode); 
-    textD->selectGC = allocateGC(textD->w, GCFont | GCForeground | GCBackground,
-            selectFGPixel, selectBGPixel, fontStruct->fid, GCClipMask,
+    textD->gc = allocateGC(textD->w, GCForeground | GCBackground,
+            fgPixel, bgPixel, 0, GCClipMask, GCArcMode); 
+    textD->selectGC = allocateGC(textD->w, GCForeground | GCBackground,
+            selectFGPixel, selectBGPixel, 0, GCClipMask,
             GCArcMode);
     textD->selectBGGC = allocateGC(textD->w, GCForeground, selectBGPixel, 0,
-            fontStruct->fid, GCClipMask, GCArcMode);
-    textD->highlightGC = allocateGC(textD->w, GCFont|GCForeground|GCBackground,
-            highlightFGPixel, highlightBGPixel, fontStruct->fid, GCClipMask,
+            0, GCClipMask, GCArcMode);
+    textD->highlightGC = allocateGC(textD->w, GCForeground|GCBackground,
+            highlightFGPixel, highlightBGPixel, 0, GCClipMask,
             GCArcMode);
     textD->highlightBGGC = allocateGC(textD->w, GCForeground, highlightBGPixel,
-            0, fontStruct->fid, GCClipMask, GCArcMode);
-    textD->lineNumGC = allocateGC(textD->w, GCFont | GCForeground | 
-            GCBackground, lineNumFGPixel, bgPixel, fontStruct->fid, 
+            0, 0, GCClipMask, GCArcMode);
+    textD->lineNumGC = allocateGC(textD->w, GCForeground | 
+            GCBackground, lineNumFGPixel, bgPixel, 0, 
             GCClipMask, GCArcMode);
 }
 

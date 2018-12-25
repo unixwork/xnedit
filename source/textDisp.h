@@ -145,7 +145,6 @@ typedef struct _textDisp {
     unfinishedStyleCBProc		/* Callback to parse "unfinished" */
     	    unfinishedHighlightCB;  	/*     regions */
     void *highlightCBArg;   	    	/* Arg to unfinishedHighlightCB */
-    XFontStruct *fontStruct2;		/* Font structure for primary font */
     NFont *font;                        /* primary font */
     int ascent, descent;		/* Composite ascent and descent for
     					   primary font + all-highlight fonts */
@@ -190,7 +189,7 @@ typedef struct _textDisp {
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 	Position left, Position top, Position width, Position height,
 	Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-	XFontStruct *fontStruct, NFont *font, Pixel bgPixel, Pixel fgPixel,
+	NFont *font, Pixel bgPixel, Pixel fgPixel,
 	Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
 	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString, 

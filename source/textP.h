@@ -60,7 +60,6 @@ typedef struct _TextPart {
     /* resources */
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
     Pixel cursorFGPixel, lineNumFGPixel, calltipFGPixel, calltipBGPixel;
-    XFontStruct *fontStruct;
     NFont *font2;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;

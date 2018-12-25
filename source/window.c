@@ -1780,7 +1780,9 @@ void UpdateNewOppositeMenu(WindowInfo *window, int openInTab)
 void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
         const char *boldName, const char *boldItalicName)
 {
-    XFontStruct *font, *oldFont;
+    //XFontStruct *font, *oldFont;
+    NFont *font;
+    NFont *oldFont;
     int i, oldFontWidth, oldFontHeight, fontWidth, fontHeight;
     int borderWidth, borderHeight, marginWidth, marginHeight;
     int primaryChanged, highlightChanged = False;
@@ -1803,7 +1805,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
             &oldWindowHeight, NULL);
     XtVaGetValues(window->textArea, XmNheight, &textHeight,
             textNmarginHeight, &marginHeight, textNmarginWidth,
-            &marginWidth, textNfont, &oldFont, NULL);
+            &marginWidth, textNXftFont, &oldFont, NULL);
     oldTextWidth = textD->width + textD->lineNumWidth;
     oldTextHeight = textHeight - 2*marginHeight;
     for (i=0; i<window->nPanes; i++) {
@@ -1812,7 +1814,8 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     }
     borderWidth = oldWindowWidth - oldTextWidth;
     borderHeight = oldWindowHeight - oldTextHeight;
-    oldFontWidth = oldFont->max_bounds.width;
+    XftFont *oldXftFont = FontDefault(oldFont);
+    oldFontWidth = oldXftFont->max_advance_width;
     oldFontHeight = textD->ascent + textD->descent;
     
         
@@ -1822,12 +1825,16 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
        is interpreted as "use the primary font" */
     if (primaryChanged) {
         strcpy(window->fontName, fontName);
-        font = XLoadQueryFont(TheDisplay, fontName);
-        if (font == NULL)
-            XtVaGetValues(window->statsLine, XmNfontList, &window->fontList,
-                    NULL);
-        else
-            window->fontList = XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
+        //font = XLoadQueryFont(TheDisplay, fontName);
+        font = FontFromName(TheDisplay, fontName);
+        if (font == NULL) {
+            //XtVaGetValues(window->statsLine, XmNfontList, &window->fontList,
+            //        NULL);
+            printf("implement fallback font\n");
+        } else {
+            //window->fontList = XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
+            window->font = font;
+        }
     }
     if (highlightChanged) {
         strcpy(window->italicFontName, italicName);
@@ -1840,10 +1847,12 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
 
     /* Change the primary font in all the widgets */
     if (primaryChanged) {
-        font = GetDefaultFontStruct(TheDisplay, window->fontList);
-        XtVaSetValues(window->textArea, textNfont, font, NULL);
-        for (i=0; i<window->nPanes; i++)
-            XtVaSetValues(window->textPanes[i], textNfont, font, NULL);
+        //font = GetDefaultFontStruct(TheDisplay, window->fontList);
+        font = window->font;
+        XtVaSetValues(window->textArea, textNXftFont, font, NULL);
+        for (i=0; i<window->nPanes; i++) {
+            XtVaSetValues(window->textPanes[i], textNXftFont, font, NULL);
+        }
     }
     
     /* Change the highlight fonts, even if they didn't change, because
@@ -1862,6 +1871,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
        size appropriate for the new font, but only do so if there's only
        _one_ document in the window, in order to avoid growing-window bug */
     if (NDocuments(window) == 1) {
+        // TODO: convert to new font
 	fontWidth = GetDefaultFontStruct(TheDisplay, window->fontList)->max_bounds.width;
 	fontHeight = textD->ascent + textD->descent;
 	newWindowWidth = (oldTextWidth*fontWidth) / oldFontWidth + borderWidth;
@@ -2245,7 +2255,7 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
-            textNfont, GetDefaultFontStruct(TheDisplay, window->fontList),
+            textNXftFont, window->font,
             textNhScrollBar, hScrollBar, textNvScrollBar, vScrollBar,
             textNreadOnly, IS_ANY_LOCKED(window->lockReasons),
             textNwordDelimiters, delimiters,
@@ -2636,14 +2646,16 @@ static int updateGutterWidth(WindowInfo* window)
     }
 
     if (reqCols != maxCols) {
-        XFontStruct *fs;
+        //XFontStruct *fs;
+        NFont *fs;
         Dimension windowWidth;
         short fontWidth;
 
         newColsDiff = reqCols - maxCols;
 
-        XtVaGetValues(window->textArea, textNfont, &fs, NULL);
-        fontWidth = fs->max_bounds.width;
+        XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
+        XftFont *xftFont = FontDefault(fs);
+        fontWidth = xftFont->max_advance_width;
 
         XtVaGetValues(window->shell, XmNwidth, &windowWidth, NULL);
         XtVaSetValues(window->shell,
@@ -2865,15 +2877,17 @@ void UpdateWMSizeHints(WindowInfo *window)
 {
     Dimension shellWidth, shellHeight, textHeight, hScrollBarHeight;
     int marginHeight, marginWidth, totalHeight, nCols, nRows;
-    XFontStruct *fs;
+    NFont *fs;
+    XftFont *font;
     int i, baseWidth, baseHeight, fontHeight, fontWidth;
     Widget hScrollBar;
     textDisp *textD = ((TextWidget)window->textArea)->text.textD;
 
     /* Find the dimensions of a single character of the text font */
-    XtVaGetValues(window->textArea, textNfont, &fs, NULL);
+    XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
+    font = FontDefault(fs);
     fontHeight = textD->ascent + textD->descent;
-    fontWidth = fs->max_bounds.width;
+    fontWidth = font->max_advance_width;
 
     /* Find the base (non-expandable) width and height of the editor window.
     
@@ -2910,7 +2924,7 @@ void UpdateWMSizeHints(WindowInfo *window)
     baseHeight = shellHeight - nRows * fontHeight;
 
     /* Set the size hints in the shell widget */
-    XtVaSetValues(window->shell, XmNwidthInc, fs->max_bounds.width,
+    XtVaSetValues(window->shell, XmNwidthInc, font->max_advance_width,
             XmNheightInc, fontHeight,
             XmNbaseWidth, baseWidth, XmNbaseHeight, baseHeight,
             XmNminWidth, baseWidth + fontWidth,

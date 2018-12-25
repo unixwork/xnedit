@@ -939,17 +939,17 @@ static PrefDescripRec PrefDescrip[] = {
     {"insertTabs", "InsertTabs", PREF_BOOLEAN, "True",
     	&PrefData.insertTabs, NULL, True},
     {"textFont", "TextFont", PREF_STRING,
-    	"-*-courier-medium-r-normal--14-*-*-*-*-iso8859-1",
+    	"Monospace:size=11",
     	PrefData.fontString, (void *)sizeof(PrefData.fontString), True},
     {"boldHighlightFont", "BoldHighlightFont", PREF_STRING,
-    	"-*-courier-bold-r-normal--14-*-*-*-*-iso8859-1",
+    	"Monospace:size=11:style=Bold",
     	PrefData.boldFontString, (void *)sizeof(PrefData.boldFontString), True},
     {"italicHighlightFont", "ItalicHighlightFont", PREF_STRING,
-    	"-*-courier-medium-o-normal--14-*-*-*-*-iso8859-1",
+    	"Monospace:size=11:style=Italic",
     	PrefData.italicFontString,
     	(void *)sizeof(PrefData.italicFontString), True},
     {"boldItalicHighlightFont", "BoldItalicHighlightFont", PREF_STRING,
-    	"-*-courier-bold-o-normal--14-*-*-*-*-iso8859-1",
+    	"Monospace:size=11",
     	PrefData.boldItalicFontString,
     	(void *)sizeof(PrefData.boldItalicFontString), True},
     {"helpFont", "HelpFont", PREF_STRING,
@@ -1409,17 +1409,19 @@ static void translatePrefFormats(int convertOld, int fileVer)
     font = XLoadQueryFont(TheDisplay, PrefData.fontString);
     PrefData.fontList = font==NULL ? NULL :
 	    XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
+    /*
     PrefData.boldFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.boldFontString);
     PrefData.italicFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.italicFontString);
     PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay,
     	    PrefData.boldItalicFontString);
+    */
     
-    PrefData.font = FontFromName(TheDisplay, "Monospace:size=10");
-    PrefData.boldFont = FontFromName(TheDisplay, "Monospace:size=10");
-    PrefData.italicFont = FontFromName(TheDisplay, "Monospace:size=10");
-    PrefData.boldItalicFont = FontFromName(TheDisplay, "Monospace:size=10");
+    PrefData.font = FontFromName(TheDisplay, PrefData.fontString);
+    PrefData.boldFont = FontFromName(TheDisplay, PrefData.boldFontString);
+    PrefData.italicFont = FontFromName(TheDisplay, PrefData.italicFontString);
+    PrefData.boldItalicFont = FontFromName(TheDisplay, PrefData.boldItalicFontString);
     
     /*
     **  The default set for the comand shell in PrefDescrip ("DEFAULT") is
