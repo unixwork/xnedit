@@ -1208,12 +1208,21 @@ int BufCharWidth(char c, int indent, int tabDist, char nullSubsChar)
 int BufCountDispChars(const textBuffer* buf, int lineStartPos,
         int targetPos)
 {
-    int pos, charCount = 0;
+    int pos, len, ulen, charCount = 0;
     char expandedChar[MAX_EXP_CHAR_LEN];
     
     pos = lineStartPos;
-    while (pos < targetPos && pos < buf->length)
-    	charCount += BufGetExpandedChar(buf, pos++, charCount, expandedChar);
+    while (pos < targetPos && pos < buf->length) {
+    	len = BufGetExpandedChar(buf, pos, charCount, expandedChar);
+        ulen = utf8charlen(expandedChar);
+        if(ulen > 1) {
+            charCount += 1;
+            pos += ulen;
+        } else {
+            charCount += len;
+            pos++;
+        }
+    }
     return charCount;
 }
 
@@ -1224,16 +1233,18 @@ int BufCountDispChars(const textBuffer* buf, int lineStartPos,
 */
 int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars)
 {
-    int pos, charCount = 0;
+    // TODO: unicode
+    int pos, len, charCount = 0;
     char c;
     
     pos = lineStartPos;
     while (charCount < nChars && pos < buf->length) {
     	c = BufGetCharacter(buf, pos);
+        len = utf8charlen((unsigned char*)&c);
     	if (c == '\n')
     	    return pos;
     	charCount += BufCharWidth(c, charCount, buf->tabDist,buf->nullSubsChar);
-    	pos++;
+    	pos+=len;
     }
     return pos;
 }
@@ -1835,16 +1846,23 @@ static void insertColInLine(const char *line, const char *insLine,
     char *c, *outPtr, *retabbedStr;
     const char *linePtr;
     int indent, toIndent, len, postColIndent;
-        
+    int inc;
+          
     /* copy the line up to "column" */ 
     outPtr = outStr;
     indent = 0;
-    for (linePtr=line; *linePtr!='\0'; linePtr++) {
-	len = BufCharWidth(*linePtr, indent, tabDist, nullSubsChar);
+    for (linePtr=line; *linePtr!='\0'; linePtr+=inc) {
+        inc = utf8charlen(linePtr);
+        if(inc > 1) {
+            len = 1;
+        } else {
+            len = BufCharWidth(*linePtr, indent, tabDist, nullSubsChar);
+        }
 	if (indent + len > column)
     	    break;
     	indent += len;
-	*outPtr++ = *linePtr;
+        memmove(outPtr, linePtr, inc);
+        outPtr+=inc;
     }
     
     /* If "column" falls in the middle of a character, and the character is a
