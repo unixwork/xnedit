@@ -4043,6 +4043,9 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 
 NFont *FontCreate(Display *dp, FcPattern *pattern)
 {
+    if(!pattern) {
+        return NULL;
+    }
     FcResult result;
     pattern = FcPatternDuplicate(pattern);
     FcPattern *match = XftFontMatch(dp, DefaultScreen(dp), pattern, &result);
@@ -4069,6 +4072,9 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
 NFont *FontFromName(Display *dp, const char *name)
 {
     FcPattern *pattern = FcNameParse(name);
+    if(!pattern) {
+        return NULL;
+    }
     NFont *font = FontCreate(dp, pattern);
     FcPatternDestroy(pattern);
     return font;

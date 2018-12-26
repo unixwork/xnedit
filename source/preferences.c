@@ -4152,41 +4152,79 @@ void ChooseFonts(WindowInfo *window, int forWindow)
     ManageDialogCenteredOnPointer(form);
 }
 
+static char* fontNameAddAttribute(
+        const char *name,
+        size_t len,
+        const char *attribute,
+        const char *value)
+{
+    size_t attributelen = strlen(attribute);
+    size_t valuelen = strlen(value);
+    size_t newlen = len + attributelen + valuelen + 4;
+    char *attr = NEditMalloc(attributelen+2);
+    char *newfont = NEditMalloc(newlen);
+    char *oldattr;
+    int i = len;
+    int b = 0;
+    int e = 0;
+    
+    /* check if the font name already has this attribute */
+    attr[0] = ':';
+    memcpy(attr+1, attribute, attributelen);
+    attr[attributelen+1] = '=';
+    attr[attributelen+2] = '\0';
+    oldattr = strstr(name, attr);
+    if(oldattr) {
+        b = (int)(oldattr - name)+1;
+        e = len;
+        for(i=b;i<len;i++) {
+            if(name[i] == ':') {
+                e = i;
+                break;
+            }
+        }
+    }
+    NEditFree(attr);
+    
+    if(b < len) {
+        if(name[b-1] == ':') b--;
+        snprintf(newfont, newlen, "%.*s%.*s:%s=%s", b, name, len-e, name+e, attribute, value);
+    } else {
+        snprintf(newfont, newlen, "%s:%s=%s", name, attribute, value);
+    }
+    
+    return newfont;
+}
+
 static void fillFromPrimaryCB(Widget w, XtPointer clientData,
     	XtPointer callData)
 {
     fontDialog *fd = (fontDialog *)clientData;
     char *primaryName, *errMsg;
-    char modifiedFontName[MAX_FONT_LEN];
-    char *searchString = "(-[^-]*-[^-]*)-([^-]*)-([^-]*)-(.*)";
-    char *italicReplaceString = "\\1-\\2-o-\\4";
-    char *boldReplaceString = "\\1-bold-\\3-\\4";
-    char *boldItalicReplaceString = "\\1-bold-o-\\4";
-    regexp *compiledRE;
-
-    /* Match the primary font agains RE pattern for font names.  If it
-       doesn't match, we can't generate highlight font names, so return */
-    compiledRE = CompileRE(searchString, &errMsg, REDFLT_STANDARD);
+    size_t primaryLen;
+    
+    char *italic;
+    char *bold;
+    char *bolditalic;
+    
     primaryName = XmTextGetString(fd->primaryW);
-    if (!ExecRE(compiledRE, primaryName, NULL, False, '\0', '\0', NULL, NULL, NULL)) {
-    	XBell(XtDisplay(fd->shell), 0);
-    	free(compiledRE);
-    	NEditFree(primaryName);
-    	return;
+    primaryLen = strlen(primaryName);
+    
+    if(primaryLen > 0) {
+        italic = fontNameAddAttribute(primaryName, primaryLen, "slant", "italic");
+        bold = fontNameAddAttribute(primaryName, primaryLen, "weight", "bold");
+        bolditalic = fontNameAddAttribute(bold, strlen(bold), "slant", "italic");
+        
+        XmTextSetString(fd->boldW, bold);
+        XmTextSetString(fd->italicW, italic);
+        XmTextSetString(fd->boldItalicW, bolditalic);
+        
+        NEditFree(bold);
+        NEditFree(italic);
+        NEditFree(bolditalic);
     }
     
-    /* Make up names for new fonts based on RE replace patterns */
-    SubstituteRE(compiledRE, italicReplaceString, modifiedFontName,
-    	    MAX_FONT_LEN);
-    XmTextSetString(fd->italicW, modifiedFontName);
-    SubstituteRE(compiledRE, boldReplaceString, modifiedFontName,
-    	    MAX_FONT_LEN);
-    XmTextSetString(fd->boldW, modifiedFontName);
-    SubstituteRE(compiledRE, boldItalicReplaceString, modifiedFontName,
-    	    MAX_FONT_LEN);
-    XmTextSetString(fd->boldItalicW, modifiedFontName);
     NEditFree(primaryName);
-    NEditFree(compiledRE);
 }
 
 static void primaryModifiedCB(Widget w, XtPointer clientData,
