@@ -42,18 +42,6 @@
 *                                                                              *
 *            Widget	parent 		- parent widget ID                     *
 *                                                                              *
-*            int        showPropFont    - ONLY_FIXED : shows only fixed fonts  *
-*                                                      doesn't show prop font  *
-*                                                      toggle button also.     *
-*                                         PREF_FIXED : can select either fixed *
-*                                                      or proportional fonts;  *
-*                                                      but starting option is  *
-*                                                      Fixed fonts.            *
-*                                         PREF_PROP  : can select either fixed *
-*                                                      or proportional fonts;  *
-*                                                      but starting option is  *
-*                                                      proportional fonts.     *
-*                                                                              *
 *           char *	currFont        - ASCII string that contains the name  *
 *                                         of the currently selected font.      *
 *                                                                              *
@@ -70,16 +58,9 @@
 *                                                                              *
 *******************************************************************************/
 
-/* constant values for controlling the proportional font toggle */
-
-#define ONLY_FIXED	0
-#define PREF_FIXED	1
-#define PREF_PROP	2
-
 
 /* function prototype */
 
-char    *FontSel(Widget parent, int showPropFont, const char *currFont,
-        Pixel sampleFG, Pixel sampleBG);
+char *FontSel(Widget parent, const char *currFont);
 
 #endif /* NEDIT_FONTSEL_H_INCLUDED */

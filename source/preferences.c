@@ -4408,13 +4408,7 @@ static void browseFont(Widget parent, Widget fontTextW)
     
     origFontName = XmTextGetString(fontTextW);
 
-    /* Get the values from the defaults */
-    fgPixel = AllocColor(parent, GetPrefColorName(TEXT_FG_COLOR),
-            &dummy, &dummy, &dummy);
-    bgPixel = AllocColor(parent, GetPrefColorName(TEXT_BG_COLOR),
-            &dummy, &dummy, &dummy);
-
-    newFontName = FontSel(parent, PREF_FIXED, origFontName, fgPixel, bgPixel);
+    newFontName = FontSel(parent, origFontName);
     NEditFree(origFontName);
     if (newFontName == NULL)
     	return;
