@@ -2027,29 +2027,26 @@ void SetPrefColorName(int index, const char *name)
 */
 void SetPrefFont(char *fontName)
 {
-    XFontStruct *font;
-    
     setStringPref(PrefData.fontString, fontName);
-    font = XLoadQueryFont(TheDisplay, fontName);
-    PrefData.fontList = font==NULL ? NULL :
-	    XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
+    PrefData.font = FontFromName(TheDisplay, fontName);
 }
 
 void SetPrefBoldFont(char *fontName)
 {
+    
     setStringPref(PrefData.boldFontString, fontName);
-    PrefData.boldFontStruct = XLoadQueryFont(TheDisplay, fontName);
+    PrefData.boldFont = FontFromName(TheDisplay, fontName);
 }
 
 void SetPrefItalicFont(char *fontName)
 {
     setStringPref(PrefData.italicFontString, fontName);
-    PrefData.italicFontStruct = XLoadQueryFont(TheDisplay, fontName);
+    PrefData.italicFont = FontFromName(TheDisplay, fontName);
 }
 void SetPrefBoldItalicFont(char *fontName)
 {
     setStringPref(PrefData.boldItalicFontString, fontName);
-    PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay, fontName);
+    PrefData.boldItalicFont = FontFromName(TheDisplay, fontName);
 }
 
 char *GetPrefFontName(void)
@@ -4287,9 +4284,10 @@ static void fontCancelCB(Widget w, XtPointer clientData, XtPointer callData)
 static int checkFontStatus(fontDialog *fd, Widget fontTextFieldW)
 {
     char *primaryName, *testName;
-    XFontStruct *primaryFont, *testFont;
+    NFont *primaryFont, *testFont;
+    XftFont *primary, *test;
     Display *display = XtDisplay(fontTextFieldW);
-    int primaryWidth, primaryHeight, testWidth, testHeight;
+    int primaryHeight, testHeight;
     
     /* Get width and height of the font to check.  Note the test for empty
        name: X11R6 clients freak out X11R5 servers if they ask them to load
@@ -4299,15 +4297,16 @@ static int checkFontStatus(fontDialog *fd, Widget fontTextFieldW)
 	NEditFree(testName);
     	return BAD_FONT;
     }
-    testFont = XLoadQueryFont(display, testName);
+    //testFont = XLoadQueryFont(display, testName);
+    testFont = FontFromName(display, testName);
     if (testFont == NULL) {
     	NEditFree(testName);
     	return BAD_FONT;
     }
+    test = FontDefault(testFont);
     NEditFree(testName);
-    testWidth = testFont->min_bounds.width;
-    testHeight = testFont->ascent + testFont->descent;
-    XFreeFont(display, testFont);
+    testHeight = test->ascent + test->descent;
+    FontDestroy(testFont);
     
     /* Get width and height of the primary font */
     primaryName = XmTextGetString(fd->primaryW);
@@ -4315,19 +4314,17 @@ static int checkFontStatus(fontDialog *fd, Widget fontTextFieldW)
 	NEditFree(primaryName);
     	return BAD_FONT;
     }
-    primaryFont = XLoadQueryFont(display, primaryName);
+    primaryFont = FontFromName(display, primaryName);
     if (primaryFont == NULL) {
     	NEditFree(primaryName);
     	return BAD_PRIMARY;
     }
+    primary = FontDefault(primaryFont);
     NEditFree(primaryName);
-    primaryWidth = primaryFont->min_bounds.width;
-    primaryHeight = primaryFont->ascent + primaryFont->descent;
-    XFreeFont(display, primaryFont);
+    primaryHeight = primary->ascent + primary->descent;
+    FontDestroy(primaryFont);
     
     /* Compare font information */
-    if (testWidth != primaryWidth)
-    	return BAD_SPACING;
     if (testHeight != primaryHeight)
     	return BAD_SIZE;
     return GOOD_FONT;

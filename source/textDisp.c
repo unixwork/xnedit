@@ -4180,3 +4180,27 @@ void FontAddFail(NFont *f, FcCharSet *c)
         f->fail = newElm;
     }
 }
+
+void FontDestroy(NFont *f)
+{
+    NCharSetList *c = f->fail;
+    NCharSetList *nc;
+    while(c) {
+        FcCharSetDestroy(c->charset);
+        nc = c->next;
+        NEditFree(c);
+        c = nc;
+    }
+    
+    NFontList *l = f->fonts;
+    NFontList *nl;
+    while(l) {
+        XftFontClose(f->display, l->font);
+        nl = l->next;
+        NEditFree(nl);
+        l = nl;
+    }
+    
+    FcPatternDestroy(f->pattern);
+    NEditFree(f);
+}

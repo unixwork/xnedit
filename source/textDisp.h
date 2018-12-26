@@ -256,6 +256,7 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c);
 XftFont *FontDefault(NFont *f);
 void FontAddFail(NFont *f, FcCharSet *c);
 XftFont *FindFont(NFont *f, FcChar32 c);
+void FontDestroy(NFont *f);
 
 XftColor PixelToColor(Display *dp, Pixel p);
 XftColor RGBToColor(short r, short g, short b);
