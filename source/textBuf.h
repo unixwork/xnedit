@@ -177,4 +177,6 @@ int BufCharLen(const textBuffer *buf, int pos);
 int BufLeftPos(textBuffer *buf, int pos);
 int BufRightPos(textBuffer *buf, int pos);
 
+int Utf8ToUcs4(const char *src_orig, FcChar32 *dst, int len);
+
 #endif /* NEDIT_TEXTBUF_H_INCLUDED */

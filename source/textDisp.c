@@ -1109,7 +1109,7 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
     for(charIndex=0; charIndex<pos-lineStartPos; charIndex+=inc) {
-        inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen - charIndex);
+        inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
         if(inc > 1) {
             charLen = 1;
             expandedChar[0] = uc;
@@ -1925,7 +1925,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
             
-            inc = FcUtf8ToUcs4((FcChar8*)line, &uc, remainingLen);
+            inc = Utf8ToUcs4(line, &uc, remainingLen);
             if(inc > 1) {
                 charLen = 1;
                 expandedChar[0] = uc;
@@ -2007,7 +2007,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         } else {
             baseChar = lineStr[charIndex];
             
-            inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen - charIndex);
+            inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
             if(inc > 1) {
                 charLen = 1;
                 expandedChar[0] = uc;
@@ -2463,7 +2463,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     outIndex = 0;
     inc = 1;
     for(charIndex=0; charIndex<lineLen; charIndex+=inc) {
-        inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen-charIndex);
+        inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen-charIndex);
         if(inc > 1) {
             /* not ascii */
             charLen = 1;

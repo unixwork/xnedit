@@ -2731,3 +2731,12 @@ static int min(int i1, int i2)
 {
     return i1 <= i2 ? i1 : i2;
 }
+
+int Utf8ToUcs4(const char *src_orig, FcChar32 *dst, int len)
+{
+    int ret = FcUtf8ToUcs4((FcChar8*)src_orig, dst, len);
+    if(ret <= 0) {
+        ret = 1;
+    }
+    return ret;
+}
