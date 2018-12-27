@@ -1941,7 +1941,7 @@ static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
 	int tabDist, int useTabs, char nullSubsChar, char *outStr, int *outLen,
 	int *endOffset)
 {
-    int indent, preRectIndent, postRectIndent, len;
+    int indent, preRectIndent, postRectIndent, len, inc;
     const char *c;
     char *outPtr;
     char *retabbedStr;
@@ -1949,20 +1949,24 @@ static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
     /* copy the line up to rectStart */
     outPtr = outStr;
     indent = 0;
-    for (c=line; *c!='\0'; c++) {
+    for (c=line; *c!='\0'; c+=inc) {
 	if (indent > rectStart)
 	    break;
-	len = BufCharWidth(*c, indent, tabDist, nullSubsChar);
+        inc = utf8charlen((unsigned char*)c);
+	len = inc > 1 ? 1 : BufCharWidth(*c, indent, tabDist, nullSubsChar);
 	if (indent + len > rectStart && (indent == rectStart || *c == '\t'))
     	    break;
     	indent += len;
-	*outPtr++ = *c;
+        memmove(outPtr, c, inc);
+        outPtr+=inc;
     }
     preRectIndent = indent;
     
     /* skip the characters between rectStart and rectEnd */
-    for(; *c!='\0' && indent<rectEnd; c++)
-	indent += BufCharWidth(*c, indent, tabDist, nullSubsChar);
+    for(; *c!='\0' && indent<rectEnd; c+=inc) {
+        inc = utf8charlen((unsigned char*)c);
+	indent += inc > 1 ? 1 : BufCharWidth(*c, indent, tabDist, nullSubsChar);
+    }
     postRectIndent = indent;
     
     /* If the line ended before rectEnd, there's nothing more to do */
