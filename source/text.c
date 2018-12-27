@@ -2302,8 +2302,13 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (nChars == 0)
     	return;
 #else
+#ifdef X_HAVE_UTF8_STRING
     nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
      	   &status);
+#else
+    nChars = XmbLookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
+     	   &status);
+#endif
     if (nChars == 0 || status == XLookupNone ||
      	   status == XLookupKeySym || status == XBufferOverflow)
     	return;
