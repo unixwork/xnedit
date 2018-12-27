@@ -2,13 +2,17 @@
 *.a
 Microline/XmL/Makefile.linux
 Microline/XmL/Makefile.linux-static
+Microline/XmL/Makefile.solaris
 Xlt/Makefile.linux
 Xlt/Makefile.linux-static
+Xlt/Makefile.solaris
 source/Makefile.linux
 source/Makefile.linux-static
+source/Makefile.solaris
 source/nc
 source/nedit
 source/parse.c
 util/Makefile.linux
 util/Makefile.linux-static
+util/Makefile.solaris
 util/check_lin_tif
