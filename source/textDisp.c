@@ -3079,13 +3079,6 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
                 textD->top, textD->lineNumWidth, textD->height, False);
     
-    // TODO: use textD->lineNumGC color
-    XftColor color;
-    color.color.red = 0x0;
-    color.color.green = 0x0;
-    color.color.blue = 0x0;
-    color.color.alpha = 0xFFFF;
-    
     /* Draw the line numbers, aligned to the text */
     nCols = min(11, textD->lineNumWidth / charWidth);
     y = textD->top;
@@ -3097,7 +3090,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
             snprintf(lineNumString, 12, "%*d", nCols, line);
             XftDrawString8(
                     textD->d,
-                    &color,
+                    &textD->lineNumColor,
                     FontDefault(textD->font),
                     textD->lineNumLeft,
                     y + textD->ascent,
@@ -3274,6 +3267,7 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
     textD->lineNumGC = allocateGC(textD->w, GCForeground | 
             GCBackground, lineNumFGPixel, bgPixel, 0, 
             GCClipMask, GCArcMode);
+    textD->lineNumColor = PixelToColor(XtDisplay(textD->w), lineNumFGPixel);
 }
 
 /*

@@ -166,6 +166,7 @@ typedef struct _textDisp {
     Pixel cursorFGPixel;
     Pixel *bgClassPixel;		/* table of colors for each BG class */
     XftColor fgColor;                   /* Foreground color */
+    XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Widget calltipW;                    /* The Label widget for the calltip */
