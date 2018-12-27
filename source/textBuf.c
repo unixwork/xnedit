@@ -1214,7 +1214,7 @@ int BufCountDispChars(const textBuffer* buf, int lineStartPos,
     pos = lineStartPos;
     while (pos < targetPos && pos < buf->length) {
     	len = BufGetExpandedChar(buf, pos, charCount, expandedChar);
-        ulen = utf8charlen(expandedChar);
+        ulen = utf8charlen((unsigned char*)expandedChar);
         if(ulen > 1) {
             charCount += 1;
             pos += ulen;
@@ -1852,7 +1852,7 @@ static void insertColInLine(const char *line, const char *insLine,
     outPtr = outStr;
     indent = 0;
     for (linePtr=line; *linePtr!='\0'; linePtr+=inc) {
-        inc = utf8charlen(linePtr);
+        inc = utf8charlen((unsigned char*)linePtr);
         if(inc > 1) {
             len = 1;
         } else {

@@ -58,7 +58,7 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
         sel->filter = NULL;
     }
     if(pattern) {
-        sel->filter = FcNameParse(pattern);
+        sel->filter = FcNameParse((FcChar8*)pattern);
     }
     if(!sel->filter) {
         sel->filter = FcPatternCreate();
@@ -73,7 +73,7 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
         name = NULL;
         FcPatternGetString(sel->list->fonts[i], FC_FULLNAME, 0, &name);
         if(name) {
-            items[nfound] = XmStringCreateLocalized(name);
+            items[nfound] = XmStringCreateSimple((char*)name);
             nfound++;
         }
     }
@@ -87,7 +87,7 @@ static void CreateSizeList(Widget w)
     char buf[8];
     for(int i=0;i<21;i++) {
         snprintf(buf, 8, "%d", i+5);
-        items[i] = XmStringCreateLocalized(buf);
+        items[i] = XmStringCreateSimple(buf);
     }
     
      XtVaSetValues(w, XmNitems, items, XmNitemCount, 20, NULL);
@@ -195,7 +195,7 @@ char *FontSel(Widget parent, const char *currFont)
     Widget form = XmCreateForm(dialog, "form", args, 0);
     
     /* label */
-    str = XmStringCreateLocalized("FontConfig pattern:");
+    str = XmStringCreateSimple("FontConfig pattern:");
     XtSetArg(args[n], XmNlabelString, str); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
@@ -219,7 +219,7 @@ char *FontSel(Widget parent, const char *currFont)
     
     /* label */
     n = 0;
-    str = XmStringCreateLocalized("Font:");
+    str = XmStringCreateSimple("Font:");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, sel->pattern); n++;
     XtSetArg(args[n], XmNtopOffset, 2); n++;
@@ -251,7 +251,7 @@ char *FontSel(Widget parent, const char *currFont)
     
     /* size label */
     n = 0;
-    str = XmStringCreateLocalized("Size:");
+    str = XmStringCreateSimple("Size:");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, sel->fontlist); n++;
     XtSetArg(args[n], XmNtopOffset, 2); n++;
@@ -274,14 +274,14 @@ char *FontSel(Widget parent, const char *currFont)
     sel->size = XmCreateDropDownList(form, "combobox", args, n);
     CreateSizeList(sel->size);
     XtManageChild(sel->size);
-    str = XmStringCreateLocalized("10");
+    str = XmStringCreateSimple("10");
     XmComboBoxSelectItem(sel->size, str);
     XtAddCallback (sel->size, XmNselectionCallback, (XtCallbackProc)size_callback, sel);
     XmStringFree(str);
     
     /* font name label */
     n = 0;
-    str = XmStringCreateLocalized("Font name:");
+    str = XmStringCreateSimple("Font name:");
     XtSetArg(args[n], XmNtopOffset, 2); n++;
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
@@ -308,7 +308,7 @@ char *FontSel(Widget parent, const char *currFont)
     
     /* ok button */
     n = 0;
-    str = XmStringCreateLocalized("OK");
+    str = XmStringCreateSimple("OK");
     XtSetArg(args[n], XmNtopOffset, 2); n++;
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNbottomOffset, 5); n++;
@@ -328,7 +328,7 @@ char *FontSel(Widget parent, const char *currFont)
     
     /* cancel button */
     n = 0;
-    str = XmStringCreateLocalized("Cancel");
+    str = XmStringCreateSimple("Cancel");
     XtSetArg(args[n], XmNtopOffset, 2); n++;
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     XtSetArg(args[n], XmNbottomOffset, 5); n++;
@@ -368,3 +368,4 @@ char *FontSel(Widget parent, const char *currFont)
     FreeFontSelector(sel);
     return retStr;
 }
+

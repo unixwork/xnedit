@@ -1109,7 +1109,7 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     xStep = textD->left - textD->horizOffset;
     outIndex = 0;
     for(charIndex=0; charIndex<pos-lineStartPos; charIndex+=inc) {
-        inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
+        inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen - charIndex);
         if(inc > 1) {
             charLen = 1;
             expandedChar[0] = uc;
@@ -1925,7 +1925,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
             
-            inc = FcUtf8ToUcs4(line, &uc, remainingLen);
+            inc = FcUtf8ToUcs4((FcChar8*)line, &uc, remainingLen);
             if(inc > 1) {
                 charLen = 1;
                 expandedChar[0] = uc;
@@ -2007,7 +2007,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         } else {
             baseChar = lineStr[charIndex];
             
-            inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
+            inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen - charIndex);
             if(inc > 1) {
                 charLen = 1;
                 expandedChar[0] = uc;
@@ -2382,7 +2382,7 @@ static int stringWidth(const textDisp* textD, const char *string,
     else 
     	fs = FontDefault(textD->font);
     XGlyphInfo extents;
-    XftTextExtentsUtf8(XtDisplay(textD->w), fs, string, length, &extents);
+    XftTextExtentsUtf8(XtDisplay(textD->w), fs, (FcChar8*)string, length, &extents);
     return extents.xOff;
 }
 
@@ -2463,7 +2463,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     outIndex = 0;
     inc = 1;
     for(charIndex=0; charIndex<lineLen; charIndex+=inc) {
-        inc = FcUtf8ToUcs4(lineStr+charIndex, &uc, lineLen-charIndex);
+        inc = FcUtf8ToUcs4((FcChar8*)lineStr+charIndex, &uc, lineLen-charIndex);
         if(inc > 1) {
             /* not ascii */
             charLen = 1;
@@ -3089,7 +3089,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
                     FontDefault(textD->font),
                     textD->lineNumLeft,
                     y + textD->ascent,
-                    lineNumString,
+                    (FcChar8*)lineNumString,
                     strlen(lineNumString));
             line++;
         } else {
@@ -3177,7 +3177,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             XftTextExtentsUtf8(
                     XtDisplay(textD->w),
                     FontDefault(textD->font),
-                    expandedChar,
+                    (FcChar8*)expandedChar,
                     len,
                     &extents);
             width += extents.width;
@@ -3193,7 +3193,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             XftTextExtentsUtf8(
                     XtDisplay(textD->w),
                     FontDefault(textD->styleTable[style].font),
-                    expandedChar,
+                    (FcChar8*)expandedChar,
                     len,
                     &extents);
     	    width += extents.width;
@@ -4071,7 +4071,7 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
 
 NFont *FontFromName(Display *dp, const char *name)
 {
-    FcPattern *pattern = FcNameParse(name);
+    FcPattern *pattern = FcNameParse((FcChar8*)name);
     if(!pattern) {
         return NULL;
     }
