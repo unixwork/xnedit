@@ -23,7 +23,7 @@ AR=ar
 CFLAGS=-O -I/usr/openwin/include -I/usr/include/X11 -DUSE_DIRENT `pkg-config --cflags xft`
 
 ARFLAGS=-urs
-LIBS= -L/usr/lib -L/usr/openwin/lib -L/usr/dt/lib -lm -lXm -lXt -lX11 -lXrender \
+LIBS= -L/usr/lib -L/usr/sfw/lib -L/usr/openwin/lib -L/usr/dt/lib -lm -lXm -lXt -lX11 -lXrender \
     	-lsocket -lnsl  -R /usr/openwin/lib -R /usr/dt/lib -R /usr/ucblib `pkg-config --libs xft`
 #LIBS= -L/usr/openwin/lib -L/opt/SUNWmotif/lib -lm -lXm \
 #	-lXt -lX11 -lgen -R /usr/openwin/lib
