@@ -1138,7 +1138,7 @@ static String neditLanguageProc(Display *dpy, String xnl, XtPointer closure)
         XtWarning("locale not supported by C library, locale unchanged");
     }
 
-    patchLocaleForMotif();
+    /* patchLocaleForMotif(); */
 
     if (! XSupportsLocale()) {
         XtWarning("locale not supported by Xlib, locale set to C");
