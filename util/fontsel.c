@@ -64,7 +64,11 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
         sel->filter = FcPatternCreate();
     }
     
-    sel->list = FcFontList(NULL, sel->filter, NULL);
+    FcObjectSet *os = FcObjectSetCreate();
+    FcObjectSetAdd(os, FC_FAMILY);
+    FcObjectSetAdd(os, FC_FULLNAME);
+    sel->list = FcFontList(NULL, sel->filter, os);
+    FcObjectSetDestroy(os);
     nfonts = sel->list->nfont;
     nfound = 0;
     
@@ -91,7 +95,7 @@ static void CreateSizeList(Widget w)
     }
     
      XtVaSetValues(w, XmNitems, items, XmNitemCount, 20, NULL);
-     for(int i=0;i<21;i++) {
+     for(int i=0;i<20;i++) {
          XmStringFree(items[i]);
      }
      NEditFree(items);
