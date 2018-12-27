@@ -85,7 +85,7 @@ static void CreateSizeList(Widget w)
 {
     XmStringTable items = NEditCalloc(20, sizeof(XmString));
     char buf[8];
-    for(int i=0;i<21;i++) {
+    for(int i=0;i<20;i++) {
         snprintf(buf, 8, "%d", i+5);
         items[i] = XmStringCreateSimple(buf);
     }
