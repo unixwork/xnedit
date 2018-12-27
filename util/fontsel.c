@@ -85,17 +85,38 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     XtVaSetValues(sel->fontlist, XmNitems, items, XmNitemCount, nfound, NULL);
 }
 
+static XmString MatchFont(const char *name)
+{
+    XmString ret = NULL;
+    FcPattern* pat = FcNameParse((const FcChar8*)name);
+    
+    FcConfigSubstitute(NULL, pat, FcMatchPattern);
+    FcDefaultSubstitute(pat);
+    FcResult result;
+    FcPattern* font = FcFontMatch(NULL, pat, &result);
+    if(font) {
+        FcChar8* name = NULL;
+        if (FcPatternGetString(font, FC_FULLNAME, 0, &name) == FcResultMatch) {
+            ret = XmStringCreateSimple(name);
+        }
+        FcPatternDestroy(font);
+    }
+    FcPatternDestroy(pat);
+    
+    return ret;
+}
+
 static void CreateSizeList(Widget w)
 {
-    XmStringTable items = NEditCalloc(20, sizeof(XmString));
+    XmStringTable items = NEditCalloc(30, sizeof(XmString));
     char buf[8];
-    for(int i=0;i<20;i++) {
+    for(int i=0;i<30;i++) {
         snprintf(buf, 8, "%d", i+5);
         items[i] = XmStringCreateSimple(buf);
     }
     
-     XtVaSetValues(w, XmNitems, items, XmNitemCount, 20, NULL);
-     for(int i=0;i<20;i++) {
+     XtVaSetValues(w, XmNitems, items, XmNitemCount, 30, NULL);
+     for(int i=0;i<30;i++) {
          XmStringFree(items[i]);
      }
      NEditFree(items);
@@ -127,9 +148,15 @@ static char* GetFontString(FontSelector *sel)
         return NULL;
     }
     
-    XtVaGetValues(sel->size, XmNselectedItem, &item, NULL);
-    if(item) {
-        XmStringGetLtoR(item, XmFONTLIST_DEFAULT_TAG, &size);
+    XtVaGetValues(
+            sel->size,
+            XmNselectedItems,
+            &table,
+            XmNselectedItemCount,
+            &count,
+            NULL);
+    if(count > 0) {
+        XmStringGetLtoR(table[0], XmFONTLIST_DEFAULT_TAG, &size);
     }
     
     fontLen = font ? strlen(font) : 0;
@@ -198,118 +225,6 @@ char *FontSel(Widget parent, const char *currFont)
     AddMotifCloseCallback(dialog, (XtCallbackProc)cancel_callback, sel);
     Widget form = XmCreateForm(dialog, "form", args, 0);
     
-    /* label */
-    str = XmStringCreateSimple("FontConfig pattern:");
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopOffset, 5); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    Widget patternLabel = XmCreateLabel(form, "label", args, n);
-    XtManageChild(patternLabel);
-    XmStringFree(str);
-    
-    /* pattern text widget */
-    n = 0;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, patternLabel); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    sel->pattern = XmCreateText(form, "fcpattern_textfield", args, n);
-    XtManageChild(sel->pattern);
-    
-    /* label */
-    n = 0;
-    str = XmStringCreateSimple("Font:");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, sel->pattern); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    Widget fontListLabel = XmCreateLabel(form, "label", args, n);
-    XtManageChild(fontListLabel);
-    XmStringFree(str);
-    
-    /* font list */
-    n = 0;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, fontListLabel); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNvisibleItemCount, 10); n++;
-    sel->fontlist = XmCreateScrolledList(form, "fontlist", args, n);
-    AddMouseWheelSupport(sel->fontlist);
-    XtManageChild(sel->fontlist);
-    XtAddCallback(
-                sel->fontlist,
-                XmNbrowseSelectionCallback,
-                (XtCallbackProc)fontlist_callback,
-                sel);
-    
-    /* size label */
-    n = 0;
-    str = XmStringCreateSimple("Size:");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, sel->fontlist); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    Widget sizeLabel = XmCreateLabel(form, "label", args, n);
-    XtManageChild(sizeLabel);
-    XmStringFree(str);
-    
-    /* size list */
-    n = 0;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, sizeLabel); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNindicatorOn, XmINDICATOR_NONE); n++;
-    XtSetArg(args[n], XmNwidth, 150); n++;
-    sel->size = XmCreateDropDownList(form, "combobox", args, n);
-    CreateSizeList(sel->size);
-    XtManageChild(sel->size);
-    str = XmStringCreateSimple("10");
-    XmComboBoxSelectItem(sel->size, str);
-    XtAddCallback (sel->size, XmNselectionCallback, (XtCallbackProc)size_callback, sel);
-    XmStringFree(str);
-    
-    /* font name label */
-    n = 0;
-    str = XmStringCreateSimple("Font name:");
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, sel->size); n++;
-    Widget fontNameLabel = XmCreateLabel(form, "label", args, n);
-    XtManageChild(fontNameLabel);
-    XmStringFree(str);    
-    
-    /* font name */
-    n = 0;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNwidth, 400); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, fontNameLabel); n++;
-    sel->name = XmCreateText(form, "fcname_textfield", args, n);
-    XtManageChild(sel->name);
-    
     /* ok button */
     n = 0;
     str = XmStringCreateSimple("OK");
@@ -317,9 +232,7 @@ char *FontSel(Widget parent, const char *currFont)
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNbottomOffset, 5); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;;
-    XtSetArg(args[n], XmNtopWidget, sel->name); n++;
-    //XtSetArg(args[n], XmNshowAsDefault, TRUE); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     Widget okButton = XmCreatePushButton(form, "button", args, n);
     XtManageChild(okButton);
@@ -336,9 +249,8 @@ char *FontSel(Widget parent, const char *currFont)
     XtSetArg(args[n], XmNtopOffset, 2); n++;
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     XtSetArg(args[n], XmNbottomOffset, 5); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, sel->name); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     Widget cancelButton = XmCreatePushButton(form, "button", args, n);
     XtManageChild(cancelButton);
@@ -349,7 +261,110 @@ char *FontSel(Widget parent, const char *currFont)
                 (XtCallbackProc)cancel_callback,
                 sel);
     
+    /* font name */
+    n = 0;
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNwidth, 400); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, okButton); n++;
+    sel->name = XmCreateText(form, "fcname_textfield", args, n);
+    XtManageChild(sel->name);
+    
+    /* font name label */
+    n = 0;
+    str = XmStringCreateSimple("Font name:");
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, sel->name); n++;
+    Widget fontNameLabel = XmCreateLabel(form, "label", args, n);
+    XtManageChild(fontNameLabel);
+    XmStringFree(str);
+    
+    /* label */
+    n = 0;
+    str = XmStringCreateSimple("Font:");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, 5); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget fontListLabel = XmCreateLabel(form, "label", args, n);
+    XtManageChild(fontListLabel);
+    XmStringFree(str);
+    
+    n = 0;
+    str = XmStringCreateSimple("Size:");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, 5); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget fontSizeLabel = XmCreateLabel(form, "label", args, n);
+    XtManageChild(fontSizeLabel);
+    XmStringFree(str);
+    
+    /* font list */
+    n = 0;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, fontListLabel); n++;
+    XtSetArg(args[n], XmNtopOffset, 2); n++;
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, fontNameLabel); n++;
+    XtSetArg(args[n], XmNvisibleItemCount, 10); n++;
+    sel->fontlist = XmCreateScrolledList(form, "fontlist", args, n);
+    AddMouseWheelSupport(sel->fontlist);
+    XtManageChild(sel->fontlist);
+    XtAddCallback(
+                sel->fontlist,
+                XmNbrowseSelectionCallback,
+                (XtCallbackProc)fontlist_callback,
+                sel);
+    
+    /* font size list */
+    n = 0;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, fontSizeLabel); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, sel->fontlist); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, fontNameLabel); n++;
+    XtSetArg(args[n], XmNleftOffset, 2); n++;
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNtopOffset, 2); n++;
+    sel->size = XmCreateScrolledList(form, "sizelist", args, n);
+    CreateSizeList(sel->size);
+    XtAddCallback (sel->size, XmNbrowseSelectionCallback, (XtCallbackProc)size_callback, sel);
+    XmListSelectPos(sel->size, 6, 0);
+    XtManageChild(sel->size);
+    
+    /*
+    CreateSizeList(sel->size);
+    XtManageChild(sel->size);
+    str = XmStringCreateSimple("10");
+    XmComboBoxSelectItem(sel->size, str);
+    XtAddCallback (sel->size, XmNselectionCallback, (XtCallbackProc)size_callback, sel);
+    XmStringFree(str);
+    */
+    
     UpdateFontList(sel, NULL);
+    XmString selection = MatchFont(currFont);
+    if(selection) {
+        XmListSelectItem(sel->fontlist, selection, 0);
+        XmStringFree(selection);
+    }
     
     ManageDialogCenteredOnPointer(form);
     
