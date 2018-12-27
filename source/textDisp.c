@@ -3061,6 +3061,18 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
     clipRect.height = textD->height;
     XSetClipRectangles(display, textD->lineNumGC, 0, 0,
     	    &clipRect, 1, Unsorted);
+    if(textD->d) {
+        Picture pic = XftDrawPicture(textD->d);
+        if(pic != 0) {
+            XRenderSetPictureClipRectangles(
+                    XtDisplay(textD->w),
+                    pic,
+                    0,
+                    0,
+                    &clipRect,
+                    1);
+        }
+    }
     
     /* Erase the previous contents of the line number area, if requested */
     if (clearAll)
@@ -3082,8 +3094,8 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
         lineStart = textD->lineStarts[visLine];
         if (lineStart != -1 && (lineStart==0 ||
                 BufGetCharacter(textD->buffer, lineStart-1)=='\n')) {
-            snprintf(lineNumString, 12, "%*d\0", nCols, line);
-            XftDrawStringUtf8(
+            snprintf(lineNumString, 12, "%*d", nCols, line);
+            XftDrawString8(
                     textD->d,
                     &color,
                     FontDefault(textD->font),
