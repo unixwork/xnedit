@@ -1469,6 +1469,32 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
     }
 }
 
+static char *default_encodings[] = {
+    "detect",
+    "UTF-8",
+    "UTF-16",
+    "UTF-16BE",
+    "UTF-16LE",
+    "UTF-32",
+    "UTF-32BE",
+    "UTF-32LE",
+    "ISO8859-1",
+    "ISO8859-2",
+    "ISO8859-3",
+    "ISO8859-4",
+    "ISO8859-5",
+    "ISO8859-6",
+    "ISO8859-7",
+    "ISO8859-8",
+    "ISO8859-9",
+    "ISO8859-10",
+    "ISO8859-13",
+    "ISO8859-14",
+    "ISO8859-15",
+    "ISO8859-16",
+    NULL
+};
+
 int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
 {
     Arg args[32];
@@ -1706,17 +1732,36 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget enc = XmCreateRowColumn(form, "enc", args, n);
     XtManageChild(enc);
     
-    n = 0;
-    str = XmStringCreateSimple("Encoding:");
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    Widget encLabel = XmCreateLabel(enc, "label", args, n);
-    XtManageChild(encLabel);
-    XmStringFree(str);
-    
-    n = 0;
-    XtSetArg(args[n], XmNcolumns, 15); n++;
-    data.encoding = XmCreateDropDownList(enc, "combobox", args, n);
-    XtManageChild(data.encoding);
+    if(file->setenc) {
+        n = 0;
+        str = XmStringCreateSimple("Encoding:");
+        XtSetArg(args[n], XmNlabelString, str); n++;
+        Widget encLabel = XmCreateLabel(enc, "label", args, n);
+        XtManageChild(encLabel);
+        XmStringFree(str);
+
+        n = 0;
+        int arraylen = 1;
+        char *encStr;
+        XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
+        int i;
+        for(i=0;encStr=default_encodings[i];i++) {
+            if(i >= arraylen) {
+                arraylen *= 2;
+                encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
+            }
+            encodings[i] = XmStringCreateSimple(encStr);
+        }
+        XtSetArg(args[n], XmNcolumns, 11); n++;
+        XtSetArg(args[n], XmNitemCount, i); n++;
+        XtSetArg(args[n], XmNitems, encodings); n++;
+        data.encoding = XmCreateDropDownList(enc, "combobox", args, n);
+        XtManageChild(data.encoding);
+        for(int j=0;j<i;j++) {
+            XmStringFree(encodings[j]);
+        }
+        NEditFree(encodings);
+    }
     
     /* middle */
     
@@ -1770,6 +1815,14 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     if(data.selectedPath && !data.selIsDir && data.status == GFN_OK) {
         file->path = data.selectedPath;
         data.selectedPath = NULL;
+        
+        if(file->setenc) {
+            XmString selectedEncoding = NULL;
+            XtVaGetValues(data.encoding, XmNselectedItem, &selectedEncoding, NULL);
+            if(selectedEncoding) {
+                XmStringGetLtoR(selectedEncoding, XmFONTLIST_DEFAULT_TAG, &file->encoding);
+            }
+        }
     } else {
         data.status = GFN_CANCEL;
     }

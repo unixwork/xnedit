@@ -36,8 +36,9 @@
 #define FILEDIALOG_SAVE 2
 
 typedef struct FileSelection {
-    char *path;
-    char *encoding;
+    char    *path;
+    char    *encoding;
+    Boolean setenc;;
 } FileSelection;
 
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);

@@ -2763,7 +2763,7 @@ static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openDialogAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, "UTF-8" };
+    FileSelection file = { NULL, NULL, True };
     char *params[3];
     int response;
     int n=1;
@@ -2903,7 +2903,7 @@ static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, "UTF-8" };
+    FileSelection file = { NULL, NULL, True };
     char *params[2];
     int response;
     int n = 1;
@@ -2938,7 +2938,7 @@ static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL };
+    FileSelection file = { NULL, NULL, False };
     char *params[1];
     int response;
     
@@ -2963,7 +2963,7 @@ static void loadTagsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL };
+    FileSelection file = { NULL, NULL, False };
     char *params[1];
     int response;
     
@@ -3020,7 +3020,7 @@ static void loadTipsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL };
+    FileSelection file = { NULL, NULL, False };
     char *params[1];
     int response;
     
