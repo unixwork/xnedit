@@ -1608,14 +1608,13 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNresizable, True); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    //XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     Widget goUp = XmCreatePushButton(form, "button", args, n);
     XtManageChild(goUp);
     XmStringFree(str);
     XtAddCallback(goUp, XmNactivateCallback,
                  (XtCallbackProc)filedialog_goup, &data);
-    
     n = 0;
     str = XmStringCreateSimple("Show hidden files");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
@@ -1643,10 +1642,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     data.path = XmCreateText(form, "textfield", args, n); n++;
     XtManageChild(data.path);
     
-    XtVaSetValues(goUp, XmNbottomWidget, data.path, NULL);
     
     /* lower part */
-    
     n = 0;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomOffset, 5); n++;
@@ -1674,7 +1671,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtAddCallback(okBtn, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
     
-    n = 0; /* alignment res */
+    n = 0; // alignment res
     str = XmStringCreateSimple("Cancel");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
@@ -1739,7 +1736,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtManageChild(data.wrap);
         XmStringFree(str);
 
-        /* some code from file.c */
+        // some code from file.c
         Widget formatBtns = XtVaCreateManagedWidget("formatBtns",
                 xmRowColumnWidgetClass, form,
                 XmNradioBehavior, XmONE_OF_MANY,
@@ -1867,7 +1864,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
 		(XtCallbackProc)resize_container, &data);
-    
+      
     XtAddCallback(
             data.container,
             XmNselectionCallback,
