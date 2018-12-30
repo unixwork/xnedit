@@ -1450,8 +1450,8 @@ void PrintString(const char *string, int length, Widget parent, const char *jobN
 ** Wrapper for GetExistingFilename which uses the current window's path
 ** (if set) as the default directory.
 */
-int PromptForExistingFile(WindowInfo *window, char *prompt, char *fullname)
-{
+int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
+{   
     char *savedDefaultDir;
     int retVal;
     
@@ -1461,7 +1461,7 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, char *fullname)
     savedDefaultDir = GetFileDialogDefaultDirectory();
     if (*window->path != '\0')
     	SetFileDialogDefaultDirectory(window->path);
-    retVal = GetExistingFilename(window->shell, prompt, fullname);
+    retVal = GetExistingFilename(window->shell, prompt, file);
     if (retVal != GFN_OK)
     	SetFileDialogDefaultDirectory(savedDefaultDir);
 

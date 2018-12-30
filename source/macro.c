@@ -3456,8 +3456,9 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
 
     /*  Fork to one of the worker methods from util/getfiles.c.
         (This should obviously be refactored.)  */
+    FileSelection getfile = { NULL, NULL };
     if (0 == strcmp(mode, "exist")) {
-        gfnResult = GetExistingFilename(window->shell, title, filename);
+        gfnResult = GetExistingFilename(window->shell, title, &getfile);
     } else {
         gfnResult = GetNewFilename(window->shell, title, filename, defaultName);
     }   /*  Invalid values are weeded out above.  */ 
@@ -3471,7 +3472,8 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     result->tag = STRING_TAG;
     if (GFN_OK == gfnResult) {
         /*  Got a string, copy it to the result  */
-        if (!AllocNStringNCpy(&result->val.str, filename, MAXPATHLEN)) {
+        printf("refactore me: macro.c\n");
+        if (!AllocNStringNCpy(&result->val.str, getfile.path, MAXPATHLEN)) {
             M_FAILURE("failed to allocate return value: %s");
         }
     } else {

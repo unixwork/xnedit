@@ -2763,19 +2763,25 @@ static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openDialogAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char fullname[MAXPATHLEN], *params[2];
+    FileSelection file = { NULL, "UTF-8" };
+    char *params[3];
     int response;
     int n=1;
     
-    response = PromptForExistingFile(window, "Open File", fullname);
+    response = PromptForExistingFile(window, "Open File", &file);
     if (response != GFN_OK)
     	return;
-    params[0] = fullname;
+    params[0] = file.path;
 
-    if (*nArgs>0 && !strcmp(args[0], "1"))
+    if (*nArgs>0 && !strcmp(args[0], "1")) {
         params[n++] = "1";
+    }
+    if(file.encoding) {
+        params[n++] = file.encoding;
+    }
     
     XtCallActionProc(window->lastFocus, "open", event, params, n);
+    NEditFree(file.path);
     CheckCloseDim();
 }
 
@@ -2897,16 +2903,22 @@ static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char filename[MAXPATHLEN], *params[1];
+    FileSelection file = { NULL, "UTF-8" };
+    char *params[2];
     int response;
+    int n = 1;
     
     if (CheckReadOnly(window))
     	return;
-    response = PromptForExistingFile(window, "Include File", filename);
+    response = PromptForExistingFile(window, "Include File", &file);
     if (response != GFN_OK)
     	return;
-    params[0] = filename;
-    XtCallActionProc(window->lastFocus, "include_file", event, params, 1);
+    params[0] = file.path;
+    if(file.encoding) {
+        params[n++] = file.encoding;
+    }
+    XtCallActionProc(window->lastFocus, "include_file", event, params, n);
+    NEditFree(file.path);
 }
 
 static void includeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -2926,14 +2938,16 @@ static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char filename[MAXPATHLEN], *params[1];
+    FileSelection file = { NULL, NULL };
+    char *params[1];
     int response;
     
-    response = PromptForExistingFile(window, "Load Macro File", filename);
+    response = PromptForExistingFile(window, "Load Macro File", &file);
     if (response != GFN_OK)
     	return;
-    params[0] = filename;
+    params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_macro_file", event, params, 1);
+    NEditFree(file.path);
 }
 
 static void loadMacroAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -2949,14 +2963,16 @@ static void loadTagsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char filename[MAXPATHLEN], *params[1];
+    FileSelection file = { NULL, NULL };
+    char *params[1];
     int response;
     
-    response = PromptForExistingFile(window, "Load Tags File", filename);
+    response = PromptForExistingFile(window, "Load Tags File", &file);
     if (response != GFN_OK)
     	return;
-    params[0] = filename;
+    params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_tags_file", event, params, 1);
+    NEditFree(file.path);
 }
 
 static void loadTagsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -3004,14 +3020,16 @@ static void loadTipsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char filename[MAXPATHLEN], *params[1];
+    FileSelection file = { NULL, NULL };
+    char *params[1];
     int response;
     
-    response = PromptForExistingFile(window, "Load Calltips File", filename);
+    response = PromptForExistingFile(window, "Load Calltips File", &file);
     if (response != GFN_OK)
     	return;
-    params[0] = filename;
+    params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_tips_file", event, params, 1);
+    NEditFree(file.path);
 }
 
 static void loadTipsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 

@@ -29,6 +29,8 @@
 
 #include "nedit.h"
 
+#include "../util/getfiles.h"
+
 #include <X11/Intrinsic.h>
 
 /* flags for EditExistingFile */
@@ -54,7 +56,7 @@ void PrintWindow(WindowInfo *window, int selectedOnly);
 void PrintString(const char *string, int length, Widget parent, const char *jobName);
 int WriteBackupFile(WindowInfo *window);
 int IncludeFile(WindowInfo *window, const char *name);
-int PromptForExistingFile(WindowInfo *window, char *prompt, char *fullname);
+int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file);
 int PromptForNewFile(WindowInfo *window, char *prompt, char *fullname,
     	int *fileFormat, int *addWrap);
 int CheckReadOnly(WindowInfo *window);

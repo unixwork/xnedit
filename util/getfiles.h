@@ -32,7 +32,15 @@
 #define GFN_OK		1               /* Get Filename OK constant     */
 #define GFN_CANCEL	2               /* Get Filename Cancel constant */
 
-int GetExistingFilename(Widget parent, char *promptString, char *filename);
+#define FILEDIALOG_OPEN 1
+#define FILEDIALOG_SAVE 2
+
+typedef struct FileSelection {
+    char *path;
+    char *encoding;
+} FileSelection;
+
+int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);
 int GetNewFilename(Widget parent, char *promptString, char *filename, 
         char *defaultName);
 int HandleCustomExistFileSB(Widget existFileSB, char *filename);
