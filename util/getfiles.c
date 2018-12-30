@@ -76,7 +76,8 @@
 #include <X11/keysym.h>
 #include <Xm/Xm.h>
 #include <Xm/XmAll.h>
-#include <Xm/XpmP.h>
+
+#include <X11/xpm.h>
 
 #include "icons.h"
 
@@ -1221,7 +1222,7 @@ void initPixmaps(Display *dp, Drawable d)
     if(XpmCreatePixmapFromData(dp, d, Dtdata_m_pm, &fileIcon, &fileShape, NULL)) {
         fprintf(stderr, "failed to create file pixmap\n");
     }
-    pixmaps_initialized;
+    pixmaps_initialized = 1;
 }
 
 typedef struct FileDialogData {
