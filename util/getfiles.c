@@ -107,6 +107,8 @@ enum yesNoValues {ynNone, ynYes, ynNo};
 static XmString DefaultDirectory = NULL;
 static XmString DefaultPattern = NULL;
 
+static char* DefaultDirectoryStr = NULL;
+
 /* User settable option for leaving the file name text field in
    GetExistingFilename dialogs.  Off by default so new users will get
    used to typing in the list rather than in the text field */
@@ -653,6 +655,11 @@ void SetFileDialogDefaultDirectory(char *dir)
     if (DefaultDirectory != NULL)
     	XmStringFree(DefaultDirectory);
     DefaultDirectory = dir==NULL ? NULL : XmStringCreateSimple(dir);
+    
+    if(DefaultDirectoryStr) {
+        NEditFree(DefaultDirectoryStr);
+    }
+    DefaultDirectoryStr = NEditStrdup(dir);
 }
 
 /*
@@ -1220,6 +1227,7 @@ void initPixmaps(Display *dp, Drawable d)
 typedef struct FileDialogData {
     Widget path;
     Widget filter;
+    Widget scrollw;
     Widget container;
     Widget name;
     Widget wrap;
@@ -1227,6 +1235,9 @@ typedef struct FileDialogData {
     Widget dosFormat;
     Widget macFormat;
     Widget encoding;
+    
+    WidgetList gadgets;
+    int numGadgets;
     
     char *currentPath;
     char *selectedPath;
@@ -1255,28 +1266,26 @@ static void freeFileData(FileList *e) {
     NEditFree(e);
 }
 
-static void cleanupFileView(FileDialogData *data)
+static int cleanupFileView(FileDialogData *data)
 {
-    /* remove all existing items in the file view container */
-    Widget *children;
-    int nc;
-
-    XtVaGetValues(
-            data->container,
-            XmNchildren,
-            &children,
-            XmNnumChildren,
-            &nc,
-            NULL);
-
-    for(int i=0;i<nc;i++) {
+    if(!data->gadgets) {
+        return 0;
+    }
+    
+    for(int i=0;i<data->numGadgets;i++) {
         FileList *e = NULL;
-        XtVaGetValues(children[i], XmNuserData, &e, NULL);
+        XtVaGetValues(data->gadgets[i], XmNuserData, &e, NULL);
         if(e) {
             freeFileData(e);
         }
-        XtDestroyWidget(children[i]);
     }
+    
+    XtUnmanageChildren(data->gadgets, data->numGadgets);
+    int ret = data->numGadgets;
+    NEditFree(data->gadgets);
+    data->gadgets = NULL;
+    data->numGadgets = 0;
+    return ret;
 }
 
 static void filedialog_cleanup(FileDialogData *data)
@@ -1325,6 +1334,30 @@ static FileList* filelist_add(FileList *list, FileList *newelm)
     return list;
 }
 
+static void resize_container(Widget w, FileDialogData *data, XtPointer d) 
+{
+    Dimension width, height;
+    Dimension cw, ch;
+    
+    XtVaGetValues(w, XtNwidth, &width, XtNheight, &height, NULL);
+    XtVaGetValues(data->container, XtNwidth, &cw, XtNheight, &ch, NULL);
+    
+    if(ch < height) {
+        XtVaSetValues(data->container, XtNwidth, width, XtNheight, height, NULL);
+    } else {
+        XtVaSetValues(data->container, XtNwidth, width, NULL);
+    }
+}
+
+static void init_container_size(FileDialogData *data)
+{
+    Widget parent = XtParent(data->container);
+    Dimension width;
+    
+    XtVaGetValues(parent, XtNwidth, &width, NULL);
+    XtVaSetValues(data->container, XtNwidth, width, XtNheight, 100, NULL);
+}
+
 #define FILEDIALOG_FALLBACK_PATH "/"
 static void filedialog_update_dir(FileDialogData *data, char *path)
 {
@@ -1332,7 +1365,10 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     int n;
     XmString str;
     
-    cleanupFileView(data);
+    if(cleanupFileView(data)) {
+        init_container_size(data);
+    }
+    
     
     /* read dir and insert items */
     DIR *dir = opendir(path);
@@ -1357,7 +1393,9 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     path = data->currentPath;
     
     FileList *files = NULL;
-    FileList *fe = NULL;
+    int count = 0; 
+    
+    size_t maxNameLen = 0;
     
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
@@ -1384,19 +1422,27 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         new_entry->isDirectory = S_ISDIR(s.st_mode);
         new_entry->next = NULL;
         
-        files = filelist_add(files, new_entry);
+        size_t nameLen = strlen(ent->d_name);
+        if(nameLen > maxNameLen) {
+            maxNameLen = nameLen;
+        }
         
-        fe = new_entry;
+        files = filelist_add(files, new_entry);
+        count++;
     }
     closedir(dir);
     
+    WidgetList gadgets = NEditCalloc(count, sizeof(Widget));
+    
     FileList *e = files;
+    int pos = 0;
     while(e) {
         n = 0;
         str = XmStringCreateLocalized(fileName(e->path));
         XtSetArg(args[n], XmNuserData, e); n++;
         XtSetArg(args[n], XmNlabelString, str); n++;
         XtSetArg(args[n], XmNshadowThickness, 0); n++;
+        XtSetArg(args[n], XmNpositionIndex, pos); n++;
         XtSetArg(args[n], XmNalignment, XmALIGNMENT_BEGINNING); n++;
         if(e->isDirectory) {
             XtSetArg(args[n], XmNlargeIconPixmap, folderIcon); n++;
@@ -1407,10 +1453,17 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         }
         Widget item = XmCreateIconGadget(data->container, "table", args, n);
         XtManageChild(item);
+        gadgets[pos] = item;
         XmStringFree(str);
         e = e->next;
+        pos++;
     }
     e = files;
+    
+    data->gadgets = gadgets;
+    data->numGadgets = count;
+    
+    XmContainerRelayout(data->container);
 }
 
 static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
@@ -1795,18 +1848,24 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     XtSetArg(args[n], XmNbottomOffset, 2); n++;
     XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
-    XtSetArg(args[n], XmNwidth, 700); n++;
-    XtSetArg(args[n], XmNheight, 500); n++;
+    XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmSTATIC); n++;
+    XtSetArg(args[n], XmNwidth, 580); n++;
+    XtSetArg(args[n], XmNheight, 400); n++;
     Widget scrollw = XmCreateScrolledWindow(form, "scroll_win", args, n);
     XtManageChild(scrollw);
     
     n = 0;
-    XtSetArg(args[n], XmNlayoutType,  XmOUTLINE); n++;
+    XtSetArg(args[n], XmNlayoutType,  XmSPATIAL); n++;
     XtSetArg(args[n], XmNselectionPolicy, XmSINGLE_SELECT); n++;
     XtSetArg(args[n], XmNentryViewType, XmLARGE_ICON); n++;
+    XtSetArg(args[n], XmNspatialStyle, XmGRID); n++;
+    XtSetArg(args[n], XmNspatialIncludeModel, XmAPPEND); n++;
     XtSetArg(args[n], XmNspatialResizeModel, XmGROW_MINOR); n++;
+    //XtSetArg(args[n], XmNlargeCellWidth, 200); n++;
     data.container = XmCreateContainer(scrollw, "table", args, n);
     XtManageChild(data.container);
+    XtAddCallback(XtParent(data.container), XmNresizeCallback,
+		(XtCallbackProc)resize_container, &data);
     
     XtAddCallback(
             data.container,
@@ -1819,10 +1878,13 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             (XtCallbackProc)filedialog_action,
             &data);
     
-    filedialog_update_dir(&data, getenv("HOME"));
+    char *defDir = DefaultDirectoryStr ? DefaultDirectoryStr : getenv("HOME");
+    //init_container_size(&data);
+    filedialog_update_dir(&data, defDir);
     
     /* event loop */
-    ManageDialogCenteredOnPointer(form);
+    ManageDialogCenteredOnPointer(form);   
+    
     XtAppContext app = XtWidgetToApplicationContext(dialog);
     while(!data.end && !XtAppGetExitFlag(app)) {
         XEvent event;
