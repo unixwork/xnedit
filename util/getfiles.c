@@ -1290,6 +1290,41 @@ static void filedialog_cleanup(FileDialogData *data)
     }
 }
 
+static int filecmp(FileList *file1, FileList *file2)
+{
+    if(file1->isDirectory != file2->isDirectory) {
+        return file1->isDirectory < file2->isDirectory;
+    }
+    
+    return strcmp(fileName(file1->path), fileName(file2->path));
+}
+
+static FileList* filelist_add(FileList *list, FileList *newelm)
+{
+    if(!list) {
+        return newelm;
+    }
+    
+    FileList *l = list;
+    FileList *prev = NULL;
+    while(l) {
+        if(filecmp(l, newelm) > 0) {
+            if(prev) {
+                prev->next = newelm;
+            } else {
+                list = newelm;
+            }
+            newelm->next = l;
+            return list;
+        }
+        prev = l;
+        l = l->next;
+    }
+    
+    prev->next = newelm;
+    return list;
+}
+
 #define FILEDIALOG_FALLBACK_PATH "/"
 static void filedialog_update_dir(FileDialogData *data, char *path)
 {
@@ -1324,9 +1359,6 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     FileList *files = NULL;
     FileList *fe = NULL;
     
-    FileList *dirs = NULL;
-    FileList *de = NULL;
-    
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
         if(!data->showHidden) {
@@ -1352,47 +1384,33 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         new_entry->isDirectory = S_ISDIR(s.st_mode);
         new_entry->next = NULL;
         
-        if(!S_ISDIR(s.st_mode)) {
-            if(!files) {
-                files = new_entry;
-            } else {
-                fe->next = new_entry;
-            }
-            fe = new_entry;
-        } else {
-            if(!dirs) {
-                dirs = new_entry;
-            } else {
-                de->next = new_entry;
-            }
-            de = new_entry;
-        }
+        files = filelist_add(files, new_entry);
+        
+        fe = new_entry;
     }
     closedir(dir);
     
-    FileList *e = dirs;
-    for(int i=0;i<2;i++) {
-        while(e) {
-            n = 0;
-            str = XmStringCreateLocalized(fileName(e->path));
-            XtSetArg(args[n], XmNuserData, e); n++;
-            XtSetArg(args[n], XmNlabelString, str); n++;
-            XtSetArg(args[n], XmNshadowThickness, 0); n++;
-            XtSetArg(args[n], XmNalignment, XmALIGNMENT_BEGINNING); n++;
-            if(e->isDirectory) {
-                XtSetArg(args[n], XmNlargeIconPixmap, folderIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, folderShape); n++;
-            } else {
-                XtSetArg(args[n], XmNlargeIconPixmap, fileIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, fileShape); n++;
-            }
-            Widget item = XmCreateIconGadget(data->container, "table", args, n);
-            XtManageChild(item);
-            XmStringFree(str);
-            e = e->next;
+    FileList *e = files;
+    while(e) {
+        n = 0;
+        str = XmStringCreateLocalized(fileName(e->path));
+        XtSetArg(args[n], XmNuserData, e); n++;
+        XtSetArg(args[n], XmNlabelString, str); n++;
+        XtSetArg(args[n], XmNshadowThickness, 0); n++;
+        XtSetArg(args[n], XmNalignment, XmALIGNMENT_BEGINNING); n++;
+        if(e->isDirectory) {
+            XtSetArg(args[n], XmNlargeIconPixmap, folderIcon); n++;
+            XtSetArg(args[n], XmNlargeIconMask, folderShape); n++;
+        } else {
+            XtSetArg(args[n], XmNlargeIconPixmap, fileIcon); n++;
+            XtSetArg(args[n], XmNlargeIconMask, fileShape); n++;
         }
-        e = files;
+        Widget item = XmCreateIconGadget(data->container, "table", args, n);
+        XtManageChild(item);
+        XmStringFree(str);
+        e = e->next;
     }
+    e = files;
 }
 
 static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
