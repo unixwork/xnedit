@@ -1231,6 +1231,7 @@ typedef struct FileDialogData {
     char *currentPath;
     char *selectedPath;
     int selIsDir;
+    int showHidden;
     
     int end;
     int status;
@@ -1313,10 +1314,12 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     /* dir reading complete - set the path textfield */
     XmTextSetString(data->path, path);
-    if(data->currentPath) {
-        NEditFree(data->currentPath);
-    }
+    char *oldPath = data->currentPath;
     data->currentPath = NEditStrdup(path);
+    if(oldPath) {
+        NEditFree(oldPath);
+    }
+    path = data->currentPath;
     
     FileList *files = NULL;
     FileList *fe = NULL;
@@ -1326,8 +1329,14 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
-        if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
-            continue;
+        if(!data->showHidden) {
+            if(ent->d_name[0] == '.' || !strcmp(ent->d_name, "..")) {
+                continue;
+            }
+        } else {
+            if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) {
+                continue;
+            }
         }
         
         char *entpath = concatPath(path, ent->d_name);
@@ -1439,6 +1448,15 @@ static void filedialog_action(
     }
 }
 
+static void filedialog_setshowhidden(
+        Widget w,
+        FileDialogData *data,
+        XmToggleButtonCallbackStruct *tb)
+{
+    data->showHidden = tb->set;
+    filedialog_update_dir(data, data->currentPath);
+}
+
 static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
 {
     if(data->selectedPath) {
@@ -1501,13 +1519,28 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
                  (XtCallbackProc)filedialog_goup, &data);
     
     n = 0;
+    str = XmStringCreateSimple("Show hidden files");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, dirLabel); n++;
+    XtSetArg(args[n], XmNtopOffset, 2); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget showHidden = XmCreateToggleButton(form, "showHidden", args, n);
+    XtManageChild(showHidden);
+    XmStringFree(str);
+    XtAddCallback(showHidden, XmNvalueChangedCallback,
+                 (XtCallbackProc)filedialog_setshowhidden, &data);
+    
+    n = 0;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, dirLabel); n++;
     XtSetArg(args[n], XmNtopOffset, 2); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNleftWidget, goUp); n++;
     XtSetArg(args[n], XmNleftOffset, 2); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNrightWidget, showHidden); n++;
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     data.path = XmCreateText(form, "textfield", args, n); n++;
     XtManageChild(data.path);
