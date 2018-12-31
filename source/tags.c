@@ -1448,7 +1448,7 @@ static void editTaggedLocation( Widget parent, int i )
     
     ParseFilename(tagFiles[i],filename,pathname);
     /* open the file containing the definition */
-    EditExistingFile(parentWindow, filename, pathname, 0, NULL, False, 
+    EditExistingFile(parentWindow, filename, pathname, NULL, 0, NULL, False, 
     	    NULL, GetPrefOpenInTab(), False);
     windowToSearch = FindWindowWithFile(filename, pathname);
     if (windowToSearch == NULL) {

@@ -194,8 +194,8 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
 ** opening operation when multiple files are being opened in succession. 
 */
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
-        const char *path, int flags, char *geometry, int iconic,
-	const char *languageMode, int tabbed, int bgOpen)
+        const char *path, const char *encoding, int flags, char *geometry,
+        int iconic, const char *languageMode, int tabbed, int bgOpen)
 {
     WindowInfo *window;
     char fullname[MAXPATHLEN];

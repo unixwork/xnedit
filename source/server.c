@@ -470,7 +470,7 @@ static void processServerCommandString(char *string)
 	       items. The current file may also be raised if there're
 	       macros to execute on. */
 	    window = EditExistingFile(findWindowOnDesktop(tabbed, currentDesktop),
-		    filename, pathname, editFlags, geometry, iconicFlag, 
+		    filename, pathname, NULL, editFlags, geometry, iconicFlag, 
 		    lmLen == 0 ? NULL : langMode, 
 		    tabbed == -1? GetPrefOpenInTab() : tabbed, True);
 

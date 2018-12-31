@@ -2788,21 +2788,26 @@ static void openDialogAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    char filename[MAXPATHLEN], pathname[MAXPATHLEN];
+    char *enc = NULL;
     
     if (*nArgs == 0) {
     	fprintf(stderr, "nedit: open action requires file argument\n");
     	return;
     }
-    if (0 != ParseFilename(args[0], filename, pathname)
-            || strlen(filename) + strlen(pathname) > MAXPATHLEN - 1) {
-        fprintf(stderr, "nedit: invalid file name for open action: %s\n",
-                args[0]);
-        return;
+    if(*nArgs > 1) {
+        enc = args[1];
     }
-    EditExistingFile(window, filename, pathname, 0, NULL, False, 
+    
+    /* ParseFileName was replaced by the new path util functions */
+    
+    char *name = fileName(args[0]);
+    char *dirpath = parentPath(args[0]);
+    
+    EditExistingFile(window, name, dirpath, enc, 0, NULL, False, 
             NULL, GetPrefOpenInTab(), False);
     CheckCloseDim();
+    
+    NEditFree(dirpath);
 }
 
 static void openSelectedAP(Widget w, XEvent *event, String *args,

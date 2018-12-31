@@ -759,7 +759,7 @@ int main(int argc, char **argv)
 		   last file opened will be raised to restore those deferred
 		   items. The current file may also be raised if there're
 		   macros to execute on. */
-		window = EditExistingFile(WindowList, filename, pathname, 
+		window = EditExistingFile(WindowList, filename, pathname, NULL,
 		    	editFlags, geometry, iconic, langMode, isTabbed, True);
     	    	fileSpecified = TRUE;
 		if (window) {

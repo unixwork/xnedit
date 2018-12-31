@@ -367,7 +367,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 	      XBell(TheDisplay, 0);
 	  else
     	      EditExistingFile(GetPrefOpenInTab()? window : NULL, 
-	              filename, pathname, 0, NULL, False, NULL, 
+	              filename, pathname, NULL, 0, NULL, False, NULL, 
 		      GetPrefOpenInTab(), False);
       }
       globfree(&globbuf);

@@ -80,6 +80,7 @@
 #include <X11/xpm.h>
 #include "utils.h"
 #include "icons.h"
+#include "fileUtils.h"
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -1150,67 +1151,6 @@ static int compareXmStrings(const void *string1, const void *string2)
     return result;
 }
 
-static char* concatPath(const char *parent, const char *name)
-{
-    size_t parentlen = strlen(parent);
-    size_t namelen = strlen(name);
-    
-    size_t pathlen = parentlen + namelen + 2;
-    char *path = NEditMalloc(pathlen);
-    
-    memcpy(path, parent, parentlen);
-    if(parentlen > 0 && parent[parentlen-1] != '/') {
-        path[parentlen] = '/';
-        parentlen++;
-    }
-    if(name[0] == '/') {
-        name++;
-        namelen--;
-    }
-    memcpy(path+parentlen, name, namelen);
-    path[parentlen+namelen] = '\0';
-    return path;
-}
-
-static char* fileName(char *path) {
-    int si = 0;
-    int osi = 0;
-    int i = 0;
-    int p = 0;
-    char c;
-    while((c = path[i]) != 0) {
-        if(c == '/') {
-            osi = si;
-            si = i;
-            p = 1;
-        }
-        i++;
-    }
-    
-    char *name = path + si + p;
-    if(name[0] == 0) {
-        name = path + osi + p;
-        if(name[0] == 0) {
-            return path;
-        }
-    }
-    
-    return name;
-}
-
-char* parentPath(char *path) {
-    char *name = fileName(path);
-    size_t namelen = strlen(name);
-    size_t pathlen = strlen(path);
-    size_t parentlen = pathlen - namelen;
-    if(parentlen == 0) {
-        parentlen++;
-    }
-    char *parent = NEditMalloc(parentlen + 1);
-    memcpy(parent, path, parentlen);
-    parent[parentlen] = '\0';
-    return parent;
-}
 
 static int pixmaps_initialized = 0;
 static Pixmap folderIcon;
