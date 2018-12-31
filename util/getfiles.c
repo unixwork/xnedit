@@ -78,7 +78,7 @@
 #include <Xm/XmAll.h>
 
 #include <X11/xpm.h>
-
+#include "utils.h"
 #include "icons.h"
 
 #ifdef HAVE_DEBUG_H
@@ -1163,6 +1163,10 @@ static char* concatPath(const char *parent, const char *name)
         path[parentlen] = '/';
         parentlen++;
     }
+    if(name[0] == '/') {
+        name++;
+        namelen--;
+    }
     memcpy(path+parentlen, name, namelen);
     path[parentlen+namelen] = '\0';
     return path;
@@ -1541,6 +1545,25 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
     }
 }
 
+static void filedialog_setpath(Widget w, FileDialogData *data, XtPointer d)
+{
+    char *newpath = XmTextGetString(data->path);
+    if(newpath) {
+        if(newpath[0] == '~') {
+            char *p = newpath+1;
+            char *cp = concatPath(GetHomeDir(), p);
+            XtFree(newpath);
+            newpath = cp;
+        } else if(newpath[0] != '/') {
+            char *cp = concatPath(GetCurrentDir(), newpath);
+            XtFree(newpath);
+            newpath = cp;
+        }
+        filedialog_update_dir(data, newpath);
+        XtFree(newpath);
+    }
+}
+
 static char *default_encodings[] = {
     "detect",
     "UTF-8",
@@ -1641,6 +1664,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     data.path = XmCreateText(form, "textfield", args, n); n++;
     XtManageChild(data.path);
+    XtAddCallback(data.path, XmNactivateCallback,
+                 (XtCallbackProc)filedialog_setpath, &data);
     
     
     /* lower part */
