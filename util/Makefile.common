@@ -5,7 +5,7 @@
 
 OBJS = DialogF.o getfiles.o printUtils.o misc.o fileUtils.o \
 	prefFile.o fontsel.o managedList.o utils.o clearcase.o motif.o \
-	rbTree.o refString.o nedit_malloc.o
+	rbTree.o refString.o nedit_malloc.o libxattr.o
 
 all: libNUtil.a
 
