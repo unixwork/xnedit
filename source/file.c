@@ -47,6 +47,7 @@
 #include "../util/printUtils.h"
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
+#include "../util/libxattr.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -54,6 +55,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <iconv.h>
 
 #ifdef VMS
 #include "../util/VMSparam.h"
@@ -365,6 +367,38 @@ static void safeClose(WindowInfo *window)
     }
 }
 
+static char bom_utf16be[2] = { 0xFE, 0xFF };
+static char bom_utf16le[2] = { 0xFF, 0xFE };
+static char bom_utf32be[4] = { 0, 0, 0xFE, 0xFF };
+static char bom_utf32le[4] = { 0xFF, 0xFE, 0, 0 };
+static char bom_gb18030[4] = { 0x84, 0x31, 0x95, 0x33 };
+
+typedef size_t(*ConvertFunc)(iconv_t, char **, size_t *, char **, size_t *);
+
+/*
+ * a function with an iconv like interface but it just copies bytes
+ */
+size_t copyBytes(
+        iconv_t cd,
+        char **inbuf,
+        size_t *inbytesleft,
+        char **outbuf,
+        size_t *outbytesleft)
+{
+    size_t in = *inbytesleft;
+    size_t out = *outbytesleft;
+    size_t cp = in > out ? out : in;
+    memcpy(*outbuf, *inbuf, cp);
+    *inbuf = (*inbuf) + cp;
+    *outbuf = (*outbuf) + cp;
+    *inbytesleft = in - cp;
+    *outbytesleft = out - cp;
+    return 0;
+}
+
+
+#define IO_BUFSIZE 2048
+
 static int doOpen(WindowInfo *window, const char *name, const char *path,
      const char *encoding, int flags)
 {
@@ -372,9 +406,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     struct stat statbuf;
     int fileLen, readLen;
     char *fileString, *c;
+    char buf[IO_BUFSIZE];
     FILE *fp = NULL;
     int fd;
     int resp;
+    int err;
     
     /* initialize lock reasons */
     CLEAR_ALL_LOCKS(window->lockReasons);
@@ -499,20 +535,144 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
 #endif
     fileLen = statbuf.st_size;
     
+    char *enc_attr = NULL;
+    
+    if(!encoding) {
+        size_t attrlen = 0;
+        enc_attr = xattr_get(fullname, "charset", &attrlen);
+        if(enc_attr && attrlen > 0) {
+            encoding = enc_attr;
+        }
+    }
+    
+    int checkBOM = 1;
+    if(encoding) {
+        /* check if the encoding string starts with UTF */
+        if(strcasecmp(encoding, "UTF")) {
+            /* no UTF encoding */
+            checkBOM = 0;
+        }
+        if(strcasecmp(encoding, "GB18030")) {
+            checkBOM = 1; /* GB18030 is unicode and could have a BOM */
+        }
+    }
+    
+    char *setEncoding = NULL;
+    if(checkBOM) {
+        /* read Byte Order Mark */
+        int bom = 0;
+        size_t r = fread(buf, 1, 4, fp);
+        do {
+            if(r >= 4) {
+                bom = 4;
+                if(!memcmp(buf, bom_utf32be, 4)) {
+                    setEncoding = "UTF-32BE";
+                    break;
+                } else if(!memcmp(buf, bom_utf32le, 4)) {
+                    setEncoding = "UTF-32LE";
+                    break;
+                } else if(!memcmp(buf, bom_gb18030, 4)) {
+                    setEncoding = "GB18030";
+                    break;
+                }
+            }
+            if(r >= 2) {
+                bom = 2;
+                if(!memcmp(buf, bom_utf16be, 2)) {
+                    setEncoding = "UTF-16BE";
+                    break;
+                } else if(!memcmp(buf, bom_utf16le, 2)) {
+                    setEncoding = "UTF-16LE";
+                    break;
+                } else {
+                }
+            }
+            bom = 0;
+        } while (0);
+        fseek(fp, bom, SEEK_SET);
+    }
+    if(!encoding) {
+        encoding = setEncoding;
+    }
+    
     /* Allocate space for the whole contents of the file (unfortunately) */
-    fileString = (char *)NEditMalloc(fileLen+1);  /* +1 = space for null */
+    size_t strAlloc = fileLen;
+    size_t strPos = 0;
+    fileString = (char *)malloc(strAlloc + 1); /* +1 = space for null */
     if (fileString == NULL) {
         fclose(fp);
         window->filenameSet = FALSE; /* Temp. prevent check for changes. */
         DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                 "File is too large to edit", "OK");
         window->filenameSet = TRUE;
+        if(enc_attr) {
+            free(enc_attr);
+        }
         return FALSE;
     }
-
-    /* Read the file into fileString and terminate with a null */
-    readLen = fread(fileString, sizeof(char), fileLen, fp);
-    if (ferror(fp)) {
+    
+    iconv_t ic = NULL;
+    ConvertFunc strconv = copyBytes;
+    if(encoding) {
+        ic = iconv_open("UTF-8", encoding);
+        if(enc_attr) {
+            free(enc_attr);
+        }
+        if(ic == (iconv_t) -1) {
+            fclose(fp);
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            char *format = "File cannot be converted from %s to UTF8";
+            size_t msglen = strlen(format) + strlen(encoding) + 4;
+            char *msgbuf = NEditMalloc(msglen);
+            snprintf(msgbuf, msglen, format, encoding);
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    msgbuf, "OK");
+            NEditFree(msgbuf);
+            window->filenameSet = TRUE;
+            return FALSE;
+        }
+        strconv = iconv;
+    }
+    
+    err = 0;
+    size_t r = 0;
+    readLen = 0;
+    char *outStr = fileString;
+    while((r = fread(buf, 1, IO_BUFSIZE, fp)) > 0 && !err) {
+        char *str = buf;
+        size_t inleft = r;
+        size_t outleft = strAlloc - readLen;
+        while(inleft > 0) { 
+            size_t w = outleft;
+            size_t rc = strconv(ic, &str, &inleft, &outStr, &outleft);
+            w = w - outleft;
+            readLen += w;
+            
+            if(rc == (size_t)-1) {
+                /* iconv wants more bytes */
+                if(outleft > 8) {
+                    /* iconv has enough bytes, something has gone wrong */
+                    err = 1;
+                    break;
+                }
+                strAlloc += 512;
+                size_t outpos = outStr - fileString;
+                fileString = realloc(fileString, strAlloc + 1);
+                outStr = fileString + outpos;
+                if(!fileString) {
+                    err = 1;
+                    break;
+                }
+                outleft = strAlloc - readLen;
+            }
+        }
+    }
+    
+    if(ic) {
+        iconv_close(ic);
+    }
+    
+    if (err || ferror(fp)) {
         fclose(fp);
         window->filenameSet = FALSE; /* Temp. prevent check for changes. */
         DialogF(DF_ERR, window->shell, 1, "Error while opening File",
@@ -522,7 +682,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         return FALSE;
     }
     fileString[readLen] = 0;
- 
+    
     /* Close the file */
     if (fclose(fp) != 0) {
         /* unlikely error */
