@@ -1007,7 +1007,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     int response, retVal, fileFormat;
     char filename[MAXPATHLEN], pathname[MAXPATHLEN];
     WindowInfo *otherWindow;
-    FileSelection file = { NULL, NULL, 0 };
+    FileSelection file = { NULL, NULL, 1 };
     char fullname[MAXPATHLEN];
     
     /* Get the new name for the file */

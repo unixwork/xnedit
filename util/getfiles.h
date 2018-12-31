@@ -39,6 +39,9 @@ typedef struct FileSelection {
     char    *path;
     char    *encoding;
     Boolean setenc;
+    Boolean setxattr;
+    Boolean addwrap;
+    int     format;
 } FileSelection;
 
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);

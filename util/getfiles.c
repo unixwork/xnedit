@@ -1558,6 +1558,10 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     memset(&data, 0, sizeof(FileDialogData));
     data.type = type;
     
+    file->addwrap = FALSE;
+    file->setxattr = FALSE;
+    file->format = UNIX_FILE_FORMAT;
+    
     Widget dialog = CreateDialogShell(parent, promptString, args, 0);
     AddMotifCloseCallback(dialog, (XtCallbackProc)filedialog_cancel, &data);
     
@@ -1792,19 +1796,21 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XmStringFree(str);
 
         n = 0;
-        int arraylen = 1;
+        int arraylen = 22;
         char *encStr;
         XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
+        /* skip the "detect" item on type == save */
+        int skip = type == FILEDIALOG_OPEN ? 0 : 1;
         int i;
-        for(i=0;encStr=default_encodings[i];i++) {
+        for(i=skip;encStr=default_encodings[i];i++) {
             if(i >= arraylen) {
                 arraylen *= 2;
                 encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
             }
-            encodings[i] = XmStringCreateSimple(encStr);
+            encodings[i-skip] = XmStringCreateSimple(encStr);
         }
         XtSetArg(args[n], XmNcolumns, 11); n++;
-        XtSetArg(args[n], XmNitemCount, i); n++;
+        XtSetArg(args[n], XmNitemCount, i-skip); n++;
         XtSetArg(args[n], XmNitems, encodings); n++;
         data.encoding = XmCreateDropDownList(enc, "combobox", args, n);
         XtManageChild(data.encoding);
@@ -1880,10 +1886,15 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         if(file->setenc) {
             int encPos;
             XtVaGetValues(data.encoding, XmNselectedPosition, &encPos, NULL);
-            if(encPos > 0) {
-                /* index 0 is the "detect" item which is not a valid 
-                   encoding string that can be used later */
-                file->encoding = default_encodings[encPos];
+            if(type == FILEDIALOG_OPEN) {
+                if(encPos > 0) {
+                    /* index 0 is the "detect" item which is not a valid 
+                       encoding string that can be used later */
+                    file->encoding = default_encodings[encPos];
+                }
+            } else {
+                /* save has no "detect" encoding */
+                file->encoding = default_encodings[encPos+1];
             }
         }
     } else {
