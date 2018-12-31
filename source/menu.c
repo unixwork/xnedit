@@ -2850,16 +2850,18 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
 {
     WindowInfo *window = WidgetToWindow(w);
     int response, addWrap, fileFormat;
-    char fullname[MAXPATHLEN], *params[2];
+    char *params[2];
     
-    response = PromptForNewFile(window, "Save File As", fullname,
+    FileSelection file = { NULL, NULL, True };
+    response = PromptForNewFile(window, "Save File As", &file,
 	    &fileFormat, &addWrap);
     if (response != GFN_OK)
     	return;
     window->fileFormat = fileFormat;
-    params[0] = fullname;
+    params[0] = file.path;
     params[1] = "wrapped";
     XtCallActionProc(window->lastFocus, "save_as", event, params, addWrap?2:1);
+    NEditFree(file.path);
 }
 
 static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)

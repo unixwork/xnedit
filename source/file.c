@@ -1025,6 +1025,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
         }
         memcpy(fullname, file.path, pathlen);
         fullname[pathlen] = '\0';
+        printf("save file: %s\n", fullname);
         NEditFree(file.path);
     } else
     {

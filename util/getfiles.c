@@ -1479,6 +1479,7 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
         if(!data->selIsDir) {
             data->status = GFN_OK;
             data->end = True;
+            return;
         } else {
             filedialog_update_dir(data, data->selectedPath);
         }
