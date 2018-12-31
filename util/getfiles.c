@@ -318,10 +318,6 @@ Widget getFilenameHelper(Widget parent, char *promptString, char *filename,
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file) 
 {
     return FileDialog(parent, promptString, file, FILEDIALOG_OPEN);
-    
-    //Widget existFileSB = getFilenameHelper(parent, promptString, file->path, 
-    //        True);
-    //return HandleCustomExistFileSB(existFileSB, buf);
 }
 
 /* GetNewFilename
@@ -330,11 +326,13 @@ int GetExistingFilename(Widget parent, char *promptString, FileSelection *file)
  * In this case the text area of the FSB is *not* unmanaged, so the user can
  * enter a new filename.
  */
-int GetNewFilename(Widget parent, char *promptString, char *filename,
+int GetNewFilename(Widget parent, char *promptString, FileSelection *file,
         char *defaultName)
 {
-    Widget fileSB = getFilenameHelper(parent, promptString, filename, False);
-    return HandleCustomNewFileSB(fileSB, filename, defaultName);
+    //Widget fileSB = getFilenameHelper(parent, promptString, filename, False);
+    //return HandleCustomNewFileSB(fileSB, filename, defaultName);
+    // TODO: use defaultName
+    return FileDialog(parent, promptString, file, FILEDIALOG_SAVE);
 }
 
 /*

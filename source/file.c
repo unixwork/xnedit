@@ -1005,16 +1005,27 @@ int SaveWindow(WindowInfo *window)
 int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
 {
     int response, retVal, fileFormat;
-    char fullname[MAXPATHLEN], filename[MAXPATHLEN], pathname[MAXPATHLEN];
+    char filename[MAXPATHLEN], pathname[MAXPATHLEN];
     WindowInfo *otherWindow;
+    FileSelection file = { NULL, NULL, 0 };
+    char fullname[MAXPATHLEN];
     
     /* Get the new name for the file */
     if (newName == NULL) {
-	response = PromptForNewFile(window, "Save File As", fullname,
+	response = PromptForNewFile(window, "Save File As", &file,
 		&fileFormat, &addWrap);
 	if (response != GFN_OK)
     	    return FALSE;
 	window->fileFormat = fileFormat;
+        size_t pathlen = strlen(file.path);
+        if(pathlen >= MAXPATHLEN) {
+            fprintf(stderr, "Error: Path too long\n");
+            NEditFree(file.path);
+            return FALSE;
+        }
+        memcpy(fullname, file.path, pathlen);
+        fullname[pathlen] = '\0';
+        NEditFree(file.path);
     } else
     {
         strcpy(fullname, newName);
@@ -1030,7 +1041,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     	addWrapNewlines(window);
     
     if (ParseFilename(fullname, filename, pathname) != 0) {
-       return FALSE;
+        return FALSE;
     }
 
     /* If the requested file is this file, just save it and return */
@@ -1647,7 +1658,7 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
 ** (if set) as the default directory, and asks about embedding newlines
 ** to make wrapping permanent.
 */
-int PromptForNewFile(WindowInfo *window, char *prompt, char *fullname,
+int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     	int *fileFormat, int *addWrap)
 {
     int n, retVal;
@@ -1666,104 +1677,8 @@ int PromptForNewFile(WindowInfo *window, char *prompt, char *fullname,
     if (*window->path != '\0')
     	SetFileDialogDefaultDirectory(window->path);
     
-    /* Present a file selection dialog with an added field for requesting
-       long line wrapping to become permanent via inserted newlines */
-    n = 0;
-    XtSetArg(args[n],
-            XmNselectionLabelString,
-            s1 = XmStringCreateLocalized("New File Name:")); n++;
-    XtSetArg(args[n], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL); n++;
-    XtSetArg(args[n],
-            XmNdialogTitle,
-            s2 = XmStringCreateSimple(prompt)); n++;
-    fileSB = CreateFileSelectionDialog(window->shell,"FileSelect",args,n);
-    XmStringFree(s1);
-    XmStringFree(s2);
-    formatForm = XtVaCreateManagedWidget("formatForm", xmFormWidgetClass,
-	    fileSB, NULL);
-    formatBtns = XtVaCreateManagedWidget("formatBtns",
-            xmRowColumnWidgetClass, formatForm,
-            XmNradioBehavior, XmONE_OF_MANY,
-            XmNorientation, XmHORIZONTAL,
-            XmNpacking, XmPACK_TIGHT,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNleftAttachment, XmATTACH_FORM,
-            NULL);
-    XtVaCreateManagedWidget("formatBtns", xmLabelWidgetClass, formatBtns,
-	    XmNlabelString, s1=XmStringCreateSimple("Format:"), NULL);
-    XmStringFree(s1);
-    unixFormat = XtVaCreateManagedWidget("unixFormat",
-            xmToggleButtonWidgetClass, formatBtns,
-            XmNlabelString, s1 = XmStringCreateSimple("Unix"),
-            XmNset, *fileFormat == UNIX_FILE_FORMAT,
-            XmNuserData, (XtPointer)UNIX_FILE_FORMAT,
-            XmNmarginHeight, 0,
-            XmNalignment, XmALIGNMENT_BEGINNING,
-            XmNmnemonic, 'U',
-            NULL);
-    XmStringFree(s1);
-    XtAddCallback(unixFormat, XmNvalueChangedCallback, setFormatCB,
-    	    fileFormat);
-    dosFormat = XtVaCreateManagedWidget("dosFormat",
-            xmToggleButtonWidgetClass, formatBtns,
-            XmNlabelString, s1 = XmStringCreateSimple("DOS"),
-            XmNset, *fileFormat == DOS_FILE_FORMAT,
-            XmNuserData, (XtPointer)DOS_FILE_FORMAT,
-            XmNmarginHeight, 0,
-            XmNalignment, XmALIGNMENT_BEGINNING,
-            XmNmnemonic, 'O',
-            NULL);
-    XmStringFree(s1);
-    XtAddCallback(dosFormat, XmNvalueChangedCallback, setFormatCB,
-    	    fileFormat);
-    macFormat = XtVaCreateManagedWidget("macFormat",
-            xmToggleButtonWidgetClass, formatBtns,
-            XmNlabelString, s1 = XmStringCreateSimple("Macintosh"),
-            XmNset, *fileFormat == MAC_FILE_FORMAT,
-            XmNuserData, (XtPointer)MAC_FILE_FORMAT,
-            XmNmarginHeight, 0,
-            XmNalignment, XmALIGNMENT_BEGINNING,
-            XmNmnemonic, 'M',
-            NULL);
-    XmStringFree(s1);
-    XtAddCallback(macFormat, XmNvalueChangedCallback, setFormatCB,
-    	    fileFormat);
-    if (window->wrapMode == CONTINUOUS_WRAP) {
-	wrapToggle = XtVaCreateManagedWidget("addWrap",
-                xmToggleButtonWidgetClass, formatForm,
-                XmNlabelString, s1 = XmStringCreateSimple("Add line breaks where wrapped"),
-                XmNalignment, XmALIGNMENT_BEGINNING,
-                XmNmnemonic, 'A',
-                XmNtopAttachment, XmATTACH_WIDGET,
-                XmNtopWidget, formatBtns,
-                XmNleftAttachment, XmATTACH_FORM,
-                NULL);
-	XtAddCallback(wrapToggle, XmNvalueChangedCallback, addWrapCB,
-    	    	addWrap);
-	XmStringFree(s1);
-    }
-    *addWrap = False;
-    XtVaSetValues(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_FILTER_LABEL),
-            XmNmnemonic, 'l',
-            XmNuserData, XmFileSelectionBoxGetChild(fileSB, XmDIALOG_FILTER_TEXT),
-            NULL);
-    XtVaSetValues(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_DIR_LIST_LABEL),
-            XmNmnemonic, 'D',
-            XmNuserData, XmFileSelectionBoxGetChild(fileSB, XmDIALOG_DIR_LIST),
-            NULL);
-    XtVaSetValues(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_LIST_LABEL),
-            XmNmnemonic, 'F',
-            XmNuserData, XmFileSelectionBoxGetChild(fileSB, XmDIALOG_LIST),
-            NULL);
-    XtVaSetValues(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_SELECTION_LABEL),
-            XmNmnemonic, prompt[strspn(prompt, "lFD")],
-            XmNuserData, XmFileSelectionBoxGetChild(fileSB, XmDIALOG_TEXT),
-            NULL);
-    AddDialogMnemonicHandler(fileSB, FALSE);
-    RemapDeleteKey(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_FILTER_TEXT));
-    RemapDeleteKey(XmFileSelectionBoxGetChild(fileSB, XmDIALOG_TEXT));
-    retVal = HandleCustomNewFileSB(fileSB, fullname,
-    	    window->filenameSet ? window->filename : NULL);
+    
+    retVal = GetNewFilename(window->shell, prompt, file, "");
 
     if (retVal != GFN_OK)
     	SetFileDialogDefaultDirectory(savedDefaultDir);

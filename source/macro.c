@@ -3460,7 +3460,7 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     if (0 == strcmp(mode, "exist")) {
         gfnResult = GetExistingFilename(window->shell, title, &getfile);
     } else {
-        gfnResult = GetNewFilename(window->shell, title, filename, defaultName);
+        gfnResult = GetNewFilename(window->shell, title, &getfile, defaultName);
     }   /*  Invalid values are weeded out above.  */ 
 
     /*  Reset original values and free temps  */

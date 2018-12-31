@@ -42,7 +42,7 @@ typedef struct FileSelection {
 } FileSelection;
 
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);
-int GetNewFilename(Widget parent, char *promptString, char *filename, 
+int GetNewFilename(Widget parent, char *promptString, FileSelection *file, 
         char *defaultName);
 int HandleCustomExistFileSB(Widget existFileSB, char *filename);
 int HandleCustomNewFileSB(Widget newFileSB, char *filename, char *defaultName);
