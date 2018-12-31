@@ -1178,6 +1178,8 @@ typedef struct FileDialogData {
     Widget dosFormat;
     Widget macFormat;
     Widget encoding;
+    Widget bom;
+    Widget xattr;
     
     WidgetList gadgets;
     int numGadgets;
@@ -1186,7 +1188,7 @@ typedef struct FileDialogData {
     char *selectedPath;
     int selIsDir;
     int showHidden;
-    
+      
     int type;
     
     int end;
@@ -1544,6 +1546,40 @@ static char *default_encodings[] = {
     NULL
 };
 
+static void adjust_enc_settings(FileDialogData *data){
+    /* this should never happen, but make sure it will not do anything */
+    if(data->type != FILEDIALOG_SAVE) return;
+    
+    int encPos;
+    XtVaGetValues(data->encoding, XmNselectedPosition, &encPos, NULL);
+    
+    /*
+     * the save file dialog doesn't has the "detect" item
+     * the default_encodings index is encPos + 1
+     */
+    if(encPos > 6) {
+        /* no unicode no bom */
+        XtSetSensitive(data->bom, False);
+        XtVaSetValues(data->xattr, XmNset, 1, NULL);
+    } else {
+        XtSetSensitive(data->bom, True);
+        if(encPos > 0) {
+            /* enable bom for all non-UTF-8 unicode encodings */
+            XtVaSetValues(data->bom, XmNset, 1, NULL);
+        }
+    }
+}
+
+static void filedialog_select_encoding(
+        Widget w,
+        FileDialogData *data,
+        XmComboBoxCallbackStruct *cb)
+{
+    if(cb->reason == XmCR_SELECT) {
+        adjust_enc_settings(data);
+    }
+}
+
 int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
 {
     Arg args[32];
@@ -1560,6 +1596,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     file->addwrap = FALSE;
     file->setxattr = FALSE;
+    file->writebom = FALSE;
     file->format = UNIX_FILE_FORMAT;
     
     Widget dialog = CreateDialogShell(parent, promptString, args, 0);
@@ -1818,6 +1855,31 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XmStringFree(encodings[j]);
         }
         NEditFree(encodings);
+        
+        /* bom and xattr option */
+        if(type == FILEDIALOG_SAVE) {
+            /* only the save file dialog needs an encoding select callback */
+            XtAddCallback(
+                    data.encoding,
+                    XmNselectionCallback,
+                    (XtCallbackProc)filedialog_select_encoding,
+                    &data);
+            
+            n = 0;
+            str = XmStringCreateSimple("Write BOM");
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            data.bom = XmCreateToggleButton(enc, "togglebutton", args, n);
+            XtManageChild(data.bom);
+            XmStringFree(str);
+            
+            n = 0;
+            str = XmStringCreateSimple("Store encoding in extended attribute");
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            data.xattr = XmCreateToggleButton(enc, "togglebutton", args, n);
+            XtManageChild(data.xattr);
+            XmStringFree(str);
+        }
+        
     }
     
     /* middle */

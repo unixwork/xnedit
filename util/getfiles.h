@@ -40,6 +40,7 @@ typedef struct FileSelection {
     char    *encoding;
     Boolean setenc;
     Boolean setxattr;
+    Boolean writebom;
     Boolean addwrap;
     int     format;
 } FileSelection;
