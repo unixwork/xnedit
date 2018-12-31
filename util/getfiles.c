@@ -1187,6 +1187,8 @@ typedef struct FileDialogData {
     int selIsDir;
     int showHidden;
     
+    int type;
+    
     int end;
     int status;
 } FileDialogData;
@@ -1481,6 +1483,18 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
             filedialog_update_dir(data, data->selectedPath);
         }
     }
+    
+    if(data->type == FILEDIALOG_SAVE) {
+        char *newName = XmTextGetString(data->name);
+        if(newName) {
+            if(strlen(newName) > 0) {
+                data->selectedPath = concatPath(data->currentPath, newName);
+                data->status = GFN_OK;
+                data->end = True;
+            }
+            XtFree(newName);
+        }
+    }
 }
 
 static void filedialog_setpath(Widget w, FileDialogData *data, XtPointer d)
@@ -1541,6 +1555,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     FileDialogData data;
     memset(&data, 0, sizeof(FileDialogData));
+    data.type = type;
     
     Widget dialog = CreateDialogShell(parent, promptString, args, 0);
     AddMotifCloseCallback(dialog, (XtCallbackProc)filedialog_cancel, &data);
@@ -1675,6 +1690,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtSetArg(args[n], XmNrightOffset, 5); n++;
         data.name = XmCreateText(form, "textfield", args, n);
         XtManageChild(data.name);
+        XtAddCallback(data.name, XmNactivateCallback,
+                 (XtCallbackProc)filedialog_ok, &data);
 
         n = 0;
         str = XmStringCreateSimple("New File Name");
