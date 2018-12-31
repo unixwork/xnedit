@@ -1864,7 +1864,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
 		(XtCallbackProc)resize_container, &data);
-      
+    AddMouseWheelSupport(data.container);
+    
     XtAddCallback(
             data.container,
             XmNselectionCallback,

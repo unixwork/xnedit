@@ -1947,13 +1947,22 @@ void InstallMouseWheelActions(XtAppContext context)
     XtAppAddActions(context, Actions, XtNumber(Actions));
 }
 
+static Widget getScrolledWindow(Widget w)
+{
+    Widget scrolledWindow = XtParent(w);
+    if (!XmIsScrolledWindow(scrolledWindow)) {
+        scrolledWindow = XtParent(scrolledWindow);
+    }
+    return scrolledWindow;
+}
+
 /*
 ** Add mouse wheel support to a specific widget, which must be the scrollable
 ** widget of a ScrolledWindow.
 */
 void AddMouseWheelSupport(Widget w)
 {
-    if (XmIsScrolledWindow(XtParent(w))) 
+    if (XmIsScrolledWindow(getScrolledWindow(w))) 
     {
         static const char scrollTranslations[] =
            "Shift<Btn4Down>,<Btn4Up>: scrolled-window-scroll-up(1)\n"
@@ -1978,7 +1987,7 @@ static void pageUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     String al[1];
     
     al[0] = "Up";
-    scrolledWindow = XtParent(w);
+    scrolledWindow = getScrolledWindow(w);
     scrollBar = XtNameToWidget (scrolledWindow, "VertScrollBar");
     if (scrollBar)
         XtCallActionProc(scrollBar, "PageUpOrLeft", event, al, 1) ;
@@ -1991,7 +2000,7 @@ static void pageDownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     String al[1];
     
     al[0] = "Down";
-    scrolledWindow = XtParent(w);
+    scrolledWindow = getScrolledWindow(w);
     scrollBar = XtNameToWidget (scrolledWindow, "VertScrollBar");
     if (scrollBar)
         XtCallActionProc(scrollBar, "PageDownOrRight", event, al, 1) ;
@@ -2007,7 +2016,7 @@ static void scrollUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
        return;
     al[0] = "Up";
-    scrolledWindow = XtParent(w);
+    scrolledWindow = getScrolledWindow(w);
     scrollBar = XtNameToWidget (scrolledWindow, "VertScrollBar");
     if (scrollBar)
         for (i=0; i<nLines; i++)
@@ -2024,7 +2033,7 @@ static void scrollDownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
        return;
     al[0] = "Down";
-    scrolledWindow = XtParent(w);
+    scrolledWindow = getScrolledWindow(w);
     scrollBar = XtNameToWidget (scrolledWindow, "VertScrollBar");
     if (scrollBar)
         for (i=0; i<nLines; i++)
