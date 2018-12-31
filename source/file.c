@@ -552,7 +552,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             /* no UTF encoding */
             checkBOM = 0;
         }
-        if(strcasecmp(encoding, "GB18030")) {
+        if(!strcasecmp(encoding, "GB18030")) {
             checkBOM = 1; /* GB18030 is unicode and could have a BOM */
         }
     }
