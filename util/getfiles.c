@@ -1504,8 +1504,9 @@ static void filedialog_setpath(Widget w, FileDialogData *data, XtPointer d)
     }
 }
 
+#define DETECT_ENCODING "detect"
 static char *default_encodings[] = {
-    "detect",
+    DETECT_ENCODING,
     "UTF-8",
     "UTF-16",
     "UTF-16BE",
@@ -1861,10 +1862,12 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.selectedPath = NULL;
         
         if(file->setenc) {
-            XmString selectedEncoding = NULL;
-            XtVaGetValues(data.encoding, XmNselectedItem, &selectedEncoding, NULL);
-            if(selectedEncoding) {
-                XmStringGetLtoR(selectedEncoding, XmFONTLIST_DEFAULT_TAG, &file->encoding);
+            int encPos;
+            XtVaGetValues(data.encoding, XmNselectedPosition, &encPos, NULL);
+            if(encPos > 0) {
+                /* index 0 is the "detect" item which is not a valid 
+                   encoding string that can be used later */
+                file->encoding = default_encodings[encPos];
             }
         }
     } else {

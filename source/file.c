@@ -91,7 +91,7 @@
 static int doSave(WindowInfo *window);
 static void safeClose(WindowInfo *window);
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     int flags);
+     const char *encoding, int flags);
 static void backupFileName(WindowInfo *window, char *name, size_t len);
 static int writeBckVersion(WindowInfo *window);
 static int bckError(WindowInfo *window, const char *errString, const char *file);
@@ -231,14 +231,23 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     	/* open file in untitled document */
     	window = inWindow;
     	strcpy(window->path, path);
-    	strcpy(window->filename, name);
+    	strcpy(window->filename, name); 
+        if(encoding) {
+            size_t enclen = strlen(encoding);
+            if(enclen < MAX_ENCODING_LENGTH) {
+                memcpy(window->encoding, encoding, enclen + 1);
+            }
+        } else {
+            window->encoding[0] = '\0';
+        }
+        
         if (!iconic && !bgOpen) {
             RaiseDocumentWindow(window);
         }
     }
     
     /* Open the file */
-    if (!doOpen(window, name, path, flags)) {
+    if (!doOpen(window, name, path, encoding, flags)) {
 	/* The user may have destroyed the window instead of closing the 
 	   warning dialog; don't close it twice */
 	safeClose(window);
@@ -280,6 +289,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
 void RevertToSaved(WindowInfo *window)
 {
     char name[MAXPATHLEN], path[MAXPATHLEN];
+    char *encoding;
     int i;
     int insertPositions[MAX_PANES], topLines[MAX_PANES];
     int horizOffsets[MAX_PANES];
@@ -305,10 +315,12 @@ void RevertToSaved(WindowInfo *window)
     /* re-read the file, update the window title if new file is different */
     strcpy(name, window->filename);
     strcpy(path, window->path);
+    encoding = window->encoding[0] != '\0' ? window->encoding : NULL;
     RemoveBackupFile(window);
     ClearUndoList(window);
+    // TODO: get encoding from somewhere
     openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
-    if (!doOpen(window, name, path, openFlags)) {
+    if (!doOpen(window, name, path, encoding, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
@@ -354,7 +366,7 @@ static void safeClose(WindowInfo *window)
 }
 
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     int flags)
+     const char *encoding, int flags)
 {
     char fullname[MAXPATHLEN];
     struct stat statbuf;

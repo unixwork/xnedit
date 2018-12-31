@@ -159,6 +159,9 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 /* determine a safe size for a string to hold an integer-like number contained in xType */
 #define TYPE_INT_STR_SIZE(xType) ((sizeof(xType) * 3) + 2)
 
+/* maximum encoding string length */
+#define MAX_ENCODING_LENGTH 128
+
 /* Record on undo list */
 typedef struct _UndoInfo {
     struct _UndoInfo *next;		/* pointer to the next undo record */
@@ -454,6 +457,7 @@ typedef struct _WindowInfo {
 #endif
     char	filename[MAXPATHLEN];	/* name component of file being edited*/
     char	path[MAXPATHLEN];	/* path component of file being edited*/
+    char        encoding[MAX_ENCODING_LENGTH];
     unsigned	fileMode;		/* permissions of file being edited */
     uid_t	fileUid; 		/* last recorded user id of the file */
     gid_t	fileGid;		/* last recorded group id of the file */
