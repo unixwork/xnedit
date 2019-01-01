@@ -238,7 +238,8 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         if(encoding) {
             size_t enclen = strlen(encoding);
             if(enclen < MAX_ENCODING_LENGTH) {
-                memcpy(window->encoding, encoding, enclen + 1);
+                memcpy(window->encoding, encoding, enclen);
+                window->encoding[enclen] = '\0';
             }
         } else {
             window->encoding[0] = '\0';
@@ -1082,7 +1083,8 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
             } else {
                 size_t enclen = strlen(newFile.encoding);
                 if(enclen < MAX_ENCODING_LENGTH) {
-                    memcpy(window->encoding, newFile.encoding, enclen + 1);
+                    memcpy(window->encoding, newFile.encoding, enclen);
+                    window->encoding[enclen] = '\0';
                 }
             }
         }
@@ -1097,7 +1099,8 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         } else {
             size_t enclen = strlen(newFile.encoding);
             if(enclen < MAX_ENCODING_LENGTH) {
-                memcpy(window->encoding, file->encoding, enclen + 1);
+                memcpy(window->encoding, file->encoding, enclen);
+                window->encoding[enclen] = '\0';
             }
         }
         window->bom = file->writebom;
