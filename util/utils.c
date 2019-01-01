@@ -50,7 +50,7 @@
 #include "../debug.h"
 #endif
 
-#define DEFAULT_NEDIT_HOME ".nedit"
+#define DEFAULT_NEDIT_HOME ".xnedit"
 #ifdef VMS
     static char* hiddenFileNames[N_FILE_TYPES] = {".nedit", ".neditmacro", ".neditdb;1"};
     static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history;1"};
