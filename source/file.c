@@ -1324,7 +1324,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         char *bom;
         int bomLen = getBOM(window->encoding, &bom);
         if(bomLen > 0) {
-            if(FWRITE(fp, bom, bomLen)) {
+            if(FWRITE(fp, bom, bomLen) != bomLen) {
                 fileLen = 0;
             }
         }
