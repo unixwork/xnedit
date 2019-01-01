@@ -2850,17 +2850,20 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
 {
     WindowInfo *window = WidgetToWindow(w);
     int response, addWrap, fileFormat;
-    char *params[2];
+    char *params[8];
     
     FileSelection file = { NULL, NULL, True };
     response = PromptForNewFile(window, "Save File As", &file,
-	    &fileFormat, &addWrap);
+	    &fileFormat);
     if (response != GFN_OK)
     	return;
     window->fileFormat = fileFormat;
     params[0] = file.path;
-    params[1] = "wrapped";
-    XtCallActionProc(window->lastFocus, "save_as", event, params, addWrap?2:1);
+    params[1] = file.encoding;
+    params[2] = file.writebom ? "writebom" : "";
+    params[3] = file.setxattr ? "setxattr" : "";
+    params[4] = file.addwrap ? "wrapped" : "";
+    XtCallActionProc(window->lastFocus, "save_as", event, params, 5);
     NEditFree(file.path);
 }
 
@@ -2870,8 +2873,14 @@ static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     	fprintf(stderr, "nedit: save_as action requires file argument\n");
     	return;
     }
-    SaveWindowAs(WidgetToWindow(w), args[0],
-    	    *nArgs == 2 && !strCaseCmp(args[1], "wrapped"));
+    FileSelection file;
+    memset(&file, 0, sizeof(FileSelection));
+    file.path = args[0];
+    file.encoding = *nArgs > 1 ? args[1] : NULL;
+    file.writebom = *nArgs > 2 && !strCaseCmp(args[2], "writebom") ? 1 : 0;
+    file.setxattr = *nArgs > 3 && !strCaseCmp(args[3], "setxattr") ? 1 : 0;
+    file.addwrap = *nArgs > 4 && !strCaseCmp(args[4], "wrapped") ? 1 : 0;
+    SaveWindowAs(WidgetToWindow(w), &file);
 }
 
 static void revertDialogAP(Widget w, XEvent *event, String *args,

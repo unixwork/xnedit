@@ -90,7 +90,7 @@
    system which is slow to process stat requests (which I'm not sure exists) */
 #define MOD_CHECK_INTERVAL 3000
 
-static int doSave(WindowInfo *window);
+static int doSave(WindowInfo *window, Boolean setEncAttr);
 static void safeClose(WindowInfo *window);
 static int doOpen(WindowInfo *window, const char *name, const char *path,
      const char *encoding, int flags);
@@ -558,6 +558,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     char *setEncoding = NULL;
+    int hasBOM = 0;
     if(checkBOM) {
         /* read Byte Order Mark */
         int bom = 0;
@@ -567,12 +568,15 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 bom = 4;
                 if(!memcmp(buf, bom_utf32be, 4)) {
                     setEncoding = "UTF-32BE";
+                    hasBOM = TRUE;
                     break;
                 } else if(!memcmp(buf, bom_utf32le, 4)) {
                     setEncoding = "UTF-32LE";
+                    hasBOM = TRUE;
                     break;
                 } else if(!memcmp(buf, bom_gb18030, 4)) {
                     setEncoding = "GB18030";
+                    hasBOM = TRUE;
                     break;
                 }
             }
@@ -580,9 +584,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 bom = 2;
                 if(!memcmp(buf, bom_utf16be, 2)) {
                     setEncoding = "UTF-16BE";
+                    hasBOM = TRUE;
                     break;
                 } else if(!memcmp(buf, bom_utf16le, 2)) {
                     setEncoding = "UTF-16LE";
+                    hasBOM = TRUE;
                     break;
                 } else {
                 }
@@ -690,6 +696,16 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 "Unable to close file", "OK");
         /* we read it successfully, so continue */
     }
+    
+    /* store encoding and bom in the window */
+    window->encoding[0] = '\0';
+    if(encoding) {
+        size_t enclen = strlen(encoding);
+        if(enclen < MAX_ENCODING_LENGTH) {
+            memcpy(window->encoding, encoding, enclen);
+        }
+    }
+    window->bom = hasBOM;
 
     /* Any errors that happen after this point leave the window in a 
         "broken" state, and thus RevertToSaved will abandon the window if
@@ -966,7 +982,7 @@ int SaveWindow(WindowInfo *window)
     	return TRUE;
     /* Prompt for a filename if this is an Untitled window */
     if (!window->filenameSet)
-    	return SaveWindowAs(window, NULL, False);
+    	return SaveWindowAs(window, NULL);
 
     /* Check for external modifications and warn the user */
     if (GetPrefWarnFileMods() && fileWasModifiedExternally(window))
@@ -991,45 +1007,47 @@ int SaveWindow(WindowInfo *window)
     
 #ifdef VMS
     RemoveBackupFile(window);
-    stat = doSave(window);
+    stat = doSave(window, 0);
 #else
     if (writeBckVersion(window))
     	return FALSE;
-    stat = doSave(window);
+    stat = doSave(window, 0);
     if (stat) 
         RemoveBackupFile(window);
 #endif /*VMS*/
     return stat;
 }
     
-int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
+int SaveWindowAs(WindowInfo *window, FileSelection *file)
 {
     int response, retVal, fileFormat;
     char filename[MAXPATHLEN], pathname[MAXPATHLEN];
     WindowInfo *otherWindow;
-    FileSelection file = { NULL, NULL, 1 };
     char fullname[MAXPATHLEN];
     
     /* Get the new name for the file */
-    if (newName == NULL) {
-	response = PromptForNewFile(window, "Save File As", &file,
-		&fileFormat, &addWrap);
+    FileSelection newFile;
+    if (!file) {
+        memset(&newFile, 0, sizeof(FileSelection));
+        newFile.setenc = True;
+        
+	response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
 	if (response != GFN_OK)
     	    return FALSE;
 	window->fileFormat = fileFormat;
-        size_t pathlen = strlen(file.path);
+        size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
             fprintf(stderr, "Error: Path too long\n");
-            NEditFree(file.path);
+            NEditFree(newFile.path);
             return FALSE;
         }
-        memcpy(fullname, file.path, pathlen);
+        memcpy(fullname, newFile.path, pathlen);
         fullname[pathlen] = '\0';
-        printf("save file: %s\n", fullname);
-        NEditFree(file.path);
+        NEditFree(newFile.path);
+        file = &newFile;        
     } else
     {
-        strcpy(fullname, newName);
+        strcpy(fullname, file->path);
     }
 
     if (1 == NormalizePathname(fullname))
@@ -1038,7 +1056,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     }
     
     /* Add newlines if requested */
-    if (addWrap)
+    if (file->addwrap)
     	addWrapNewlines(window);
     
     if (ParseFilename(fullname, filename, pathname) != 0) {
@@ -1050,7 +1068,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     	    !strcmp(window->path, pathname)) {
 	if (writeBckVersion(window))
     	    return FALSE;
-	return doSave(window);
+	return doSave(window, file->setxattr);
     }
     
     /* If the file is open in another window, make user close it.  Note that
@@ -1088,7 +1106,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     window->fileUid = 0;
     window->fileGid = 0;
     CLEAR_ALL_LOCKS(window->lockReasons);
-    retVal = doSave(window);
+    retVal = doSave(window, file->setxattr);
     UpdateWindowReadOnly(window);
     RefreshTabState(window);
     
@@ -1111,7 +1129,7 @@ int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap)
     return retVal;
 }
 
-static int doSave(WindowInfo *window)
+static int doSave(WindowInfo *window, Boolean setEncAttr)
 {
     char *fileString = NULL;
     char fullname[MAXPATHLEN];
@@ -1173,7 +1191,7 @@ static int doSave(WindowInfo *window)
 
         if (result == 1)
         {
-            return SaveWindowAs(window, NULL, 0);
+            return SaveWindowAs(window, NULL);
         }
         return FALSE;
     }
@@ -1660,13 +1678,9 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
 ** to make wrapping permanent.
 */
 int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
-    	int *fileFormat, int *addWrap)
+    	int *fileFormat)
 {
     int n, retVal;
-    Arg args[20];
-    XmString s1, s2;
-    Widget fileSB, wrapToggle;
-    Widget formatForm, formatBtns, unixFormat, dosFormat, macFormat;
     char *savedDefaultDir;
     
     *fileFormat = window->fileFormat;

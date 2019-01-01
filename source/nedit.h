@@ -458,6 +458,7 @@ typedef struct _WindowInfo {
     char	filename[MAXPATHLEN];	/* name component of file being edited*/
     char	path[MAXPATHLEN];	/* path component of file being edited*/
     char        encoding[MAX_ENCODING_LENGTH];
+    Boolean     bom;                    /* content starts with BOM */
     unsigned	fileMode;		/* permissions of file being edited */
     uid_t	fileUid; 		/* last recorded user id of the file */
     gid_t	fileGid;		/* last recorded group id of the file */

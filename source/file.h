@@ -49,7 +49,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         int iconic, const char *languageMode, int tabbed, int bgOpen);
 void RevertToSaved(WindowInfo *window);
 int SaveWindow(WindowInfo *window);
-int SaveWindowAs(WindowInfo *window, const char *newName, int addWrap);
+int SaveWindowAs(WindowInfo *window, FileSelection *file);
 int CloseAllFilesAndWindows(void);
 int CloseFileAndWindow(WindowInfo *window, int preResponse);
 void PrintWindow(WindowInfo *window, int selectedOnly);
@@ -58,7 +58,7 @@ int WriteBackupFile(WindowInfo *window);
 int IncludeFile(WindowInfo *window, const char *name);
 int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file);
 int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
-    	int *fileFormat, int *addWrap);
+    	int *fileFormat);
 int CheckReadOnly(WindowInfo *window);
 void RemoveBackupFile(WindowInfo *window);
 void UniqueUntitledName(char *name);
