@@ -2852,7 +2852,12 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     int response, addWrap, fileFormat;
     char *params[8];
     
-    FileSelection file = { NULL, NULL, True };
+    FileSelection file;
+    memset(&file, 0, sizeof(FileSelection));
+    file.setenc = True;
+    if(strlen(window->encoding) > 0) {
+        file.encoding = window->encoding;
+    }
     response = PromptForNewFile(window, "Save File As", &file,
 	    &fileFormat);
     if (response != GFN_OK)

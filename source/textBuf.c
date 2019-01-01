@@ -1018,19 +1018,6 @@ int BufEndOfLine(textBuffer *buf, int pos)
     return endPos;
 }
 
-static int utf8charlen(const unsigned char *u) {
-    unsigned char u0 = u[0];
-    int ulen = 1;
-    if(u0 > 240) {
-        ulen = 4;
-    } else if(u0 > 224) {
-        ulen = 3;
-    } else if(u0 > 192) {
-        ulen = 2;
-    }
-    return ulen;
-}
-
 /*
 ** Get a character from the text buffer expanded into it's screen
 ** representation (which may be several characters for a tab or a
@@ -1046,7 +1033,7 @@ int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
     int i;
     
     utf8[0] = BufGetCharacter(buf, pos);
-    int charlen = utf8charlen((unsigned char*)utf8);
+    int charlen = Utf8CharLen((unsigned char*)utf8);
     if(charlen > 1) {
         for(i=1;i<charlen;i++) {
             utf8[i] = BufGetCharacter(buf, pos+i);
@@ -1214,7 +1201,7 @@ int BufCountDispChars(const textBuffer* buf, int lineStartPos,
     pos = lineStartPos;
     while (pos < targetPos && pos < buf->length) {
     	len = BufGetExpandedChar(buf, pos, charCount, expandedChar);
-        ulen = utf8charlen((unsigned char*)expandedChar);
+        ulen = Utf8CharLen((unsigned char*)expandedChar);
         if(ulen > 1) {
             charCount += 1;
             pos += ulen;
@@ -1240,7 +1227,7 @@ int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars)
     pos = lineStartPos;
     while (charCount < nChars && pos < buf->length) {
     	c = BufGetCharacter(buf, pos);
-        len = utf8charlen((unsigned char*)&c);
+        len = Utf8CharLen((unsigned char*)&c);
     	if (c == '\n')
     	    return pos;
     	charCount += BufCharWidth(c, charCount, buf->tabDist,buf->nullSubsChar);
@@ -1852,7 +1839,7 @@ static void insertColInLine(const char *line, const char *insLine,
     outPtr = outStr;
     indent = 0;
     for (linePtr=line; *linePtr!='\0'; linePtr+=inc) {
-        inc = utf8charlen((unsigned char*)linePtr);
+        inc = Utf8CharLen((unsigned char*)linePtr);
         if(inc > 1) {
             len = 1;
         } else {
@@ -1952,7 +1939,7 @@ static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
     for (c=line; *c!='\0'; c+=inc) {
 	if (indent > rectStart)
 	    break;
-        inc = utf8charlen((unsigned char*)c);
+        inc = Utf8CharLen((unsigned char*)c);
 	len = inc > 1 ? 1 : BufCharWidth(*c, indent, tabDist, nullSubsChar);
 	if (indent + len > rectStart && (indent == rectStart || *c == '\t'))
     	    break;
@@ -1964,7 +1951,7 @@ static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
     
     /* skip the characters between rectStart and rectEnd */
     for(; *c!='\0' && indent<rectEnd; c+=inc) {
-        inc = utf8charlen((unsigned char*)c);
+        inc = Utf8CharLen((unsigned char*)c);
 	indent += inc > 1 ? 1 : BufCharWidth(*c, indent, tabDist, nullSubsChar);
     }
     postRectIndent = indent;
@@ -2700,7 +2687,7 @@ int BufCharLen(const textBuffer *buf, int pos)
 {
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
-    return utf8charlen((unsigned char*)utf8);
+    return Utf8CharLen((unsigned char*)utf8);
 }
 
 int BufLeftPos(textBuffer *buf, int pos)
@@ -2730,6 +2717,20 @@ static int max(int i1, int i2)
 static int min(int i1, int i2)
 {
     return i1 <= i2 ? i1 : i2;
+}
+
+int Utf8CharLen(const unsigned char *u)
+{
+    unsigned char u0 = u[0];
+    int ulen = 1;
+    if(u0 > 240) {
+        ulen = 4;
+    } else if(u0 > 224) {
+        ulen = 3;
+    } else if(u0 > 192) {
+        ulen = 2;
+    }
+    return ulen;
 }
 
 int Utf8ToUcs4(const char *src_orig, FcChar32 *dst, int len)

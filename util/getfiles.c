@@ -1856,6 +1856,18 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         }
         NEditFree(encodings);
         
+        if(file->encoding) {
+            char *encStr = NEditStrdup(file->encoding);
+            size_t encLen = strlen(encStr);
+            for(int i=0;i<encLen;i++) {
+                encStr[i] = toupper(encStr[i]);
+            }
+            str = XmStringCreateSimple(encStr);
+            XmComboBoxSelectItem(data.encoding, str);
+            XmStringFree(str);
+            NEditFree(encStr);
+        }
+        
         /* bom and xattr option */
         if(type == FILEDIALOG_SAVE) {
             /* only the save file dialog needs an encoding select callback */

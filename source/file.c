@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <iconv.h>
 
 #ifdef VMS
@@ -418,6 +419,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     /* Update the window data structure */
     strcpy(window->filename, name);
     strcpy(window->path, path);
+    window->encoding[0] = '\0';
     window->filenameSet = TRUE;
     window->fileMissing = TRUE;
 
@@ -540,8 +542,20 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(!encoding) {
         size_t attrlen = 0;
         enc_attr = xattr_get(fullname, "charset", &attrlen);
-        if(enc_attr && attrlen > 0) {
-            encoding = enc_attr;
+        /* enc_attr is NOT null-terminated */
+        if(enc_attr) {
+            if(attrlen > 0) {
+                char *enc_attr_str = NEditMalloc(attrlen + 1);
+                memcpy(enc_attr_str, enc_attr, attrlen);
+                enc_attr_str[attrlen] = '\0';
+                
+                encoding = enc_attr_str;
+                free(enc_attr);
+                enc_attr = enc_attr_str;
+            } else {
+                free(enc_attr);
+                enc_attr = NULL;
+            }
         }
     }
     
@@ -603,7 +617,6 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     
     /* Allocate space for the whole contents of the file (unfortunately) */
     size_t strAlloc = fileLen;
-    size_t strPos = 0;
     fileString = (char *)malloc(strAlloc + 1); /* +1 = space for null */
     if (fileString == NULL) {
         fclose(fp);
@@ -621,9 +634,6 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     ConvertFunc strconv = copyBytes;
     if(encoding) {
         ic = iconv_open("UTF-8", encoding);
-        if(enc_attr) {
-            free(enc_attr);
-        }
         if(ic == (iconv_t) -1) {
             fclose(fp);
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
@@ -635,9 +645,25 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     msgbuf, "OK");
             NEditFree(msgbuf);
             window->filenameSet = TRUE;
+            if(enc_attr) {
+                free(enc_attr);
+            }
             return FALSE;
         }
         strconv = iconv;
+        
+        /* store encoding in window */
+        size_t enclen = strlen(encoding);
+        if(enclen < MAX_ENCODING_LENGTH) {
+            memcpy(window->encoding, encoding, enclen);
+            window->encoding[enclen] = '\0';
+        } else {
+            encoding = NULL;
+        }
+        
+        if(enc_attr) {
+            free(enc_attr);
+        }
     }
     
     err = 0;
@@ -697,14 +723,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         /* we read it successfully, so continue */
     }
     
-    /* store encoding and bom in the window */
-    window->encoding[0] = '\0';
-    if(encoding) {
-        size_t enclen = strlen(encoding);
-        if(enclen < MAX_ENCODING_LENGTH) {
-            memcpy(window->encoding, encoding, enclen);
-        }
-    }
+    /* bom in the window */
     window->bom = hasBOM;
 
     /* Any errors that happen after this point leave the window in a 
@@ -1030,6 +1049,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     if (!file) {
         memset(&newFile, 0, sizeof(FileSelection));
         newFile.setenc = True;
+        newFile.encoding = strlen(window->encoding) > 0 ? window->encoding : NULL;
         
 	response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
 	if (response != GFN_OK)
@@ -1044,10 +1064,33 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         memcpy(fullname, newFile.path, pathlen);
         fullname[pathlen] = '\0';
         NEditFree(newFile.path);
+        
+        if(newFile.encoding) {
+            if(!strcmp(newFile.encoding, "UTF-8")) {
+                window->encoding[0] = '\0';
+            } else {
+                size_t enclen = strlen(newFile.encoding);
+                if(enclen < MAX_ENCODING_LENGTH) {
+                    memcpy(window->encoding, newFile.encoding, enclen + 1);
+                }
+            }
+        }
+        
         file = &newFile;        
     } else
     {
         strcpy(fullname, file->path);
+        // TODO: create window_set_encoding function
+        if(!strcmp(file->encoding, "UTF-8")) {
+            window->encoding[0] = '\0';
+        } else {
+            size_t enclen = strlen(newFile.encoding);
+            if(enclen < MAX_ENCODING_LENGTH) {
+                memcpy(window->encoding, file->encoding, enclen + 1);
+            }
+        }
+        window->bom = file->writebom;
+        window->fileFormat = file->format;
     }
 
     if (1 == NormalizePathname(fullname))
@@ -1136,6 +1179,18 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     struct stat statbuf;
     FILE *fp;
     int fileLen, result;
+    
+    iconv_t ic = NULL;
+    ConvertFunc strconv = copyBytes;
+    if(strlen(window->encoding) > 0) {
+        ic = iconv_open(window->encoding, "UTF-8");
+        if(ic == (iconv_t) -1) {
+            DialogF(DF_ERR, window->shell, 1, "Error saving File",
+                "The text cannot be converted to %s", "OK", window->encoding);
+            return FALSE;
+        }
+        strconv = iconv;
+    }
 
     /* Get the full name of the file */
     strcpy(fullname, window->path);
@@ -1224,10 +1279,50 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
 
     /* write to the file */
 #ifdef IBM_FWRITE_BUG
-    write(fileno(fp), fileString, fileLen);
+#define FWRITE(fd, buf, len) write(fileno(fd), buf, len)
 #else
-    fwrite(fileString, sizeof(char), fileLen, fp);
+#define FWRITE(fd, buf, len) fwrite(buf, 1, len, fd)
 #endif
+    
+    int skipped = 0;
+    char buf[IO_BUFSIZE];
+    char *in = fileString;
+    size_t inleft = fileLen;
+    while(inleft > 0) {
+        char *out = buf;
+        size_t outleft = IO_BUFSIZE;
+        size_t w = outleft;
+        char *outBuf = out;
+        size_t rc = strconv(ic, &in, &inleft, &out, &outleft);
+        w = w - outleft;
+        
+        if(w > 0) {
+            FWRITE(fp, outBuf, w);
+        }
+        
+        if(rc == (size_t)-1) {
+            size_t skip = Utf8CharLen((const unsigned char*)in);
+            skipped++;
+            in += skip;
+            if(inleft >= skip) {
+                inleft -= skip;
+            } else {
+                break;
+            }
+        }
+    }
+    
+    if (skipped > 0) {
+        char skippedStr[32];
+        snprintf(skippedStr, 32, "%d", skipped);
+        DialogF(DF_WARN, window->shell, 1, "Encoding warning",
+                "%s characters skipped", "OK", skippedStr);
+    }
+    
+    if(ic) {
+        iconv_close(ic);
+    }
+    
     if (ferror(fp))
     {
         DialogF(DF_ERR, window->shell, 1, "Error saving File",
@@ -1236,6 +1331,44 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         remove(fullname);
         NEditFree(fileString);
         return FALSE;
+    }
+    
+    if(setEncAttr) {
+        size_t encLen = strlen(window->encoding);
+        char *encStr = window->encoding;
+        char *encCopy = NULL;
+        if(encLen == 0) {
+            encStr = "utf-8";
+            encLen = 5;
+        } else {
+            encCopy = NEditStrdup(window->encoding);
+            for(int i=0;i<encLen;i++) {
+                encCopy[i] = tolower(encCopy[i]);
+            }
+            encStr = encCopy;
+        }
+        
+        if(xattr_set(fullname, "charset", encStr, encLen)) {
+            perror("xattr_set failed");
+        }
+        
+        if(encCopy) {
+            NEditFree(encCopy);
+        }
+    } else {
+        size_t len = 0;
+        char *fileAttr = xattr_get(fullname, "charset", &len);
+        if(fileAttr) {
+            size_t winEncLen = strlen(window->encoding);
+            size_t cmpLen = winEncLen > len ? len : winEncLen;
+            if(len != winEncLen || memcmp(fileAttr, window->encoding, cmpLen)) {
+                if(xattr_remove(fullname, "charset")) {
+                    DialogF(DF_ERR, window->shell, 1, "Error saving File",
+                            "Cannot remove previous charset attribute");
+                }
+            }
+            free(fileAttr);
+        }
     }
     
     /* close the file */
