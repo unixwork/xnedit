@@ -31,8 +31,8 @@ all:
 	    $(MAKE) -f Makefile.$@ libNUtil.a)
 	(cd Xlt;    $(MAKE) -f Makefile.$@ libXlt.a)
 	(cd Microline/XmL;    $(MAKE) -f Makefile.$@ libXmL.a)
-	(cd source; $(MAKE) -f Makefile.$@ nedit nc)
-	@source/nedit -V
+	(cd source; $(MAKE) -f Makefile.$@ xnedit xnc)
+	@source/xnedit -V
 
 # This should not be in the default build, as users may not have Perl
 # installed.  This is only interesting to developers.
@@ -55,8 +55,8 @@ realclean: clean
 #
 # The following is for creating binary packages of NEdit.
 #
-RELEASE=nedit-5.7-`uname -s`-`uname -m`
-BINDIST-FILES=source/nedit source/nc README COPYRIGHT ReleaseNotes doc/nedit.doc doc/nedit.html doc/nedit.man doc/nc.man doc/faq.txt
+RELEASE=xnedit-5.7-`uname -s`-`uname -m`
+BINDIST-FILES=source/xnedit source/xnc README COPYRIGHT ReleaseNotes doc/nedit.doc doc/nedit.html doc/nedit.man doc/nc.man doc/faq.txt
 
 dist-bin: $(BINDIST-FILES)
 	rm -rf $(RELEASE)
