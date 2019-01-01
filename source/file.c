@@ -370,6 +370,7 @@ static char bom_utf16le[2] = { (char)0xFF, (char)0xFE };
 static char bom_utf32be[4] = { (char)0, (char)0, (char)0xFE, (char)0xFF };
 static char bom_utf32le[4] = { (char)0xFF, (char)0xFE, (char)0, (char)0 };
 static char bom_gb18030[4] = { (char)0x84, (char)0x31, (char)0x95, (char)0x33 };
+static char bom_utfebcdic[4] = { (char)0xDD, (char)0x73, (char)0x66, (char)0x73 };
 
 typedef size_t(*ConvertFunc)(iconv_t, char **, size_t *, char **, size_t *);
 
@@ -600,6 +601,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     break;
                 } else if(!memcmp(buf, bom_gb18030, 4)) {
                     setEncoding = "GB18030";
+                    hasBOM = TRUE;
+                    break;
+                } else if(!memcmp(buf, bom_utfebcdic, 4)) {
+                    setEncoding = "UTF-EBCDIC";
                     hasBOM = TRUE;
                     break;
                 }
@@ -1202,6 +1207,9 @@ static int getBOM(char *encoding, char **bom)
         len = 4;
     } else if(!strcasecmp(encoding, "GB18030")) {
         *bom = bom_gb18030;
+        len = 4;
+    } else if(!strcasecmp(encoding, "UTF-EBCDIC")) {
+        *bom = bom_utfebcdic;
         len = 4;
     }
     return len;
