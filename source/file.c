@@ -1059,11 +1059,13 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         memset(&newFile, 0, sizeof(FileSelection));
         newFile.setenc = True;
         newFile.encoding = strlen(window->encoding) > 0 ? window->encoding : NULL;
+        newFile.format = window->fileFormat;
+        newFile.writebom = window->bom;
         
 	response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
 	if (response != GFN_OK)
     	    return FALSE;
-	window->fileFormat = fileFormat;
+	window->fileFormat = newFile.format;
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
             fprintf(stderr, "Error: Path too long\n");

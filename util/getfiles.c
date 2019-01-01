@@ -1596,8 +1596,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     file->addwrap = FALSE;
     file->setxattr = FALSE;
-    file->writebom = FALSE;
-    file->format = UNIX_FILE_FORMAT;
     
     Widget dialog = CreateDialogShell(parent, promptString, args, 0);
     AddMotifCloseCallback(dialog, (XtCallbackProc)filedialog_cancel, &data);
@@ -1779,7 +1777,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.unixFormat = XtVaCreateManagedWidget("unixFormat",
                 xmToggleButtonWidgetClass, formatBtns,
                 XmNlabelString, str = XmStringCreateSimple("Unix"),
-                XmNset, 1,
+                XmNset, file->format == UNIX_FILE_FORMAT,
                 XmNuserData, (XtPointer)UNIX_FILE_FORMAT,
                 XmNmarginHeight, 0,
                 XmNalignment, XmALIGNMENT_BEGINNING,
@@ -1791,7 +1789,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.dosFormat = XtVaCreateManagedWidget("dosFormat",
                 xmToggleButtonWidgetClass, formatBtns,
                 XmNlabelString, str = XmStringCreateSimple("DOS"),
-                XmNset, 0,
+                XmNset, file->format == DOS_FILE_FORMAT,
                 XmNuserData, (XtPointer)DOS_FILE_FORMAT,
                 XmNmarginHeight, 0,
                 XmNalignment, XmALIGNMENT_BEGINNING,
@@ -1803,7 +1801,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.macFormat = XtVaCreateManagedWidget("macFormat",
                 xmToggleButtonWidgetClass, formatBtns,
                 XmNlabelString, str = XmStringCreateSimple("Macintosh"),
-                XmNset, 0,
+                XmNset, file->format == MAC_FILE_FORMAT,
                 XmNuserData, (XtPointer)MAC_FILE_FORMAT,
                 XmNmarginHeight, 0,
                 XmNalignment, XmALIGNMENT_BEGINNING,
@@ -1880,6 +1878,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             n = 0;
             str = XmStringCreateSimple("Write BOM");
             XtSetArg(args[n], XmNlabelString, str); n++;
+            XtSetArg(args[n], XmNset, file->writebom); n++;
             data.bom = XmCreateToggleButton(enc, "togglebutton", args, n);
             XtManageChild(data.bom);
             XmStringFree(str);

@@ -2855,6 +2855,8 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     FileSelection file;
     memset(&file, 0, sizeof(FileSelection));
     file.setenc = True;
+    file.writebom = window->bom;
+    file.format = window->fileFormat;
     if(strlen(window->encoding) > 0) {
         file.encoding = window->encoding;
     }
@@ -2868,7 +2870,15 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     params[2] = file.writebom ? "writebom" : "";
     params[3] = file.setxattr ? "setxattr" : "";
     params[4] = file.addwrap ? "wrapped" : "";
-    XtCallActionProc(window->lastFocus, "save_as", event, params, 5);
+    char *formatStr;
+    switch(file.format) {
+        default:
+        case UNIX_FILE_FORMAT: formatStr = "0"; break;
+        case DOS_FILE_FORMAT: formatStr = "1"; break;
+        case MAC_FILE_FORMAT: formatStr = "2"; break;
+    }
+    params[5] = formatStr;
+    XtCallActionProc(window->lastFocus, "save_as", event, params, 6);
     NEditFree(file.path);
 }
 
@@ -2885,6 +2895,7 @@ static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     file.writebom = *nArgs > 2 && !strCaseCmp(args[2], "writebom") ? 1 : 0;
     file.setxattr = *nArgs > 3 && !strCaseCmp(args[3], "setxattr") ? 1 : 0;
     file.addwrap = *nArgs > 4 && !strCaseCmp(args[4], "wrapped") ? 1 : 0;
+    file.format = *nArgs > 5 ? atoi(args[5]) : UNIX_FILE_FORMAT;
     SaveWindowAs(WidgetToWindow(w), &file);
 }
 
