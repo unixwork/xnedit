@@ -551,8 +551,21 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 memcpy(enc_attr_str, enc_attr, attrlen);
                 enc_attr_str[attrlen] = '\0';
                 
-                encoding = enc_attr_str;
+                // trim the encoding string
+                char *enc_trim = enc_attr_str;
+                size_t etlen = attrlen;
+                while(etlen > 0 && isspace(*enc_trim)) {
+                    enc_trim++;
+                    etlen--;
+                }
+                while(etlen > 0 && isspace(enc_trim[etlen-1])) {
+                    etlen--;
+                }
+                enc_trim[etlen] = '\0';
+                
+                encoding = enc_trim;
                 free(enc_attr);
+                // keep the original pointer for NEditFree
                 enc_attr = enc_attr_str;
             } else {
                 free(enc_attr);
