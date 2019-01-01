@@ -368,6 +368,7 @@ static void safeClose(WindowInfo *window)
     }
 }
 
+static char bom_utf8[3] = { 0xEF, 0xBB, 0xBF };
 static char bom_utf16be[2] = { 0xFE, 0xFF };
 static char bom_utf16le[2] = { 0xFF, 0xFE };
 static char bom_utf32be[4] = { 0, 0, 0xFE, 0xFF };
@@ -590,6 +591,14 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     break;
                 } else if(!memcmp(buf, bom_gb18030, 4)) {
                     setEncoding = "GB18030";
+                    hasBOM = TRUE;
+                    break;
+                }
+            }
+            if(r >= 3) {
+                bom = 3;
+                if(!memcmp(buf, bom_utf8, 3)) {
+                    setEncoding = "UTF-8";
                     hasBOM = TRUE;
                     break;
                 }
@@ -1172,6 +1181,32 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     return retVal;
 }
 
+static int getBOM(char *encoding, char **bom)
+{
+    int len = 0;
+    *bom = NULL;
+    if(!encoding || strlen(encoding) == 0 || !strcasecmp(encoding, "UTF-8")) {
+        *bom = bom_utf8;
+        len = 3;
+    } else if(!strcasecmp(encoding, "UTF-16BE")) {
+        *bom = bom_utf16be;
+        len = 2;
+    } else if(!strcasecmp(encoding, "UTF-16LE")) {
+        *bom = bom_utf16le;
+        len = 2;
+    } else if(!strcasecmp(encoding, "UTF-32BE")) {
+        *bom = bom_utf32be;
+        len = 4;
+    } else if(!strcasecmp(encoding, "UTF-32LE")) {
+        *bom = bom_utf32le;
+        len = 4;
+    } else if(!strcasecmp(encoding, "GB18030")) {
+        *bom = bom_gb18030;
+        len = 4;
+    }
+    return len;
+}
+
 static int doSave(WindowInfo *window, Boolean setEncAttr)
 {
     char *fileString = NULL;
@@ -1284,6 +1319,18 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
 #define FWRITE(fd, buf, len) fwrite(buf, 1, len, fd)
 #endif
     
+    /* write bom if requsted */
+    if(window->bom) {
+        char *bom;
+        int bomLen = getBOM(window->encoding, &bom);
+        if(bomLen > 0) {
+            if(FWRITE(fp, bom, bomLen)) {
+                fileLen = 0;
+            }
+        }
+    }
+    
+    /* convert text if required and write it to the file */
     int skipped = 0;
     char buf[IO_BUFSIZE];
     char *in = fileString;
