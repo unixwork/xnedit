@@ -4782,3 +4782,20 @@ void CleanUpTabBarExposeQueue(WindowInfo *window)
 		ExposureMask, (XEvent *)&ev);
     }
 }    
+
+void SetEncoding(WindowInfo *window, const char *encoding)
+{
+    size_t len = strlen(encoding);
+    if(len >= MAX_ENCODING_LENGTH) {
+        fprintf(stderr, "Error: Encoding string too large\n");
+        return;
+    }
+    
+    if(encoding == window->encoding) {
+        // noop
+        return;
+    }
+    
+    memcpy(window->encoding, encoding, len);
+    window->encoding[len] = '\0';
+}

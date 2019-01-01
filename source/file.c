@@ -236,11 +236,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     	strcpy(window->path, path);
     	strcpy(window->filename, name); 
         if(encoding) {
-            size_t enclen = strlen(encoding);
-            if(enclen < MAX_ENCODING_LENGTH) {
-                memcpy(window->encoding, encoding, enclen);
-                window->encoding[enclen] = '\0';
-            }
+            SetEncoding(window, encoding);
         } else {
             window->encoding[0] = '\0';
         }
@@ -322,7 +318,6 @@ void RevertToSaved(WindowInfo *window)
     encoding = window->encoding[0] != '\0' ? window->encoding : NULL;
     RemoveBackupFile(window);
     ClearUndoList(window);
-    // TODO: get encoding from somewhere
     openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
     if (!doOpen(window, name, path, encoding, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
@@ -676,13 +671,8 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         strconv = (ConvertFunc)iconv;
         
         /* store encoding in window */
-        size_t enclen = strlen(encoding);
-        if(enclen < MAX_ENCODING_LENGTH) {
-            memcpy(window->encoding, encoding, enclen);
-            window->encoding[enclen] = '\0';
-        } else {
-            encoding = NULL;
-        }
+        SetEncoding(window, encoding);
+        encoding = window->encoding[0] == '\0' ? window->encoding : NULL;
         
         if(enc_attr) {
             free(enc_attr);
@@ -1094,11 +1084,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
             if(!strcmp(newFile.encoding, "UTF-8")) {
                 window->encoding[0] = '\0';
             } else {
-                size_t enclen = strlen(newFile.encoding);
-                if(enclen < MAX_ENCODING_LENGTH) {
-                    memcpy(window->encoding, newFile.encoding, enclen);
-                    window->encoding[enclen] = '\0';
-                }
+                SetEncoding(window, newFile.encoding);
             }
         }
         
@@ -1110,11 +1096,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         if(!strcmp(file->encoding, "UTF-8")) {
             window->encoding[0] = '\0';
         } else {
-            size_t enclen = strlen(newFile.encoding);
-            if(enclen < MAX_ENCODING_LENGTH) {
-                memcpy(window->encoding, file->encoding, enclen);
-                window->encoding[enclen] = '\0';
-            }
+            SetEncoding(window, file->encoding);
         }
         window->bom = file->writebom;
         window->fileFormat = file->format;

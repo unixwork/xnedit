@@ -1586,6 +1586,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     int n = 0;
     XmString str;
     
+    int currentEncItem = 0;
+    
     if(!pixmaps_initialized) {
         initPixmaps(XtDisplay(parent), XtWindow(parent));
     }
@@ -1836,17 +1838,34 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
         /* skip the "detect" item on type == save */
         int skip = type == FILEDIALOG_OPEN ? 0 : 1;
+        char *defEncoding = type == FILEDIALOG_OPEN ? NULL : file->encoding;
+        int hasDef = 0;
         int i;
         for(i=skip;encStr=default_encodings[i];i++) {
             if(i >= arraylen) {
                 arraylen *= 2;
                 encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
             }
-            encodings[i-skip] = XmStringCreateSimple(encStr);
+            encodings[i] = XmStringCreateSimple(encStr);
+            if(defEncoding) {
+                if(!strcasecmp(defEncoding, encStr)) {
+                    hasDef = 1;
+                    defEncoding = NULL;
+                }
+            }
+        }
+        if(skip == 1 && !hasDef) {
+            /* Current encoding is not in the list of
+             * default encodings
+             * Add an extra item at pos 0 for the current encoding
+             */
+            encodings[0] = XmStringCreateSimple(file->encoding);
+            currentEncItem = 1;
+            skip = 0;
         }
         XtSetArg(args[n], XmNcolumns, 11); n++;
         XtSetArg(args[n], XmNitemCount, i-skip); n++;
-        XtSetArg(args[n], XmNitems, encodings); n++;
+        XtSetArg(args[n], XmNitems, encodings+skip); n++;
         data.encoding = XmCreateDropDownList(enc, "combobox", args, n);
         XtManageChild(data.encoding);
         for(int j=0;j<i;j++) {
@@ -1966,8 +1985,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
                     file->encoding = default_encodings[encPos];
                 }
             } else {
-                /* save has no "detect" encoding */
-                file->encoding = default_encodings[encPos+1];
+                if(currentEncItem) {
+                    /* first item is the current encoding that is not 
+                     * in default_encodings */
+                    if(encPos > 0) {
+                        file->encoding = default_encodings[encPos];
+                    }
+                } else {
+                    /* first item is "UTF-8" */
+                    file->encoding = default_encodings[encPos+1];
+                }
             }
         }
         
