@@ -11,6 +11,8 @@ source/Makefile.linux-static
 source/Makefile.solaris
 source/nc
 source/nedit
+source/xnc
+source/xnedit
 source/parse.c
 util/Makefile.linux
 util/Makefile.linux-static

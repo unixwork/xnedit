@@ -1854,7 +1854,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
                 }
             }
         }
-        if(skip == 1 && !hasDef) {
+        if(skip == 1 && !hasDef && file->encoding) {
             /* Current encoding is not in the list of
              * default encodings
              * Add an extra item at pos 0 for the current encoding
