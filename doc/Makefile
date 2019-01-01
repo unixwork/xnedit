@@ -39,24 +39,24 @@ instructions:
 	
 .version:
 	@ if [ "$(VERSION)" = "" ]; then \
-	      echo "NEdit release of `date +'%b %e, %Y'`" > .version; \
+	      echo "XNEdit release of `date +'%b %e, %Y'`" > .version; \
 	  else \
 	      echo "$(VERSION)" > .version; \
 	  fi
 help: ../source/help_topic.h ../source/help_data.h setext
 
 ../source/help_topic.h ../source/help_data.h: .version help.etx setext
-	@ echo "Creating NEdit help code `cat .version`"
+	@ echo "Creating XNEdit help code `cat .version`"
 	@ ./setext -m -v version="`cat .version`" help.etx
 	@ mv -f help_topic.h ../source
 	@ mv -f help_data.h ../source
 
 nedit.html: .version help.etx setext
-	@ echo "Creating NEdit HTML documentation..."
+	@ echo "Creating XNEdit HTML documentation..."
 	@ ./setext -v version="`cat .version`" help.etx nedit.html
 
 html/nedit.html: .version help.etx setext
-	@ echo "Creating NEdit HTML website documentation..."
+	@ echo "Creating XNEdit HTML website documentation..."
 	@ if [ ! -d html ]; then mkdir html; fi
 	@ if [ -d html ]; then \
 	      cd html; \
