@@ -97,7 +97,7 @@ static XmString MatchFont(const char *name)
     if(font) {
         FcChar8* name = NULL;
         if (FcPatternGetString(font, FC_FULLNAME, 0, &name) == FcResultMatch) {
-            ret = XmStringCreateSimple(name);
+            ret = XmStringCreateSimple((char*)name);
         }
         FcPatternDestroy(font);
     }

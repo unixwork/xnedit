@@ -368,12 +368,12 @@ static void safeClose(WindowInfo *window)
     }
 }
 
-static char bom_utf8[3] = { 0xEF, 0xBB, 0xBF };
-static char bom_utf16be[2] = { 0xFE, 0xFF };
-static char bom_utf16le[2] = { 0xFF, 0xFE };
-static char bom_utf32be[4] = { 0, 0, 0xFE, 0xFF };
-static char bom_utf32le[4] = { 0xFF, 0xFE, 0, 0 };
-static char bom_gb18030[4] = { 0x84, 0x31, 0x95, 0x33 };
+static char bom_utf8[3] = { (char)0xEF, (char)0xBB, (char)0xBF };
+static char bom_utf16be[2] = { (char)0xFE, (char)0xFF };
+static char bom_utf16le[2] = { (char)0xFF, (char)0xFE };
+static char bom_utf32be[4] = { (char)0, (char)0, (char)0xFE, (char)0xFF };
+static char bom_utf32le[4] = { (char)0xFF, (char)0xFE, (char)0, (char)0 };
+static char bom_gb18030[4] = { (char)0x84, (char)0x31, (char)0x95, (char)0x33 };
 
 typedef size_t(*ConvertFunc)(iconv_t, char **, size_t *, char **, size_t *);
 
@@ -541,7 +541,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     char *enc_attr = NULL;
     
     if(!encoding) {
-        size_t attrlen = 0;
+        ssize_t attrlen = 0;
         enc_attr = xattr_get(fullname, "charset", &attrlen);
         /* enc_attr is NOT null-terminated */
         if(enc_attr) {
@@ -659,7 +659,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             }
             return FALSE;
         }
-        strconv = iconv;
+        strconv = (ConvertFunc)iconv;
         
         /* store encoding in window */
         size_t enclen = strlen(encoding);
@@ -1226,7 +1226,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
                 "The text cannot be converted to %s", "OK", window->encoding);
             return FALSE;
         }
-        strconv = iconv;
+        strconv = (ConvertFunc)iconv;
     }
 
     /* Get the full name of the file */
@@ -1405,7 +1405,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             NEditFree(encCopy);
         }
     } else {
-        size_t len = 0;
+        ssize_t len = 0;
         char *fileAttr = xattr_get(fullname, "charset", &len);
         if(fileAttr) {
             size_t winEncLen = strlen(window->encoding);
