@@ -313,13 +313,27 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
  * Initialize the XftDraw object. This should be called after the widget
  * is realized.
  */
-void TextDInitXft(textDisp *textD) {
+void TextDInitXft(textDisp *textD) {   
+    XWindowAttributes attributes;
+    XGetWindowAttributes(XtDisplay(textD->w), XtWindow(textD->w), &attributes); 
+    
+    Screen *screen = textD->w->core.screen;
+    Visual *visual = screen->root_visual;
+    for(int i=0;i<screen->ndepths;i++) {
+        Depth d = screen->depths[i];
+        if(d.depth == textD->w->core.depth) {
+            visual = d.visuals;
+            break;
+        }
+    }
+    
     Display *dp = XtDisplay(textD->w);
     textD->d = XftDrawCreate(
             dp,
             XtWindow(textD->w),
-            textD->w->core.screen->root_visual,
+            visual,
             textD->w->core.colormap);
+    
 }
 
 /*
@@ -2208,9 +2222,9 @@ static void drawString(textDisp *textD, int style, int x, int y, int toX,
         XChangeGC(XtDisplay(textD->w), gc, GCForeground, &gcValues);
     }
 
-    /* Draw the string using color and font set above */
+    /* Draw the string using color and font set above */  
     XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
-    
+        
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
     {
