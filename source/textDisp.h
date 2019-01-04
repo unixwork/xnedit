@@ -259,7 +259,7 @@ void FontAddFail(NFont *f, FcCharSet *c);
 XftFont *FindFont(NFont *f, FcChar32 c);
 void FontDestroy(NFont *f);
 
-XftColor PixelToColor(Display *dp, Pixel p);
+XftColor PixelToColor(Widget w, Pixel p);
 XftColor RGBToColor(short r, short g, short b);
 
 #ifdef VMS /* VMS linker doesn't like long names (>31 chars) */

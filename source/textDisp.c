@@ -233,7 +233,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->nStyles = 0;
     textD->bgPixel = bgPixel;
     textD->fgPixel = fgPixel;
-    textD->fgColor = PixelToColor(XtDisplay(widget), fgPixel);
+    textD->fgColor = PixelToColor(widget, fgPixel);
     textD->selectFGPixel = selectFGPixel;
     textD->highlightFGPixel = highlightFGPixel;
     textD->selectBGPixel = selectBGPixel;
@@ -318,8 +318,8 @@ void TextDInitXft(textDisp *textD) {
     textD->d = XftDrawCreate(
             dp,
             XtWindow(textD->w),
-            DefaultVisual(dp, DefaultScreen(dp)),
-            DefaultColormap(dp, DefaultScreen(dp)));
+            textD->w->core.screen->root_visual,
+            textD->w->core.colormap);
 }
 
 /*
@@ -409,7 +409,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     
     /* Update the stored pixels */
     textD->fgPixel = textFgP;
-    textD->fgColor = PixelToColor(d, textFgP);
+    textD->fgColor = PixelToColor(textD->w, textFgP);
     textD->bgPixel = textBgP;
     textD->selectFGPixel = selectFgP;
     textD->selectBGPixel = selectBgP;
@@ -957,12 +957,12 @@ void TextDOverstrike(textDisp *textD, char *text)
 }
 
 
-XftColor PixelToColor(Display *dp, Pixel p)
+XftColor PixelToColor(Widget w, Pixel p)
 {
     XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
     xcolor.pixel = p;
-    Colormap colormap = DefaultColormap(dp, DefaultScreen(dp));
-    XQueryColor(dp, colormap, &xcolor);
+    XQueryColor(XtDisplay(w), w->core.colormap, &xcolor);
     
     XftColor color;
     color.pixel = p;
@@ -3267,7 +3267,7 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
     textD->lineNumGC = allocateGC(textD->w, GCForeground | 
             GCBackground, lineNumFGPixel, bgPixel, 0, 
             GCClipMask, GCArcMode);
-    textD->lineNumColor = PixelToColor(XtDisplay(textD->w), lineNumFGPixel);
+    textD->lineNumColor = PixelToColor(textD->w, lineNumFGPixel);
 }
 
 /*

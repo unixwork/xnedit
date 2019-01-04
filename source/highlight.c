@@ -776,7 +776,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       p->isBold = FontOfNamedStyleIsBold(pat->style); \
       p->isItalic = FontOfNamedStyleIsItalic(pat->style); \
       /* And now for the more physical stuff */ \
-      p->color = PixelToColor(XtDisplay(window->textArea), AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
+      p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
       p->red = r; \
       p->green = g; \
       p->blue = b; \
