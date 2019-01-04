@@ -185,8 +185,10 @@ static char *fallbackResources[] = {
     "*textFontList: "           NEDIT_FIXED_FONT,
 #endif
 
+    /*
     "*background: "             NEDIT_DEFAULT_BG,
     "*foreground: "             NEDIT_DEFAULT_FG,
+    */
     "*XmText.foreground: "      NEDIT_DEFAULT_FG,
     "*XmText.background: "      NEDIT_DEFAULT_TEXT_BG,
     "*XmList.foreground: "      NEDIT_DEFAULT_FG,
