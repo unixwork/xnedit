@@ -1862,6 +1862,11 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     XftFont *styleFont;
     XftFont *charFont;
     
+    leftCharIndex = 0; /* workaround for horizontal scrolling */
+    if(leftClip > 100) {
+        printf("debug\n");
+    }
+    
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -1986,7 +1991,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             XRenderSetPictureClipRectangles(
                     XtDisplay(textD->w),
                     pic,
-                    x,
+                    leftClip,
                     y,
                     &rect,
                     1);
@@ -2910,8 +2915,11 @@ static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
        if there's nothing to recover because the scroll distance is large */
     xOffset = origHOffset - textD->horizOffset;
     yOffset = lineDelta * fontHeight;
-    if (textD->visibility != VisibilityUnobscured ||
-            abs(xOffset) > textD->width || abs(yOffset) > exactHeight) {
+    //if (textD->visibility != VisibilityUnobscured ||
+    //        abs(xOffset) > textD->width || abs(yOffset) > exactHeight) {
+    if(1) {
+        // WORKAROUND for hscroll bug with new xft rendering
+        // the code with XCopyArea doesn't work, so we always redisplay
         TextDTranlateGraphicExposeQueue(textD, xOffset, yOffset, False);
         TextDRedisplayRect(textD, textD->left, textD->top, textD->width,
                 textD->height);
