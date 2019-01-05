@@ -153,6 +153,7 @@ void CopyToClipboard(Widget w, Time time)
     long itemID = 0;
     XmString s;
     int stat, length;
+    int res;
     
     /* Get the selected text, if there's no selection, do nothing */
     text = BufGetSelectionText(((TextWidget)w)->text.textD->buffer);
@@ -186,9 +187,15 @@ void CopyToClipboard(Widget w, Time time)
     /* Note that we were previously passing length + 1 here, but I suspect
        that this was inconsistent with the somewhat ambiguous policy of
        including a terminating null but not mentioning it in the length */
-
-    if (SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "STRING",
-    	    text, length, 0, NULL) != ClipboardSuccess) {
+    
+    res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "UTF8_STRING",
+    	    text, length, 0, NULL);
+    if(res == ClipboardSuccess) {
+        res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "STRING",
+    	    text, length, 0, NULL);
+    }
+    
+    if (res != ClipboardSuccess) {
     	NEditFree(text);
         SpinClipboardEndCopy(XtDisplay(w), XtWindow(w), itemID);
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
@@ -282,7 +289,9 @@ void InsertClipboard(Widget w, int isColumnar)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     int cursorLineStart, column, cursorPos;
+    int res;
     char *string;
+    char *type = "UTF8_STRING";
     long id = 0;
 
     /* Get the clipboard contents.  Note: this code originally used the
@@ -295,8 +304,16 @@ void InsertClipboard(Widget w, int isColumnar)
        size of the data that be transferred via the clipboard, and are
        generally slower and buggier, they do preserve the clipboard across
        widget destruction and even program termination. */
-    if (SpinClipboardInquireLength(XtDisplay(w), XtWindow(w), "STRING", &length)
-    	    != ClipboardSuccess || length == 0) {
+    
+    res = SpinClipboardInquireLength(XtDisplay(w), XtWindow(w),
+                                    type, &length);
+    if(res != ClipboardSuccess || length == 0) {
+        type = "STRING";
+        res = SpinClipboardInquireLength(XtDisplay(w), XtWindow(w),
+                                        type, &length);
+    }
+    
+    if (res != ClipboardSuccess || length == 0) {
         /*
          * Possibly, the clipboard can remain in a locked state after
          * a failure, so we try to remove the lock, just to be sure.
@@ -305,7 +322,7 @@ void InsertClipboard(Widget w, int isColumnar)
     	return;
     }
     string = (char*)NEditMalloc(length+1);
-    if (SpinClipboardRetrieve(XtDisplay(w), XtWindow(w), "STRING", string,
+    if (SpinClipboardRetrieve(XtDisplay(w), XtWindow(w), type, string,
     	    length, &retLength, &id) != ClipboardSuccess || retLength == 0) {
     	NEditFree(string);
         /*
