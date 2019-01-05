@@ -1,0 +1,96 @@
+*highlightColor: #4a90d9
+
+*XmDialogShell.background:	#e6e6e6
+*XmDialogShell.foreground:	#000000
+
+*XmForm.background:	#e6e6e6
+*XmForm.foreground:	#000000
+
+*XmFrame.background:	#e6e6e6
+*XmFrame.foreground:	#000000
+
+*XmPanedWindow.background:	#e6e6e6
+*XmPanedWindow.foreground:	#000000
+
+*XmRowColumn.background:	#e6e6e6
+*XmRowColumn.foreground:	#000000
+
+*XmMenuShell.background:	#e6e6e6
+*XmMenuShell.foreground:	#000000
+
+*XmMessageBox.background:	#e6e6e6
+*XmMessageBox.foreground:	#000000
+
+*XmScrollBar.background:	#e6e6e6
+*XmScrollBar.foreground:	#000000
+
+*XmScrolledWindow.background:	#e6e6e6
+*XmScrolledWindow.foreground:	#000000
+
+*XmSelectionBox.background:	#e6e6e6
+*XmSelectionBox.foreground:	#000000
+
+
+
+*XmLabel.background:	#e6e6e6
+*XmLabel.foreground:	#000000
+*XmLabelGadget.background:	#e6e6e6
+*XmLabelGadget.foreground:	#000000
+
+*XmPushButton.background:	#e6e6e6
+*XmPushButton.foreground:	#000000
+*XmPushButtonGadget.background:	#e6e6e6
+*XmPushButtonGadget.foreground:	#000000
+*XmPushButton.highlightThickness: 2
+
+*XmCascadeButton.background:	#e6e6e6
+*XmCascadeButton.foreground:	#000000
+*XmCascadeButtonGadget.background:	#e6e6e6
+*XmCascadeButtonGadget.foreground:	#000000
+*XmCascadeButtonGadget.highlightThickness: 2
+
+*XmTearOffButton.background:	#e6e6e6
+*XmTearOffButton.foreground:	#000000
+*XmTearOffButtonGadget.background:	#e6e6e6
+*XmTearOffButtonGadget.foreground:	#000000
+*XmTearOffButtonGadget.highlightThickness: 2
+
+*XmToggleButton.background:	#e6e6e6
+*XmToggleButton.foreground:	#000000
+*XmToggleButtonGadget.background:	#e6e6e6
+*XmToggleButtonGadget.foreground:	#000000
+*XmToggleButtonGadget.highlightThickness: 2
+
+*XmSeparator.background:	#e6e6e6
+*XmSeparator.foreground:	#000000
+*XmSeparatorGadget.background:	#e6e6e6
+*XmSeparatorGadget.foreground:	#000000
+
+*XmList.background:	#ffffff
+*XmList.foreground:	#000000
+
+*XmSash.background:	#e6e6e6
+*XmSash.foreground:	#000000
+
+*XmText.foreground:	#000000
+*XmText.background:	#ffffff
+
+*XmTextField.foreground:	#000000
+*XmTextField.background:	#ffffff
+
+
+*TextWidget.background: #ffffff
+
+
+*enableEtchedInMenu:	True
+*enableMenuInCascade:	True
+*enableThinThickness:	True
+*ScrollbarBackground:	#e6e6e6
+
+*foreground: #000000
+*background: #e6e6e6
+
+
+*text.background: #f5f5f5
+
+

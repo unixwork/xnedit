@@ -1,10 +1,10 @@
 .. $Id: help.etx,v 1.111.2.2 2009/11/30 20:21:18 lebert Exp $
 .. NOTE: Remember to supply 'version' variable on setext command line.
-..       For example,  setext -m -v "version=NEdit Version 6.0".
+..       For example,  setext -m -v "version=XNEdit Version 6.0".
 ..
 .. The following are variable definitions for the various titles below
 .. ----------------------------------------------------------------------------
-.. |>title=Nirvana Editor (NEdit) Help Documentation<|
+.. |>title=Nirvana Editor (XNEdit) Help Documentation<|
 .. |>ttlMk==========================================<|
 .. ----------------------------------------------------------------------------
 .. ? NEDITDOC~
@@ -38,15 +38,15 @@ Table of Contents
       Tabbed_Editing_                      Action_Routines_
       File_Format_
                                         Customizing
-    Features for Programming              Customizing_NEdit_
-      Programming_with_NEdit_              Preferences_
+    Features for Programming              Customizing_XNEdit_
+      Programming_with_XNEdit_              Preferences_
       Tab_Stops/Emulated_Tab_Stops_        X_Resources_
       Auto/Smart_Indent_                   Key_Binding_
       Syntax_Highlighting_                 Highlighting_Patterns_
       Finding_Declarations_(ctags)_        Smart_Indent_Macros_
       Calltips_
 
-    Regular Expressions                 NEdit_Command_Line_
+    Regular Expressions                 XNEdit_Command_Line_
       Basic_Regular_Expression_Syntax_   Client/Server_Mode_
       Metacharacters_                    Crash_Recovery_
       Parenthetical_Constructs_          Version_
@@ -58,32 +58,32 @@ Table of Contents
 Getting Started
 ---------------
 
-  Welcome to NEdit!
+  Welcome to XNEdit!
 .. ~ NEDITDOC
 .. .. What appears below will always print whether or not NEDITDOC is defined.
 ..
 
-  NEdit is a standard GUI (Graphical User Interface) style text editor for
+  XNEdit is a standard GUI (Graphical User Interface) style text editor for
   programs and plain-text files.  Users of Macintosh and MS Windows based text
-  editors should find NEdit a familiar and comfortable environment.  NEdit
+  editors should find XNEdit a familiar and comfortable environment.  XNEdit
   provides all of the standard menu, dialog, editing, and mouse support, as
   well as all of the standard shortcuts to which the users of modern GUI based
   environments are accustomed.  For users of older style Unix editors, welcome
   to the world of mouse-based editing!
 
 .. ? NEDITDOC~
-..   NEdit is freely distributed under the terms of the Gnu General Public
+..   XNEdit is freely distributed under the terms of the Gnu General Public
 ..   License.
 
 .. .. This stuff will always be invisible, unless NEDITDOC is defined
 ..
-.. Installing NEdit
+.. Installing XNEdit
 .. ----------------
 ..
-..   NEdit is a single stand-alone executable file which can be installed by simply
-..   copying the appropriate executable "nedit" for your system.  Both sources and
-..   executables are available from http://www.nedit.org.  The optional "nc" (NEdit
-..   Client) program is also available for users who want to run nedit in
+..   XNEdit is a single stand-alone executable file which can be installed by simply
+..   copying the appropriate executable "xnedit" for your system.  Both sources and
+..   executables are available from http://www.nedit.org.  The optional "xnc" (XNEdit
+..   Client) program is also available for users who want to run xnedit in
 ..   client/server mode.
 ..
 .. Getting Started
@@ -103,10 +103,10 @@ Getting Started
   Programmers should also read the introductory section under the "Features for
   Programming" section:
 
-      Programming_with_NEdit_
+      Programming_with_XNEdit_
 
   If you get into trouble, the Undo command in the Edit menu can reverse any
-  modifications that you make.  NEdit does not change the file you are editing
+  modifications that you make.  XNEdit does not change the file you are editing
   until you tell it to Save.
 
 3>Editing an Existing File
@@ -116,9 +116,9 @@ Getting Started
   may open any number of files at the same time.  Depending on your settings
   (cf. "Tabbed_Editing_") each file can appear in its own editor window, or it
   can appear under a tab in the same editor window.  Using Open... rather than
-  re-typing the NEdit command and running additional copies of NEdit, will give
+  re-typing the XNEdit command and running additional copies of XNEdit, will give
   you quick access to all of the files you have open via the Windows menu, and
-  ensure that you don't accidentally open the same file twice.  NEdit has no
+  ensure that you don't accidentally open the same file twice.  XNEdit has no
   "main" window.  It remains running as long as at least one editor window is
   open.
 
@@ -131,18 +131,18 @@ Getting Started
 
 3>Backup Files
 
-  NEdit maintains periodic backups of the file you are editing so that you can
+  XNEdit maintains periodic backups of the file you are editing so that you can
   recover the file in the event of a problem such as a system crash, network
   failure, or X server crash.  These files are saved under the name `~filename`
   (on Unix) or `_filename` (on VMS), where filename is the name of the file you
-  were editing.  If an NEdit process is killed, some of these backup files may
+  were editing.  If an XNEdit process is killed, some of these backup files may
   remain in your directory.  (To remove one of these files on Unix, you may
   have to prefix the `~' (tilde) character with a (backslash) to prevent the
   shell from interpreting it as a special character.)
 
 3>Shortcuts
 
-  As you become more familiar with NEdit, substitute the control and function
+  As you become more familiar with XNEdit, substitute the control and function
   keys shown on the right side of the menus for pulling down menus with the
   mouse.
 
@@ -173,7 +173,7 @@ Basic Operation
 Selecting Text
 --------------
 
-  NEdit has two general types of selections, primary (highlighted text), and
+  XNEdit has two general types of selections, primary (highlighted text), and
   secondary (underlined text). Selections can cover either a simple range of
   text between two points in the file, or they can cover a rectangular area of
   the file. Rectangular selections are only useful with non-proportional (fixed
@@ -249,7 +249,7 @@ Finding and Replacing Text
   current editor window, it may even be in another program.  For example, if
   the word dog appears somewhere in a window on your screen, and you want to
   find it in the file you are editing, select the word dog by dragging the
-  mouse across it, switch to your NEdit window and choose Find Selection from
+  mouse across it, switch to your XNEdit window and choose Find Selection from
   the Search menu.
 
   Find Incremental, which opens the interactive search bar, is yet another variation
@@ -291,7 +291,7 @@ Finding and Replacing Text
 
   You can do the same replacement in more than one document at the same time.
   To do that, enter the search and replacement string in the replacement dialog
-  as usual, then press the 'Multiple Documents...' button. NEdit will open
+  as usual, then press the 'Multiple Documents...' button. XNEdit will open
   another dialog where you can pick any document in which the replacement should
   take place. Then press 'Replace' in this dialog to do the replacement. All
   attributes (Regular Expression, Case, etc.) are used as selected in the main
@@ -314,8 +314,8 @@ Cut and Paste
   You can also use the clipboard to transfer text to and from other Motif
   programs and X programs which make proper use of the clipboard.
 
-  There are many other methods for copying and moving text within NEdit windows
-  and between NEdit and other programs.  The most common such method is
+  There are many other methods for copying and moving text within XNEdit windows
+  and between XNEdit and other programs.  The most common such method is
   clicking the middle mouse button to copy the primary selection (to the
   clicked position).  Copying the selection by clicking the middle mouse button
   in many cases is the only way to transfer data to and from many X programs.
@@ -330,7 +330,7 @@ Cut and Paste
 Using the Mouse
 ---------------
 
-  Mouse-based editing is what NEdit is all about, and learning to use the more
+  Mouse-based editing is what XNEdit is all about, and learning to use the more
   advanced features like secondary selections and primary selection dragging
   will be well worth your while.
 
@@ -486,19 +486,19 @@ Using the Mouse
   * The Alt key may be labeled Meta or Compose-Character on some keyboards.
   Some window managers, including default configurations of mwm, bind
   combinations of the Alt key and mouse buttons to window manager operations.
-  In NEdit, Alt is only used on button release, so regardless of the window
+  In XNEdit, Alt is only used on button release, so regardless of the window
   manager bindings for Alt-modified mouse buttons, you can still do the
-  corresponding NEdit operation by using the Alt key AFTER the initial mouse
+  corresponding XNEdit operation by using the Alt key AFTER the initial mouse
   press, so that Alt is held while you release the mouse button.  If you find
   this difficult or annoying, you can re-configure most window managers to skip
-  this binding, or you can re-configure NEdit to use a different key
+  this binding, or you can re-configure XNEdit to use a different key
   combination.
    ----------------------------------------------------------------------
 
 Keyboard Shortcuts
 ------------------
 
-  Most of the keyboard shortcuts in NEdit are shown on the right hand sides of
+  Most of the keyboard shortcuts in XNEdit are shown on the right hand sides of
   the pull-down menus.  However, there are more which are not as obvious.  These
   include; dialog button shortcuts; menu and dialog mnemonics; labeled keyboard
   keys, such as the arrows, page-up, page-down, and home; and optional Shift
@@ -551,7 +551,7 @@ Keyboard Shortcuts
 3>Labeled Function Keys
 
   The labeled function keys on standard workstation and PC keyboards, like the
-  arrows, and page-up and page-down, are active in NEdit, though not shown in the
+  arrows, and page-up and page-down, are active in XNEdit, though not shown in the
   pull-down menus.
 
   Holding down the control key while pressing a named key extends the scope of
@@ -566,7 +566,7 @@ Keyboard Shortcuts
   selection commands to make the selection rectangular.
 
   Under X and Motif, there are several levels of translation between keyboard
-  keys and the actions they perform in a program.  The "Customizing_NEdit_", and
+  keys and the actions they perform in a program.  The "Customizing_XNEdit_", and
   "X_Resources_" sections of the Help menu have more information on this subject.
   Because of all of this configurability, and since keyboards and standards for
   the meaning of some keys vary from machine to machine, the mappings may be
@@ -607,7 +607,7 @@ Keyboard Shortcuts
 
       Ctrl+Left   Move the cursor backward one word
                   (Word delimiters are settable, see
-                  "Customizing_NEdit_", and "X_Resources_")
+                  "Customizing_XNEdit_", and "X_Resources_")
 
       Right       Move the cursor to the right one character
 
@@ -653,7 +653,7 @@ Keyboard Shortcuts
 
     Delete        Delete the character before the cursor.
                   (Can be configured to delete the character
-                  after the cursor, see "Customizing_NEdit_",
+                  after the cursor, see "Customizing_XNEdit_",
                   and "X_Resources_")
 
     Ctrl+Delete   Delete to end of line.
@@ -727,7 +727,7 @@ Shifting and Filling
 3>Filling
 
   Text filling using the Fill Paragraph command in the Edit menu is one of the
-  most important concepts in NEdit.  And it will be well worth your while to
+  most important concepts in XNEdit.  And it will be well worth your while to
   understand how to use it properly.
 
   In plain text files, unlike word-processor files, there is no way to tell
@@ -735,13 +735,13 @@ Shifting and Filling
   separate, because there is no distinction in meaning between newline
   characters which separate lines in a paragraph, and ones which separate
   paragraphs from other text.  This makes it impossible for a text editor like
-  NEdit to tell parts of the text which belong together as a paragraph from
+  XNEdit to tell parts of the text which belong together as a paragraph from
   carefully arranged individual lines.
 
   In continuous wrap mode (Preferences -> Wrap -> Continuous), lines
   automatically wrap and unwrap themselves to line up properly at the right
   margin.  In this mode, you simply omit the newlines within paragraphs and let
-  NEdit make the line breaks as needed.  Unfortunately, continuous wrap mode is
+  XNEdit make the line breaks as needed.  Unfortunately, continuous wrap mode is
   not appropriate in the majority of situations, because files with extremely
   long lines are not common under Unix and may not be compatible with all
   tools, and because you can't achieve effects like indented sections, columns,
@@ -749,11 +749,11 @@ Shifting and Filling
 
   Without continuous wrapping, paragraph filling is not entirely automatic.
   Auto-Newline wrapping keeps paragraphs lined up as you type, but once
-  entered, NEdit can no longer distinguish newlines which join wrapped text,
+  entered, XNEdit can no longer distinguish newlines which join wrapped text,
   and newlines which must be preserved.  Therefore, editing in the middle of a
   paragraph will often leave the right margin messy and uneven.
 
-  Since NEdit can't act automatically to keep your text lined up, you need to
+  Since XNEdit can't act automatically to keep your text lined up, you need to
   tell it explicitly where to operate, and that is what Fill Paragraph is for.
   It arranges lines to fill the space between two margins, wrapping the lines
   neatly at word boundaries.  Normally, the left margin for filling is inferred
@@ -767,7 +767,7 @@ Shifting and Filling
 
   There are three ways to use Fill Paragraph.  The simplest is, while you are
   typing text, and there is no selection, simply select Fill Paragraph (or type
-  Ctrl+J), and NEdit will arrange the text in the paragraph adjacent to the
+  Ctrl+J), and XNEdit will arrange the text in the paragraph adjacent to the
   cursor.  A paragraph, in this case, means an area of text delimited by blank
   lines.
 
@@ -780,7 +780,7 @@ Shifting and Filling
   The third, and most versatile, way to use Fill Paragraph is with a
   rectangular selection.  Fill Paragraph treats rectangular selections
   differently from other commands.  Instead of simply filling the text inside
-  the rectangular selection, NEdit interprets the right edge of the selection
+  the rectangular selection, XNEdit interprets the right edge of the selection
   as the requested wrap margin.  Text to the left of the selection is not
   disturbed (the usual interpretation of a rectangular selection), but text to
   the right of the selection is included in the operation and is pulled in to
@@ -793,10 +793,10 @@ Shifting and Filling
 Tabbed Editing
 ----------------
 
-  NEdit is able to display files in distinct editor windows, or to display files
+  XNEdit is able to display files in distinct editor windows, or to display files
   under tabs in the same editor window.  The Options for controlling the tabbed
   interface are found under Preferences -> Default Settings -> Tabbed Editing
-  (cf. "Preferences_", also "NEdit_Command_Line_").
+  (cf. "Preferences_", also "XNEdit_Command_Line_").
 
   Notice that you can re-group tabs at any time by detaching and attaching them,
   or moving them, to other windows. This can be done using the Windows menu, or
@@ -818,20 +818,20 @@ File Format
   line termination, and wrapping.
 
   While character set differences are the most obvious and pose the most
-  challenge to portability, they affect NEdit only indirectly via the same font
+  challenge to portability, they affect XNEdit only indirectly via the same font
   and localization mechanisms common to all X applications.  If your system is
   set up properly, you will probably never see character-set related problems
-  in NEdit.  NEdit cannot display Unicode text files, nor any multi-byte
+  in XNEdit.  XNEdit cannot display Unicode text files, nor any multi-byte
   character set.
 
   The primary difference between an MS DOS format file and a Unix format file,
   is how the lines are terminated.  Unix uses a single newline character.  MS
-  DOS uses a carriage-return and a newline.  NEdit can read and write both file
-  formats, but internally, it uses the single character Unix standard.  NEdit
+  DOS uses a carriage-return and a newline.  XNEdit can read and write both file
+  formats, but internally, it uses the single character Unix standard.  XNEdit
   auto-detects MS DOS format files based on the line termination at the start
   of the file.  Files are judged to be DOS format if all of the first five line
   terminators, within a maximum range, are DOS-style.  To change the format in
-  which NEdit writes a file from DOS to Unix or visa versa, use the Save As...
+  which XNEdit writes a file from DOS to Unix or visa versa, use the Save As...
   command and check or un-check the MS DOS Format button.
 
   Wrapping within text files can vary among individual users, as well as from
@@ -839,7 +839,7 @@ File Format
   files with no implicit right margin.  In these files, wrapping is determined
   by the tool which displays them.  Files of this style also exist on Unix
   systems, despite the fact that they are not supported by all Unix utilities.
-  To display this kind of file properly in NEdit, you have to select the wrap
+  To display this kind of file properly in XNEdit, you have to select the wrap
   style called Continuous.  Wrapping modes are discussed in the sections:
   Customizing -> Preferences, and Basic Operation -> Shifting and Filling.
 
@@ -848,17 +848,17 @@ File Format
   files they read and fail in various ways on files which do not have it.  Vi
   and approximately half of Unix editors enforce the terminating newline on all
   files that they write; Emacs does not enforce this rule.  Users are divided
-  on which is best.  NEdit makes the final terminating newline optional
+  on which is best.  XNEdit makes the final terminating newline optional
   (Preferences -> Default Settings -> Terminate with Line Break on Save).
    ----------------------------------------------------------------------
 
 Features for Programming
 ========================
 
-Programming with NEdit
+Programming with XNEdit
 ----------------------
 
-  Though general in appearance, NEdit has many features intended specifically
+  Though general in appearance, XNEdit has many features intended specifically
   for programmers.  Major programming-related topics are listed in separate
   sections under the heading: "Features for Programming": Syntax_Highlighting_,
   Tab_Stops/Emulated_Tab_Stops_, Finding_Declarations_(ctags)_, Calltips_, and
@@ -866,9 +866,9 @@ Programming with NEdit
 
 3>Language Modes
 
-  When NEdit initially reads a file, it attempts to determine whether the file
+  When XNEdit initially reads a file, it attempts to determine whether the file
   is in one of the computer languages that it knows about.  Knowing what language
-  a file is written in allows NEdit to assign highlight patterns and smart indent
+  a file is written in allows XNEdit to assign highlight patterns and smart indent
   macros, and to set language specific preferences like word delimiters, tab
   emulation, and auto-indent.  Language mode can be recognized from both the file
   name and from the first 200 characters of content.  Language mode recognition
@@ -880,7 +880,7 @@ Programming with NEdit
 
 3>Backlighting [EXPERIMENTAL]
 
-  NEdit can be made to set the background color of particular classes of
+  XNEdit can be made to set the background color of particular classes of
   characters to allow easy identification of those characters. This is
   particularly useful if you need to be able to distinguish between tabs
   and spaces in a file where the difference is important. The colors used
@@ -893,10 +893,10 @@ Programming with NEdit
   This settings can be saved along with other preferences using
   Preferences -> Save Defaults.
 
-  **Important:** In future versions of NEdit, the backlighting feature will be
+  **Important:** In future versions of XNEdit, the backlighting feature will be
   extended and reworked such that it becomes easier to configure. The current
   way of controlling it through a resource is generally considered to be below
-  NEdit's usability standards. These future changes are likely to be
+  XNEdit's usability standards. These future changes are likely to be
   incompatible with the current format of the "nedit*backlightCharTypes"
   resource, though. Therefore, it is expected that there will be no automatic
   migration path for users who customize the resource.
@@ -923,7 +923,7 @@ Programming with NEdit
 3>Matching Parentheses
 
   To help you inspect nested parentheses, brackets, braces, quotes, and other
-  characters, NEdit has both an automatic parenthesis matching mode, and a Goto
+  characters, XNEdit has both an automatic parenthesis matching mode, and a Goto
   Matching command.  Automatic parenthesis matching is activated when you type,
   or move the insertion cursor after a parenthesis, bracket, or brace.  It
   momentarily highlights either the opposite character ('Delimiter') or the
@@ -931,7 +931,7 @@ Programming with NEdit
   window. To find a matching character anywhere in the file, select it or
   position the cursor after it, and choose Goto Matching from the Search menu.
   If the character matches itself, such as a quote or slash, select the first
-  character of the pair.  NEdit will match {, (, [, <, ", ', `, /, and \.
+  character of the pair.  XNEdit will match {, (, [, <, ", ', `, /, and \.
   Holding the Shift key while typing the accelerator key (Shift+Ctrl+M, by
   default), will select all of the text between the matching characters.
 
@@ -945,20 +945,20 @@ Programming with NEdit
   The Open Selected command in the File menu understands the C preprocessor's
   #include syntax, so selecting an #include line and invoking Open Selected will
   generally find the file referred to, unless doing so depends on the settings of
-  compiler switches or other information not available to NEdit.
+  compiler switches or other information not available to XNEdit.
 
 3>Interface to Programming Tools
 
   Integrated software development environments such as SGI's CaseVision and
-  Centerline Software's Code Center, can be interfaced directly with NEdit via
+  Centerline Software's Code Center, can be interfaced directly with XNEdit via
   the client server interface.  These tools allow you to click directly on
-  compiler and runtime error messages and request NEdit to open files, and select
+  compiler and runtime error messages and request XNEdit to open files, and select
   lines of interest.  The easiest method is usually to use the tool's interface
-  for character-based editors like vi, to invoke nc, but programmatic interfaces
-  can also be derived using the source code for nc.
+  for character-based editors like vi, to invoke xnc, but programmatic interfaces
+  can also be derived using the source code for xnc.
 
   There are also some simple compile/review, grep, ctree, and ctags browsers
-  available in the NEdit contrib directory on ftp.nedit.org.
+  available in the XNEdit contrib directory on ftp.nedit.org.
    ----------------------------------------------------------------------
 
 Tab Stops/Emulated Tab Stops
@@ -977,9 +977,9 @@ Tab Stops/Emulated Tab Stops
   back to mechanical capabilities of the original teletype), which is usually
   too coarse for a single indent.
 
-  Most text editors, NEdit included, allow you to change the interpretation of
+  Most text editors, XNEdit included, allow you to change the interpretation of
   the tab character, and many programmers take advantage of this, and set their
-  tab stops to 3 or 4 characters to match their programming style.  In NEdit you
+  tab stops to 3 or 4 characters to match their programming style.  In XNEdit you
   set the hardware tab distance in Preferences -> Tab Stops... for the current
   window, or Preferences -> Default Settings -> Tab Stops... (general), or
   Preferences -> Default Settings -> Language Modes... (language-specific) to
@@ -1002,11 +1002,11 @@ Tab Stops/Emulated Tab Stops
   the next emulated tab stop, as if tabs were set at the emulated tab distance
   rather than the hardware tab distance. Backspacing immediately after entering
   an emulated tab will delete the fictitious tab as a unit, but as soon as you
-  move the cursor away from the spot, NEdit will forget that the collection of
+  move the cursor away from the spot, XNEdit will forget that the collection of
   spaces and tabs is a tab, and will treat it as separate characters.  To enter
   a real tab character with "Emulate Tabs" turned on, use Ctrl+Tab.
 
-  It is also possible to tell NEdit not to insert ANY tab characters at all in
+  It is also possible to tell XNEdit not to insert ANY tab characters at all in
   the course of processing emulated tabs, and in shifting and rectangular
   insertion/deletion operations, for programmers who worry about the
   misinterpretation of tab characters on other systems.
@@ -1026,7 +1026,7 @@ Tab Stops/Emulated Tab Stops
 ..   The Tabs dialog controls both the operation of the Tab key, and
 ..   the interpretation of tab characters within a file.
 ..   
-..   The first field, Tab Spacing, controls how  NEdit responds to
+..   The first field, Tab Spacing, controls how  XNEdit responds to
 ..   tab characters in a file.  On most Unix and VMS systems the
 ..   conventional interpretation of a tab character is to advance the
 ..   text position to the nearest multiple of eight characters (a tab
@@ -1044,17 +1044,17 @@ Tab Stops/Emulated Tab Stops
 ..   if the tab spacing were set at the value in the "Emulated tab
 ..   spacing" field.  Backspacing immediately after entering an
 ..   emulated tab will delete it as a unit, but as soon as you move
-..   the cursor away from the spot, NEdit will forget that the
+..   the cursor away from the spot, XNEdit will forget that the
 ..   collection of spaces and tabs is a tab, and will treat it as
 ..   separate characters.  To enter a real tab character with
 ..   "Emulate Tabs" turned on, use Ctrl+Tab.
 ..   
 ..   In generating emulated tabs, and in Shift Left, Paste Column,
-..   and some rectangular selection operations, NEdit inserts blank
+..   and some rectangular selection operations, XNEdit inserts blank
 ..   characters (spaces or tabs) to preserve the alignment of
 ..   non-blank characters. The bottom toggle button in the Tabs
-..   dialog instructs NEdit whether to insert tab characters as
-..   padding in such situations. Turning this off, will keep NEdit
+..   dialog instructs XNEdit whether to insert tab characters as
+..   padding in such situations. Turning this off, will keep XNEdit
 ..   from automatically inserting tabs. Some software developers
 ..   prefer to keep their source code free of tabs to avoid its
 ..   misinterpretation on systems with different tab character
@@ -1078,7 +1078,7 @@ Tab Stops/Emulated Tab Stops
 ..   
 ..   The following sequences are interpreted in the format string:
 ..   
-..    %c    ClearCase view tag (only relevant when NEdit is
+..    %c    ClearCase view tag (only relevant when XNEdit is
 ..          used together with ClearCase)
 ..    %[n]d directory, with one optional numeric digit n
 ..          specifying the maximum number of trailing directory
@@ -1086,7 +1086,7 @@ Tab Stops/Emulated Tab Stops
 ..          replaced by an ellipsis (...).
 ..    %f    file name, without the path name
 ..    %h    host name
-..    %s    NEdit server name (server mode only)
+..    %s    XNEdit server name (server mode only)
 ..    %[*]S file status, either verbose (%S) or brief (%*S).
 ..          In verbose mode the file status is spelled out:
 ..          read-only, locked, and modified. In brief mode,
@@ -1119,7 +1119,7 @@ Tab Stops/Emulated Tab Stops
 ..   for display, various states can be enforced on the preview.
 ..   
 ..   For instance, components that are not always active (such the
-..   NEdit server name) can be turned on or off in the preview.
+..   XNEdit server name) can be turned on or off in the preview.
 ..
 .. ~ help
 
@@ -1129,7 +1129,7 @@ Auto/Smart Indent
   Programmers who use structured languages usually require some form of
   automatic indent, so that they don't have to continually re-type the
   sequences of tabs and/or spaces needed to maintain lengthy running indents.
-  NEdit therefore offers "smart" indent, in addition to the traditional
+  XNEdit therefore offers "smart" indent, in addition to the traditional
   automatic indent which simply lines up the cursor position with the previous
   line.
 
@@ -1138,7 +1138,7 @@ Auto/Smart Indent
   Smart indent macros are only available by default for C and C++, and while
   these can easily be configured for different default indentation distances,
   they may not conform to everyone's exact C programming style.  Smart indent
-  is programmed in terms of macros in the NEdit macro language which can be
+  is programmed in terms of macros in the XNEdit macro language which can be
   entered in: Preferences -> Default Settings -> Indent -> Program Smart
   Indent.  Hooks are provided for intervening at the point that a newline is
   entered, either via the user pressing the Enter key, or through
@@ -1149,7 +1149,7 @@ Auto/Smart Indent
 
 3>Auto-Indent
 
-  With Indent set to Auto (the default), NEdit keeps a running indent.  When
+  With Indent set to Auto (the default), XNEdit keeps a running indent.  When
   you press the Return or Enter key, spaces and tabs are inserted to line up
   the insert point under the start of the previous line.
 
@@ -1178,15 +1178,15 @@ Syntax Highlighting
   Programmers use syntax highlighting to understand code faster and better, and
   to spot many kinds of syntax errors more quickly.
 
-  To use syntax highlighting in NEdit, select Highlight Syntax in the
-  Preferences menu.  If NEdit recognizes the computer language that you are
+  To use syntax highlighting in XNEdit, select Highlight Syntax in the
+  Preferences menu.  If XNEdit recognizes the computer language that you are
   using, and highlighting rules (patterns) are available for that language, it
   will highlight your text, and maintain the highlighting, automatically, as
   you type.
 
-  If NEdit doesn't correctly recognize the type of the file you are editing,
+  If XNEdit doesn't correctly recognize the type of the file you are editing,
   you can manually select a language mode from Language Modes in the
-  Preferences menu.  You can also program the method that NEdit uses to
+  Preferences menu.  You can also program the method that XNEdit uses to
   recognize language modes in Preferences -> Default Settings -> Language
   Modes....
 
@@ -1194,7 +1194,7 @@ Syntax Highlighting
   use, you can create new patterns relatively quickly.  The Help section
   "Highlighting_Patterns_" under "Customizing", has details.
 
-  If you are satisfied with what NEdit is highlighting, but would like it to
+  If you are satisfied with what XNEdit is highlighting, but would like it to
   use different colors or fonts, you can change these by selecting Preferences
   -> Default Settings -> Syntax Highlighting -> Text Drawing Styles.
   Highlighting patterns are connected with font and color information through a
@@ -1205,7 +1205,7 @@ Syntax Highlighting
   to look at "Highlighting_Patterns_" section, as well.
 
   Syntax highlighting is CPU intensive, and under some circumstances can affect
-  NEdit's responsiveness.  If you have a particularly slow system, or work with
+  XNEdit's responsiveness.  If you have a particularly slow system, or work with
   very large files, you may not want to use it all of the time.  Syntax
   highlighting introduces two kinds of delays.  The first is an initial parsing
   delay, proportional to the size of the file.  This delay is also incurred
@@ -1220,39 +1220,39 @@ Syntax Highlighting
 Finding Declarations (ctags)
 ----------------------------
 
-  NEdit can process tags files generated using the Unix _ctags command or the
+  XNEdit can process tags files generated using the Unix _ctags command or the
   Exuberant Ctags program.  Ctags creates index files correlating names of
   functions and declarations with their locations in C, Fortran, or Pascal source
   code files. (See the ctags manual page for more information).  Ctags produces a
-  file called "tags" which can be loaded by NEdit.  NEdit can manage any number
+  file called "tags" which can be loaded by XNEdit.  XNEdit can manage any number
   of tags files simultaneously.  Tag collisions are handled with a popup menu to
-  let the user decide which tag to use.  In 'Smart' mode NEdit will automatically
+  let the user decide which tag to use.  In 'Smart' mode XNEdit will automatically
   choose the desired tag based on the scope of the file or module. Once loaded,
-  the information in the tags file enables NEdit to go directly to the
+  the information in the tags file enables XNEdit to go directly to the
   declaration of a highlighted function or data structure name with a single
   command.  To load a tags file, select "Load Tags File" from the File menu and
-  choose a tags file to load, or specify the name of the tags file on the NEdit
+  choose a tags file to load, or specify the name of the tags file on the XNEdit
   command line:
 
-      nedit -tags tags
+      xnedit -tags tags
 
-  NEdit can also be set to load a tags file automatically when it starts up.
-  Setting the X resource nedit.tagFile to the name of a tag file tells NEdit to
-  look for that file at startup time (see "Customizing_NEdit_").  The file name
-  can be either a complete path name, in which case NEdit will always load the
+  XNEdit can also be set to load a tags file automatically when it starts up.
+  Setting the X resource nedit.tagFile to the name of a tag file tells XNEdit to
+  look for that file at startup time (see "Customizing_XNEdit_").  The file name
+  can be either a complete path name, in which case XNEdit will always load the
   same tags file, or a file name without a path or with a relative path, in
-  which case NEdit will load it starting from the current directory.  The
+  which case XNEdit will load it starting from the current directory.  The
   second option allows you to have different tags files for different projects,
   each automatically loaded depending on the directory you're in when you start
-  NEdit.  Setting the name to "tags" is an obvious choice since this is the
-  name that ctags uses. NEdit normally evaluates relative path tag file
+  XNEdit.  Setting the name to "tags" is an obvious choice since this is the
+  name that ctags uses. XNEdit normally evaluates relative path tag file
   specifications every time a file is opened. All accessible tag files are
   loaded at this time. To disable the automatic loading of tag files specified
   as relative paths, set the X resource nedit.alwaysCheckRelativeTagsSpecs to
   False.
 
   To unload a tags file, select "Un-load Tags File" from the File menu and
-  choose from the list of tags files.  NEdit will keep track of tags file updates
+  choose from the list of tags files.  XNEdit will keep track of tags file updates
   by checking the timestamp on the files, and automatically update the tags
   cache.
 
@@ -1386,7 +1386,7 @@ Basic Regular Expression Syntax
 3>Anchors
 
   Anchors are assertions that you are at a very specific position within the
-  search text.  NEdit regular expressions support the following anchor tokens:
+  search text.  XNEdit regular expressions support the following anchor tokens:
 
      ^    Beginning of line
      $    End of line
@@ -1406,7 +1406,7 @@ Basic Regular Expression Syntax
 
   Quantifiers specify how many times the previous regular expression atom may
   be matched in the search text.  Some quantifiers can produce a large
-  performance penalty, and can in some instances completely lock up NEdit.  To
+  performance penalty, and can in some instances completely lock up XNEdit.  To
   prevent this, avoid nested quantifiers, especially those of the maximal
   matching type (see below.)
 
@@ -1487,7 +1487,7 @@ Metacharacters
   metacharacters. For example, backslash is a special metacharacter which
   'escapes' or changes the meaning of the character following it. Thus, to
   match a literal backslash would require a regular expression to have two
-  backslashes in sequence. NEdit provides the following escape sequences so
+  backslashes in sequence. XNEdit provides the following escape sequences so
   that metacharacters that are used by the regex syntax can be specified as
   ordinary characters.
 
@@ -1498,7 +1498,7 @@ Metacharacters
 
   There are some special characters that are  difficult or impossible to type.
   Many of these characters can be constructed as a sort of metacharacter or
-  sequence by preceding a literal character with a backslash. NEdit recognizes
+  sequence by preceding a literal character with a backslash. XNEdit recognizes
   the following special character sequences:
 
      \a  alert (bell)
@@ -1511,7 +1511,7 @@ Metacharacters
      \v  vertical tab
 
      *** For environments that use the EBCDIC character set,
-         when compiling NEdit set the EBCDIC_CHARSET compiler
+         when compiling XNEdit set the EBCDIC_CHARSET compiler
          symbol to get the EBCDIC equivalent escape
          character.)
 
@@ -1533,7 +1533,7 @@ Metacharacters
 
 3>Shortcut Escape Sequences
 
-  NEdit defines some escape sequences that are handy shortcuts for commonly
+  XNEdit defines some escape sequences that are handy shortcuts for commonly
   used character classes.
 
    \d  digits            0-9
@@ -1559,7 +1559,7 @@ Metacharacters
      \Y   Not a word delimiter character
 
   The `\y' token matches any single character that is one of the characters
-  that NEdit recognizes as a word delimiter character, while the `\Y' token
+  that XNEdit recognizes as a word delimiter character, while the `\Y' token
   matches any character that is ~not~ a word delimiter character.  Word
   delimiter characters are dynamic in nature, meaning that the user can change
   them through preference settings.  For this reason, they must be handled
@@ -1663,12 +1663,12 @@ Parenthetical Constructs
 
 3>Matching Newlines
 
-  NEdit regular expressions by default handle the matching of newlines in a way
+  XNEdit regular expressions by default handle the matching of newlines in a way
   that should seem natural for most editing tasks.  There are situations,
   however, that require finer control over how newlines are matched by some
   regular expression tokens.
 
-  By default, NEdit regular expressions will ~not~ match a newline character for
+  By default, XNEdit regular expressions will ~not~ match a newline character for
   the following regex tokens: dot (`.'); a negated character class (`[^...]');
   and the following shortcuts for character classes:
 
@@ -1725,7 +1725,7 @@ Parenthetical Constructs
 
   The escape sequences described above for special characters, and octal and
   hexadecimal escapes are treated the same way by a substitution string. When
-  the substitution string contains the `&' character, NEdit will substitute the
+  the substitution string contains the `&' character, XNEdit will substitute the
   entire string that was matched by the `Find...' operation. Any of the first
   nine sub-expressions of the match string can also be inserted into the
   replacement string.  This is done by inserting a `\' followed by a digit from
@@ -1840,10 +1840,10 @@ Shell Commands and Filters
 --------------------------
 
   The Shell menu (Unix versions only) allows you to execute Unix shell commands
-  from within NEdit.  You can add items to the menu to extend NEdit's command
+  from within XNEdit.  You can add items to the menu to extend XNEdit's command
   set or to incorporate custom automatic editing features using shell commands
   or editing languages like awk and sed.  To add items to the menu, select
-  Preferences -> Default Settings Customize Menus -> Shell Menu.  NEdit comes
+  Preferences -> Default Settings Customize Menus -> Shell Menu.  XNEdit comes
   pre-configured with a few useful Unix commands like spell and sort, but we
   encourage you to add your own custom extensions.
 
@@ -1860,12 +1860,12 @@ Shell Commands and Filters
 
   Execute Command Line uses the position of the cursor in the window to
   indicate a line to execute as a shell command line.  The cursor may be
-  positioned anywhere on the line.  This command allows you to use an NEdit
+  positioned anywhere on the line.  This command allows you to use an XNEdit
   window as an editable command window for saving output and saving commands
   for re-execution. Note that the same character expansions described above
   in Execute Command also occur with this command.
 
-  The X resource called nedit.shell (See "Customizing_NEdit_") determines which
+  The X resource called nedit.shell (See "Customizing_XNEdit_") determines which
   Unix shell is used to execute commands.  The default value for this resource
   is the user's login shell.
    ----------------------------------------------------------------------
@@ -1873,7 +1873,7 @@ Shell Commands and Filters
 Learn/Replay
 ------------
 
-  Selecting Learn Keystrokes from the Macro menu puts NEdit in learn mode.  In
+  Selecting Learn Keystrokes from the Macro menu puts XNEdit in learn mode.  In
   learn mode, keystrokes and menu commands are recorded, to be played back
   later, using the Replay Keystrokes command, or pasted into a macro in the
   Macro Commands dialog of the Default Settings menu in Preferences.
@@ -1881,7 +1881,7 @@ Learn/Replay
   Note that only keyboard and menu commands are recorded, not mouse clicks or
   mouse movements since these have no absolute point of reference, such as
   cursor or selection position.  When you do a mouse-based operation in learn
-  mode, NEdit will beep (repeatedly) to remind you that the operation was not
+  mode, XNEdit will beep (repeatedly) to remind you that the operation was not
   recorded.
 
   Learn mode is also the quickest and easiest method for writing macros.  The
@@ -1929,7 +1929,7 @@ Macro Language
   -> Default Settings -> Customize Menus.  Help on creating items in these
   menus can be found in the section Preferences_.
 
-  NEdit's macro language is a simple interpreter with integer arithmetic,
+  XNEdit's macro language is a simple interpreter with integer arithmetic,
   dynamic strings, and C-style looping constructs (very similar to the
   procedural portion of the Unix awk program).  From the macro language, you
   can call the same action routines which are bound to keyboard keys and menu
@@ -1940,7 +1940,7 @@ Macro Language
 
 3>Syntax
 
-  An NEdit macro language program consists of a list of statements, each
+  An XNEdit macro language program consists of a list of statements, each
   terminated by a newline.  Groups of statements which are executed together
   conditionally, such as the body of a loop, are surrounded by curly braces
   "{}".
@@ -1956,7 +1956,7 @@ Macro Language
 
 3>Data Types
 
-  The NEdit macro language recognizes only three data types, dynamic character
+  The XNEdit macro language recognizes only three data types, dynamic character
   strings, integer values and associative arrays. In general strings and
   integers can be used interchangeably. If a string represents an integer
   value, it can be used as an integer. Integers can be compared and
@@ -1987,9 +1987,9 @@ Macro Language
   Also allowed is the escape control character sequence:
 
      \e Escape (ASCII or EBCDIC,
-                depending on NEdit compilation settings)
+                depending on XNEdit compilation settings)
 
-  For example, to send output to the terminal from which NEdit was started, a
+  For example, to send output to the terminal from which XNEdit was started, a
   newline character is necessary because, like printf, t_print requires
   explicit newlines, and also buffers its output on a per-line basis:
 
@@ -2000,7 +2000,7 @@ Macro Language
   paragraphs headed "Octal and Hex Escape Sequences" of the section
   "Metacharacters_", except that an octal escape sequence can start with any
   octal digit, not just 0, so the single character string "\0033" is the same
-  as "\33", "\x1B" and "\e" (for an ASCII version of NEdit).
+  as "\33", "\x1B" and "\e" (for an ASCII version of XNEdit).
 
   Note that if you want to define a regular expression in a macro string,
   you need to "double-up" the backslashes for the metacharacters with
@@ -2033,7 +2033,7 @@ Macro Language
 
 4>Built-in Variables
 
-  NEdit has a number of permanently defined variables, which are used to access
+  XNEdit has a number of permanently defined variables, which are used to access
   global editor information and information about the window in which the
   macro is executing.  These are listed along with the built in functions in
   the section titled "Macro_Subroutines_".
@@ -2059,7 +2059,7 @@ Macro Language
 
 4>Built-in Functions
 
-  NEdit has a wide range of built in functions which can be called from the
+  XNEdit has a wide range of built in functions which can be called from the
   macro language.  These routines are divided into two classes, macro-language
   functions, and editor action routines.  Editor action routines are more
   flexible, in that they may be called either from the macro language, or bound
@@ -2134,7 +2134,7 @@ Macro Language
 
 4>Numerical Operators
 
-  The numeric operators supported by the NEdit macro language are listed below:
+  The numeric operators supported by the XNEdit macro language are listed below:
 
      + addition
      - subtraction or negation
@@ -2154,7 +2154,7 @@ Macro Language
 
   Logical operations produce a result of 0 (for false) or 1 (for true).  In a
   logical operation, any non-zero value is recognized to mean true.  The
-  logical and comparison operators allowed in the NEdit macro language are
+  logical and comparison operators allowed in the XNEdit macro language are
   listed below:
 
      && logical and
@@ -2285,7 +2285,7 @@ Macro Language
 
 3>Looping and Conditionals
 
-  NEdit supports looping constructs: for and while, and conditional statements:
+  XNEdit supports looping constructs: for and while, and conditional statements:
   if and else, with essentially the same syntax as C:
 
      for (<init>, ...; <condition>; <increment>, ...) <body>
@@ -2437,7 +2437,7 @@ Macro Subroutines
   yet been saved.
 
 **$VERSION**
-  Returns NEdit's version number ('5006' for NEdit 5.6).
+  Returns XNEdit's version number ('5006' for XNEdit 5.6).
 
 **$n_display_lines**
   The number of lines visible in the currently active pane.
@@ -2461,7 +2461,7 @@ Macro Subroutines
   the current window, or -1 if there is no selection or it is not rectangular.
 
 **$server_name**
-  Name of the current NEdit server.
+  Name of the current XNEdit server.
 
 **$show_line_numbers**
   Whether line numbers are shown next to the text.
@@ -2491,7 +2491,7 @@ Macro Subroutines
   The line number of the top line of the currently active pane.
 
 **$use_tabs**
-  Whether the user is allowing the NEdit to insert tab characters to maintain
+  Whether the user is allowing the XNEdit to insert tab characters to maintain
   spacing in tab emulation and rectangular dragging operations. (The setting of
   the "Use tab characters in padding and emulated tabs" button in the
   Tab Stops... dialog of the Preferences menu.)
@@ -2574,7 +2574,7 @@ Macro Subroutines
 **focus_window( window_name )**  
   Sets the window on which subsequent macro commands operate. window_name can
   be either a fully qualified file name, or a relative filename (which will
-  be completed from NEdit's working directory) or one of "last" for the last
+  be completed from XNEdit's working directory) or one of "last" for the last
   window created, or "next" for the next window in the chain from the currently
   focused window (the first window being the one returned from calling
   focus_window("last"). Returns the name of the newly-focused window, or an
@@ -2732,7 +2732,7 @@ Macro Subroutines
   is beyond the end position, the empty string is returned.
 
 **t_print( string1, string2, ... )**
-  Writes strings to the terminal (stdout) from which NEdit was started.
+  Writes strings to the terminal (stdout) from which XNEdit was started.
 
 **tolower( string )**
   Return an all lower-case version of string.
@@ -2822,7 +2822,7 @@ Rangesets
   these modes to be chosen.
 
   Note that the precise behaviour of these modes may change in future versions
-  of NEdit.
+  of XNEdit.
 
   The available modes are:
 
@@ -2975,7 +2975,7 @@ Highlighting Information
   (whether the font is supposed to be bold and/or italic).
 
   These macro functions permit macro writers to generate formatted output which
-  allows NEdit highlighting to be reproduced. This is suitable for the
+  allows XNEdit highlighting to be reproduced. This is suitable for the
   generation of HTML or Postscript output, for example.
 
   Note that if any of the functions is used while in Plain mode or while syntax
@@ -3047,7 +3047,7 @@ Highlighting Information
 Action Routines
 ---------------
 
-  All of the editing capabilities of NEdit are represented as a special type of
+  All of the editing capabilities of XNEdit are represented as a special type of
   subroutine, called an action routine, which can be invoked from both macros
   and translation table entries (see "Key_Binding_" in the
   Customizing section of the Help menu).
@@ -3179,7 +3179,7 @@ Action Routines
                    Default behaviour is "prefs".
 
     ~filename~       Path names are relative to the directory from
-                   which NEdit was started. Shell interpreted
+                   which XNEdit was started. Shell interpreted
                    wildcards and `~' are not expanded.
 
     ~keep-dialog~    Either "keep" or "nokeep".
@@ -3609,27 +3609,27 @@ Action Routines
 Customizing
 ===========
 
-Customizing NEdit
+Customizing XNEdit
 -----------------
 
-  NEdit can be customized in many different ways.  The most important
+  XNEdit can be customized in many different ways.  The most important
   user-settable options are presented in the Preferences menu, including all
   options that users might need to change during an editing session.  Options
   set in the Default Settings sub-menu of the Preferences menu can be preserved
   between sessions by selecting Save Defaults, which writes the changes to the
   preferences file.  See the section titled "Preferences_" for more details.
 
-  User defined commands can be added to NEdit's Shell, Macro, and window
+  User defined commands can be added to XNEdit's Shell, Macro, and window
   background menus.  Dialogs for creating items in these menus can be found
   under Customize Menus in the Default Settings sub menu of the Preferences
   menu.
 
-  For users who depend on NEdit every day and want to tune every excruciating
+  For users who depend on XNEdit every day and want to tune every excruciating
   detail, there are also X resources for tuning a vast number of such details,
   down to the color of each individual button.  See the section "X_Resources_"
   for more information, as well as a list of selected resources.
 
-  The most common reason for customizing your X resources for NEdit, however, is
+  The most common reason for customizing your X resources for XNEdit, however, is
   key binding.  While limited key binding can be done through Preferences
   settings (Preferences -> Default Settings -> Customize Menus), you can really
   only add keys this way, and each key must have a corresponding menu item.
@@ -3642,7 +3642,7 @@ Preferences
 -----------
 
   The Preferences menu allows you to set options for both the current editing
-  window, and default values for newly created windows and future NEdit
+  window, and default values for newly created windows and future XNEdit
   sessions.  Options in the Preferences menu itself (not in the Default
   Settings sub-menu) take effect immediately and refer to the current window
   only.  Options in the Default Settings sub-menu provide initial settings for
@@ -3650,19 +3650,19 @@ Preferences
   windows are also set here.
 
   Preferences set in the Default Settings sub-menu are saved in a file that
-  NEdit reads at startup time, cf. Autoload_Files_, by selecting Save Defaults.
+  XNEdit reads at startup time, cf. Autoload_Files_, by selecting Save Defaults.
 
 3>Preferences Menu
 
 **Default Settings**
   Menu of initial settings for future windows.  Generally the same as the
   options in the main part of the menu, but apply as defaults for future
-  windows created during this NEdit session.  These settings can be saved using
-  the Save Defaults command below, to be loaded automatically each time NEdit
+  windows created during this XNEdit session.  These settings can be saved using
+  the Save Defaults command below, to be loaded automatically each time XNEdit
   is started.
 
 **Save Defaults**
-  Save the default options as set under Default Settings for future NEdit
+  Save the default options as set under Default Settings for future XNEdit
   sessions.
 
 **Statistics Line**
@@ -3676,16 +3676,16 @@ Preferences
   Display line numbers to the right of the text.
 
 **Language Mode**
-  Tells NEdit what language (if any) to assume, for selecting language-specific
+  Tells XNEdit what language (if any) to assume, for selecting language-specific
   features such as highlight patterns and smart indent macros, and setting
   language specific preferences like word delimiters, tab emulation, and
-  auto-indent.  See Programming_with_NEdit_ for more information.
+  auto-indent.  See Programming_with_XNEdit_ for more information.
 
 **Auto Indent**
   Setting Auto Indent "on" maintains a running indent (pressing the Return key
   will line up the cursor with the indent level of the previous line).  If
   smart indent macros are available for the current language mode, smart indent
-  can be selected and NEdit will attempt to guess proper language indentation
+  can be selected and XNEdit will attempt to guess proper language indentation
   for each new line, cf. Auto/Smart_Indent_.
 
 **Wrap**
@@ -3715,7 +3715,7 @@ Preferences
   information.
 
 **Highlight Syntax**
-  If NEdit recognizes the language being edited, and highlighting patterns are
+  If XNEdit recognizes the language being edited, and highlighting patterns are
   available for that language, use fonts and colors to enhance viewing of the
   file.  (See Syntax_Highlighting_ for more information.)
 
@@ -3744,14 +3744,14 @@ Preferences
 
 **Read Only**
   Lock the file against accidental modification.  This temporarily prevents the
-  file from being modified in this NEdit session. Note that this is different
+  file from being modified in this XNEdit session. Note that this is different
   from setting the file protection.
 
 3>Preferences -> Default Settings Menu
 
   Options in the Preferences -> Default Settings menu have the same meaning as
   those in the top-level Preferences menu, except that they apply to future
-  NEdit windows and future NEdit sessions if saved with the Save Defaults
+  XNEdit windows and future XNEdit sessions if saved with the Save Defaults
   command.  Additional options which appear in this menu are:
 
 **Language Modes**
@@ -3846,7 +3846,7 @@ Preferences
 
 **Terminate with Line Break on Save**
   Some UNIX tools expect that files end with a line feed. If this option is
-  activated, NEdit will append one if required.
+  activated, XNEdit will append one if required.
 
 **Sort Open Prev. Menu**
   Option to order the File -> Open Previous menu alphabetically, versus in
@@ -3868,14 +3868,14 @@ Preferences
   Options for controlling the popping up of warning dialogs:
 
   ~File Modified Externally~ -
-  Pop up a warning dialog when files get changed external to NEdit.
+  Pop up a warning dialog when files get changed external to XNEdit.
 
   ~Check Modified File Contents~ -
   If external file modification warnings are requested, also check the file
   contents iso. only the modification date.
 
   ~On Exit~ -
-  Ask before exiting when two or more files are open in an NEdit session
+  Ask before exiting when two or more files are open in an XNEdit session
   or before closing a window with two or more tabs.
 
 **Initial Window Size**
@@ -3883,16 +3883,16 @@ Preferences
 
 3>Changing Font(s)
 
-  The font used to display text in NEdit is set under Preferences -> Text Font
+  The font used to display text in XNEdit is set under Preferences -> Text Font
   (for the current window), or Preferences -> Default Settings Text Font (for
   future windows).  These dialogs also allow you to set fonts for syntax
   highlighting.  If you don't intend to use syntax highlighting, you can ignore
   most of the dialog, and just set the field labeled Primary Font.
 
   Unless you are absolutely certain about the types of files that you will be
-  editing with NEdit, you should choose a fixed-spacing font.  Many, if not
+  editing with XNEdit, you should choose a fixed-spacing font.  Many, if not
   most, plain-text files are written expecting to be viewed with fixed
-  character spacing, and will look wrong with proportional spacing.  NEdit's
+  character spacing, and will look wrong with proportional spacing.  XNEdit's
   filling, wrapping, and rectangular operations will also work strangely if you
   choose a proportional font.
 
@@ -3986,24 +3986,24 @@ Preferences
   also exists, this will always appear, meaning that the menu will always have
   two "Make Prototypes" entries, whatever the language mode.
 
-3>The NEdit Autoload Files
+3>The XNEdit Autoload Files
 
-  At startup time, NEdit _automatically reads the preferences file
+  At startup time, XNEdit _automatically reads the preferences file
   `nedit.rc', the autoload macro file `autoload.nm', and the history data base
   `nedit.history'.  The preferences file contains saved preferences (menu
   settings) in the format of an X resource file.  The autoload macro file is a
-  macro file containing macro commands and definitions that NEdit will
-  execute at startup.  (NEdit doesn't create this file automatically.)
-  Moreover, NEdit saves a list of the recently opened files, which appear under
+  macro file containing macro commands and definitions that XNEdit will
+  execute at startup.  (XNEdit doesn't create this file automatically.)
+  Moreover, XNEdit saves a list of the recently opened files, which appear under
   the Open Previous menu, in the history data base.
 
-  By default the location of these files is '$HOME/.nedit/'.  A different
+  By default the location of these files is '$HOME/.xnedit/'.  A different
   directory can be given by letting the environment variable NEDIT_HOME
   point to it.
 
-  Notice that NEdit still supports the older names for these files, which are
+  Notice that XNEdit still supports the older names for these files, which are
   `$HOME/.nedit', `$HOME/.neditmacro', and `$HOME/.neditdb', respectively. This
-  old naming scheme will be used if NEdit detects that `$HOME/.nedit' is a
+  old naming scheme will be used if XNEdit detects that `$HOME/.nedit' is a
   regular file and NEDIT_HOME isn't set.
 
   (For VMS, the location of these files is '$NEDIT_HOME/' if NEDIT_HOME is set,
@@ -4015,7 +4015,7 @@ Preferences
   Another reason for moving preferences into an X resource file would be to
   keep preferences menu options and X resource settable options together in
   one place.  Though the files are the same format, additional resources
-  should not be added to the preferences file, since NEdit modifies that file
+  should not be added to the preferences file, since XNEdit modifies that file
   by overwriting it completely.  Note also that the contents of the
   preferences file takes precedence over the values in an X resource file.
   Using Save Defaults after moving the contents of your preferences file to
@@ -4024,19 +4024,19 @@ Preferences
 
 
 
-3>Sharing Customizations with Other NEdit Users
+3>Sharing Customizations with Other XNEdit Users
 
   If you have written macro or shell menu commands, highlight patterns, or
-  smart-indent macros that you want to share with other NEdit users, you can
-  make a file which they can load into their NEdit environment.
+  smart-indent macros that you want to share with other XNEdit users, you can
+  make a file which they can load into their XNEdit environment.
 
-  To load such a file, start NEdit with the command:
+  To load such a file, start XNEdit with the command:
 
-     nedit -import <file>
+     xnedit -import <file>
 
-  In the new NEdit session, verify that the imported patterns or macros do what
+  In the new XNEdit session, verify that the imported patterns or macros do what
   you want, then select Preferences -> Save Defaults.  Saving incorporates the
-  changes into the NEdit preferences file, so the next time you run NEdit, you
+  changes into the XNEdit preferences file, so the next time you run XNEdit, you
   will not have to import the distribution file.
 
   Loading a customization file is automated, but creating one is not.  To
@@ -4061,7 +4061,7 @@ Preferences
 
   Resources are in the format of X resource files, but the format of text
   within multiple-item resources like highlight patterns, language modes,
-  macros, styles, etc., are private to NEdit.  Each resource is a string which
+  macros, styles, etc., are private to XNEdit.  Each resource is a string which
   ends at the first newline character not escaped with \, so you must be
   careful about how you treat ends of lines.  While you can generally just cut
   and paste indented sections, if something which was originally in the middle
@@ -4077,8 +4077,8 @@ Preferences
 X Resources
 -----------
 
-  NEdit has additional options to those provided in the Preferences menu which
-  are set using X resources.  Like most other X programs, NEdit can be
+  XNEdit has additional options to those provided in the Preferences menu which
+  are set using X resources.  Like most other X programs, XNEdit can be
   customized to vastly unnecessary proportions, from initial window positions
   down to the font and shadow colors of each individual button (A complete
   discussion of how to do this is left to books on the X Window System).  Key
@@ -4096,25 +4096,25 @@ X Resources
 
 3>Selected X Resource Names
 
-  The following are selected NEdit resource names and default values for NEdit
+  The following are selected XNEdit resource names and default values for XNEdit
   options not settable via the Preferences menu (for preference resource names,
-  see your NEdit preference file):
+  see your XNEdit preference file):
 
 **nedit.tagFile**: (not defined)
 
   This can be the name of a file, or multiple files separated by a colon (:)
   character, of the type produced by Exuberant Ctags or the Unix ctags
-  command, which NEdit will load at startup time (see ctags_support_). The tag
-  file provides a database from which NEdit can automatically open files
+  command, which XNEdit will load at startup time (see ctags_support_). The tag
+  file provides a database from which XNEdit can automatically open files
   containing the definition of a particular subroutine or data type.
 
 **nedit.alwaysCheckRelativeTagsSpecs: True**
 
   When this resource is set to True, and there are tag files specified (with
-  the nedit.tagFile resource, see above) as relative paths, NEdit will evaluate
+  the nedit.tagFile resource, see above) as relative paths, XNEdit will evaluate
   these tag value paths whenever a file is opened. All accessible tag files
   will be loaded at this time. When this resource value is False, relative path
-  tag specifications will only be evaluated at NEdit startup time.
+  tag specifications will only be evaluated at XNEdit startup time.
 
 **nedit.wordDelimiters**: .,/\\`'!@@#%^&*()-=+{}[]":;<>?
 
@@ -4134,7 +4134,7 @@ X Resources
   can be helpful on systems where the bindings have become tangled, and in
   environments which mix systems with PC style keyboards and systems with DEC
   and Macintosh keyboards.  Theoretically, these bindings should be made using
-  the standard X/Motif mechanisms, outside of NEdit.  In practice, some
+  the standard X/Motif mechanisms, outside of XNEdit.  In practice, some
   environments where users access several different systems remotely, can be
   very hard to configure. If you've given up and are using a backspace key
   halfway off the keyboard because you can't figure out the bindings, set this
@@ -4155,20 +4155,20 @@ X Resources
   application installs an invalid set, all others applications may have
   problems.
 
-  In the past, NEdit has been the victim of invalid bindings installed by other
-  applications several times. Through this resource, NEdit can be instructed
+  In the past, XNEdit has been the victim of invalid bindings installed by other
+  applications several times. Through this resource, XNEdit can be instructed
   to ignore the bindings installed by other applications, and use its own
-  private bindings. By default, NEdit tries to detect invalid bindings
-  and ignore them automatically (Auto). Optionally, NEdit can be told to
+  private bindings. By default, XNEdit tries to detect invalid bindings
+  and ignore them automatically (Auto). Optionally, XNEdit can be told to
   always keep the installed bindings (Never), or to always override them
   (Always).
 
 **nedit.stdOpenDialog**: False
 
   Setting this resource to True restores the standard Motif style of Open
-  dialog.  NEdit file open dialogs are missing a text field at the bottom of
+  dialog.  XNEdit file open dialogs are missing a text field at the bottom of
   the dialog, where the file name can be entered as a string.  The field is
-  removed in NEdit to encourage users to type file names in the list, a
+  removed in XNEdit to encourage users to type file names in the list, a
   non-standard, but much faster method for finding files.
 
 **nedit.bgMenuButton**: @~Shift@~Ctrl@~Meta@~Alt<Btn3Down>
@@ -4182,7 +4182,7 @@ X Resources
 
   Number of files listed in the Open Previous sub-menu of the File menu.
   Setting this to zero disables the Open Previous menu item and maintenance of
-  the NEdit file history file.
+  the XNEdit file history file.
 
 **nedit.printCommand**: (system specific)
 
@@ -4227,7 +4227,7 @@ X Resources
 
   If your screen supports multiple visuals (color mapping models), this
   resource allows you to manually choose among them.  The default value of
-  "Best" chooses the deepest (most colors) visual available. Since NEdit does
+  "Best" chooses the deepest (most colors) visual available. Since XNEdit does
   not depend on the specific characteristics of any given color model, Best
   probably IS the best choice for everyone, and the only reason for setting
   this resource would be to patch around some kind of X server problem. The
@@ -4240,9 +4240,9 @@ X Resources
   If you are running under a themed environment (like KDE or CDE) that places
   its colors in a shallow visual, and you'd rather have that color scheme
   instead of more colors available, then you may need set the visual to
-  "Default" so that NEdit doesn't choose one with more colors.  (The reason
-  for this is: if the "best" visual is not the server's default, then NEdit
-  cannot use the colors provided by your environment.  NEdit will fall back to
+  "Default" so that XNEdit doesn't choose one with more colors.  (The reason
+  for this is: if the "best" visual is not the server's default, then XNEdit
+  cannot use the colors provided by your environment.  XNEdit will fall back to
   its own default color scheme.)
 
 **nedit.installColormap**: False
@@ -4250,7 +4250,7 @@ X Resources
   Force the installation of a private colormap.  If you have a humble 8-bit
   color display, and netscape is hogging all of the color cells, you may want
   to try turning this on.  On most systems, this will result in colors flashing
-  wildly when you switch between NEdit and other applications.  But a few
+  wildly when you switch between XNEdit and other applications.  But a few
   systems (SGI) have hardware support for multiple simultaneous colormaps, and
   applications with installed colormaps are well behaved.
 
@@ -4275,13 +4275,13 @@ X Resources
 
 **nedit.undoModifiesSelection**: True
 
-  By default, NEdit selects any text inserted or changed through a undo/redo
+  By default, XNEdit selects any text inserted or changed through a undo/redo
   action.  Set this resource to False if you don't want your selection to be
   touched.
 
 **nedit@*scrollBarPlacement**: BOTTOM_RIGHT
 
-  How scroll bars are placed in NEdit windows, as well as various lists and
+  How scroll bars are placed in XNEdit windows, as well as various lists and
   text fields in the program. Other choices are: BOTTOM_LEFT, TOP_LEFT, or
   TOP_RIGHT.
 
@@ -4383,7 +4383,7 @@ X Resources
 
 **nedit.backlightCharTypes**:  0-8,10-31,127:red;9:#dedede;32,160-255:#f0f0f0;128-159:orange
 
-  **NOTE: backlighting is ~experimental~** (see "Programming_with_NEdit_").
+  **NOTE: backlighting is ~experimental~** (see "Programming_with_XNEdit_").
 
   A string specifying character classes as ranges of ASCII values followed by
   the color to be used as their background colors.  The format is:
@@ -4404,12 +4404,12 @@ X Resources
   This resource determines whether new text windows and text windows that are
   raised, should also request the input focus.  Conventionally, it is the task
   of the window manager to decide on which window gets the input focus.
-  Therefore, NEdit's default behaviour is not to request the input focus
+  Therefore, XNEdit's default behaviour is not to request the input focus
   explicitly.
 
 **nedit.forceOSConversion**: True
 
-  By default, NEdit converts texts in DOS or Mac format to an internal
+  By default, XNEdit converts texts in DOS or Mac format to an internal
   format using simple newlines as line dividers. This is sometimes not
   wanted by the user and can be prevented by setting this resource to
   False.
@@ -4423,7 +4423,7 @@ X Resources
 
 **nedit.truncSubstitution**: Fail
 
-  NEdit has a fixed limit on substitution result string length. This
+  XNEdit has a fixed limit on substitution result string length. This
   resource modifies the behaviour if this limit is exceeded. Possible
   values are ~Silent~ (will silently fail the operation), ~Fail~ (will fail
   the operation and pop up a dialog informing the user), ~Warn~ (pops up a
@@ -4434,23 +4434,23 @@ X Resources
 
 **nedit.honorSymlinks**: True
 
-  If set to True, NEdit will open a requested file on disk even if it is a
+  If set to True, XNEdit will open a requested file on disk even if it is a
   symlink pointing to a file already opened in another window. If set to false,
-  NEdit will try to detect these cases and just pop up the already opened
+  XNEdit will try to detect these cases and just pop up the already opened
   document.
 
 **nc.autoStart**: True 
 
-  Whether the nc program should automatically start an NEdit server (without
+  Whether the xnc program should automatically start an XNEdit server (without
   prompting the user) if an appropriate server is not found.
 
-**nc.serverCommand**: nedit -server
+**nc.serverCommand**: xnedit -server
 
-  Command used by the nc program to start an NEdit server.
+  Command used by the xnc program to start an XNEdit server.
 
 **nc.timeOut**: 10
 
-  Basic time-out period used in communication with an NEdit server (seconds).
+  Basic time-out period used in communication with an XNEdit server (seconds).
 
    ----------------------------------------------------------------------
   ~The following are Selected widget names (to which you may append~
@@ -4483,8 +4483,8 @@ X Resources
 Key Binding
 -----------
 
-  There are several ways to change key bindings in NEdit.  The easiest way to
-  add a new key binding in NEdit is to define a macro in Preferences -> Default
+  There are several ways to change key bindings in XNEdit.  The easiest way to
+  add a new key binding in XNEdit is to define a macro in Preferences -> Default
   Settings -> Customize Menus -> Macro Menu.  However, if you want to change
   existing bindings or add a significant number of new key bindings you will
   need to do so via X resources.
@@ -4492,7 +4492,7 @@ Key Binding
   Before reading this section, you must understand how to set X resources (see
   the help section "X_Resources_").  Since setting X resources is tricky, it is
   also helpful when working on key-binding, to set some easier-to-verify
-  resource at the same time, as a simple check that the NEdit program is
+  resource at the same time, as a simple check that the XNEdit program is
   actually seeing your changes.  The appres program is also very helpful in
   checking that the resource settings that you make, actually reach the program
   for which they are intended in the correct form.
@@ -4500,7 +4500,7 @@ Key Binding
 3>Key Binding in General
 
   Keyboard commands are associated with editor action routines through two
-  separate mechanisms in NEdit.  Commands which appear in pull-down menus have
+  separate mechanisms in XNEdit.  Commands which appear in pull-down menus have
   individual resources designating a keyboard equivalent to the menu command,
   called an accelerator key.  Commands which do not have an associated menu
   item are bound to keys via the X toolkit translation mechanism.  The methods
@@ -4508,12 +4508,12 @@ Key Binding
 
 3>Key Binding Via Translations
 
-  The most general way to bind actions to keys in NEdit is to use the
+  The most general way to bind actions to keys in XNEdit is to use the
   translation table associated with the text widget.  To add a binding to Alt+Y
   to insert the string "Hi!", for example, add lines similar to the following
   to your X resource file:
 
-    NEdit*text.Translations: #override \n\
+    XNEdit*text.Translations: #override \n\
       Alt<Key>y: insert_string("Hi!") \n
 
   The Help topic "Action_Routines_" lists the actions available to be bound.
@@ -4542,7 +4542,7 @@ Key Binding
 
 3>Changing Menu Accelerator Keys
 
-  The menu shortcut keys shown at the right of NEdit menu items can also be
+  The menu shortcut keys shown at the right of XNEdit menu items can also be
   changed via X resources.  Each menu item has two resources associated with
   it, accelerator, the event to trigger the menu item; and acceleratorText, the
   string shown in the menu.  The form of the accelerator resource is the same
@@ -4571,7 +4571,7 @@ Highlighting Patterns
 3>Writing Syntax Highlighting Patterns
 
   Patterns are the mechanism by which language syntax highlighting is
-  implemented in NEdit (see Syntax_Highlighting_ under the heading of Features
+  implemented in XNEdit (see Syntax_Highlighting_ under the heading of Features
   for Programming). To create syntax highlighting patterns for a new
   language, or to modify existing patterns, select "Recognition Patterns" from
   "Syntax Highlighting" sub-section of the "Default Settings" sub-menu of the
@@ -4585,11 +4585,11 @@ Highlighting Patterns
   highlighting.  When working on highlighting patterns, be sure to save your
   work frequently.
 
-  NEdit's syntax highlighting is unusual in that it works in real-time (as you
+  XNEdit's syntax highlighting is unusual in that it works in real-time (as you
   type), and yet is completely programmable using standard regular expression
   notation.  Other syntax highlighting editors usually fall either into the
   category of fully programmable but unable to keep up in real-time, or
-  real-time but limited programmability.  The additional burden that NEdit
+  real-time but limited programmability.  The additional burden that XNEdit
   places on pattern writers in order to achieve this speed/flexibility mix, is
   to force them to state self-imposed limitations on the amount of context that
   patterns may examine when re-parsing after a change.  While the "Pattern
@@ -4640,7 +4640,7 @@ Highlighting Patterns
   It is also possible to color areas of text within a regular expression
   match.  A pattern of this type associates a style with sub-expressions
   references of the parent pattern (as used in regular expression substitution
-  patterns, see the NEdit Help menu item on Regular_Expressions_).
+  patterns, see the XNEdit Help menu item on Regular_Expressions_).
   Sub-expressions of both the starting and ending patterns may be colored.  For
   example, if the parent pattern has a starting expression "\<", and end
   expression "\>", (for highlighting all of the text contained within angle
@@ -4720,7 +4720,7 @@ Highlighting Patterns
 
 4>Deferred (Pass-2) Parsing
 
-  NEdit does pattern matching for syntax highlighting in two passes.  The first
+  XNEdit does pattern matching for syntax highlighting in two passes.  The first
   pass is applied to the entire file when syntax highlighting is first turned
   on, and to new ranges of text when they are initially read or pasted in.  The
   second pass is applied only as needed when text is exposed (scrolled in to
@@ -4752,7 +4752,7 @@ Highlighting Patterns
 
   The context requirements of a pattern set state how much additional text
   around any change must be examined to guarantee that the patterns will match
-  what they are intended to match.  Context requirements are a promise by NEdit
+  what they are intended to match.  Context requirements are a promise by XNEdit
   to the pattern writer, that the regular expressions in his/her patterns will
   be matched against at least <line context> lines and <character context>
   characters, around any modified text.  Combining line and character
@@ -4786,7 +4786,7 @@ Smart Indent Macros
   difficult to write than highlighting patterns.  A good place to start, of
   course, is to look at the existing macros for C and C++.
 
-  Smart indent macros for a language mode consist of standard NEdit macro
+  Smart indent macros for a language mode consist of standard XNEdit macro
   language code attached to any or all of the following three activation
   conditions: 1) When smart indent is first turned on for a text window
   containing code of the language, 2) When a newline is typed and smart indent
@@ -4819,11 +4819,11 @@ Smart Indent Macros
   keystroke typed, so if you try to get too fancy, you may degrade performance.
    ----------------------------------------------------------------------
 
-NEdit Command Line
+XNEdit Command Line
 ------------------
 
 .. ? help !!#ifndef VMS
-   **nedit** [-**read**] [-**create**] [-**line** n | +n] [-**server**]
+   **xnedit** [-**read**] [-**create**] [-**line** n | +n] [-**server**]
       [-**do** command] [-**tags** file] [-**tabs** n] [-**wrap**]
       [-**nowrap**] [-**autowrap**] [-**autoindent**] [-**noautoindent**]
       [-**autosave**] [-**noautosave**] [-**rows** n] [-**columns** n]
@@ -4844,15 +4844,15 @@ NEdit Command Line
   Go to line number n in the file following this switch.
 
 **-server**
-  Designate this session as an NEdit server, for processing commands from the
-  nc program.  nc can be used to interface NEdit to code development
+  Designate this session as an XNEdit server, for processing commands from the
+  xnc program.  xnc can be used to interface XNEdit to code development
   environments, mailers, etc., or just as a quick way to open files from the
-  shell command line without starting a new NEdit session.
+  shell command line without starting a new XNEdit session.
 
 **-do command**
-  Execute an NEdit macro or action on the file following the -do argument on
-  the command line. -do is particularly useful from the nc program, where
-  nc -do can remotely execute commands in an NEdit -server session.
+  Execute an XNEdit macro or action on the file following the -do argument on
+  the command line. -do is particularly useful from the xnc program, where
+  xnc -do can remotely execute commands in an XNEdit -server session.
 
 **-tags file**
   Load a file of directions for finding definitions of program subroutines and
@@ -4924,7 +4924,7 @@ NEdit Command Line
 **-untabbed**
   Open all subsequent files in new windows. Resets -group option. Note
   that this only works on subsequent files in this command and does not put
-  NEdit in tab-less mode; for that you can use the command
+  XNEdit in tab-less mode; for that you can use the command
     nedit -xrm "nedit.openInTab: False" -xrm "nedit.tabBarHideOne: True"
   This will affect your default settings for the session, and will be saved
   if Preferences->Save Defaults... is used, which may not be desired.
@@ -4934,35 +4934,35 @@ NEdit Command Line
 
 **-xrm resourcestring**
   Set the value of an X resource to override a default
-  value (see "Customizing_NEdit_").
+  value (see "Customizing_XNEdit_").
 
 **-svrname name**
-  When starting NEdit in server mode, name the server, such that it responds to
-  requests only when nc is given a corresponding -svrname argument.  By naming
+  When starting XNEdit in server mode, name the server, such that it responds to
+  requests only when xnc is given a corresponding -svrname argument.  By naming
   servers, you can run several simultaneously, and direct files and commands
   specifically to any one. Specifying a non-empty name automatically designates
-  this session as an NEdit server, as though -server were specified.
+  this session as an XNEdit server, as though -server were specified.
 
 **-import file**
   Loads an additional preferences file on top of the existing defaults saved in
   your preferences file.  To incorporate macros, language modes, and highlight
-  patterns and styles written by other users, run NEdit with -import <file>,
+  patterns and styles written by other users, run XNEdit with -import <file>,
   then re-save your preferences file with Preferences -> Save Defaults.
 
 **-version**
-  Prints out the NEdit version information. The -V option is synonymous.
+  Prints out the XNEdit version information. The -V option is synonymous.
 
 **-help**
-  Prints out the NEdit command line help. The -h option is synonymous.
+  Prints out the XNEdit command line help. The -h option is synonymous.
 
 **--**
   Treats all subsequent arguments as file names, even if they start with a
-  dash. This is so NEdit can access files that begin with the dash character.
+  dash. This is so XNEdit can access files that begin with the dash character.
 
 .. ? help~
 !!#else
 ..
-..   This documentation for VMS NEdit usage should only appear in the
+..   This documentation for VMS XNEdit usage should only appear in the
 ..   generated help code, not in any of the printed documentation.
 ..   Reasoning is that VMS usage is diminishing and there is a desire
 ..   to not clutter up the printed documentation here.
@@ -4981,15 +4981,15 @@ NEdit Command Line
   Go to line #n
 
 **/server**
-  Designate this session as an NEdit server for processing commands from the nc
-  program. The nc program can be used to interface NEdit to code development
+  Designate this session as an XNEdit server for processing commands from the xnc
+  program. The xnc program can be used to interface XNEdit to code development
   environments, mailers, etc., or just as a quick way to open files from the
-  shell command line without starting a new NEdit session.
+  shell command line without starting a new XNEdit session.
 
 **/do=command**
-  Execute an NEdit action routine. on each file following the /do argument on
-  the command line.  /do is particularly useful from the nc program, where nc
-  /do can remotely execute commands in an nedit /server session.
+  Execute an XNEdit action routine. on each file following the /do argument on
+  the command line.  /do is particularly useful from the xnc program, where xnc
+  /do can remotely execute commands in an xnedit /server session.
 
 **/tags=file**
   Load a file of directions for finding definitions of program subroutines and
@@ -5057,11 +5057,11 @@ NEdit Command Line
 
 **/xrm=resourcestring**
   Set the value of an X resource to override a default value
-  (see Customizing NEdit).
+  (see Customizing XNEdit).
 
 **/svrname=name**
-  When starting nedit in server mode, name the server, such that it responds to
-  requests only when nc is given a corresponding -svrname argument.  By naming
+  When starting xnedit in server mode, name the server, such that it responds to
+  requests only when xnc is given a corresponding -svrname argument.  By naming
   servers, you can run several simultaneously, and direct files and commands
   specifically to any one.
 
@@ -5085,30 +5085,30 @@ NEdit Command Line
 Client/Server Mode
 ------------------
 
-  NEdit can be operated on its own, or as a two-part client/server
-  application.  Client/server mode is useful for integrating NEdit with
+  XNEdit can be operated on its own, or as a two-part client/server
+  application.  Client/server mode is useful for integrating XNEdit with
   software development environments, mailers, and other programs; or just as a
   quick way to open files from the shell command line without starting a new
-  NEdit session.
+  XNEdit session.
 
-  To run NEdit in server mode, type:
+  To run XNEdit in server mode, type:
 
-      nedit -server
+      xnedit -server
 
-  NEdit can also be started in server mode via the NEdit Client program
-  (**nc**) when no servers are available.
+  XNEdit can also be started in server mode via the XNEdit Client program
+  (**xnc**) when no servers are available.
 
-  The nc program, which is distributed along with NEdit, sends commands to
-  an NEdit server to open files or execute editor actions. It can also be
+  The xnc program, which is distributed along with XNEdit, sends commands to
+  an XNEdit server to open files or execute editor actions. It can also be
   used on files that are already opened.
 
-  Listing a file on the nc command line means: Open it if it is not already
+  Listing a file on the xnc command line means: Open it if it is not already
   open and bring the window to the front.
 
 
-  nc supports the following command line options:
+  xnc supports the following command line options:
 
-    **nc** [**-read**] [**-create**]
+    **xnc** [**-read**] [**-create**]
        [**-line** n | **+**n] [**-do** command] [**-lm** languagemode]
        [**-svrname** name] [**-svrcmd** command]
        [**-ask**] [**-noask**] [**-timeout** seconds]
@@ -5129,32 +5129,32 @@ Client/Server Mode
   Go to line number n. This will also affect files which are already open.
 
 **-do** command
-  Execute an NEdit macro or action on the file following the -do argument
+  Execute an XNEdit macro or action on the file following the -do argument
   on the command line.
 
-  If you use this command without a filename, nc would randomly choose one
+  If you use this command without a filename, xnc would randomly choose one
   window to focus and execute the macro in.
 
 **-lm** languagemode
   Initial language mode used.
 
 **-svrname** name
-  Explicitly instructs nc which server to connect to, an instance of
-  nedit(1) with a corresponding -svrname argument.  By naming servers, you
+  Explicitly instructs xnc which server to connect to, an instance of
+  xnedit(1) with a corresponding -svrname argument.  By naming servers, you
   can run several simultaneously, and direct files and commands
   specifically to any one.
 
 **-svrcmd** command
-  The command which nc uses to start an NEdit server. It is also settable
+  The command which xnc uses to start an XNEdit server. It is also settable
   via the X resource `nc.serverCommand' (see X_Resources_). Defaults to
-  "nedit -server".
+  "xnedit -server".
 
 **-ask**, **-noask**
-  Instructs nc to automatically start a server if one is not available.  This
+  Instructs xnc to automatically start a server if one is not available.  This
   overrides the X resource `nc.autoStart' (see X_Resources_).
 
 **-timeout** seconds
-  Basic time-out period used in communication with an NEdit server.  The
+  Basic time-out period used in communication with an XNEdit server.  The
   default is 10 seconds. Also settable via the X resource `nc.timeOut'.
 
   Under rare conditions (such as a slow connection), it may be necessary to
@@ -5162,7 +5162,7 @@ Client/Server Mode
 
 **-geometry** geometry, **-g** geometry
   The initial size and/or location of editor windows. See
-  NEdit_Command_Line_ for details.
+  XNEdit_Command_Line_ for details.
 
 **-icon**, **-iconic**
   Initial window state.
@@ -5177,27 +5177,27 @@ Client/Server Mode
   Open all subsequent files as tabs in a new window.
 
 **-wait**
-  Instructs nc not to return to the shell until all files given are closed.
+  Instructs xnc not to return to the shell until all files given are closed.
 
-  Normally, nc returns once the files given in its command line are opened
-  by the server. When this option is given, nc returns only after the last
+  Normally, xnc returns once the files given in its command line are opened
+  by the server. When this option is given, xnc returns only after the last
   file given in this call is closed.
 
   Note that this option affects all files in the command line, not only the
   ones following this option.
 
-  Note that nc will wait for all files given in the command line, even if
+  Note that xnc will wait for all files given in the command line, even if
   the files were already opened.
 
 **-version**, **-V**
-  Prints nc's version and build information.
+  Prints xnc's version and build information.
 
 **-xrm** resourcestring
   Contains the resourcestring passed to a newly started server. This option
   has no effect if the server is already started.
 
 **-display** [<host>]:<server>[.<screen>]
-  The name of the X server to use. See NEdit_Command_Line_ for details.
+  The name of the X server to use. See XNEdit_Command_Line_ for details.
 
 
 4>Command Line Arguments
@@ -5205,8 +5205,8 @@ Client/Server Mode
   In typical Unix style, arguments affect the files which follow them on the
   command line, for example:
 
-      incorrect:   nc file.c -line 25
-      correct:     nc -line 25 file.c
+      incorrect:   xnc file.c -line 25
+      correct:     xnc -line 25 file.c
 
   -read, -create, and -line affect all of the files which follow them on the
   command line.
@@ -5221,9 +5221,9 @@ Client/Server Mode
 
 4>Multiple Servers
 
-  Sometimes it is useful to have more than one NEdit server running, for
+  Sometimes it is useful to have more than one XNEdit server running, for
   example to keep mail and programming work separate.  The option, -svrname, to
-  both nedit and nc, allows you to start, and communicate with, separate named
+  both xnedit and xnc, allows you to start, and communicate with, separate named
   servers.  A named server responds only to requests with the corresponding
   -svrname argument.  If you use ClearCase and are within a ClearCase view, the
   server name will default to the name of the view (based on the value of the
@@ -5231,16 +5231,16 @@ Client/Server Mode
 
 4>Communication
 
-  Communication between nc and nedit is done through the X display. So as long
-  as the X Window System is set up and working properly, nc will work properly
-  as well. nc uses the DISPLAY environment variable, the machine name and your
+  Communication between xnc and xnedit is done through the X display. So as long
+  as the X Window System is set up and working properly, xnc will work properly
+  as well. xnc uses the DISPLAY environment variable, the machine name and your
   user name to find the appropriate server, meaning, if you have several
-  machines sharing a common file system, nc will not be able to find a server
+  machines sharing a common file system, xnc will not be able to find a server
   that is running on a machine with a different host name, even though it may
   be perfectly appropriate for editing a given file.
 
-  The command which nc uses to start an nedit server is settable via the X
-  resource nc.serverCommand, by default, "nedit -server".
+  The command which xnc uses to start an xnedit server is settable via the X
+  resource nc.serverCommand, by default, "xnedit -server".
    ----------------------------------------------------------------------
 
 Crash Recovery
@@ -5248,14 +5248,14 @@ Crash Recovery
 
   If a system crash, network failure, X server crash, or program error should
   happen while you are editing a file, you can still recover most of your
-  work.  NEdit maintains a backup file which it updates periodically (every 8
+  work.  XNEdit maintains a backup file which it updates periodically (every 8
   editing operations or 80 characters typed).  This file has the same name
   as the file that you are editing, but with the character `~' (tilde) on Unix
   or `_' (underscore) on VMS prefixed to the name.  To recover a file after a
   crash, simply rename the file to remove the tilde or underscore character,
   replacing the older version of the file.  (Because several of the Unix shells
   consider the tilde to be a special character, you may have to prefix the
-  character with a `\' (backslash) when you move or delete an NEdit backup
+  character with a `\' (backslash) when you move or delete an XNEdit backup
   file.)
 
   Example, to recover the file called "help.c" on Unix type the command:
@@ -5264,8 +5264,8 @@ Crash Recovery
 
   A minor caveat, is that if the file you were editing was in MS DOS format,
   the backup file will be in Unix format, and you will need to open the backup
-  file in NEdit and change the file format back to MS DOS via the Save As...
-  dialog (or use the Unix unix2dos command outside of NEdit).
+  file in XNEdit and change the file format back to MS DOS via the Save As...
+  dialog (or use the Unix unix2dos command outside of XNEdit).
    ----------------------------------------------------------------------
 
 Version
@@ -5308,7 +5308,7 @@ Version
   Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Max Vohlken, Yunliang Yu,
   Donna Reid, Steve Haehn, Steve LoBasso, and Alexander Mai.
   
-  The regular expression matching routines used in NEdit are adapted (with
+  The regular expression matching routines used in XNEdit are adapted (with
   permission) from original code written by Henry Spencer at the
   University of Toronto.
 
@@ -5323,8 +5323,8 @@ Version
   Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones,
   and Niek van den Berg.
 
-  NEdit sources, executables, additional documentation, and contributed
-  software are available from the NEdit web site at http://www.nedit.org_.
+  XNEdit sources, executables, additional documentation, and contributed
+  software are available from the XNEdit web site at http://www.nedit.org_.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU_General_Public_License_
@@ -5620,15 +5620,15 @@ GNU General Public License
 Mailing Lists
 -------------
 
-  There are two separate mailing lists for nedit users, and one for developers.
+  There are two separate mailing lists for xnedit users, and one for developers.
   Users may post to the developer mailing list to report defects and communicate
-  with the nedit developers.  Remember that nedit is entirely a volunteer
+  with the xnedit developers.  Remember that xnedit is entirely a volunteer
   effort, so please ask questions first to the discussion list, and do your
   share to answer other users questions as well.
 
     discuss@@nedit.org_
 
-  General discussion, questions and answers among NEdit users and developers.
+  General discussion, questions and answers among XNEdit users and developers.
 
     announce@@nedit.org_
 
@@ -5636,7 +5636,7 @@ Mailing Lists
 
     develop@@nedit.org_
 
-  Communication among and with NEdit developers.
+  Communication among and with XNEdit developers.
   Developers should also subscribe to the discuss list.
 
   To subscribe, send mail to one of the following addresses:
@@ -5656,7 +5656,7 @@ Problems/Defects
 3>Solutions to Common Problems
 
   For a much more comprehensive list of common problems and solutions, see the
-  NEdit FAQ.  The latest version of the FAQ can always be found on the NEdit
+  XNEdit FAQ.  The latest version of the FAQ can always be found on the XNEdit
   web site at:
 
       http://www.nedit.org_.
@@ -5675,7 +5675,7 @@ Problems/Defects
 
   **P: Preferences specified in the Preferences menu don't seem to get saved when I select Save Defaults.**
 
-  S: NEdit has two kinds of preferences: 1) per-window preferences, in the
+  S: XNEdit has two kinds of preferences: 1) per-window preferences, in the
   Preferences menu, and 2) default settings for preferences in newly created
   windows, in the Default Settings sub-menu of the Preferences menu.
   Per-window preferences are not saved by Save Defaults, only Default
@@ -5683,12 +5683,12 @@ Problems/Defects
 
   **P: Columns and indentation don't line up.**
 
-  S: NEdit is using a proportional width font.  Set the font to a fixed style
+  S: XNEdit is using a proportional width font.  Set the font to a fixed style
   (see Preferences menu).
 
-  **P: NEdit performs poorly on very large files.**
+  **P: XNEdit performs poorly on very large files.**
 
-  S: Turn off Incremental Backup.  With Incremental Backup on, NEdit
+  S: Turn off Incremental Backup.  With Incremental Backup on, XNEdit
   periodically writes a full copy of the file to disk.
 
   **P: Commands added to the Shell Commands menu (Unix only) don't output anything until they are finished executing.**
@@ -5703,9 +5703,9 @@ Problems/Defects
   S: Most X Window managers allow you to choose between two categories of
   keyboard focus models: pointer focus, and explicit focus.  Pointer focus
   means that as you move the mouse around the screen, the window under the
-  mouse automatically gets the keyboard focus.  NEdit users who use this
+  mouse automatically gets the keyboard focus.  XNEdit users who use this
   focus model should set "Popups Under Pointer" in the Default Settings sub
-  menu of the preferences menu in NEdit.  Users with the explicit focus
+  menu of the preferences menu in XNEdit.  Users with the explicit focus
   model, in some cases, may have problems with certain dialogs, such as Find
   and Replace.  In MWM this is caused by the mwm resource startupKeyFocus
   being set to False (generally a bad choice for explicit focus users).
@@ -5716,14 +5716,14 @@ Problems/Defects
   **P: The Backspace key doesn't work, or deletes forward rather than backward.**
 
   S: While this is an X/Motif binding problem, and should be solved outside of
-  NEdit in the Motif virtual binding layer (or possibly xmodmap or
-  translations), NEdit provides an out.  If you set the resource:
-  nedit.remapDeleteKey to True, NEdit will forcibly map the delete key to
+  XNEdit in the Motif virtual binding layer (or possibly xmodmap or
+  translations), XNEdit provides an out.  If you set the resource:
+  nedit.remapDeleteKey to True, XNEdit will forcibly map the delete key to
   backspace.  The default setting of this resource recently changed, so
   users who have been depending on this remapping will now have to set it
   explicitly (or fix their bindings).
 
-  **P: NEdit crashes when I try to paste text in to a text field in a dialog (like Find or Replace) on my SunOS system.**
+  **P: XNEdit crashes when I try to paste text in to a text field in a dialog (like Find or Replace) on my SunOS system.**
 
   S: On many SunOS systems, you have to set up an nls directory before various
   inter-client communication features of Motif will function properly.
@@ -5735,8 +5735,8 @@ Problems/Defects
 
 3>Known Defects
 
-  Below is the list of known defects which affect NEdit. The defects your copy
-  of NEdit will exhibit depend on which system you are running and with which
+  Below is the list of known defects which affect XNEdit. The defects your copy
+  of XNEdit will exhibit depend on which system you are running and with which
   Motif libraries it was built. Note that there are now Motif 1.2 and/or 2.0
   libraries available on ALL supported platforms, and as you can see below
   there are far fewer defects in Motif 1.2, so it is in your best interest to
@@ -5767,13 +5767,13 @@ Problems/Defects
     http://sf.net/tracker/?func=add&group_id=11005&atid=111005
 
   Please include the first few lines from Help > Version, which identifies
-  NEdit's version and other system attributes important for diagnosing your
+  XNEdit's version and other system attributes important for diagnosing your
   problem.
 
-  The NEdit developers subscribe to both discuss@@nedit.org and
+  The XNEdit developers subscribe to both discuss@@nedit.org and
   develop@@nedit.org, either of which may be used for reporting defects.  If
   you're not sure, or you think the report might be of interest to the general
-  NEdit user community, send the report to discuss@@nedit.org_.  If it's
+  XNEdit user community, send the report to discuss@@nedit.org_.  If it's
   something obvious and boring, like we misspelled "anemometer" in the on-line
   help, send it to develop@@nedit.org_.  If you don't want to subscribe to the
   Mailing_Lists_, please add a note to your mail about cc'ing you on responses.
@@ -5801,7 +5801,7 @@ Problems/Defects
 .. The number of spaces indented is not significant, but items to be placed
 .. in the same menu panel MUST line up at the same indent level.
 .. ALL nodes of this menu "tree" should have help name qualifiers.
-.. These are used to produce the internal lists used by NEdit help code.
+.. These are used to produce the internal lists used by XNEdit help code.
 
 .. By default, the first character of the menu element will be used as a
 .. menu mneumonic key. To use another character in the menu element for this
@@ -5826,9 +5826,9 @@ Problems/Defects
 .. in buildHelpMenu (found in 'menu.c'). When the number matches the hideIt
 .. value found in the procedure, that element will effectively become invisible.
 .. This mechanism was created for particular menu features that are not
-.. available to all incarnations of NEdit (in this case, the VMS version).
+.. available to all incarnations of XNEdit (in this case, the VMS version).
 
-.. A "Help" directive is used for all other text used as NEdit help, but
+.. A "Help" directive is used for all other text used as XNEdit help, but
 .. does not show up in the Help menu.
 
 ..       Menu Title                         # Help-name
@@ -5845,7 +5845,7 @@ Problems/Defects
 .. Menu:   F_i_le Format                    # format
 
 .. Menu: Features for Programming           # features
-.. Menu:   Programming with NEdit           # programmer
+.. Menu:   Programming with XNEdit           # programmer
 .. Menu:   Tab Stops/Emulated Tab Stops     # tabs
 .. Menu:   Auto/Smart Indent                # indent
 .. Menu:   Syntax Highlighting              # syntax
@@ -5869,14 +5869,14 @@ Problems/Defects
 .. Menu:   Action Routines                  # actions
 
 .. Menu: Customizing                        # customizing
-.. Menu:   Customizing NEdit                # customize
+.. Menu:   Customizing XNEdit                # customize
 .. Menu:   Preferences                      # preferences
 .. Menu:   X Resources                      # resources
 .. Menu:   Key Binding                      # binding
 .. Menu:   Highlighting Patterns            # patterns
 .. Menu:   Smart Indent Macros              # smart_indent
 
-.. Menu: NEdit Command Line                 # command_line
+.. Menu: XNEdit Command Line                 # command_line
 .. Menu: Client/Server Mode                 # server
 .. Menu: Cr_a_sh Recovery                   # recovery
 .. Menu: ---------------------------------- # separator1
