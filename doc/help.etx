@@ -82,9 +82,9 @@ Getting Started
 ..
 ..   XNEdit is a single stand-alone executable file which can be installed by simply
 ..   copying the appropriate executable "xnedit" for your system.  Both sources and
-..   executables are available from http://www.nedit.org.  The optional "xnc" (XNEdit
-..   Client) program is also available for users who want to run xnedit in
-..   client/server mode.
+..   executables are available from https://www.unixwork.de/xnedit/. 
+..   The optional "xnc" (XNEdit Client) program is also available for users who want
+..   to run xnedit in client/server mode.
 ..
 .. Getting Started
 .. ---------------
@@ -5301,12 +5301,13 @@ Version
 .. binary.
 .. ======================================================================
 
-  Active developers: Tony Balinski, Arne Førlie, Nathaniel Gray, Eddy De
-  Greef, Thorsten Haude, Andrew Hood, Scott Tringali, and TK Soh.
-
-  Retired developers: Mark Edel, Joy Kyriakopulos, Christopher Conrad, Jim
-  Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Max Vohlken, Yunliang Yu,
-  Donna Reid, Steve Haehn, Steve LoBasso, and Alexander Mai.
+  XNEdit is based on NEdit 5.7 and developed by Olaf Wintermann.
+  
+  NEdit developers: Tony Balinski, Arne Førlie, Nathaniel Gray, Eddy De
+  Greef, Thorsten Haude, Andrew Hood, Scott Tringali, TK Soh, Mark Edel,
+  Joy Kyriakopulos, Christopher Conrad, Jim Clark, Arnulfo Zepeda-Navratil,
+  Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn,
+  Steve LoBasso and Alexander Mai.
   
   The regular expression matching routines used in XNEdit are adapted (with
   permission) from original code written by Henry Spencer at the
@@ -5324,7 +5325,8 @@ Version
   and Niek van den Berg.
 
   XNEdit sources, executables, additional documentation, and contributed
-  software are available from the XNEdit web site at http://www.nedit.org_.
+  software are available from the XNEdit web site at
+  https://www.unixwork.de/xnedit/.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU_General_Public_License_
@@ -5659,7 +5661,7 @@ Problems/Defects
   XNEdit FAQ.  The latest version of the FAQ can always be found on the XNEdit
   web site at:
 
-      http://www.nedit.org_.
+      https://www.unixwork.de/xnedit/_.
 
   **P: No files are shown in the "Files" list in the Open... dialog.**
 
@@ -5788,7 +5790,7 @@ Problems/Defects
 .. _discuss-request@@nedit.org   mailto:discuss-request@@nedit.org
 .. _announce-request@@nedit.org  mailto:announce-request@@nedit.org
 .. _develop-request@@nedit.org   mailto:develop-request@@nedit.org
-.. _http://www.nedit.org http://www.nedit.org
+.. _https://www.unixwork.de/xnedit/ https://www.unixwork.de/xnedit/
 .. _ctags_support         #ctags
 .. _Alternation          #alternation
 .. _Autoload_Files       #automatically
