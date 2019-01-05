@@ -1861,12 +1861,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     NFont *charFL;
     XftFont *styleFont;
     XftFont *charFont;
-    
-    leftCharIndex = 0; /* workaround for horizontal scrolling */
-    if(leftClip > 100) {
-        printf("debug\n");
-    }
-    
+     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -3192,40 +3187,40 @@ static int countLines(const char *string)
 */
 static int measureVisLine(textDisp *textD, int visLineNum)
 {
+    textBuffer *buf = textD->buffer;
     int i, width = 0, len, style, lineLen = visLineLength(textD, visLineNum);
-    int charCount = 0, lineStartPos = textD->lineStarts[visLineNum];
-    char expandedChar[MAX_EXP_CHAR_LEN];
+    int lineStartPos = textD->lineStarts[visLineNum];
+    char *lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+    FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
+    FcChar32 uc;
+    int inc;
+    int charLen;
+    char indent = 0;
+    NFont *font;
     
-    if (textD->styleBuffer == NULL) {
-	for (i=0; i<lineLen; i++) {
-    	    len = BufGetExpandedChar(textD->buffer, lineStartPos + i,
-    		    charCount, expandedChar);
-            XGlyphInfo extents;
-            XftTextExtentsUtf8(
-                    XtDisplay(textD->w),
-                    FontDefault(textD->font),
-                    (FcChar8*)expandedChar,
-                    len,
-                    &extents);
-            width += extents.width;
-    	    charCount += len;
-	}
-    } else {
-    	for (i=0; i<lineLen; i++) {
-    	    len = BufGetExpandedChar(textD->buffer, lineStartPos+i,
-    		    charCount, expandedChar);
-    	    style = (unsigned char)BufGetCharacter(textD->styleBuffer,
+    for(i=0;i<lineLen;i+=inc) {
+        inc = Utf8ToUcs4(lineStr+i, &uc, lineLen - i);
+        if(inc > 1) {
+            charLen = 1;
+            expandedChar[0] = uc;
+            indent += inc;
+        } else {
+            charLen = BufExpandCharacter4(lineStr[i],
+                    indent,
+                    expandedChar,
+                    buf->tabDist, buf->nullSubsChar);
+            indent += charLen;
+        }
+        
+        if (textD->styleBuffer) {
+            style = (unsigned char)BufGetCharacter(textD->styleBuffer,
 		    lineStartPos+i) - ASCII_A;
-            XGlyphInfo extents;
-            XftTextExtentsUtf8(
-                    XtDisplay(textD->w),
-                    FontDefault(textD->styleTable[style].font),
-                    (FcChar8*)expandedChar,
-                    len,
-                    &extents);
-    	    width += extents.width;
-    	    charCount += len;
-	}
+            font = textD->styleTable[style].font;
+        } else {
+            font = textD->font;
+        }
+        
+        width += stringWidth4(textD, expandedChar, charLen, font);
     }
     return width;
 }
