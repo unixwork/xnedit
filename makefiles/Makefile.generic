@@ -115,7 +115,7 @@ AR=ar
 # syntax highlighting performance.   You will also often need to add locations
 # of X and/or Motif include files if they are not in the compiler's standard
 # search path.
-CFLAGS=-O
+CFLAGS=-O -I/usr/include/X11 `pkg-config --cflags xft fontconfig`
 
 # Flags for the library (archive) tool.  These are pretty much standard
 # across all Unix systems, but if your system is having trouble building or
@@ -133,7 +133,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -lXm -lXt -lX11 -lm
+LIBS= -lXm -lXt -lX11 -lm -lXpm -lXrender `pkg-config --libs xft fontconfig`
 
 # System independent part
 include Makefile.common
