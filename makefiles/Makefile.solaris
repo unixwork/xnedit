@@ -18,15 +18,18 @@ AR=ar
 # To test if the Motif library exports the runtime version
 # add -DHAVE__XMVERSIONSTRING to CFLAGS
 #
-#CFLAGS=-g -I/usr/openwin/include -I/usr/dt/include \
-#    	-DUSE_DIRENT -DROWCOLPATCH -DNO_XMIM
-CFLAGS=-O -I/usr/openwin/include -I/usr/include/X11 -DUSE_DIRENT `pkg-config --cflags fontconfig xft`
+
+ARCH=-m64
+#ARCH=-m32
+
+PKGCONFIG_CFLAGS:sh=pkg-config --cflags xft fontconfig
+CFLAGS=-O $(ARCH) -I/usr/openwin/include -I/usr/include/X11 -DUSE_DIRENT $(PKGCONFIG_CFLAGS)
 
 ARFLAGS=-urs
-LIBS= -L/usr/lib -L/usr/sfw/lib -L/usr/openwin/lib -L/usr/dt/lib -lm -lXm -lXt -lXpm -lX11 -lXrender \
-    	-lsocket -lnsl  -R /usr/openwin/lib -R /usr/dt/lib -R /usr/ucblib `pkg-config --libs fontconfig xft`
-#LIBS= -L/usr/openwin/lib -L/opt/SUNWmotif/lib -lm -lXm \
-#	-lXt -lX11 -lgen -R /usr/openwin/lib
+
+PKGCONFIG_LIBS:sh = pkg-config --libs xft fontconfig
+LIBS= -L/usr/lib $(ARCH) -L/usr/sfw/lib -lm -lXm -lXt -lXpm -lX11 -lXrender \
+    	-lsocket -lnsl $(PKGCONFIG_LIBS)
 
 include Makefile.common
 
