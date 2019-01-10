@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jan 5, 2019 (Do NOT edit!)
+                 Generated on Jan 10, 2019 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2019 Mark Edel                                            *
@@ -5111,6 +5111,12 @@ static char * htxt_version [] = {
 "not obligated to do so. If you do not wish to do so, delete this ",
 "exception statement from your version. ",
 "\n\n",
+"The file dialog icons are from the Common Desktop Environment (CDE), ",
+"by The Open Group, released under the terms of the Creative Commons ",
+"Attribution Share Alike 3.0 license. ",
+"\n\n",
+"http://creativecommons.org/licenses/by-sa/3.0/ ",
+"\n\n",
 "This program is distributed in the hope that it will be useful, ",
 "but WITHOUT ANY WARRANTY; without even the implied warranty of ",
 "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ",
@@ -5750,4 +5756,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit release of Jan  5, 2019\n";
+static const char * NEditVersion = "XNEdit release of Jan 10, 2019\n";
