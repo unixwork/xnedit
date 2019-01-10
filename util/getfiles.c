@@ -517,10 +517,10 @@ int HandleCustomNewFileSB(Widget newFileSB, char *filename, char *defaultName)
     XtAddCallback(newFileSB, XmNhelpCallback, (XtCallbackProc)newHelpCB, 
     	    (char *)help);
 #if XmVersion >= 1002
-#ifndef SGI_CUSTOM
+#ifndef REAL_SGI_CUSTOM
     XtVaSetValues(newFileSB, XmNinitialFocus, 
     	    XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_TEXT), NULL);
-#else /* SGI_CUSTOM */
+#else /* REAL_SGI_CUSTOM */
     { Widget finder = XmFileSelectionBoxGetChild(newFileSB, SgDIALOG_FINDER);
       if ( finder != NULL )
     	  XtVaSetValues(newFileSB, XmNinitialFocus, finder, NULL);
