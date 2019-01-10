@@ -1299,35 +1299,13 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
         }
     }
 
-    if (PrefData.prefFileRead && fileVer < 5002) {
-        updatePatternsTo5dot2();
-    }
-    
-    if (PrefData.prefFileRead && fileVer < 5003) {
-        updateShellCmdsTo5dot3();
-        updatePatternsTo5dot3();
-    }
-
     /* Note that we don't care about unreleased file versions.  Anyone
        who is running a CVS or alpha version of NEdit is resposnbile
        for managing the preferences file themselves.  Otherwise, it
        gets impossible to track the number of "in-between" file formats.
        We only do auto-upgrading for a real release. */
 
-    if (PrefData.prefFileRead && (fileVer < 5004)) {
-        migrateColorResources(prefDB, appDB);
-        updateShellCmdsTo5dot4();
-        updatePatternsTo5dot4();
-    }
-    if (PrefData.prefFileRead && (fileVer < 5005)) {
-        updateMacroCmdsTo5dot5();
-    }
-    if (PrefData.prefFileRead && (fileVer < 5006)) {
-        fprintf(stderr, "NEdit: Converting .nedit file to 5.6 version.\n"
-                "    To keep, use Preferences -> Save Defaults\n");
-        updateMacroCmdsTo5dot6();
-        updatePatternsTo5dot6();
-    }
+    
     /* Migrate colors if there's no config file yet */
     if (!PrefData.prefFileRead) {
         migrateColorResources(prefDB, appDB);
