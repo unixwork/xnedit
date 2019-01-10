@@ -17,7 +17,7 @@ AR=ar
 # To test if the Motif library exports the runtime version
 # add -DHAVE__XMVERSIONSTRING to CFLAGS
 #
-CFLAGS=-O -I/usr/X11R6/include -I/usr/include/X11 -DUSE_DIRENT -DUSE_LPR_PRINT_CMD $(shell pkg-config --cflags xft fontconfig)
+CFLAGS=-O -g -I/usr/X11R6/include -I/usr/include/X11 -DSGI_CUSTOM -DUSE_DIRENT -DUSE_LPR_PRINT_CMD $(shell pkg-config --cflags xft fontconfig)
 
 ARFLAGS=-urs
 

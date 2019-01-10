@@ -68,8 +68,8 @@
 #include "../debug.h"
 #endif
 
-#define APP_NAME "nc"
-#define APP_CLASS "NEditClient"
+#define APP_NAME "xnc"
+#define APP_CLASS "XNEditClient"
 
 #define PROPERTY_CHANGE_TIMEOUT (Preferences.timeOut * 1000) /* milliseconds */
 #define SERVER_START_TIMEOUT    (Preferences.timeOut * 3000) /* milliseconds */
@@ -112,7 +112,7 @@ static const char cmdLineHelp[] =
 #ifdef VMS
 "[Sorry, no on-line help available.]\n"; /* Why is that ? */
 #else
-"Usage:  nc [-read] [-create]\n"
+"Usage: xnc [-read] [-create]\n"
 "           [-line n | +n] [-do command] [-lm languagemode]\n"
 "           [-svrname name] [-svrcmd command]\n"
 "           [-ask] [-noask] [-timeout seconds]\n"
@@ -136,7 +136,7 @@ static struct {
 static PrefDescripRec PrefDescrip[] = {
     {"autoStart", "AutoStart", PREF_BOOLEAN, "True",
       &Preferences.autoStart, NULL, True},
-    {"serverCommand", "ServerCommand", PREF_STRING, "nedit -server",
+    {"serverCommand", "ServerCommand", PREF_STRING, "xnedit -server",
       Preferences.serverCmd, (void *)sizeof(Preferences.serverCmd), False},
     {"serverName", "serverName", PREF_STRING, "", Preferences.serverName,
       (void *)sizeof(Preferences.serverName), False},
@@ -260,7 +260,7 @@ int main(int argc, char **argv)
     TheDisplay = XtOpenDisplay (context, NULL, APP_NAME, APP_CLASS, NULL,
     	    0, &argc, argv);
     if (!TheDisplay) {
-	XtWarning ("nc: Can't open display\n");
+	XtWarning ("xnc: Can't open display\n");
 	exit(EXIT_FAILURE);
     }
     rootWindow = RootWindow(TheDisplay, DefaultScreen(TheDisplay));
@@ -354,7 +354,7 @@ static Boolean findExistingServer(XtAppContext context,
     unsigned long dummyULong, nItems;
 
     /* See if there might be a server (not a guaranty), by translating the
-       root window property NEDIT_SERVER_EXISTS_<user>_<host> */
+       root window property XNEDIT_SERVER_EXISTS_<user>_<host> */
     if (XGetWindowProperty(TheDisplay, rootWindow, serverExistsAtom, 0,
     	    INT_MAX, False, XA_STRING, &dummyAtom, &getFmt, &nItems,
     	    &dummyULong, &propValue) != Success || nItems == 0) {
@@ -590,7 +590,7 @@ static CommandLine processCommandLine(int argc, char** argv)
     /* Convert command line arguments into a command string for the server */
     parseCommandLine(argc, argv, &commandLine);
     if (commandLine.serverRequest == NULL) {
-        fprintf(stderr, "nc: Invalid commandline argument\n");
+        fprintf(stderr, "xnc: Invalid commandline argument\n");
 	exit(EXIT_FAILURE);
     }
 
@@ -665,13 +665,13 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
     	    nextArg(argc, argv, &i);
 	    nRead = sscanf(argv[i], "%d", &lineArg);
 	    if (nRead != 1)
-    		fprintf(stderr, "nc: argument to line should be a number\n");
+    		fprintf(stderr, "xnc: argument to line should be a number\n");
     	    else
     	    	lineNum = lineArg;
     	} else if (opts && (*argv[i] == '+')) {
     	    nRead = sscanf((argv[i]+1), "%d", &lineArg);
 	    if (nRead != 1)
-    		fprintf(stderr, "nc: argument to + should be a number\n");
+    		fprintf(stderr, "xnc: argument to + should be a number\n");
     	    else
     	    	lineNum = lineArg;
     	} else if (opts && (!strcmp(argv[i], "-ask") || !strcmp(argv[i], "-noask"))) {
@@ -695,7 +695,7 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
 #ifdef VMS
 	    *argv[i] = '/';
 #endif /*VMS*/
-    	    fprintf(stderr, "nc: Unrecognized option %s\n%s", argv[i],
+    	    fprintf(stderr, "xnc: Unrecognized option %s\n%s", argv[i],
     	    	    cmdLineHelp);
     	    exit(EXIT_FAILURE);
     	} else {
@@ -956,14 +956,14 @@ static void nextArg(int argc, char **argv, int *argIndex)
 #ifdef VMS
 	    *argv[*argIndex] = '/';
 #endif /*VMS*/
-    	fprintf(stderr, "nc: %s requires an argument\n%s",
+    	fprintf(stderr, "xnc: %s requires an argument\n%s",
 	        argv[*argIndex], cmdLineHelp);
     	exit(EXIT_FAILURE);
     }
     (*argIndex)++;
 }
 
-/* Copies a given nc command line argument to the server startup command
+/* Copies a given xnc command line argument to the server startup command
 ** line (-icon, -geometry, -xrm, ...) Special characters are protected from
 ** the shell by escaping EVERYTHING with \ 
 ** Note that the .shell string in the command line structure is large enough
@@ -998,14 +998,14 @@ static void copyCommandLineArg(CommandLine *commandLine, const char *arg)
 #endif /* VMS */
 }
 
-/* Print version of 'nc' */
+/* Print version of 'xnc' */
 static void printNcVersion(void ) {
-   static const char *const ncHelpText = \
-   "nc (NEdit) Version 5.7 (January 2017)\n\n\
+   static const char *const xncHelpText = \
+   "xnc (XNEdit) Version 0.9 (January 2019)\n\n\
      Built on: %s, %s, %s\n\
      Built at: %s, %s\n";
      
-    fprintf(stdout, ncHelpText,
+    fprintf(stdout, xncHelpText,
                   COMPILE_OS, COMPILE_MACHINE, COMPILE_COMPILER,
                   __DATE__, __TIME__);
 }

@@ -76,8 +76,8 @@
 #define MAX_COLOR_LEN 30	/* maximum length for a color name */
 #define MAX_MARKS 36	    	/* max. # of bookmarks (one per letter & #) */
 #define MIN_LINE_NUM_COLS 4 	/* Min. # of columns in line number display */
-#define APP_NAME "nedit"	/* application name for loading resources */
-#define APP_CLASS "NEdit"	/* application class for loading resources */
+#define APP_NAME "xnedit"	/* application name for loading resources */
+#define APP_CLASS "XNEdit"	/* application class for loading resources */
 
 /* The accumulated list of undo operations can potentially consume huge
    amounts of memory.  These tuning parameters determine how much undo infor-
