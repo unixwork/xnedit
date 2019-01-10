@@ -43,8 +43,8 @@
  * Create the server property atoms for the server with serverName.
  * Atom names are generated as follows:
  * 
- * NEDIT_SERVER_EXISTS_<host_name>_<user>_<server_name>
- * NEDIT_SERVER_REQUEST_<host_name>_<user>_<server_name>
+ * XNEDIT_SERVER_EXISTS_<host_name>_<user>_<server_name>
+ * XNEDIT_SERVER_REQUEST_<host_name>_<user>_<server_name>
  * 
  * <server_name> is the name that can be set by the user to allow
  * for multiple servers to run on the same display. <server_name>
@@ -60,9 +60,9 @@ void CreateServerPropertyAtoms(const char *serverName,
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
 
-    sprintf(propName, "NEDIT_SERVER_EXISTS_%s_%s_%s", hostName, userName, serverName);
+    sprintf(propName, "XNEDIT_SERVER_EXISTS_%s_%s_%s", hostName, userName, serverName);
     *serverExistsAtomReturn = XInternAtom(TheDisplay, propName, False);
-    sprintf(propName, "NEDIT_SERVER_REQUEST_%s_%s_%s", hostName, userName, serverName);
+    sprintf(propName, "XNEDIT_SERVER_REQUEST_%s_%s_%s", hostName, userName, serverName);
     *serverRequestAtomReturn = XInternAtom(TheDisplay, propName, False);
 }
 
@@ -73,7 +73,7 @@ void CreateServerPropertyAtoms(const char *serverName,
  *
  * Atom names are generated as follows:
  * 
- * NEDIT_FILE_<host_name>_<user>_<server_name>_<path>
+ * XNEDIT_FILE_<host_name>_<user>_<server_name>_<path>
  * 
  * <server_name> is the name that can be set by the user to allow
  * for multiple servers to run on the same display. <server_name>
@@ -91,7 +91,7 @@ Atom CreateServerFileOpenAtom(const char *serverName,
     const char *hostName = GetNameOfHost();
     Atom        atom;
 
-    sprintf(propName, "NEDIT_FILE_%s_%s_%s_%s_WF_OPEN", hostName, userName, serverName, path);
+    sprintf(propName, "XNEDIT_FILE_%s_%s_%s_%s_WF_OPEN", hostName, userName, serverName, path);
     atom = XInternAtom(TheDisplay, propName, False);
     return(atom);
 }
@@ -105,7 +105,7 @@ Atom CreateServerFileClosedAtom(const char *serverName,
     const char *hostName = GetNameOfHost();
     Atom        atom;
 
-    sprintf(propName, "NEDIT_FILE_%s_%s_%s_%s_WF_CLOSED", hostName, userName, serverName, path);
+    sprintf(propName, "XNEDIT_FILE_%s_%s_%s_%s_WF_CLOSED", hostName, userName, serverName, path);
     atom = XInternAtom(TheDisplay, propName, only_if_exist);
     return(atom);
 }
@@ -119,7 +119,7 @@ void DeleteServerFileAtoms(const char* serverName, Window rootWindow)
     char propNamePrefix[10+1+MAXNODENAMELEN+1+MAXUSERNAMELEN+1+MAXSERVERNAMELEN+1];
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
-    int length = sprintf(propNamePrefix, "NEDIT_FILE_%s_%s_%s_", hostName, userName, serverName);
+    int length = sprintf(propNamePrefix, "XNEDIT_FILE_%s_%s_%s_", hostName, userName, serverName);
 
     int nProperties;
     Atom* atoms = XListProperties(TheDisplay, rootWindow, &nProperties);
