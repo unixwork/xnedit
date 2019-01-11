@@ -55,11 +55,14 @@
 #endif
 
 
+static int isColFlag = 0;
+static Time selectionTime = 0;
+
 #define N_SELECT_TARGETS 7
-#define N_ATOMS 11
+#define N_ATOMS 12
 enum atomIndex {A_TEXT, A_TARGETS, A_MULTIPLE, A_TIMESTAMP,
 	A_INSERT_SELECTION, A_DELETE, A_CLIPBOARD, A_INSERT_INFO,
-	A_ATOM_PAIR, A_MOTIF_DESTINATION, A_COMPOUND_TEXT};
+	A_ATOM_PAIR, A_MOTIF_DESTINATION, A_COMPOUND_TEXT, A_UTF8_STRING};
 
 /* Results passed back to the convert proc processing an INSERT_SELECTION
    request, by getInsertSelection when the selection to insert has been
@@ -82,10 +85,19 @@ typedef struct {
     int length;
 } selectNotifyInfo;
 
+typedef struct {
+    char *utf8String;
+    char *string;
+    int isColFlag;
+    int cbCount;
+} stringSelection;
+
 static void modifiedCB(int pos, int nInserted, int nDeleted,
 	int nRestyled, const char *deletedText, void *cbArg);
 static void sendSecondary(Widget w, Time time, Atom sel, int action,
 	char *actionText, int actionTextLen);
+static void getSelectionUtf8CB(Widget w, XtPointer clientData, Atom *selType,
+	Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
 	Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
@@ -212,15 +224,22 @@ void CopyToClipboard(Widget w, Time time)
 */
 void InsertPrimarySelection(Widget w, Time time, int isColumnar)
 {
-   static int isColFlag;
-
-   /* Theoretically, strange things could happen if the user managed to get
+    /* Theoretically, strange things could happen if the user managed to get
       in any events between requesting receiving the selection data, however,
       getSelectionCB simply inserts the selection at the cursor.  Don't
       bother with further measures until real problems are observed. */
-   isColFlag = isColumnar;
-   XtGetSelectionValue(w, XA_PRIMARY, XA_STRING, getSelectionCB, &isColFlag,
-   	    time);
+    
+    stringSelection *sel = NEditMalloc(sizeof(stringSelection));
+    sel->utf8String = NULL;
+    sel->string = NULL;
+    sel->cbCount = 0;
+    sel->isColFlag = isColumnar;
+    
+    Atom targets[2] = {XA_STRING, getAtom(XtDisplay(w), A_UTF8_STRING)};
+    void *data[2] = { sel, sel };
+    
+    selectionTime = time;
+    XtGetSelectionValues(w, XA_PRIMARY, targets, 2, getSelectionCB, data, time);
 }
 
 /*
@@ -266,17 +285,23 @@ void ExchangeSelections(Widget w, Time time)
 */
 void MovePrimarySelection(Widget w, Time time, int isColumnar)
 {
-   static Atom targets[2] = {XA_STRING};
-   static int isColFlag;
-   static XtPointer clientData[2] =
-   	    {(XtPointer)&isColFlag, (XtPointer)&isColFlag};
+    // TODO: investigate when this is called and what happens
+    
+    stringSelection *sel = NEditMalloc(sizeof(stringSelection));
+    sel->utf8String = NULL;
+    sel->string = NULL;
+    sel->cbCount = 0;
+    sel->isColFlag = isColumnar;
+    
+    Atom targets[3] = {
+        XA_STRING,
+        getAtom(XtDisplay(w), A_UTF8_STRING),
+        getAtom(XtDisplay(w), A_DELETE)};
+    void *data[3] = { sel, sel, sel};
+    
+    selectionTime = time;
    
-   targets[1] = getAtom(XtDisplay(w), A_DELETE);
-   isColFlag = isColumnar;
-   /* some strangeness here: the selection callback appears to be getting
-      clientData[1] for targets[0] */
-   XtGetSelectionValues(w, XA_PRIMARY, targets, 2, getSelectionCB,
-   	    clientData, time);
+   XtGetSelectionValues(w, XA_PRIMARY, targets, 3, getSelectionCB, data, time);
 }
 
 /*
@@ -468,6 +493,67 @@ static void sendSecondary(Widget w, Time time, Atom sel, int action,
     	    selectNotifyTimerProc, (XtPointer)cbInfo);
 }
 
+
+
+static void selectionSetValue(
+        Widget w,
+        stringSelection *selection,
+        Atom selType,
+        Atom type,
+        XtPointer value,
+        unsigned long length,
+        int format)
+{
+    selection->cbCount++;
+    
+    Atom utf8 = getAtom(XtDisplay(w), A_UTF8_STRING);
+    
+    if(value && (type == XA_STRING || type == utf8) && format == 8) {
+        char *string = NEditMalloc(length+1);
+        memcpy(string, value, length);
+        string[length] = '\0';
+        
+        if(type == XA_STRING) {
+            selection->string = string;
+        } else {
+            selection->utf8String = string;
+        }
+    }
+    
+    XtFree(value);
+    
+    if(selection->cbCount == 2) {
+        char *insertStr = selection->utf8String ? selection->utf8String : selection->string;  
+        if(insertStr) {
+            textDisp *textD = ((TextWidget)w)->text.textD;
+
+            if (!BufSubstituteNullChars(insertStr, length, textD->buffer)) {
+                fprintf(stderr, "Too much binary data, giving up\n");
+            } if (selection->isColFlag) {
+                /* Insert it in the text widget */
+                int cursorPos = TextDGetInsertPosition(textD);
+                int cursorLineStart = BufStartOfLine(textD->buffer, cursorPos);
+                int row, column;
+                TextDXYToUnconstrainedPosition(textD, ((TextWidget)w)->text.btnDownX,
+                        ((TextWidget)w)->text.btnDownY, &row, &column);
+                BufInsertCol(textD->buffer, column, cursorLineStart, insertStr, NULL,NULL);
+                TextDSetInsertPosition(textD, textD->buffer->cursorPosHint);
+            } else {
+                TextInsertAtCursor(w, insertStr, NULL, False,
+                        ((TextWidget)w)->text.autoWrapPastedText);
+            }
+        }
+        
+        if(selection->utf8String) {
+            NEditFree(selection->utf8String);
+        }
+        if(selection->string) {
+            NEditFree(selection->string);
+        }
+        NEditFree(selection);
+    }
+}
+
 /*
 ** Called when data arrives from a request for the PRIMARY selection.  If
 ** everything is in order, it inserts it at the cursor in the requesting
@@ -476,49 +562,7 @@ static void sendSecondary(Widget w, Time time, Atom sel, int action,
 static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
 	Atom *type, XtPointer value, unsigned long *length, int *format)
 {
-    textDisp *textD = ((TextWidget)w)->text.textD;
-    int isColumnar = *(int *)clientData;
-    int cursorLineStart, cursorPos, column, row;
-    char *string;
- 
-    /* Confirm that the returned value is of the correct type */
-    if (*type != XA_STRING || *format != 8) {
-        NEditFree(value);
-    	return;
-    }
-    
-    /* Copy the string just to make space for the null character (this may
-       not be necessary, XLib documentation claims a NULL is already added,
-       but the Xt documentation for this routine makes no such claim) */
-    string = (char*)NEditMalloc(*length + 1);
-    memcpy(string, (char *)value, *length);
-    string[*length] = '\0';
-    
-    /* If the string contains ascii-nul characters, substitute something
-       else, or give up, warn, and refuse */
-    if (!BufSubstituteNullChars(string, *length, textD->buffer)) {
-	fprintf(stderr, "Too much binary data, giving up\n");
-	NEditFree(string);
-	NEditFree(value);
-	return;
-    }
-    
-    /* Insert it in the text widget */
-    if (isColumnar) {
-    	cursorPos = TextDGetInsertPosition(textD);
-    	cursorLineStart = BufStartOfLine(textD->buffer, cursorPos);
-	TextDXYToUnconstrainedPosition(textD, ((TextWidget)w)->text.btnDownX,
-		((TextWidget)w)->text.btnDownY, &row, &column);
-    	BufInsertCol(textD->buffer, column, cursorLineStart, string, NULL,NULL);
-    	TextDSetInsertPosition(textD, textD->buffer->cursorPosHint);
-    } else
-    	TextInsertAtCursor(w, string, NULL, False,
-		((TextWidget)w)->text.autoWrapPastedText);
-    NEditFree(string);
-    
-    /* The selection requstor is required to free the memory passed
-       to it via value */
-    NEditFree(value);
+    selectionSetValue(w, clientData, *selType, *type, value, *length, *format);
 }
 
 /*
@@ -898,7 +942,8 @@ static Atom getAtom(Display *display, int atomNum)
     static Atom atomList[N_ATOMS] = {0};
     static char *atomNames[N_ATOMS] = {"TEXT", "TARGETS", "MULTIPLE",
     	    "TIMESTAMP", "INSERT_SELECTION", "DELETE", "CLIPBOARD",
-    	    "INSERT_INFO", "ATOM_PAIR", "MOTIF_DESTINATION", "COMPOUND_TEXT"};
+    	    "INSERT_INFO", "ATOM_PAIR", "MOTIF_DESTINATION", "COMPOUND_TEXT",
+            "UTF8_STRING"};
     
     if (atomList[atomNum] == 0)
     	atomList[atomNum] = XInternAtom(display, atomNames[atomNum], False);
