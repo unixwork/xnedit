@@ -3757,11 +3757,8 @@ static int measurePropChar(const textDisp* textD, char c,
     
     charLen = BufExpandCharacter4(c, colNum, expChar, 
 	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
-    NFont *font;
-    if (styleBuf == NULL) {
-	style = 0;
-        font = textD->font;
-    } else {
+    NFont *font = NULL;
+    if (styleBuf) {
 	style = (unsigned char)BufGetCharacter(styleBuf, pos);
 	if (style == textD->unfinishedStyle) {
     	    /* encountered "unfinished" style, trigger parsing */
@@ -3769,6 +3766,9 @@ static int measurePropChar(const textDisp* textD, char c,
     	    style = (unsigned char)BufGetCharacter(styleBuf, pos);
 	}
         font = textD->styleTable[style].font;
+    }
+    if(!font) {
+        font = textD->font;
     }
     return stringWidth4(textD, expChar, charLen, font);
 }
