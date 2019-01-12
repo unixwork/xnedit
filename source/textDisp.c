@@ -925,32 +925,39 @@ void TextDOverstrike(textDisp *textD, char *text)
     textBuffer *buf = textD->buffer;
     int lineStart = BufStartOfLine(buf, startPos);
     int textLen = strlen(text);
-    int i, p, endPos, indent, startIndent, endIndent;
+    int i, p, endPos, indent, startIndent, endIndent, inc;
     char *c, ch, *paddedText = NULL;
     
     /* determine how many displayed character positions are covered */
     startIndent = BufCountDispChars(textD->buffer, lineStart, startPos);
     indent = startIndent;
-    for (c=text; *c!='\0'; c++)
-    	indent += BufCharWidth(*c, indent, buf->tabDist, buf->nullSubsChar);
+    for (c=text; *c!='\0'; c+=inc) {
+        inc = Utf8CharLen((unsigned char*)c);
+        if(inc >= 1) {
+            indent++;
+        } else {
+            indent += BufCharWidth(*c, indent, buf->tabDist, buf->nullSubsChar);
+        }
+    }
     endIndent = indent;
     
     /* find which characters to remove, and if necessary generate additional
        padding to make up for removed control characters at the end */
     indent=startIndent;
-    for (p=startPos; ; p++) {
+    for (p=startPos; ; p+=inc) {
     	if (p == buf->length)
     	    break;
     	ch = BufGetCharacter(buf, p);
+        inc = Utf8CharLen((unsigned char*)&ch);
     	if (ch == '\n')
     	    break;
     	indent += BufCharWidth(ch, indent, buf->tabDist, buf->nullSubsChar);
     	if (indent == endIndent) {
-    	    p++;
+    	    p += inc;
     	    break;
     	} else if (indent > endIndent) {
     	    if (ch != '\t') {
-    	    	p++;
+    	    	p += inc;
     	    	paddedText = (char*)NEditMalloc(textLen + MAX_EXP_CHAR_LEN + 1);
     	    	strcpy(paddedText, text);
     	    	for (i=0; i<indent-endIndent; i++)
@@ -1885,12 +1892,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	lineLen = visLineLength(textD, visLineNum);
 	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
     }
-    
-    int dbg = 0;
-    if(lineLen > 0) {
-        dbg = 1;
-        //printf("A line: [%.*s]\n", lineLen, lineStr);
-    }
      
     /* Space beyond the end of the line is still counted in units of characters
        of a standardized character width (this is done mostly because style
@@ -1979,7 +1980,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             XRectangle rect;
             rect.x = 0;
             rect.y = 0;
-            rect.width = rightClip;
+            rect.width = rightClip - leftClip;
             rect.height = textD->ascent + textD->descent;
             XRenderSetPictureClipRectangles(
                     XtDisplay(textD->w),
@@ -3648,9 +3649,9 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     width = 0;
     int inc = 1;
     for (p=lineStart; p<buf->length; p+=inc) {
-    	c = BufGetCharacter(buf, p);
+    	c = BufGetCharacter(buf, p);     
         inc = Utf8CharLen((unsigned char*)&c);
-
+        
     	/* If the character was a newline, count the line and start over,
     	   otherwise, add it to the width and column counts */
     	if (c == '\n') {
@@ -3683,7 +3684,6 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	if (colNum > wrapMargin || width > maxWidth) {
     	    foundBreak = False;
     	    for (b=p; b>=lineStart; b--) {
-    	    	c = BufGetCharacter(buf, b);
     	    	if (c == '\t' || c == ' ') {
     	    	    newLineStart = b + 1;
     	    	    if (countPixels) {
