@@ -874,20 +874,11 @@ static void initialize(TextWidget request, TextWidget new)
     new->text.motifDestOwner = False;
     new->text.emTabsBeforeCursor = 0;
 
-#ifndef NO_XMIM
+#if !defined(NO_XMIM) && defined(LESSTIF_VERSION)
     /* Register the widget to the input manager */
-    //XmImRegister((Widget)new, 0);
+    XmImRegister((Widget)new, 0);
     /* In case some Resources for the IC need to be set, add them below */
-    //XmImVaSetValues((Widget)new, NULL);
-    
-    char *name;
-    char *wclass;
-    XtGetApplicationNameAndClass(XtDisplay(new), &name, &wclass); 
-    new->text.xim = XOpenIM(
-            XtDisplay(new),
-            XtDatabase(XtDisplay(new)),
-            name,
-            wclass);
+    XmImVaSetValues((Widget)new, NULL);
 #endif
 
     XtAddEventHandler((Widget)new, GraphicsExpose, True,
@@ -1221,6 +1212,7 @@ static void realize(Widget w, XtValueMask *valueMask,
     text->text.xim = XmImGetXIM(w);
     if(!text->text.xim) {
         fprintf(stderr, "Cannot get X Input Manager\n");
+        exit(1);
     } else {
         Window win = XtWindow(w);
         XIMStyle style = XIMPreeditNothing | XIMStatusNothing;
