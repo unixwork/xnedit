@@ -122,8 +122,6 @@ static void clearRect(textDisp *textD, GC gc, int x, int y,
 static void drawCursor(textDisp *textD, int x, int y);
 static int styleOfPos(textDisp *textD, int lineStartPos,
         int lineLen, int lineIndex, int dispIndex, int thisChar);
-static int stringWidth(const textDisp* textD, const char* string,
-        int length, int style);
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *font);
 static NFont* styleFontList(const textDisp* textD, int style);
@@ -2382,23 +2380,6 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
     return style;
 }
 
-/*
- * deprecated
- * TODO: remove
- */
-static int stringWidth(const textDisp* textD, const char *string,
-        int length, int style)
-{
-    XftFont *fs;
-    
-    if (style & STYLE_LOOKUP_MASK)
-    	fs = FontDefault(textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font);
-    else 
-    	fs = FontDefault(textD->font);
-    XGlyphInfo extents;
-    XftTextExtentsUtf8(XtDisplay(textD->w), fs, (FcChar8*)string, length, &extents);
-    return extents.xOff;
-}
 
 /*
 ** Find the width of a string in the font of a particular style
@@ -3665,8 +3646,10 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     */
     colNum = 0;
     width = 0;
-    for (p=lineStart; p<buf->length; p++) {
+    int inc = 1;
+    for (p=lineStart; p<buf->length; p+=inc) {
     	c = BufGetCharacter(buf, p);
+        inc = Utf8CharLen((unsigned char*)&c);
 
     	/* If the character was a newline, count the line and start over,
     	   otherwise, add it to the width and column counts */
@@ -3768,15 +3751,16 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
 static int measurePropChar(const textDisp* textD, char c,
     int colNum, int pos)
 {
-    int charLen, style, isMB;
-    char expChar[MAX_EXP_CHAR_LEN];
+    int charLen, style;
+    FcChar32 expChar[MAX_EXP_CHAR_LEN];
     textBuffer *styleBuf = textD->styleBuffer;
     
-    // fix the function signature
-    charLen = BufExpandCharacter(&c, 1, colNum, expChar, 
-	    textD->buffer->tabDist, textD->buffer->nullSubsChar, &isMB);
+    charLen = BufExpandCharacter4(c, colNum, expChar, 
+	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+    NFont *font;
     if (styleBuf == NULL) {
 	style = 0;
+        font = textD->font;
     } else {
 	style = (unsigned char)BufGetCharacter(styleBuf, pos);
 	if (style == textD->unfinishedStyle) {
@@ -3784,8 +3768,9 @@ static int measurePropChar(const textDisp* textD, char c,
     	    (textD->unfinishedHighlightCB)(textD, pos, textD->highlightCBArg);
     	    style = (unsigned char)BufGetCharacter(styleBuf, pos);
 	}
+        font = textD->styleTable[style].font;
     }
-    return stringWidth(textD, expChar, charLen, style);
+    return stringWidth4(textD, expChar, charLen, font);
 }
 
 /*
