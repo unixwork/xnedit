@@ -2048,9 +2048,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         if (charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
             charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
-            if(charWidth == 0) {
-                printf("line: [%s]\n", lineStr);
-            }
         } else {
             charWidth = stdCharWidth;
         }
@@ -2388,6 +2385,10 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *fontList)
 {
+    if(!fontList) {
+        fontList = textD->font;
+    }
+    
     XGlyphInfo extents;
     XftFont *font = FindFont(fontList, string[0]);
     XftTextExtents32(XtDisplay(textD->w), font, string, length, &extents);

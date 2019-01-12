@@ -58,7 +58,7 @@
 static int isColFlag = 0;
 static Time selectionTime = 0;
 
-#define N_SELECT_TARGETS 7
+#define N_SELECT_TARGETS 8
 #define N_ATOMS 12
 enum atomIndex {A_TEXT, A_TARGETS, A_MULTIPLE, A_TIMESTAMP,
 	A_INSERT_SELECTION, A_DELETE, A_CLIPBOARD, A_INSERT_INFO,
@@ -655,13 +655,15 @@ static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
     int getFmt, result = INSERT_WAITING;
     XEvent nextEvent;
     
+    Atom utf8 = getAtom(display, A_UTF8_STRING);
+    
     /* target is text, string, or compound text */
     if (*target == XA_STRING || *target == getAtom(display, A_TEXT) ||
-        *target == getAtom(display, A_COMPOUND_TEXT)) {
+        *target == getAtom(display, A_COMPOUND_TEXT) || *target == utf8) {
         /* We really don't directly support COMPOUND_TEXT, but recent
            versions gnome-terminal incorrectly ask for it, even though
            don't declare that we do.  Just reply in string format. */
-    	*type = XA_STRING;
+    	*type = *target == utf8 ? utf8 : XA_STRING;
     	*value = (XtPointer)BufGetSelectionText(buf);
     	*length = strlen((char *)*value);
     	*format = 8;
@@ -673,12 +675,13 @@ static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
     if (*target == getAtom(display, A_TARGETS)) {
 	targets = (Atom *)NEditMalloc(sizeof(Atom) * N_SELECT_TARGETS);
 	targets[0] = XA_STRING;
-	targets[1] = getAtom(display, A_TEXT);
-	targets[2] = getAtom(display, A_TARGETS);
-	targets[3] = getAtom(display, A_MULTIPLE);
-	targets[4] = getAtom(display, A_TIMESTAMP);
-	targets[5] = getAtom(display, A_INSERT_SELECTION);
-	targets[6] = getAtom(display, A_DELETE);
+        targets[1] = utf8;
+	targets[2] = getAtom(display, A_TEXT);
+	targets[3] = getAtom(display, A_TARGETS);
+	targets[4] = getAtom(display, A_MULTIPLE);
+	targets[5] = getAtom(display, A_TIMESTAMP);
+	targets[6] = getAtom(display, A_INSERT_SELECTION);
+	targets[7] = getAtom(display, A_DELETE);
 	*type = XA_ATOM;
 	*value = (XtPointer)targets;
 	*length = N_SELECT_TARGETS;
