@@ -84,6 +84,8 @@
 #include "regularExp.h"
 #include "../util/nedit_malloc.h"
 
+#include "textBuf.h" /* Utf8CharLen() */
+
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
@@ -3247,12 +3249,12 @@ static int match (unsigned char *prog, int *branch_index_param) {
          case ANY: /* `.' (matches any character EXCEPT newline) */
             if (AT_END_OF_STRING(Reg_Input) || *Reg_Input == '\n') MATCH_RETURN (0);
 
-            Reg_Input++; break;
+            Reg_Input += Utf8CharLen(Reg_Input); break;
 
          case EVERY: /* `.' (matches any character INCLUDING newline) */
             if (AT_END_OF_STRING(Reg_Input)) MATCH_RETURN (0);
 
-            Reg_Input++; break;
+            Reg_Input += Utf8CharLen(Reg_Input); break;
 
          case DIGIT: /* \d, same as [0123456789] */
             if (!isdigit ((int) *Reg_Input) ||
