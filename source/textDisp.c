@@ -3766,7 +3766,9 @@ static int measurePropChar(const textDisp* textD, char c,
     	    (textD->unfinishedHighlightCB)(textD, pos, textD->highlightCBArg);
     	    style = (unsigned char)BufGetCharacter(styleBuf, pos);
 	}
-        font = textD->styleTable[style].font;
+        if (style & STYLE_LOOKUP_MASK) {
+            font = textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A].font;
+        }
     }
     if(!font) {
         font = textD->font;
