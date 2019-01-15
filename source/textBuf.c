@@ -332,6 +332,35 @@ char BufGetCharacter(const textBuffer* buf, int pos)
 }
 
 /*
+ * Return the UCS-4 character at buffer position "pos". Positions start at 0.
+ */
+FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen)
+{
+    FcChar32 result = 0;
+    char c = BufGetCharacter(buf, pos);
+    int len = Utf8CharLen((unsigned char*)&c);
+    if(len == 1) {
+        result = c;
+    } else {
+        char utf8[4];
+        if(pos + len <= buf->gapStart) {
+            memmove(utf8, buf->buf+pos, len);
+        } else {
+            utf8[0] = c;
+            for(int i=1;i<len;i++) {
+                utf8[i] = BufGetCharacter(buf, pos+i);
+            }
+        }
+        FcUtf8ToUcs4(utf8, &result, len);
+    }
+    if(len) {
+        *charlen = len;
+    }
+    return result;
+    
+}
+
+/*
 ** Insert null-terminated string "text" at position "pos" in "buf"
 */
 void BufInsert(textBuffer *buf, int pos, const char *text)

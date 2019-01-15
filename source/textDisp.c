@@ -175,7 +175,7 @@ static int getAbsTopLineNum(textDisp *textD);
 static void offsetAbsLineNum(textDisp *textD, int oldFirstChar);
 static int maintainingAbsTopLineNum(textDisp *textD);
 static void resetAbsLineNum(textDisp *textD);
-static int measurePropChar(const textDisp* textD, char c,
+static int measurePropChar(const textDisp* textD, FcChar32 c,
         int colNum, int pos);
 static Pixel allocBGColor(Widget w, char *colorName, int *ok);
 static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground);
@@ -3616,7 +3616,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     int lineStart, newLineStart = 0, b, p, colNum, wrapMargin;
     int maxWidth, width, countPixels, i, foundBreak;
     int nLines = 0, tabDist = textD->buffer->tabDist;
-    unsigned char c;
+    FcChar32 c;
     char nullSubsChar = textD->buffer->nullSubsChar;
     
     /* If the font is fixed, or there's a wrap margin set, it's more efficient
@@ -3650,12 +3650,11 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     width = 0;
     int inc = 1;
     for (p=lineStart; p<buf->length; p+=inc) {
-    	c = BufGetCharacter(buf, p);     
-        inc = Utf8CharLen((unsigned char*)&c);
+        c = BufGetCharacter32(buf, p, &inc);
         
     	/* If the character was a newline, count the line and start over,
     	   otherwise, add it to the width and column counts */
-    	if (c == '\n') {
+    	if ((char)c == '\n') {
     	    if (p >= maxPos) {
     		*retPos = maxPos;
     		*retLines = nLines;
@@ -3675,7 +3674,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    colNum = 0;
     	    width = 0;
     	} else {
-    	    colNum += BufCharWidth(c, colNum, tabDist, nullSubsChar);
+    	    colNum += BufCharWidth((char)c, colNum, tabDist, nullSubsChar);
     	    if (countPixels)
     	    	width += measurePropChar(textD, c, colNum, p+styleBufOffset);
     	}
@@ -3684,15 +3683,18 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	   and wrap there */
     	if (colNum > wrapMargin || width > maxWidth) {
     	    foundBreak = False;
+            /* TODO: implement unicode word boundary */
     	    for (b=p; b>=lineStart; b--) {
-    	    	if (c == '\t' || c == ' ') {
+                c = BufGetCharacter(buf, b);
+    	    	if ((char)c == '\t' || (char)c == ' ') {
     	    	    newLineStart = b + 1;
     	    	    if (countPixels) {
     	    	    	colNum = 0;
     	    	    	width = 0;
-    	    	    	for (i=b+1; i<p+1; i++) {
+                        int charLen;
+    	    	    	for (i=b+1; i<p+1; i+=charLen) {
     	    	    	    width += measurePropChar(textD,
-				    BufGetCharacter(buf, i), colNum, 
+				    BufGetCharacter32(buf, i, &charLen), colNum, 
 				    i+styleBufOffset);
     	    	    	    colNum++;
     	    	    	}
@@ -3704,7 +3706,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    }
     	    if (!foundBreak) { /* no whitespace, just break at margin */
     	    	newLineStart = max(p, lineStart+1);
-    	    	colNum = BufCharWidth(c, colNum, tabDist, nullSubsChar);
+    	    	colNum = BufCharWidth((char)c, colNum, tabDist, nullSubsChar);
     	    	if (countPixels)
    	    	    width = measurePropChar(textD, c, colNum, p+styleBufOffset);
     	    }
@@ -3749,15 +3751,20 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
 ** insertion/deletion, though static display and wrapping and resizing
 ** should now be solid because they are now used for online help display.
 */
-static int measurePropChar(const textDisp* textD, char c,
+static int measurePropChar(const textDisp* textD, FcChar32 c,
     int colNum, int pos)
 {
     int charLen, style;
     FcChar32 expChar[MAX_EXP_CHAR_LEN];
     textBuffer *styleBuf = textD->styleBuffer;
     
-    charLen = BufExpandCharacter4(c, colNum, expChar, 
+    if(c < 128) {
+        charLen = BufExpandCharacter4(c, colNum, expChar, 
 	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+    } else {
+        charLen = 1;
+        expChar[0] = c;
+    }
     NFont *font = NULL;
     if (styleBuf) {
 	style = (unsigned char)BufGetCharacter(styleBuf, pos);

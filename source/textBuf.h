@@ -93,6 +93,7 @@ const char *BufAsString(textBuffer *buf);
 void BufSetAll(textBuffer *buf, const char *text);
 char* BufGetRange(const textBuffer* buf, int start, int end);
 char BufGetCharacter(const textBuffer* buf, int pos);
+FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen);
 char *BufGetTextInRect(textBuffer *buf, int start, int end,
 	int rectStart, int rectEnd);
 void BufInsert(textBuffer *buf, int pos, const char *text);
