@@ -24,14 +24,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <Xft/Xft.h>
 #include <fontconfig/fontconfig.h>
 
 #include <Xm/XmAll.h>
-
 #include "nedit_malloc.h"
 #include "misc.h"
 
 #include "fontsel.h"
+
+#define PREVIEW_STR "ABCDEFGHIJabcdefghijklmn[](){}.:,;-_"
 
 typedef struct FontSelector {
     FcPattern *filter;
@@ -40,11 +42,97 @@ typedef struct FontSelector {
     Widget pattern;
     Widget fontlist;
     Widget size;
+    Widget preview;
     Widget name;
+    
+    XftFont *font;
+    XftDraw *draw;
     
     int end;
     int cancel;
 } FontSelector;
+
+static void UpdatePreview(FontSelector *sel, const char *fontStr)
+{
+    Display *dp = XtDisplay(sel->preview);
+    XftFont *font = XftFontOpenName(dp, DefaultScreen(dp), fontStr);
+    if(!font) {
+        return;
+    }
+    if(sel->font) {
+        XftFontClose(XtDisplay(sel->preview), sel->font);
+    }
+    sel->font = font;
+}
+
+static void InitXftDraw(FontSelector *sel)
+{
+    if(sel->draw) {
+        return;
+    }
+    
+    XWindowAttributes attributes;
+    XGetWindowAttributes(XtDisplay(sel->preview), XtWindow(sel->preview), &attributes); 
+    Screen *screen = XtScreen(sel->preview);
+    Visual *visual = screen->root_visual;
+    
+    Cardinal depth;
+    Colormap colormap;
+    XtVaGetValues(sel->preview, XtNdepth, &depth, XtNcolormap, &colormap, NULL);
+    
+    for(int i=0;i<screen->ndepths;i++) {
+        Depth d = screen->depths[i];
+        if(d.depth == depth) {
+            visual = d.visuals;
+            break;
+        }
+    }
+    
+    Display *dp = XtDisplay(sel->preview);
+    sel->draw = XftDrawCreate(
+            dp,
+            XtWindow(sel->preview),
+            visual,
+            colormap);
+}
+
+static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
+{
+    InitXftDraw(sel);
+    if(!sel->font) {
+        return;
+    }
+    
+    XClearWindow(XtDisplay(w), XtWindow(w));
+    
+    XftColor color;
+    color.color.red = 0;
+    color.color.green = 0;
+    color.color.blue = 0;
+    color.color.alpha = 0xFFFF;
+    
+    Dimension width, height;
+    XtVaGetValues(
+            w,
+            XmNwidth,
+            &width,
+            XmNheight,
+            &height,
+            NULL);
+    
+    int fontHeight = sel->font->ascent + sel->font->descent;
+    int space = height - fontHeight;
+    
+    
+    XftDrawStringUtf8(
+            sel->draw,
+            &color,
+            sel->font,
+            10,
+            space/2 + sel->font->ascent,
+            PREVIEW_STR,
+            sizeof(PREVIEW_STR)-1);
+}
 
 static void UpdateFontList(FontSelector *sel, char *pattern)
 {
@@ -164,7 +252,7 @@ static char* GetFontString(FontSelector *sel)
     if(size) {
         outLen = fontLen + sizeLen + 16;
         out = XtMalloc(outLen);
-        snprintf(out, outLen, "%s:%s", font, size);
+        snprintf(out, outLen, "%s:size=%s", font, size);
         XmTextSetString(sel->name, out);
         XtFree(size);
         XtFree(font);
@@ -178,6 +266,8 @@ static void UpdateFontName(FontSelector *sel)
 {
     char *fontStr = GetFontString(sel);
     if(fontStr) {
+        UpdatePreview(sel, fontStr);
+        exposeFontPreview(sel->preview, sel, NULL);
         XmTextSetString(sel->name, fontStr);
         XtFree(fontStr);
     }
@@ -287,6 +377,33 @@ char *FontSel(Widget parent, const char *currFont)
     XtManageChild(fontNameLabel);
     XmStringFree(str);
     
+    /* preview */
+    n = 0;
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, fontNameLabel); n++;
+    XtSetArg(args[n], XmNshadowType, XmSHADOW_IN); n++;
+    XtSetArg(args[n], XmNmarginWidth, 3); n++;
+    XtSetArg(args[n], XmNmarginHeight, 3); n++;
+    Widget previewFrame = XmCreateFrame(form, "frame", args, n);
+    XtManageChild(previewFrame);
+    
+    n = 0;
+    sel->preview = XmCreateDrawingArea(previewFrame, "fontpreview", args, n);
+    Dimension w, h;
+    XtMakeResizeRequest(sel->preview, 10, 60, &w, &h);
+    XtManageChild(sel->preview);
+    
+    XtAddCallback(
+            sel->preview,
+            XmNexposeCallback,
+            (XtCallbackProc)exposeFontPreview,
+            sel);
+    
     /* label */
     n = 0;
     str = XmStringCreateSimple("Font:");
@@ -319,7 +436,7 @@ char *FontSel(Widget parent, const char *currFont)
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, fontNameLabel); n++;
+    XtSetArg(args[n], XmNbottomWidget, previewFrame); n++;
     XtSetArg(args[n], XmNvisibleItemCount, 10); n++;
     sel->fontlist = XmCreateScrolledList(form, "fontlist", args, n);
     AddMouseWheelSupport(sel->fontlist);
@@ -339,7 +456,7 @@ char *FontSel(Widget parent, const char *currFont)
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNleftWidget, sel->fontlist); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, fontNameLabel); n++;
+    XtSetArg(args[n], XmNbottomWidget, previewFrame); n++;
     XtSetArg(args[n], XmNleftOffset, 2); n++;
     XtSetArg(args[n], XmNbottomOffset, 2); n++;
     XtSetArg(args[n], XmNtopOffset, 2); n++;
@@ -357,6 +474,8 @@ char *FontSel(Widget parent, const char *currFont)
     XtAddCallback (sel->size, XmNselectionCallback, (XtCallbackProc)size_callback, sel);
     XmStringFree(str);
     */
+    
+    UpdatePreview(sel, currFont);
     
     UpdateFontList(sel, NULL);
     XmString selection = MatchFont(currFont);
