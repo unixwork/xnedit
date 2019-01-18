@@ -33,7 +33,7 @@
 
 #include "fontsel.h"
 
-#define PREVIEW_STR "ABCDEFGHIJabcdefghijklmn[](){}.:,;-_"
+#define PREVIEW_STR "ABCDEFGHIJabcdefghijklmn[](){}.:,;-_$%&/\"'"
 
 typedef struct FontSelector {
     FcPattern *filter;
@@ -297,7 +297,15 @@ static void cancel_callback(Widget w, FontSelector *sel, XtPointer data)
 static void FreeFontSelector(FontSelector *sel)
 {
     FcPatternDestroy(sel->filter);
-    // TODO: free all stuff
+    
+    XftDrawDestroy(sel->draw);
+    if(sel->font) {
+        XftFontClose(XtDisplay(sel->preview), sel->font);
+    }
+    if(sel->list) {
+        FcFontSetDestroy(sel->list);
+    }
+    
     NEditFree(sel);
 }
 

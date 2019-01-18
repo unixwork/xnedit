@@ -4139,7 +4139,7 @@ static char* fontNameAddAttribute(
     size_t attributelen = strlen(attribute);
     size_t valuelen = strlen(value);
     size_t newlen = len + attributelen + valuelen + 4;
-    char *attr = NEditMalloc(attributelen+2);
+    char *attr = NEditMalloc(attributelen+3);
     char *newfont = NEditMalloc(newlen);
     char *oldattr;
     int i = len;
@@ -4165,7 +4165,7 @@ static char* fontNameAddAttribute(
     NEditFree(attr);
     
     if(b < len) {
-        if(name[b-1] == ':') b--;
+        if(b > 0 && name[b-1] == ':') b--;
         snprintf(newfont, newlen, "%.*s%.*s:%s=%s", b, name, len-e, name+e, attribute, value);
     } else {
         snprintf(newfont, newlen, "%s:%s=%s", name, attribute, value);
