@@ -2800,8 +2800,8 @@ static void openAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     
     /* ParseFileName was replaced by the new path util functions */
     
-    char *name = fileName(args[0]);
-    char *dirpath = parentPath(args[0]);
+    char *name = FileName(args[0]);
+    char *dirpath = ParentPath(args[0]);
     
     EditExistingFile(window, name, dirpath, enc, 0, NULL, False, 
             NULL, GetPrefOpenInTab(), False);

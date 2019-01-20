@@ -2,7 +2,7 @@ DialogF.o: DialogF.c DialogF.h misc.h
 clearcase.o: clearcase.c clearcase.h
 fileUtils.o: fileUtils.c fileUtils.h utils.h
 fontsel.o: fontsel.c fontsel.h misc.h DialogF.h
-getfiles.o: getfiles.c getfiles.h fileUtils.h misc.h
+getfiles.o: getfiles.c getfiles.h fileUtils.h misc.h filedialog.h
 managedList.o: managedList.c managedList.h misc.h
 misc.o: misc.c misc.h DialogF.h
 prefFile.o: prefFile.c prefFile.h fileUtils.h utils.h
@@ -12,3 +12,4 @@ vmsUtils.o: vmsUtils.c
 refString.o: refString.c
 rbTree.o: rbTree.c
 libxattr.o: libxattr.c
+filedialog.o: filedialog.c filedialog.h

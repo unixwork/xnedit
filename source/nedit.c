@@ -195,6 +195,10 @@ static char *fallbackResources[] = {
     "*XmList.background: "      NEDIT_DEFAULT_TEXT_BG,
     "*XmTextField.foreground: " NEDIT_DEFAULT_FG,
     "*XmTextField.background: " NEDIT_DEFAULT_TEXT_BG,
+    
+    //"*pathbar.background: #FFFFFF",
+    "*pbbutton.shadowThickness: 1",
+    "*pbbutton.highlightThickness: 1",
        
     "*XmContainer.outlineIndentation:	30",
 "*XmContainer.outlineColumnWidth:	6cm",

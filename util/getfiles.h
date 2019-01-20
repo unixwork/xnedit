@@ -29,21 +29,11 @@
 
 #include <X11/Intrinsic.h>
 
+#include "filedialog.h"
+
 #define GFN_OK		1               /* Get Filename OK constant     */
 #define GFN_CANCEL	2               /* Get Filename Cancel constant */
 
-#define FILEDIALOG_OPEN 1
-#define FILEDIALOG_SAVE 2
-
-typedef struct FileSelection {
-    char    *path;
-    char    *encoding;
-    Boolean setenc;
-    Boolean setxattr;
-    Boolean writebom;
-    Boolean addwrap;
-    int     format;
-} FileSelection;
 
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);
 int GetNewFilename(Widget parent, char *promptString, FileSelection *file, 
@@ -53,7 +43,16 @@ int HandleCustomNewFileSB(Widget newFileSB, char *filename, char *defaultName);
 char *GetFileDialogDefaultDirectory(void);
 char *GetFileDialogDefaultPattern(void);
 void SetFileDialogDefaultDirectory(char *dir);
+char* GetDefaultDirectoryStr(void);
 void SetFileDialogDefaultPattern(char *pattern);
 void SetGetEFTextFieldRemoval(int state);
+
+Widget CreateFormatButtons(
+        Widget form,
+        Widget bottom,
+        int format,
+        Widget *u,
+        Widget *d,
+        Widget *m);
 
 #endif /* NEDIT_GETFILES_H_INCLUDED */

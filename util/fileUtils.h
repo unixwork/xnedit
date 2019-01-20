@@ -29,10 +29,6 @@
 
 enum fileFormats {UNIX_FILE_FORMAT, DOS_FILE_FORMAT, MAC_FILE_FORMAT};
 
-char* concatPath(const char *parent, const char *name);
-char* fileName(char *path);
-char* parentPath(char *path);
-
 int ParseFilename(const char *fullname, char *filename, char *pathname);
 int ExpandTilde(char *pathname);
 const char* GetTrailingPathComponents(const char* path,

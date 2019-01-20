@@ -110,7 +110,7 @@ static void modifiedWindowDestroyedCB(Widget w, XtPointer clientData,
 static void forceShowLineNumbers(WindowInfo *window);
 
 #ifdef VMS
-void removeVersionNumber(char *fileName);
+void removeVersionNumber(char *FileName);
 #endif /*VMS*/
 
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
@@ -2193,11 +2193,11 @@ static const char *errorString(void)
 /*
 ** Removing the VMS version number from a file name (if has one).
 */
-void removeVersionNumber(char *fileName)
+void removeVersionNumber(char *FileName)
 {
     char *versionStart;
     
-    versionStart = strrchr(fileName, ';');
+    versionStart = strrchr(FileName, ';');
     if (versionStart != NULL)
     	*versionStart = '\0';
 }
