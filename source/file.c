@@ -1987,6 +1987,9 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     	    window->filenameSet ? window->filename : NULL);
     if(retVal == GFN_OK) {
         file->path = NEditStrdup(fullname);
+        if(!file->encoding) {
+            file->encoding = "";
+        }
     }
 #else
     retVal = GetNewFilename(window->shell, prompt, file, "");
