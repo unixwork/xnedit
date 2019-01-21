@@ -346,6 +346,7 @@ int GetNewFilename(Widget parent, char *promptString, FileSelection *file,
     Widget fileSB = getFilenameHelper(parent, promptString, FileName, False);
     int r = HandleCustomNewFileSB(fileSB, FileName, defaultName);
     if(r == GFN_OK) {
+        file->encoding = "";
         file->path = NEditStrdup(FileName);
     }
     return r;

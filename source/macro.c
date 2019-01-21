@@ -1612,8 +1612,9 @@ static char *actionToString(Widget w, char *actionName, XEvent *event,
     /* Figure out the length of string required */
     nameLength = strlen(actionName);
     length = nameLength + 3;
-    for (i=0; i<nParams; i++)
-	length += escapedStringLength(params[i]) + 4;
+    for (i=0; i<nParams; i++) {
+	length += escapedStringLength(params[i] ? params[i] : "") + 4;
+    }
     
     /* Allocate the string and copy the information to it */
     outPtr = outStr = (char*)NEditMalloc(length + 1);
@@ -1622,7 +1623,7 @@ static char *actionToString(Widget w, char *actionName, XEvent *event,
     *outPtr++ = '(';
     for (i=0; i<nParams; i++) {
 	*outPtr++ = '\"';
-	outPtr += escapeStringChars(params[i], outPtr);
+	outPtr += escapeStringChars(params[i] ? params[i] : "", outPtr);
 	*outPtr++ = '\"'; *outPtr++ = ','; *outPtr++ = ' ';
     }
     if (nParams != 0)
