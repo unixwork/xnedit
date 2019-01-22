@@ -1981,6 +1981,28 @@ void AddMouseWheelSupport(Widget w)
     }
 }
 
+/* better version for XmContainer scrolling */
+void XmContainerAddMouseWheelSupport(Widget w)
+{
+    if (XmIsScrolledWindow(getScrolledWindow(w))) 
+    {
+        static const char scrollTranslations[] =
+           "Shift<Btn4Down>,<Btn4Up>: scrolled-window-scroll-up(1)\n"
+           "Shift<Btn5Down>,<Btn5Up>: scrolled-window-scroll-down(1)\n"
+           "Ctrl<Btn4Down>,<Btn4Up>:  scrolled-window-scroll-up(3)\n"
+           "Ctrl<Btn5Down>,<Btn5Up>:  scrolled-window-scroll-down(3)\n"
+           "<Btn4Down>,<Btn4Up>:      scrolled-window-page-up()\n"
+           "<Btn5Down>,<Btn5Up>:      scrolled-window-page-down()\n";
+        static XtTranslations trans_table = NULL;
+        
+        if (trans_table == NULL)
+        {
+            trans_table = XtParseTranslationTable(scrollTranslations);
+        }
+        XtOverrideTranslations(w, trans_table);
+    }
+}
+
 static void pageUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     Widget scrolledWindow, scrollBar;

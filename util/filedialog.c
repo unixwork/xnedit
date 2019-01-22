@@ -399,7 +399,7 @@ void PathBarChangeDir(Widget w, PathBar *bar, XtPointer c)
     
     int plen = strlen(bar->path);
     int countSeg = 0;
-    for(int i=0;i<plen;i++) {
+    for(int i=0;i<=plen;i++) {
         char c = bar->path[i];
         if(c == '/' || c == '\0') {
             if(countSeg == bar->selection) {
@@ -717,6 +717,9 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     WidgetList gadgets = NEditCalloc(count, sizeof(Widget));
     
+    // TODO: better width calculation
+    XtVaSetValues(data->container, XmNlargeCellWidth, maxNameLen*8, NULL);
+    
     FileList *e = files;
     int pos = 0;
     while(e) {
@@ -736,6 +739,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         }
         Widget item = XmCreateIconGadget(data->container, "table", args, n);
         XtManageChild(item);
+        
         gadgets[pos] = item;
         XmStringFree(str);
         e = e->next;
@@ -746,7 +750,8 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     data->gadgets = gadgets;
     data->numGadgets = count;
     
-    XmContainerRelayout(data->container);
+    //XmContainerRelayout(data->container);   
+    resize_container(XtParent(data->container), data, NULL);
 }
 
 static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
@@ -1225,7 +1230,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
 		(XtCallbackProc)resize_container, &data);
-    AddMouseWheelSupport(data.container);
+    XmContainerAddMouseWheelSupport(data.container);
     
     XtAddCallback(
             data.container,

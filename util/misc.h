@@ -119,6 +119,7 @@ Widget CreateWidget(Widget parent, const char *name, WidgetClass class,
 Modifiers GetNumLockModMask(Display *display);
 void InstallMouseWheelActions(XtAppContext context);
 void AddMouseWheelSupport(Widget w);
+void XmContainerAddMouseWheelSupport(Widget w);
 void RadioButtonChangeState(Widget widget, Boolean state, Boolean notify);
 void CloseAllPopupsFor(Widget shell);
 long QueryCurrentDesktop(Display *display, Window rootWindow);
