@@ -4130,50 +4130,6 @@ void ChooseFonts(WindowInfo *window, int forWindow)
     ManageDialogCenteredOnPointer(form);
 }
 
-static char* fontNameAddAttribute(
-        const char *name,
-        size_t len,
-        const char *attribute,
-        const char *value)
-{
-    size_t attributelen = strlen(attribute);
-    size_t valuelen = strlen(value);
-    size_t newlen = len + attributelen + valuelen + 4;
-    char *attr = NEditMalloc(attributelen+3);
-    char *newfont = NEditMalloc(newlen);
-    char *oldattr;
-    int i = len;
-    int b = 0;
-    int e = 0;
-    
-    /* check if the font name already has this attribute */
-    attr[0] = ':';
-    memcpy(attr+1, attribute, attributelen);
-    attr[attributelen+1] = '=';
-    attr[attributelen+2] = '\0';
-    oldattr = strstr(name, attr);
-    if(oldattr) {
-        b = (int)(oldattr - name)+1;
-        e = len;
-        for(i=b;i<len;i++) {
-            if(name[i] == ':') {
-                e = i;
-                break;
-            }
-        }
-    }
-    NEditFree(attr);
-    
-    if(b < len) {
-        if(b > 0 && name[b-1] == ':') b--;
-        snprintf(newfont, newlen, "%.*s%.*s:%s=%s", b, name, len-e, name+e, attribute, value);
-    } else {
-        snprintf(newfont, newlen, "%s:%s=%s", name, attribute, value);
-    }
-    
-    return newfont;
-}
-
 static void fillFromPrimaryCB(Widget w, XtPointer clientData,
     	XtPointer callData)
 {
@@ -4189,9 +4145,9 @@ static void fillFromPrimaryCB(Widget w, XtPointer clientData,
     primaryLen = strlen(primaryName);
     
     if(primaryLen > 0) {
-        italic = fontNameAddAttribute(primaryName, primaryLen, "slant", "italic");
-        bold = fontNameAddAttribute(primaryName, primaryLen, "weight", "bold");
-        bolditalic = fontNameAddAttribute(bold, strlen(bold), "slant", "italic");
+        italic = FontNameAddAttribute(primaryName, primaryLen, "slant", "italic");
+        bold = FontNameAddAttribute(primaryName, primaryLen, "weight", "bold");
+        bolditalic = FontNameAddAttribute(bold, strlen(bold), "slant", "italic");
         
         XmTextSetString(fd->boldW, bold);
         XmTextSetString(fd->italicW, italic);
