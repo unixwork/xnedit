@@ -24,10 +24,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <Xm/XmAll.h>
+
 #include <Xft/Xft.h>
 #include <fontconfig/fontconfig.h>
 
-#include <Xm/XmAll.h>
 #include "nedit_malloc.h"
 #include "misc.h"
 
@@ -130,7 +131,7 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
             sel->font,
             10,
             space/2 + sel->font->ascent,
-            PREVIEW_STR,
+            (unsigned char*)PREVIEW_STR,
             sizeof(PREVIEW_STR)-1);
 }
 
