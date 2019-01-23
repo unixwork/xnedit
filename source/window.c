@@ -855,7 +855,7 @@ static Widget addTab(Widget folder, const char *string)
     XtVaSetValues(tooltipLabel,
     	    XmNbackground, AllocateColor(tab, GetPrefTooltipBgColor()),
     	    XmNforeground, AllocateColor(tab, NEDIT_DEFAULT_FG),
-	    NULL);
+    	    NULL);
 
     /* put borders around tooltip. BubbleButton use 
        transientShellWidgetClass as tooltip shell, which

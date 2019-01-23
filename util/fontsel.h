@@ -61,6 +61,6 @@
 
 /* function prototype */
 
-char *FontSel(Widget parent, const char *currFont);
+char *FontSel(Widget parent, const char *curFont);
 
 #endif /* NEDIT_FONTSEL_H_INCLUDED */

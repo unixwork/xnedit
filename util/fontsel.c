@@ -172,9 +172,11 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     XtVaSetValues(sel->fontlist, XmNitems, items, XmNitemCount, nfound, NULL);
 }
 
-static XmString MatchFont(const char *name)
+static void MatchFont(const char *name, XmString *retName, XmString *retSize)
 {
-    XmString ret = NULL;
+    *retName = NULL;
+    *retSize = NULL;
+    
     FcPattern* pat = FcNameParse((const FcChar8*)name);
     
     FcConfigSubstitute(NULL, pat, FcMatchPattern);
@@ -182,15 +184,19 @@ static XmString MatchFont(const char *name)
     FcResult result;
     FcPattern* font = FcFontMatch(NULL, pat, &result);
     if(font) {
-        FcChar8* name = NULL;
-        if (FcPatternGetString(font, FC_FULLNAME, 0, &name) == FcResultMatch) {
-            ret = XmStringCreateSimple((char*)name);
+        FcChar8* nameStr = NULL;
+        double fontSize = 0;
+        if (FcPatternGetString(font, FC_FULLNAME, 0, &nameStr) == FcResultMatch) {
+            *retName = XmStringCreateSimple((char*)nameStr);
+        }
+        if(FcPatternGetDouble(font, FC_SIZE, 0, &fontSize) == FcResultMatch) {
+            char buf[8];
+            snprintf(buf, 8, "%d", (int)fontSize);
+            *retSize = XmStringCreateSimple(buf);
         }
         FcPatternDestroy(font);
     }
     FcPatternDestroy(pat);
-    
-    return ret;
 }
 
 static void CreateSizeList(Widget w)
@@ -309,7 +315,7 @@ static void FreeFontSelector(FontSelector *sel)
     NEditFree(sel);
 }
 
-char *FontSel(Widget parent, const char *currFont)
+char *FontSel(Widget parent, const char *curFont)
 {
     Arg args[32];
     int n = 0;
@@ -483,13 +489,19 @@ char *FontSel(Widget parent, const char *currFont)
     XmStringFree(str);
     */
     
-    UpdatePreview(sel, currFont);
+    UpdatePreview(sel, curFont);
     
     UpdateFontList(sel, NULL);
-    XmString selection = MatchFont(currFont);
-    if(selection) {
-        XmListSelectItem(sel->fontlist, selection, 0);
-        XmStringFree(selection);
+    XmString fontSelection;
+    XmString sizeSelection;
+    MatchFont(curFont, &fontSelection, &sizeSelection);
+    if(fontSelection) {
+        XmListSelectItem(sel->fontlist, fontSelection, 0);
+        XmStringFree(fontSelection);
+    }
+    if(sizeSelection) {
+        XmListSelectItem(sel->size, sizeSelection, 0);
+        XmStringFree(sizeSelection);
     }
     
     ManageDialogCenteredOnPointer(form);
@@ -507,7 +519,7 @@ char *FontSel(Widget parent, const char *currFont)
         retStr = GetFontString(sel);
     }
     if(!retStr) {
-        retStr = NEditStrdup(currFont);
+        retStr = NEditStrdup(curFont);
     }
     
     FreeFontSelector(sel);
