@@ -4154,7 +4154,7 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
 
 XftFont *FindFont(NFont *f, FcChar32 c)
 {
-    if(c == 0) {
+    if(c < 128) {
         return f->fonts->font;
     }
     
