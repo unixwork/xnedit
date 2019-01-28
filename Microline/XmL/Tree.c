@@ -444,7 +444,6 @@ _TreeCellAction(XmLGridCell cell,
 	{
 	XmLTreeWidget t;
 	XmLTreeRow row;
-	XmLGridColumn col;
 	XmLGridWidgetClass sc;
 	XmLGridCellActionProc cellActionProc;
 	XmLGridCellRefValues *cellValues;
@@ -528,13 +527,12 @@ _TreeCellAction(XmLGridCell cell,
 				if (cellValues->type != XmICON_CELL)
 					return 0;
 				icon = (XmLGridCellIcon *)cell->cell.value;
-				col = (XmLGridColumn)cbs->object;
 				row = (XmLTreeRow)XmLGridGetRow(w, XmCONTENT, cbs->row);
 				if (row->tree.stringWidthValid == False)
 					{
 					if (icon && icon->string)
 						row->tree.stringWidth =
-							XmStringWidth(cellValues->fontList, icon->string);
+							XmStringWidth(cellValues->renderTable, icon->string);
 					else
 						row->tree.stringWidth = 0;
 					row->tree.stringWidthValid = True;
@@ -789,7 +787,7 @@ DrawIconCell(XmLGridCell cell,
 		else
 			XSetForeground(dpy, ds->gc, cellValues->foreground);
 		XmLStringDraw(w, icon->string, ds->stringDirection,
-			cellValues->fontList, XmALIGNMENT_LEFT,
+			cellValues->renderTable, XmALIGNMENT_LEFT,
 			ds->gc, &rect, clipRect);
 		}
 
@@ -1081,7 +1079,7 @@ _SetCellValuesResize(XmLGridWidget g,
 		row->grid.pos >= g->grid.headingRowCount &&
 		row->grid.pos < g->grid.headingRowCount + g->grid.rowCount)
 		{
-		if (mask & XmLGridCellFontList)
+		if (mask & XmLGridCellRenderTable)
 			{
 			row->grid.heightInPixelsValid = 0;
 			((XmLTreeRow)row)->tree.stringWidthValid = False;

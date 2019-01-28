@@ -20,8 +20,8 @@ all: xnedit xnc
 # we only want natural rebuilds to regenerate the link date.
 xnedit: $(OBJS) ../util/libNUtil.a $(XMLLIB) $(XLTLIB)
 	$(CC) $(CFLAGS) -c linkdate.c -o linkdate.o
-	$(CC) $(CFLAGS) $(OBJS) linkdate.o $(XMLLIB) \
-	 $(XLTLIB) ../util/libNUtil.a $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(OBJS) linkdate.o \
+	 ../util/libNUtil.a $(XMLLIB) $(XLTLIB) $(LIBS) -o $@
 
 # Note LIBS isn't quite right here; it links unnecessarily against Motif
 xnc: nc.o server_common.o ../util/libNUtil.a

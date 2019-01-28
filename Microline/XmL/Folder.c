@@ -101,7 +101,7 @@ static Boolean SetValues(Widget curW, Widget reqW, Widget newW,
 	ArgList args, Cardinal *nargs);
 static Boolean ConstraintSetValues(Widget curW, Widget, Widget newW,
 	ArgList, Cardinal *); 
-static void CopyFontList(XmLFolderWidget f);
+static void CopyRenderTable(XmLFolderWidget f);
 static Boolean CvtStringToCornerStyle(Display *dpy, XrmValuePtr args,
 	Cardinal *numArgs, XrmValuePtr fromVal, XrmValuePtr toVal,
 	XtPointer *data);
@@ -117,6 +117,9 @@ static void GetCoreBackground(Widget w, int, XrmValue *value);
 static void GetDefaultTabWidgetClass(Widget w, int, XrmValue *value);
 static void GetManagerForeground(Widget w, int, XrmValue *value);
 static Boolean ServerDrawsArcsLarge(Display *dpy, int debug);
+static void CheckSetRenderTable(Widget wid,
+    int offset,
+    XrmValue *value);
 
 /* Actions, Callbacks and Handlers */
 static void Activate(Widget w, XEvent *event, String *, Cardinal *);
@@ -204,11 +207,22 @@ static XtResource resources[] =
 		XtOffset(XmLFolderWidget, folder.cornerStyle),
 		XmRImmediate, (XtPointer)XmCORNER_ARC,
 		},
+        {
+        "pri.vate","Pri.vate",XmRBoolean,
+        sizeof(Boolean), XtOffset(XmLFolderWidget, folder.check_set_render_table),
+        XmRImmediate, (XtPointer) False
+        },
 		{
 		XmNfontList, XmCFontList,
 		XmRFontList, sizeof(XmFontList),
-		XtOffset(XmLFolderWidget, folder.fontList),
-		XmRImmediate, (XtPointer)0,
+		XtOffset(XmLFolderWidget, folder.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable,
+		},
+		{
+		XmNrenderTable, XmCRenderTable,
+		XmRRenderTable, sizeof(XmRenderTable),
+		XtOffset(XmLFolderWidget, folder.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable,
 		},
 		{
 		XmNhighlightThickness, XmCHighlightThickness,
@@ -430,6 +444,24 @@ XmLFolderClassRec xmlFolderClassRec =
 
 WidgetClass xmlFolderWidgetClass = (WidgetClass)&xmlFolderClassRec;
 
+
+
+static void 
+CheckSetRenderTable(Widget wid,
+		    int offset,
+		    XrmValue *value)
+{
+  XmLFolderWidget lw = (XmLFolderWidget)wid;
+
+  /* Check if been here before */
+  if (lw->folder.check_set_render_table)
+      value->addr = NULL;
+  else {
+      lw->folder.check_set_render_table = True;
+      value->addr = (char*)&(lw->folder.renderTable);
+  }
+
+}
 /*
    Create and Destroy
 */
@@ -455,11 +487,10 @@ Initialize(Widget req,
 {
   Display *dpy;
   /*  Window root;*/
-  XmLFolderWidget f, request;
+  XmLFolderWidget f;
   
   f = (XmLFolderWidget)newW;
   dpy = XtDisplay((Widget)f);
-  request = (XmLFolderWidget)req;
   
   if (f->core.width == 0) 
     f->core.width = 100;
@@ -476,7 +507,7 @@ Initialize(Widget req,
   f->folder.focusW = 0;
   f->folder.allowLayout = 1;
   f->folder.activeRow = -1;
-  CopyFontList(f);
+  CopyRenderTable(f);
   
   if (f->folder.tabBarHeight)
     {
@@ -505,7 +536,7 @@ Initialize(Widget req,
       /* a quick hack to determine the minimum tab width - enough
 	 to show at least one character of the tab string */
       XmString st = XmStringCreateSimple("W");
-      f->folder.minTabWidth = XmStringWidth(f->folder.fontList, st);
+      f->folder.minTabWidth = XmStringWidth(f->folder.renderTable, st);
       XmStringFree(st);
     }
 }
@@ -524,7 +555,7 @@ Destroy(Widget w)
     free((char *)f->folder.tabs);
   if (f->folder.gc)
     XFreeGC(dpy, f->folder.gc);
-  XmFontListFree(f->folder.fontList);
+  XmRenderTableFree(f->folder.renderTable);
 }
 
 /*
@@ -572,7 +603,7 @@ Redisplay(Widget w,
   /* XSegment *topSeg, *botSeg; */
   /*  int tCount, bCount; */
   Widget tab;
-  int i, st, ht; /*, x, y; */
+  int i;
   
   f = (XmLFolderWidget)w;
   if (!XtIsRealized(w))
@@ -581,8 +612,6 @@ Redisplay(Widget w,
     return;
   dpy = XtDisplay(f);
   win = XtWindow(f);
-  st = f->manager.shadow_thickness;
-  ht = f->folder.highlightThickness;
   
   if (event)
     {
@@ -3055,7 +3084,6 @@ static void
 DrawTabHighlight(XmLFolderWidget f,
 		 Widget w)
 {
-  XmLFolderConstraintRec *fc;
   Display *dpy;
   Window win;
   int ht;
@@ -3066,7 +3094,6 @@ DrawTabHighlight(XmLFolderWidget f,
     return;
   dpy = XtDisplay(f);
   win = XtWindow(f);
-  fc = (XmLFolderConstraintRec *)(w->core.constraints);
   ht = f->folder.highlightThickness;
   if (f->folder.focusW == w)
     XSetForeground(dpy, f->folder.gc, f->manager.highlight_color);
@@ -3416,10 +3443,10 @@ SetValues(Widget curW,
       NE(folder.tabsPerRow) ||
       NE(folder.spacing))
     needsLayout = True;
-  if (NE(folder.fontList))
+  if (NE(folder.renderTable))
     {
-      XmFontListFree(cur->folder.fontList);
-      CopyFontList(f);
+      XmRenderTableFree(cur->folder.renderTable);
+      CopyRenderTable(f);
     }
 #undef NE
   if (needsLayout == True) 
@@ -3428,13 +3455,13 @@ SetValues(Widget curW,
 }
 
 static void 
-CopyFontList(XmLFolderWidget f)
+CopyRenderTable(XmLFolderWidget f)
 {
-  if (!f->folder.fontList)
-    f->folder.fontList = XmLFontListCopyDefault((Widget)f);
+  if (!f->folder.renderTable)
+    f->folder.renderTable = XmLRenderTableCopyDefault((Widget)f);
   else
-    f->folder.fontList = XmFontListCopy(f->folder.fontList);
-  if (!f->folder.fontList)
+    f->folder.renderTable = XmRenderTableCopy(f->folder.renderTable, NULL, 0);
+  if (!f->folder.renderTable)
     XmLWarning((Widget)f, "- fatal error - font list NULL");
 }
 
@@ -3680,7 +3707,7 @@ XmLFolderAddBitmapTab(Widget w,
   sprintf(name, "tab%d", f->folder.tabCount);
   tab = XtVaCreateManagedWidget(name,
 				f->folder.tabWidgetClass, w,
-				XmNfontList, f->folder.fontList,
+				XmNrenderTable, f->folder.renderTable,
 				XmNmarginWidth, 0,
 				XmNmarginHeight, 0,
 				XmNlabelString, string,
@@ -3736,7 +3763,7 @@ XmLFolderAddTab(Widget w,
   sprintf(name, "tab%d", f->folder.tabCount);
   tab = XtVaCreateManagedWidget(name,
 				f->folder.tabWidgetClass, w,
-				XmNfontList, f->folder.fontList,
+				XmNrenderTable, f->folder.renderTable,
 				XmNmarginWidth, 0,
 				XmNmarginHeight, 0,
 				XmNlabelString, string,
@@ -3764,7 +3791,7 @@ XmLFolderAddTabFromClass(Widget w,
 								f->folder.tabWidgetClass,
 /*  								xmDrawnButtonWidgetClass,  */
 								w,
-								XmNfontList, f->folder.fontList,
+								XmNrenderTable, f->folder.renderTable,
 /* 				XmNmarginWidth, 0, */
 /* 				XmNmarginHeight, 0, */
 								XmNlabelString, string,

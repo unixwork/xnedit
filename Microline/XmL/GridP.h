@@ -174,7 +174,7 @@ typedef int (*XmLGridCellActionProc)();
 #define XmLGridCellBottomBorderType  (1L<<3)
 #define XmLGridCellColumnSpan        (1L<<4)
 #define XmLGridCellEditable          (1L<<5)
-#define XmLGridCellFontList          (1L<<6)
+#define XmLGridCellRenderTable       (1L<<6)
 #define XmLGridCellForeground        (1L<<7)
 #define XmLGridCellLeftBorderColor   (1L<<8)
 #define XmLGridCellLeftBorderType    (1L<<9)
@@ -224,7 +224,8 @@ typedef struct
 	int columnSpan;
 	Boolean editable;
 	short fontHeight;
-	XmFontList fontList;
+    Bool check_set_render_table;
+	XmRenderTable renderTable;
 	short fontWidth;
 	Pixel foreground;
 	Pixel leftBorderColor;
@@ -332,7 +333,8 @@ typedef struct _XmLGridPart
 	int shadowRegions;
 	unsigned char shadowType;
 	Widget hsb, vsb, text;
-	XmFontList fontList;
+    Bool check_set_render_table;
+	XmRenderTable renderTable;
 	Pixel blankBg, selectBg, selectFg;
 	Pixel defaultCellBg, defaultCellFg;
 	Pixel toggleTopColor, toggleBotColor;

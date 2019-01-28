@@ -295,7 +295,9 @@ typedef struct
 
 /* Grid Row/Column/Cell resources */
 
-#define XmNrow "row"
+#ifndef XmNrow
+  #define XmNrow "row"
+#endif
 #define XmCGridRow "row"
 #define XmNrowHeight "rowHeight"
 #define XmCRowHeight "RowHeight"
@@ -313,7 +315,9 @@ typedef struct
 #define XmRRowType "RowType"
 #define XmNrowUserData "rowUserData"
 
-#define XmNcolumn "column"
+#ifndef XmNcolumn
+  #define XmNcolumn "column"
+#endif
 #define XmCGridColumn "Column"
 #define XmNcolumnPtr "columnPtr"
 #define XmNcolumnRangeEnd "columnRangeEnd"
@@ -365,6 +369,8 @@ typedef struct
 #define XmCCellMarginRight "CellMarginRight"
 #define XmNcellMarginTop "cellMarginTop"
 #define XmCCellMarginTop "CellMarginTop"
+#define XmNcellRenderTable "cellRenderTable"
+#define XmCCellRenderTable "CellRenderTable"
 #define XmNcellPixmap "cellPixmap"
 #define XmCCellPixmap "CellPixmap"
 #define XmNcellPixmapMask "cellPixmapMask"
@@ -401,7 +407,7 @@ typedef struct _XmLGridDrawStruct
 	Pixel background;
 	Pixel selectForeground;
 	Pixel selectBackground;
-	XmFontList fontList;
+	XmRenderTable renderTable;
 	unsigned char alignment;
 	Boolean drawSelected;
 	int drawFocusType;
@@ -661,7 +667,10 @@ void XmLDrawToggle(Widget w, Boolean state, Dimension size,
 	Pixel topColor, Pixel bottomColor, Pixel checkColor,
 	XRectangle *rect, XRectangle *clipRect);
 XmFontList XmLFontListCopyDefault(Widget widget);
-void XmLFontListGetDimensions(XmFontList fontList, short *width,
+XmRenderTable XmLRenderTableCopyDefault(Widget widget);
+void XmLFontListGetDimensions(Widget w, XmFontList fontList, short *width,
+	short *height, Boolean useAverageWidth);
+void XmLRenderTableGetDimensions(Widget w, XmRenderTable renderTable, short *width,
 	short *height, Boolean useAverageWidth);
 void XmLInitialize(void);
 int XmLMessageBox(Widget w, char *string, Boolean okOnly);
@@ -673,9 +682,9 @@ Widget XmLShellOfWidget(Widget w);
 void XmLSort(void *base, int numItems, unsigned int itemSize,
 	XmLSortCompareFunc, void *userData);
 void XmLStringDraw(Widget w, XmString string, XmStringDirection stringDir,
-	XmFontList fontList, unsigned char alignment, GC gc,
+	XmRenderTable renderTable, unsigned char alignment, GC gc,
 	XRectangle *rect, XRectangle *clipRect);
-void XmLStringDrawDirection(Display *dpy, Window win, XmFontList fontlist,
+void XmLStringDrawDirection(Display *dpy, Window win, XmRenderTable rendertable,
 	XmString string, GC gc, int x, int y, Dimension width,
 	unsigned char alignment, unsigned char layout_direction,
 	unsigned char drawing_direction);

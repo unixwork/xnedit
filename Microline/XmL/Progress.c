@@ -59,7 +59,7 @@ static void Realize(Widget w, XtValueMask *valueMask,
 	XSetWindowAttributes *attr);
 static void Redisplay(Widget, XEvent *, Region);
 static Boolean SetValues(Widget, Widget, Widget, ArgList, Cardinal *);
-static void CopyFontList(XmLProgressWidget p);
+static void CopyRenderTable(XmLProgressWidget p);
 static void TimeStr(char *, int);
 static void DrawBarMeter(XmLProgressWidget p, XRectangle *rect);
 static void DrawBoxesMeter(XmLProgressWidget p, XRectangle *rect);
@@ -68,6 +68,10 @@ static void DrawString(XmLProgressWidget, XmString, int, int,
 static Boolean CvtStringToMeterStyle(Display *dpy, XrmValuePtr args,
 	Cardinal *numArgs, XrmValuePtr fromVal, XrmValuePtr toVal,
 	XtPointer *data);
+static void CheckSetRenderTable(Widget wid,
+    int offset,
+    XrmValue *value);
+
 
 static XtResource resources[] = 
 	{
@@ -89,11 +93,22 @@ static XtResource resources[] =
 		XtOffset(XmLProgressWidget, progress.value),
 		XtRImmediate, (caddr_t)0
 		},
+        {
+        "pri.vate","Pri.vate",XmRBoolean,
+        sizeof(Boolean), XtOffset(XmLProgressWidget, progress.check_set_render_table),
+        XmRImmediate, (XtPointer) False
+        },
 		{
 		XmNfontList, XmCFontList,
 		XmRFontList, sizeof(XmFontList),
-		XtOffset(XmLProgressWidget, progress.fontList),
-		XmRImmediate, (XtPointer)0,
+		XtOffset(XmLProgressWidget, progress.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable,
+		},
+		{
+		XmNrenderTable, XmCRenderTable,
+		XmRRenderTable, sizeof(XmRenderTable),
+		XtOffset(XmLProgressWidget, progress.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable,
 		},
 		{
 		XmNmeterStyle, XmCMeterStyle,
@@ -168,6 +183,23 @@ XmLProgressClassRec xmlProgressClassRec =
 WidgetClass xmlProgressWidgetClass = (WidgetClass)&xmlProgressClassRec;
 
 static void 
+CheckSetRenderTable(Widget wid,
+		    int offset,
+		    XrmValue *value)
+{
+  XmLProgressWidget lw = (XmLProgressWidget)wid;
+
+  /* Check if been here before */
+  if (lw->progress.check_set_render_table)
+      value->addr = NULL;
+  else {
+      lw->progress.check_set_render_table = True;
+      value->addr = (char*)&(lw->progress.renderTable);
+  }
+
+}
+
+static void 
 ClassInitialize(void)
 	{
 	XmLInitialize();
@@ -193,7 +225,7 @@ Initialize(Widget reqW,
 
 	p->progress.gc = 0;
 	p->progress.startTime = time(0);
-	CopyFontList(p);
+	CopyRenderTable(p);
 	if (p->progress.completeValue < 1)
 		{
 		XmLWarning(newW, "Initialize() - complete value can't be < 1");
@@ -243,7 +275,7 @@ Destroy(Widget w)
 		XFreeGC(dpy, p->progress.gc);
 		XFreeFont(dpy, p->progress.fallbackFont);
 		}
-	XmFontListFree(p->progress.fontList);
+	XmRenderTableFree(p->progress.renderTable);
 	}
 
 static void
@@ -420,7 +452,7 @@ DrawBarMeter(XmLProgressWidget p,
 	/* percent complete */
 	sprintf(c, "%d%c", percent, '%');
 	str = XmStringCreateSimple(c);
-	XmStringExtent(p->progress.fontList, str, &strWidth, &strHeight);
+	XmStringExtent(p->progress.renderTable, str, &strWidth, &strHeight);
 	if (p->progress.showPercentage)
 		DrawString(p, str, rect->x + rect->width / 2 - (int)strWidth / 2,
 			rect->y + rect->height / 2 - (int)strHeight / 2, strWidth,
@@ -435,7 +467,7 @@ DrawBarMeter(XmLProgressWidget p,
 		{
 		TimeStr(c, timeSoFar);
 		str = XmStringCreateSimple(c);
-		XmStringExtent(p->progress.fontList, str,
+		XmStringExtent(p->progress.renderTable, str,
 			&strWidth, &strHeight);
 		DrawString(p, str, rect->x + 5, rect->y + rect->height / 2 -
 			(int)strHeight / 2, strWidth, &lRect, &rRect);
@@ -450,7 +482,7 @@ DrawBarMeter(XmLProgressWidget p,
 		{
 		TimeStr(c, timeLeft);
 		str = XmStringCreateSimple(c);
-		XmStringExtent(p->progress.fontList, str,
+		XmStringExtent(p->progress.renderTable, str,
 			&strWidth, &strHeight);
 		DrawString(p, str, rect->x + rect->width - strWidth - 5,
 			rect->y + rect->height / 2 - (int)strHeight / 2,
@@ -477,7 +509,7 @@ DrawString(XmLProgressWidget p,
 		{
 		XSetForeground(dpy, p->progress.gc, p->core.background_pixel);
 		XSetClipRectangles(dpy, p->progress.gc, 0, 0, lRect, 1, Unsorted);
-		XmStringDraw(dpy, win, p->progress.fontList, str,
+		XmStringDraw(dpy, win, p->progress.renderTable, str,
 			p->progress.gc, x, y, strWidth, XmALIGNMENT_BEGINNING,
 			XmSTRING_DIRECTION_L_TO_R, 0);
 		XSetClipMask(dpy, p->progress.gc, None);
@@ -486,7 +518,7 @@ DrawString(XmLProgressWidget p,
 		{
 		XSetForeground(dpy, p->progress.gc, p->primitive.foreground);
 		XSetClipRectangles(dpy, p->progress.gc, 0, 0, rRect, 1, Unsorted);
-		XmStringDraw(dpy, win, p->progress.fontList, str,
+		XmStringDraw(dpy, win, p->progress.renderTable, str,
 			p->progress.gc, x, y, strWidth, XmALIGNMENT_BEGINNING,
 			XmSTRING_DIRECTION_L_TO_R, 0);
 		XSetClipMask(dpy, p->progress.gc, None);
@@ -526,11 +558,9 @@ SetValues(Widget curW,
 	  Cardinal *narg)
 	{
 	XmLProgressWidget cur, p;
-	XtAppContext app;
 
 	cur = (XmLProgressWidget)curW;
 	p = (XmLProgressWidget)newW;
-	app = XtWidgetToApplicationContext(curW);
 	if (p->progress.value == 0)
 		p->progress.startTime = time(0);
 	if (p->progress.completeValue < 1)
@@ -553,10 +583,10 @@ SetValues(Widget curW,
 		XmLWarning(newW, "SetValues() - value can't be > completeValue");
 		p->progress.value = p->progress.completeValue;
 		}
-	if (p->progress.fontList != cur->progress.fontList)
+	if (p->progress.renderTable != cur->progress.renderTable)
 		{
-		XmFontListFree(cur->progress.fontList);
-		CopyFontList(p);
+		XmRenderTableFree(cur->progress.renderTable);
+		CopyRenderTable(p);
 		}
 	/* display changes immediately since we may be not get back
 	   to XNextEvent if the calling application is computing */
@@ -564,7 +594,7 @@ SetValues(Widget curW,
 		p->primitive.foreground != cur->primitive.foreground || 
 		p->progress.value != cur->progress.value ||
 		p->progress.completeValue != cur->progress.completeValue ||
-		p->progress.fontList != cur->progress.fontList ||
+		p->progress.renderTable != cur->progress.renderTable ||
 		p->progress.showTime != cur->progress.showTime ||
 		p->progress.showPercentage != cur->progress.showPercentage ||
 		p->progress.meterStyle != cur->progress.meterStyle ||
@@ -579,13 +609,13 @@ SetValues(Widget curW,
 	}
 
 static void
-CopyFontList(XmLProgressWidget p)
+CopyRenderTable(XmLProgressWidget p)
 	{ 
-	if (!p->progress.fontList)
-		p->progress.fontList = XmLFontListCopyDefault((Widget)p);
+	if (!p->progress.renderTable)
+		p->progress.renderTable = XmLRenderTableCopyDefault((Widget)p);
 	else
-		p->progress.fontList = XmFontListCopy(p->progress.fontList);
-	if (!p->progress.fontList)
+		p->progress.renderTable = XmRenderTableCopy(p->progress.renderTable, NULL, 0);
+	if (!p->progress.renderTable)
 		XmLWarning((Widget)p, "- fatal error - font list NULL");
 	}
 

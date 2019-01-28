@@ -81,7 +81,8 @@ typedef struct _XmLFolderPart
 	int activeTab;
 	char allowLayout;
 	XtCallbackList activateCallback;
-	XmFontList fontList;
+	XmRenderTable renderTable;
+    Bool check_set_render_table;
 
 	WidgetClass tabWidgetClass;
 

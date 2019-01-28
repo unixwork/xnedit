@@ -7,7 +7,7 @@
 .c.o:
 	$(CC) -c -I.. $(CFLAGS) -o $@ $<
 
-OBJS = Folder.o XmL.o 
+OBJS = Folder.o XmL.o Grid.o GridUtil.o Progress.o Tree.o
 
 all: libXmL.a
 

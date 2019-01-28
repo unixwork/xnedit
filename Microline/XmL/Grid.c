@@ -140,7 +140,7 @@ static void GetSubValues(Widget w, ArgList args, Cardinal *nargs);
 static void SetSubValues(Widget w, ArgList args, Cardinal *nargs);
 static Boolean SetValues(Widget curW, Widget, Widget newW, 
 	ArgList args, Cardinal *nargs);
-static void CopyFontList(XmLGridWidget g);
+static void CopyRenderTable(XmLGridWidget g);
 static Boolean CvtStringToSizePolicy(Display *dpy, XrmValuePtr args,
 	Cardinal *numArgs, XrmValuePtr fromVal, XrmValuePtr toVal,
 	XtPointer *data);
@@ -340,6 +340,11 @@ static Boolean XmLGridCellDrawSort(XmLGridCell cell);
 static Boolean XmLGridCellSortAscending(XmLGridCell cell);
 static void XmLGridCellSetDrawSort(XmLGridCell cell, Boolean drawSort);
 static void XmLGridCellSetSortAscending(XmLGridCell cell, Boolean ascending);
+
+
+static void CheckSetRenderTable(Widget wid, int offset, XrmValue *value);
+static void CheckSetRenderTable_Cell(Widget wid, int offset, XrmValue *value);
+
 
 static XtActionsRec actions[] =
 	{
@@ -624,11 +629,22 @@ static XtResource resources[] =
 		XtOffset(XmLGridWidget, grid.editTrans),
 		XmRString, (XtPointer)editTranslations,
 		},
+        {
+        "pri.vate","Pri.vate",XmRBoolean,
+        sizeof(Boolean), XtOffset(XmLGridWidget, grid.check_set_render_table),
+        XmRImmediate, (XtPointer) False
+        },
 		{
 		XmNfontList, XmCFontList,
 		XmRFontList, sizeof(XmFontList),
-		XtOffset(XmLGridWidget, grid.fontList),
-		XmRImmediate, (XtPointer)0
+		XtOffset(XmLGridWidget, grid.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable
+		},
+		{
+		XmNrenderTable, XmCRenderTable,
+		XmRRenderTable, sizeof(XmRenderTable),
+		XtOffset(XmLGridWidget, grid.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable,
 		},
 		{
 		XmNfooterColumns, XmCFooterColumns,
@@ -1110,11 +1126,22 @@ static XtResource resources[] =
 		XtOffset(XmLGridWidget, grid.cellValues.editable),
 		XmRImmediate, (XtPointer)False,
 		},
+        {
+        "pri.vate","Pri.vate",XmRBoolean,
+        sizeof(Boolean), XtOffset(XmLGridWidget, grid.cellValues.check_set_render_table),
+        XmRImmediate, (XtPointer) False
+        },
 		{
 		XmNcellFontList, XmCCellFontList,
 		XmRFontList, sizeof(XmFontList),
-		XtOffset(XmLGridWidget, grid.cellValues.fontList),
-		XmRImmediate, (XtPointer)0,
+		XtOffset(XmLGridWidget, grid.cellValues.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable_Cell,
+		},
+		{
+		XmNcellRenderTable, XmCCellRenderTable,
+		XmRRenderTable, sizeof(XmRenderTable),
+		XtOffset(XmLGridWidget, grid.cellValues.renderTable),
+		XmRCallProc, (XtPointer)CheckSetRenderTable_Cell,
 		},
 		{
 		XmNcellForeground, XmCCellForeground,
@@ -1356,6 +1383,41 @@ XmLGridClassRec xmlGridClassRec =
 
 WidgetClass xmlGridWidgetClass = (WidgetClass)&xmlGridClassRec;
 
+
+static void 
+CheckSetRenderTable(Widget wid,
+		    int offset,
+		    XrmValue *value)
+{
+  XmLGridWidget lw = (XmLGridWidget)wid;
+
+  /* Check if been here before */
+  if (lw->grid.check_set_render_table)
+      value->addr = NULL;
+  else {
+      lw->grid.check_set_render_table = True;
+      value->addr = (char*)&(lw->grid.renderTable);
+  }
+
+}
+
+static void 
+CheckSetRenderTable_Cell(Widget wid,
+		    int offset,
+		    XrmValue *value)
+{
+  XmLGridWidget lw = (XmLGridWidget)wid;
+
+  /* Check if been here before */
+  if (lw->grid.cellValues.check_set_render_table)
+      value->addr = NULL;
+  else {
+      lw->grid.cellValues.check_set_render_table = True;
+      value->addr = (char*)&(lw->grid.cellValues.renderTable);
+  }
+
+}
+
 /*
    Create and Destroy
 */
@@ -1430,7 +1492,7 @@ Initialize(Widget reqW,
 	   ArgList args,
 	   Cardinal *narg)
 	{
-	XmLGridWidget g, request;
+	XmLGridWidget g;
 	Display *dpy;
 	Pixmap pix, pixMask;
 	Pixel white, black;
@@ -1445,7 +1507,6 @@ Initialize(Widget reqW,
 
 	g = (XmLGridWidget)newW;
 	dpy = XtDisplay((Widget)g);
-	request = (XmLGridWidget)reqW;
 
 #ifdef POINTER_FOCUS_CHECK
 	shell = XmLShellOfWidget(newW);
@@ -1470,7 +1531,7 @@ Initialize(Widget reqW,
 	if (g->core.height <= 0) 
 		g->core.height = 100;
 
-	CopyFontList(g);
+	CopyRenderTable(g);
 
 	if (g->grid.useTextWidget) {
 	  g->grid.text = XtVaCreateManagedWidget("text", xmTextWidgetClass, (Widget)g,
@@ -1719,7 +1780,7 @@ Destroy(Widget w)
 		XFreeGC(dpy, g->grid.gc);
 		XFreeFont(dpy, g->grid.fallbackFont);
 		}
-	XmFontListFree(g->grid.fontList);
+	XmRenderTableFree(g->grid.renderTable);
 	XmLGridCellDerefValues(g->grid.defCellValues);
 	ExtendSelect(g, (XEvent *)0, False, -1, -1);
 	count = XmLArrayGetCount(g->grid.rowArray);
@@ -1994,7 +2055,7 @@ Redisplay(Widget w,
 				ds.rightMargin = cellValues->rightMargin;
 				ds.background = cellValues->background;
 				ds.foreground = cellValues->foreground;
-				ds.fontList = cellValues->fontList;
+				ds.renderTable = cellValues->renderTable;
 				ds.alignment = cellValues->alignment;
 				ds.selectBackground = g->grid.selectBg;
 				ds.selectForeground = g->grid.selectFg;
@@ -2154,6 +2215,7 @@ Redisplay(Widget w,
 				}
 		}
 	XSetForeground(dpy, g->grid.gc, g->grid.blankBg);
+    XSetClipMask(dpy, g->grid.gc, None);
 	for (i = 0; i < n; i++)
 		{
 		if (XmLRectIntersect(&eRect, &rect[i]) == XmLRectOutside)
@@ -2857,8 +2919,6 @@ PlaceScrollbars(XmLGridWidget g)
 		    XtManageChild(g->grid.unhideButton);
 	    }
 
-	if (height <= 0)
-		width = 1;
 	x = g->core.width - vsb->core.width;
 	XtConfigureWidget(vsb, 
 			  x, y + headingRowHeight + g->manager.shadow_thickness, 
@@ -5069,15 +5129,15 @@ SetValues(Widget curW,
 		NE(grid.shadowRegions) ||
 		NE(grid.shadowType))
 		needsRedraw = 1;
-	if (NE(grid.fontList))
+	if (NE(grid.renderTable))
 		{
-		XmFontListFree(cur->grid.fontList);
-		CopyFontList(g);
+		XmRenderTableFree(cur->grid.renderTable);
+		CopyRenderTable(g);
 		cellValues = CellRefValuesCreate(g, g->grid.defCellValues);
 		cellValues->refCount = 1;
-		XmFontListFree(cellValues->fontList);
-		cellValues->fontList = XmFontListCopy(g->grid.fontList);
-		XmLFontListGetDimensions(cellValues->fontList,
+		XmRenderTableFree(cellValues->renderTable);
+		cellValues->renderTable = XmRenderTableCopy(g->grid.renderTable, NULL, 0);
+		XmLRenderTableGetDimensions((Widget)g, cellValues->renderTable,
 			&cellValues->fontWidth, &cellValues->fontHeight,
 			g->grid.useAvgWidth);
 		XmLGridCellDerefValues(g->grid.defCellValues);
@@ -5282,13 +5342,13 @@ SetValues(Widget curW,
 	}
 
 static void
-CopyFontList(XmLGridWidget g)
+CopyRenderTable(XmLGridWidget g)
 	{
-	if (!g->grid.fontList)
-		g->grid.fontList = XmLFontListCopyDefault((Widget)g);
+	if (!g->grid.renderTable)
+		g->grid.renderTable = XmLRenderTableCopyDefault((Widget)g);
 	else
-		g->grid.fontList = XmFontListCopy(g->grid.fontList);
-	if (!g->grid.fontList)
+		g->grid.renderTable = XmRenderTableCopy(g->grid.renderTable, NULL, 0);
+	if (!g->grid.renderTable)
 		XmLWarning((Widget)g, "- fatal error - font list NULL");
 	}
 
@@ -5459,7 +5519,7 @@ SetSimpleWidths(XmLGridWidget g,
 	int i, n, colCount, valid;
 	Dimension prevWidth;
 	unsigned char prevSizePolicy;
-	long mask;
+	long mask=0;
 	struct WidthRec
 		{
 		Dimension width;
@@ -5819,7 +5879,7 @@ CellValueGetMask(char *s,
 	static XrmQuark qLeftBorderColor, qLeftBorderType;
 	static XrmQuark qMarginBottom, qMarginLeft, qMarginRight;
 	static XrmQuark qMarginTop, qPixmap, qPixmapMask;
-	static XrmQuark qRightBorderColor, qRightBorderType;
+	static XrmQuark qRenderTable, qRightBorderColor, qRightBorderType;
 	static XrmQuark qRowSpan, qString, qToggleSet;
 	static XrmQuark qTopBorderColor, qTopBorderType, qType;
 	static XrmQuark qUserData;
@@ -5844,6 +5904,7 @@ CellValueGetMask(char *s,
 		qMarginTop= XrmStringToQuark(XmNcellMarginTop);
 		qPixmap = XrmStringToQuark(XmNcellPixmap);
 		qPixmapMask = XrmStringToQuark(XmNcellPixmapMask);
+		qRenderTable = XrmStringToQuark(XmNcellRenderTable);
 		qRightBorderColor = XrmStringToQuark(XmNcellRightBorderColor);
 		qRightBorderType = XrmStringToQuark(XmNcellRightBorderType);
 		qRowSpan = XrmStringToQuark(XmNcellRowSpan);
@@ -5868,8 +5929,8 @@ CellValueGetMask(char *s,
 			*mask |= XmLGridCellColumnSpan;
 	else if (q == qEditable)
 			*mask |= XmLGridCellEditable;
-	else if (q == qFontList)
-			*mask |= XmLGridCellFontList;
+	else if (q == qFontList || q == qRenderTable)
+			*mask |= XmLGridCellRenderTable;
 	else if (q == qForeground)
 			*mask |= XmLGridCellForeground;
 	else if (q == qLeftBorderColor)
@@ -5938,8 +5999,8 @@ GetCellValue(XmLGridCell cell,
 		case XmLGridCellEditable:
 			*((Boolean *)value) = values->editable;
 			break;
-		case XmLGridCellFontList:
-			*((XmFontList *)value) = values->fontList; 
+		case XmLGridCellRenderTable:
+			*((XmRenderTable *)value) = values->renderTable; 
 			break;
 		case XmLGridCellForeground:
 			*((Pixel *)value) = values->foreground; 
@@ -6025,7 +6086,7 @@ CellRefValuesCreate(XmLGridWidget g,
 		values->leftBorderType = XmBORDER_LINE;
 		values->rightBorderType = XmBORDER_LINE;
 		values->topBorderType = XmBORDER_LINE;
-		XmLFontListGetDimensions(g->grid.fontList, &width, &height,
+		XmLRenderTableGetDimensions((Widget)g, g->grid.renderTable, &width, &height,
 			g->grid.useAvgWidth);
 		values->alignment = XmALIGNMENT_CENTER;
 		values->background = g->core.background_pixel;
@@ -6034,7 +6095,7 @@ CellRefValuesCreate(XmLGridWidget g,
 		values->columnSpan = 0;
 		values->editable = False;
 		values->fontHeight = height;
-		values->fontList = XmFontListCopy(g->grid.fontList);
+		values->renderTable = XmRenderTableCopy(g->grid.renderTable, NULL, 0);
 		values->fontWidth = width;
 		values->foreground = g->manager.foreground;
 		values->leftBorderColor = g->manager.top_shadow_color;
@@ -6052,7 +6113,7 @@ CellRefValuesCreate(XmLGridWidget g,
 		{
 		/* copy values */
 		*values = *copy;
-		values->fontList = XmFontListCopy(copy->fontList);
+		values->renderTable = XmRenderTableCopy(copy->renderTable, NULL, 0);
 		values->refCount = 0;
 		}
 	return values;
@@ -6072,9 +6133,9 @@ SetCellValuesPreprocess(XmLGridWidget g,
 
 	/* calculate font width and height if set */
 	newValues = &g->grid.cellValues;
-	if (mask & XmLGridCellFontList)
+	if (mask & XmLGridCellRenderTable)
 		{
-		XmLFontListGetDimensions(newValues->fontList, &width, &height,
+		XmLRenderTableGetDimensions((Widget)g, newValues->renderTable, &width, &height,
 			g->grid.useAvgWidth);
 		newValues->fontWidth = width;
 		newValues->fontHeight = height;
@@ -6158,7 +6219,7 @@ _SetCellValuesResize(XmLGridWidget g,
 				}
 			}
 		}
-	if (mask & XmLGridCellType || mask & XmLGridCellFontList || pixResize ||
+	if (mask & XmLGridCellType || mask & XmLGridCellRenderTable || pixResize ||
 		mask & XmLGridCellRowSpan || mask & XmLGridCellColumnSpan ||
 		mask & XmLGridCellMarginLeft || mask & XmLGridCellMarginRight ||
 		mask & XmLGridCellMarginTop || mask & XmLGridCellMarginBottom)
@@ -6211,10 +6272,10 @@ SetCellRefValues(XmLGridWidget g,
 		values->columnSpan = newValues->columnSpan;
 	if (mask & XmLGridCellEditable)
 		values->editable = newValues->editable;
-	if (mask & XmLGridCellFontList)
+	if (mask & XmLGridCellRenderTable)
 		{
-		XmFontListFree(values->fontList);
-		values->fontList = XmFontListCopy(newValues->fontList);
+		XmRenderTableFree(values->renderTable);
+		values->renderTable = XmRenderTableCopy(newValues->renderTable, NULL, 0);
 		values->fontWidth = newValues->fontWidth;
 		values->fontHeight = newValues->fontHeight;
 		}
@@ -6292,7 +6353,7 @@ SetCellRefValuesCompare(void *userData,
 	RVCOMPARE(XmLGridCellBottomBorderType, bottomBorderType)
 	RVCOMPARE(XmLGridCellColumnSpan, columnSpan)
 	RVCOMPARE(XmLGridCellEditable, editable)
-	RVCOMPARE(XmLGridCellFontList, fontList)
+	RVCOMPARE(XmLGridCellRenderTable, renderTable)
 	RVCOMPARE(XmLGridCellForeground, foreground)
 	RVCOMPARE(XmLGridCellLeftBorderColor, leftBorderColor)
 	RVCOMPARE(XmLGridCellLeftBorderType, leftBorderType)
@@ -7513,7 +7574,6 @@ Select(Widget w,
 	{
 	XmLGridWidget g;
 	Display *dpy;
-	Window win;
 	static XrmQuark qACTIVATE, qBEGIN, qEXTEND, qEND;
 	static XrmQuark qTOGGLE;
 	static int quarksValid = 0;
@@ -7536,7 +7596,6 @@ Select(Widget w,
 	else
 		g = (XmLGridWidget)XtParent(w);
 	dpy = XtDisplay(g);
-	win = XtWindow(g);
 	if (!quarksValid)
 		{
 		qACTIVATE = XrmStringToQuark("ACTIVATE");
@@ -7855,7 +7914,6 @@ PopupSelect(Widget w,
 	XmLGridWidget g;
 	int row, col;
 	XButtonEvent *be;
-	XmLGridRow rowp;
 	XmLGridCallbackStruct cbs;
 
 	if (*nparam != 1)
@@ -8303,11 +8361,9 @@ XmLGridRow XmLGridRowNew(Widget grid)
 static XmLGridRow 
 _GridRowNew(Widget grid)
 	{
-	XmLGridWidget g;
 	XmLGridRow row;
 	int size;
 
-	g = (XmLGridWidget)grid;
 	size = XmLGridClassPartOfWidget(grid).rowRecSize;
 	row = (XmLGridRow)malloc(size);
 	row->grid.grid = grid;
@@ -8453,11 +8509,9 @@ XmLGridColumnNew(Widget grid)
 static XmLGridColumn 
 _GridColumnNew(Widget grid)
 	{
-	XmLGridWidget g;
 	XmLGridColumn column;
 	int size;
 
-	g = (XmLGridWidget)grid;
 	size = XmLGridClassPartOfWidget(grid).columnRecSize;
 	column = (XmLGridColumn)malloc(size);
 	column->grid.grid = grid;
@@ -8621,11 +8675,18 @@ _GridCellAction(XmLGridCell cell,
 		XmLGridCallbackStruct *cbs)
 	{
 	int ret;
+    Display* dpy = XtDisplay(w);
+
 
 	ret = 0;
 	switch (cbs->reason)
 		{
 		case XmCR_CELL_DRAW:
+            /* in Xft-mode, the gc sometimes has a clipmask which it should not have.
+                -> clear the clipmask */
+            XSetClipMask(dpy, cbs->drawInfo->gc, None);
+
+            /* Draw */
 			_XmLGridCellDrawBackground(cell, w, cbs->clipRect, cbs->drawInfo);
 			_XmLGridCellDrawValue(cell, w, cbs->clipRect, cbs->drawInfo);
 			_XmLGridCellDrawBorders(cell, w, cbs->clipRect, cbs->drawInfo);
@@ -8686,7 +8747,7 @@ XmLGridCellDerefValues(XmLGridCellRefValues *values)
 	values->refCount--;
 	if (!values->refCount)
 		{
-		XmFontListFree(values->fontList);
+		XmRenderTableFree(values->renderTable);
 		free((char *)values);
 		}
 	}
@@ -8989,6 +9050,7 @@ _XmLGridCellDrawBackground(XmLGridCell cell,
 		XSetForeground(dpy, ds->gc, ds->selectBackground);
 	else
 		XSetForeground(dpy, ds->gc, ds->background);
+
 	XFillRectangle(dpy, win, ds->gc, clipRect->x, clipRect->y,
 		clipRect->width, clipRect->height);
 	}
@@ -9004,7 +9066,6 @@ _XmLGridCellDrawBorders(XmLGridCell cell,
 	Display *dpy;
 	Window win;
 	GC gc;
-	Pixel black, white;
 	int x1, x2, y1, y2, loff, roff;
 	int drawLeft, drawRight, drawBot, drawTop;
 	XRectangle *cellRect;
@@ -9015,8 +9076,6 @@ _XmLGridCellDrawBorders(XmLGridCell cell,
 	win = XtWindow(w);
 	gc = ds->gc;
 	cellRect = ds->cellRect;
-	black = BlackPixelOfScreen(XtScreen(w));
-	white = WhitePixelOfScreen(XtScreen(w));
 	x1 = clipRect->x;
 	x2 = clipRect->x + clipRect->width - 1;
 	y1 = clipRect->y;
@@ -9154,7 +9213,7 @@ _XmLGridCellDrawValue(XmLGridCell cell,
 		else
 			XSetForeground(dpy, ds->gc, ds->foreground);
 		XmLStringDraw(w, (XmString)cell->cell.value, ds->stringDirection,
-			ds->fontList, ds->alignment, ds->gc,
+			ds->renderTable, ds->alignment, ds->gc,
 			&cellRect, clipRect);
 		}
 	if (type == XmPIXMAP_CELL && XmLGridCellIsValueSet(cell) == True)
@@ -9186,7 +9245,7 @@ _XmLGridCellDrawValue(XmLGridCell cell,
 			else
 				XSetForeground(dpy, ds->gc, ds->foreground);
 			XmLStringDraw(w, icon->string, ds->stringDirection,
-				ds->fontList, ds->alignment, ds->gc,
+				ds->renderTable, ds->alignment, ds->gc,
 				&cellRect, clipRect);
 			}
 		}
@@ -9251,7 +9310,7 @@ _XmLGridCellBeginTextEdit(XmLGridCell cell,
 		XmNtextWidget, &text,
 		NULL);
 	XtVaSetValues(text,
-		XmNfontList, cell->cell.refValues->fontList,
+		XmNrenderTable, cell->cell.refValues->renderTable,
 		NULL);
 	return 1;
 	}

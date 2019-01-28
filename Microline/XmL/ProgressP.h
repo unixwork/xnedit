@@ -66,7 +66,8 @@ typedef struct _XmLProgressPart
 	int completeValue, value;
 	Boolean showTime;
 	Boolean showPercentage;
-	XmFontList fontList;
+	XmRenderTable renderTable;
+    Boolean	check_set_render_table;
 	GC gc;
 	time_t startTime;
 	XFontStruct *fallbackFont;

@@ -61,6 +61,9 @@
 #include <Xm/BulletinB.h>
 #include <Xm/MenuShell.h>
 
+#include <X11/Xft/Xft.h>
+
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -405,7 +408,7 @@ XmLDrawnButtonSetType(Widget w,
 	XmLDrawnBData *dd;
 	XmDrawnButtonWidget b;
 	XmString str;
-	XmFontList fontlist;
+	XmRenderTable rendertable;
 	XGCValues values;
 	XtGCMask mask;
 	Dimension width, height, dim;
@@ -439,7 +442,7 @@ XmLDrawnButtonSetType(Widget w,
 		{
 		XtVaGetValues(w,
 			XmNlabelString, &str,
-			XmNfontList, &fontlist,
+			XmNrenderTable, &rendertable,
 			XmNhighlightThickness, &highlightThickness,
 			XmNshadowThickness, &shadowThickness,
 			XmNmarginHeight, &marginHeight,
@@ -453,7 +456,7 @@ XmLDrawnButtonSetType(Widget w,
 			str = XmStringCreateSimple(XtName(w));
 		if (!str)
 			str = XmStringCreateSimple("");
-		XmStringExtent(fontlist, str, &width, &height);
+		XmStringExtent(rendertable, str, &width, &height);
 		XmStringFree(str);
 		if (drawnDir == XmDRAWNB_UP || drawnDir == XmDRAWNB_DOWN)
 			{
@@ -516,7 +519,7 @@ XmLDrawnBDrawStringCB(Widget w,
 		      XtPointer callData)
 	{
 	XmLDrawnBData *dd;
-	XmFontList fontlist;
+	XmRenderTable rendertable;
 	XmString str;
 	XmStringDirection stringDir;
 	unsigned char drawDir, alignment;
@@ -538,7 +541,7 @@ XmLDrawnBDrawStringCB(Widget w,
 		return;
 	XtVaGetValues(w,
 		XmNforeground, &fg,
-		XmNfontList, &fontlist,
+		XmNrenderTable, &rendertable,
 		XmNalignment, &alignment,
 		XmNhighlightThickness, &highlightThickness,
 		XmNshadowThickness, &shadowThickness,
@@ -590,7 +593,7 @@ XmLDrawnBDrawStringCB(Widget w,
 		XSetFont(XtDisplay(w), dd->gc, dd->fontStruct->fid);
 		}
 	XSetForeground(XtDisplay(w), dd->gc, fg);
-	XmLStringDrawDirection(XtDisplay(w), XtWindow(w), fontlist,
+	XmLStringDrawDirection(XtDisplay(w), XtWindow(w), rendertable,
 		str, dd->gc, xoff, yoff, drawWidth, alignment, stringDir, drawDir);
 	XmStringFree(str);
 	}
@@ -916,52 +919,90 @@ XmLRectIntersect(XRectangle *r1,
 	return XmLRectPartial;
 	}
 
-
+/* compatibility-support for deprecated FontList */
 XmFontList
 XmLFontListCopyDefault(Widget widget)
-	{
-	Widget parent;
-	XFontStruct *font;
-	XmFontList fontList, fl;
+{
+    return XmLRenderTableCopyDefault(widget);
+}
 
-	fontList = 0;
+XmRenderTable
+XmLRenderTableCopyDefault(Widget widget)
+{
+	Widget parent;
+	XmRenderTable renderTable, fl;
+
+	renderTable = 0;
 	parent = XtParent(widget);
 	while (parent)
-		{
+	{
 		fl = 0;
 		if (XmIsVendorShell(parent) || XmIsMenuShell(parent))
 			XtVaGetValues(parent, XmNdefaultFontList, &fl, NULL);
 		else if (XmIsBulletinBoard(parent))
 			XtVaGetValues(parent, XmNbuttonFontList, &fl, NULL);
 		if (fl)
-			{
-			fontList = XmFontListCopy(fl);
+		{
+			renderTable = XmRenderTableCopy(fl, NULL, 0);
 			parent = 0;
-			}
+		}
 		if (parent)
 			parent = XtParent(parent);
-		}
-	if (!fontList)
-		{
-		font = XLoadQueryFont(XtDisplay(widget), "fixed");
-		if (!font)
-			XmLWarning(widget,
-				"FontListCopyDefault() - FATAL ERROR - can't load fixed font");
-		fontList = XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
-		}
-	return fontList;
 	}
+	if (!renderTable)
+	{
+        XmRendition rendition = XmRenditionCreate( widget, NULL, NULL, 0 );
+        renderTable = XmRenderTableAddRenditions( NULL, &rendition, 1, XmMERGE_REPLACE );
+	}
+	return renderTable;
+}
+
+
+/* compatibility-support for deprecated FontList */
+void
+XmLFontListGetDimensions(
+             Widget w, /* used only for getting the display */
+             XmFontList fontList,
+			 short *width,
+			 short *height,
+			 Boolean useAverageWidth)
+{
+    XmLRenderTableGetDimensions(
+        w, 
+        fontList,
+        width,
+        height,
+        useAverageWidth
+    );
+}
+
+
+static void XmLGetDimensionsOfFontstruct(
+    XFontStruct *fs,
+    short *width,
+    short *height,
+    Boolean useAverageWidth)
+{
+    if (useAverageWidth == True) {
+        XmLFontGetAverageWidth(fs, width);
+    } else {
+        *width = fs->max_bounds.width;
+    }
+    *height = fs->max_bounds.ascent + fs->max_bounds.descent;
+}
 
 void
-XmLFontListGetDimensions(XmFontList fontList,
+XmLRenderTableGetDimensions(
+            Widget w, /* used only for getting the display */
+            XmRenderTable renderTable,
 			 short *width,
 			 short *height,
 			 Boolean useAverageWidth)
 	{
+#if 0 /* old fontlist code */
 	XmStringCharSet charset;
 	XmFontContext context;
 	XFontStruct *fs;
-	short w, h;
 #if XmVersion < 2000
 	/* --- begin code to work around Motif 1.x internal bug */
 	typedef struct {
@@ -974,10 +1015,94 @@ XmLFontListGetDimensions(XmFontList fontList,
 	} XmFontListRec;
 	XmFontList nextFontList;
 #endif
+#endif
 
+    Display *dpy = XtDisplay(w);
 	*width = 0;
 	*height = 0;
-	if (XmFontListInitFontContext(&context, fontList))
+    XmStringTag* tag_list = NULL;
+    int tag_count = XmRenderTableGetTags( renderTable, &tag_list );
+    int renditionIdx;
+    XmRendition* renditions = XmRenderTableGetRenditions( renderTable, tag_list, tag_count );
+    for ( renditionIdx = 0; renditionIdx < tag_count; renditionIdx++ ) {
+    	short w = 0, h = 0;
+        XmRendition rendition = renditions[renditionIdx];
+
+        XmFontType fontType = XmFONT_IS_FONT;
+        XtPointer font = NULL;
+        XftFont* xftFont = NULL;
+        Arg arglist[3];
+        int argCount = 0;
+        XtSetArg(arglist[argCount], XmNfontType, &fontType); argCount++;
+        XtSetArg(arglist[argCount], XmNfont, &font); argCount++;
+        XtSetArg(arglist[argCount], XmNxftFont, &xftFont); argCount++;
+        XmRenditionRetrieve( rendition, arglist, argCount );
+        switch(fontType) 
+        {
+            case XmFONT_IS_FONT:
+            {
+                XFontStruct *fs = (XFontStruct*)(font);
+                if ( ( fs != NULL ) && ( fs != (XFontStruct*)XmAS_IS ) ) {
+                    XmLGetDimensionsOfFontstruct(
+                        fs, &w, &h, useAverageWidth
+                    );
+                }
+            } break;
+            case XmFONT_IS_FONTSET:
+            {
+                XFontSet fontSet = (XFontSet)(font);
+                if ( ( fontSet != NULL ) && ( fontSet != (XFontSet)XmAS_IS ) ) {
+                    /* there's no easy way to compute the average width -> ignore the flag useAverageWidth */
+                    XFontSetExtents* fontsetExtents = 
+                        XExtentsOfFontSet(fontSet);
+
+                    w = fontsetExtents->max_logical_extent.width;
+                    h = fontsetExtents->max_logical_extent.height;
+                }
+            } break;
+            case XmFONT_IS_XFT:
+            {
+                if ( ( xftFont != NULL ) && ( xftFont != (XftFont*)XmAS_IS ) ) {
+                    w = xftFont->max_advance_width;
+                    h = xftFont->ascent + xftFont->descent;
+
+                    if ( useAverageWidth ) {
+                       /* there's no way to compute the average width -> approximate with average width of a
+                          representative String */
+                        const char* testString = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                        const size_t testStringLen = strlen(testString);
+                        XGlyphInfo extents;
+                        XftTextExtentsUtf8 (
+                            dpy,
+		                    xftFont,
+		                    testString,
+		                    testStringLen,
+		                    &extents
+                        );
+                        w = extents.xOff / testStringLen;
+                    }
+                }
+            } break;
+        }
+        /* Compute the maximum */
+        if (*height < h) {
+            *height = h;
+        }
+        if (*width < w) {
+            *width = w;
+        }
+    }
+    /* clean up */
+    for ( renditionIdx = 0; renditionIdx < tag_count; renditionIdx++ ) {
+        XtFree(tag_list[renditionIdx]);
+    }    
+    XtFree( (XtPointer)tag_list );
+    for ( renditionIdx = 0; renditionIdx < tag_count; renditionIdx++ ) {
+        XmRenditionFree( renditions[renditionIdx] );
+    }
+    XtFree( (XtPointer)renditions );
+#if 0 /* old fontlist code */
+	if (XmFontListInitFontContext(&context, renderTable))
 		{
 		while (1)
 			{
@@ -1006,6 +1131,7 @@ XmLFontListGetDimensions(XmFontList fontList,
 			}	
 		XmFontListFreeFontContext(context);
 		}
+#endif
 	}
 
 static void
@@ -1379,7 +1505,7 @@ void
 XmLStringDraw(Widget w,
 	      XmString string,
 	      XmStringDirection stringDir,
-	      XmFontList fontList,
+	      XmRenderTable renderTable,
 	      unsigned char alignment,
 	      GC gc,
 	      XRectangle *rect,
@@ -1395,7 +1521,7 @@ XmLStringDraw(Widget w,
 		return;
 	dpy = XtDisplay(w);
 	win = XtWindow(w);
-	XmStringExtent(fontList, string, &width, &height);
+	XmStringExtent(renderTable, string, &width, &height);
 	drawType = XmLDrawCalc(w, width, height, alignment,
 		rect, clipRect, &x, &y);
 	if (drawType == XmLDrawNODRAW)
@@ -1418,7 +1544,7 @@ XmLStringDraw(Widget w,
 	   so we use a clip region for clipping */
 	if (drawType == XmLDrawCLIPPED)
 		XSetClipRectangles(dpy, gc, 0, 0, clipRect, 1, Unsorted);
-	XmStringDraw(dpy, win, fontList, string, gc,
+	XmStringDraw(dpy, win, renderTable, string, gc,
 		x, y, rect->width - 4, strAlignment, stringDir, clipRect);
 	if (drawType == XmLDrawCLIPPED)
 		XSetClipMask(dpy, gc, None);
@@ -1427,7 +1553,7 @@ XmLStringDraw(Widget w,
 void
 XmLStringDrawDirection(Display *dpy,
 		       Window win,
-		       XmFontList fontlist,
+		       XmRenderTable rendertable,
 		       XmString string,
 		       GC gc,
 		       int x,
@@ -1450,7 +1576,7 @@ XmLStringDrawDirection(Display *dpy,
 	char *data;
 
 	screen = DefaultScreenOfDisplay(dpy);
-	XmStringExtent(fontlist, string, &dW, &dH);
+	XmStringExtent(rendertable, string, &dW, &dH);
 	stringWidth = (int)dW;
 	stringHeight = (int)dH;
 	if (!stringWidth || !stringHeight)
@@ -1471,7 +1597,7 @@ XmLStringDrawDirection(Display *dpy,
 	XSetForeground(dpy, pixmapGC, 0L);
 	XFillRectangle(dpy, pixmap, pixmapGC, 0, 0, stringWidth, stringHeight);
 	XSetForeground(dpy, pixmapGC, 1L);
-	XmStringDraw(dpy, pixmap, fontlist, string, pixmapGC, 0, 0, stringWidth,
+	XmStringDraw(dpy, pixmap, rendertable, string, pixmapGC, 0, 0, stringWidth,
 		XmALIGNMENT_BEGINNING, layout_direction, 0);
 	XFreeFont(dpy, fontStruct);
 
