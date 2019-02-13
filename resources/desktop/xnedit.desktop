@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=XNEdit
+GenericName=XNEdit
+Comment=Nirvana Text Editor
+Exec=xnedit %U
+TryExec=xnedit
+Categories=Utility;TextEditor;
+Icon=xnedit
+Terminal=false
+MimeType=text/plain;
+Type=Application
+Keywords=Text;Editor;Plaintext;Write;
+

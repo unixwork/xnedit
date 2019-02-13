@@ -1,13 +1,13 @@
-# $Id: nc.pod,v 1.7 2005/03/03 14:49:37 edg Exp $
+# $Id: xnc.pod,v 1.7 2005/03/03 14:49:37 edg Exp $
 =pod
 
 =head1 NAME
 
-nc - Client program for NEdit text editor
+xnc - Client program for XNEdit text editor
 
 =head1 SYNOPSYS
 
-nc [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-do> I<command>] 
+xnc [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-do> I<command>] 
    [B<-ask>] [B<-noask>] [B<-svrname> I<name>] [B<-svrcmd> I<command>] 
    [B<-lm> I<languagemode>] 
    [B<-geometry> I<geometry> | B<-g> I<geometry>] [B<-icon> | B<-iconic>] 
@@ -18,15 +18,15 @@ nc [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-do> I<command>]
 
 =head1 DESCRIPTION
 
-B<nc> is the client interface to the NEdit text editor. A server can be started
-explicitly by running NEdit in server mode:
+B<xnc> is the client interface to the XNEdit text editor. A server can be started
+explicitly by running XNEdit in server mode:
 
- nedit -server
+ xnedit -server
 
-If no server is running, B<nc> will start one unless configured otherwise.
-Client/server mode is useful for integrating NEdit with software development
+If no server is running, B<xnc> will start one unless configured otherwise.
+Client/server mode is useful for integrating XNEdit with software development
 environments, mailers, and other programs; or just as a quick way to open files
-from the shell command line without starting a new NEdit session.
+from the shell command line without starting a new XNEdit session.
 
 =head1 OPTIONS
 
@@ -46,29 +46,29 @@ Go to line number I<n>.
 
 =item  B<-do> I<command>
 
-Execute an NEdit macro or action on the file following the -do argument on the
+Execute an XNEdit macro or action on the file following the -do argument on the
 command line.
 
-If you use this command without a filename, B<nc> would randomly choose one
+If you use this command without a filename, B<xnc> would randomly choose one
 window to focus and execute the macro in.
 
 =item  B<-ask>, B<-noask>
 
-Instructs B<nc> whether to automatically start a server if one is not
+Instructs B<xnc> whether to automatically start a server if one is not
 available. This overrides the X resource `nc.autoStart'.
 
 
 =item  B<-svrname> I<name>
 
-Explicitly instructs B<nc> which server to connect to, an instance of
-L<nedit(1)> with a corresponding B<-svrname> argument.  By naming servers, you
+Explicitly instructs B<xnc> which server to connect to, an instance of
+L<xnedit(1)> with a corresponding B<-svrname> argument.  By naming servers, you
 can run several simultaneously, and direct files and commands specifically to
 any one.
 
 =item  B<-svrcmd> I<command>
 
-The command which B<nc> uses to start an NEdit server. It is also settable via
-the X resource `nc.serverCommand', by default, I<"nedit -server">.
+The command which B<xnc> uses to start an XNEdit server. It is also settable via
+the X resource `nc.serverCommand', by default, I<"xnedit -server">.
 
 =item  B<-lm> I<languagemode>
 
@@ -99,7 +99,7 @@ screen can be omitted and default to the local machine, and screen 0.
 
 =item  B<-timeout> I<seconds>
 
-Basic time-out period (in seconds) used in communication with an NEdit server.
+Basic time-out period (in seconds) used in communication with an XNEdit server.
 Default: 10 seconds. Also settable via the X resource `nc.timeOut'.
 
 Under rare conditions (such as a slow connection), it may be necessary to
@@ -110,8 +110,8 @@ increase the time-out period. In most cases, the default is fine.
 Instructs B<nc> not to return to the shell until all files given
 are closed.
 
-Normally, B<nc> returns once the files given in its command line
-are opened by the server. When this option is given, nc returns
+Normally, B<xnc> returns once the files given in its command line
+are opened by the server. When this option is given, xnc returns
 only after the last file given in this call is closed.
 Note that this option affects all files, not only the ones
 following this option in the command line.
@@ -146,7 +146,7 @@ Prints the command line help and then exits.
 =item B<-->
 
 Treats all subsequent arguments as file names, even if they start with a dash.
-This is so NEdit can access files that begin with the dash character. 
+This is so XNEdit can access files that begin with the dash character. 
 
 
 =back
@@ -157,7 +157,7 @@ This is so NEdit can access files that begin with the dash character.
 
 =item  DISPLAY
 
-NEdit requires an X-based workstation or X-Terminal. If you have used B<telnet>
+XNEdit requires an X-based workstation or X-Terminal. If you have used B<telnet>
 or B<rlogin> to access the host Unix system, set the Unix environment variable
 for your display:
 
@@ -167,11 +167,11 @@ for your display:
 
 =head1 NOTES
 
-Communication between L<nc(1)> and L<nedit(1)> is through the X display. So as
-long as X windows is set up and working properly, B<nc> will work properly
-as well. B<nc> uses the `DISPLAY' environment variable, the machine name and
+Communication between L<xnc(1)> and L<xnedit(1)> is through the X display. So as
+long as X windows is set up and working properly, B<xnc> will work properly
+as well. B<xnc> uses the `DISPLAY' environment variable, the machine name and
 your user name to find the appropriate server, meaning, if you have several
-machines sharing a common file system, B<nc> will not be able to find a server
+machines sharing a common file system, B<xnc> will not be able to find a server
 that is running on a machine with a different host name, even though it may be
 perfectly appropriate for editing a given file.
 
@@ -182,28 +182,28 @@ command line, for example:
 
 =item  incorrect:
 
-  nc file.c -line 25
+  xnc file.c -line 25
 
 =item  correct:
 
-  nc -line 25 file.c
+  xnc -line 25 file.c
 
 =back
 
-For more information see NEdit's online help, or I<nedit.doc> in the NEdit
+For more information see XNEdit's online help, or I<xnedit.txt> in the NEdit
 distribution kit.
 
 =head1 SEE ALSO
 
-nedit(1), X(1), mwm(1), ctags(1), etags(1)
+xnedit(1), X(1), mwm(1), ctags(1), etags(1)
 
 =head1 AUTHORS
 
-NEdit was written by Mark Edel, Joy Kyriakopulos, Christopher Conrad, Jim
-Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max Vohlken,
-Yunliang Yu, Donna Reid, Arne Forlie, Eddy De Greef, Steve LoBasso, Alexander
-Mai, Scott Tringali, Thorsten Haude, Steve Haehn, Andrew Hood, Nathaniel Gray,
-and TK Soh.
+XNEdit was written by Olaf Winterman, Mark Edel, Joy Kyriakopulos, Christopher
+Conrad, Jim Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max
+Vohlken, Yunliang Yu, Donna Reid, Arne Forlie, Eddy De Greef, Steve LoBasso,
+Alexander Mai, Scott Tringali, Thorsten Haude, Steve Haehn, Andrew Hood,
+Nathaniel Gray and TK Soh.
 
 =head1 COPYRIGHT
 

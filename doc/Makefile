@@ -51,40 +51,40 @@ help: ../source/help_topic.h ../source/help_data.h setext
 	@ mv -f help_topic.h ../source
 	@ mv -f help_data.h ../source
 
-nedit.html: .version help.etx setext
+xnedit.html: .version help.etx setext
 	@ echo "Creating XNEdit HTML documentation..."
-	@ ./setext -v version="`cat .version`" help.etx nedit.html
+	@ ./setext -v version="`cat .version`" help.etx xnedit.html
 
-html/nedit.html: .version help.etx setext
+html/xnedit.html: .version help.etx setext
 	@ echo "Creating XNEdit HTML website documentation..."
 	@ if [ ! -d html ]; then mkdir html; fi
 	@ if [ -d html ]; then \
 	      cd html; \
-	      ../setext -S -v version="`cat ../.version`" ../help.etx nedit.html; \
+	      ../setext -S -v version="`cat ../.version`" ../help.etx xnedit.html; \
 	  else \
-	      echo "** Unable to create html directory to hold NEdit documentation"; \
+	      echo "** Unable to create html directory to hold XNEdit documentation"; \
 	  fi
 
-nedit.doc: .version help.etx setext
-	@ echo "Creating NEdit plain text documenation..."
-	@ ./setext -c NEDITDOC -v version="`cat .version`" help.etx nedit.doc
+xnedit.txt: .version help.etx setext
+	@ echo "Creating XNEdit plain text documenation..."
+	@ ./setext -c NEDITDOC -v version="`cat .version`" help.etx xnedit.txt
 
-nc.man: .version
-nedit.man: .version
+xnc.man: .version
+xnedit.man: .version
 .pod.man:
 	@ echo "Creating $* man page..."
 	@ which pod2man > /dev/null 2>&1 || ( echo "Sorry, you need pod2man." && exit 1 )
-	@ pod2man --release="`cat .version`" --center="NEdit documentation" $*.pod > $@ 
+	@ pod2man --release="`cat .version`" --center="XNEdit documentation" $*.pod > $@ 
 
-doc: .version nedit.doc nedit.html html/nedit.html
+doc: .version xnedit.txt xnedit.html html/xnedit.html
 
-man: .version nedit.man nc.man
+man: .version xnedit.man xnc.man
 
 all: help doc man
 
 clean:
-	@ echo "Removing generated NEdit documentation..."
-	@ rm -rf help nedit.html html nedit.doc .version nedit.man nc.man
+	@ echo "Removing generated XNEdit documentation..."
+	@ rm -rf help xnedit.html html xnedit.txt .version xnedit.man xnc.man
 
 #
 # FAQ targets. Requires an XSLT parser and processor, such as Java with the

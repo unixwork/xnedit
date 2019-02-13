@@ -55,17 +55,16 @@ realclean: clean
 #
 # The following is for creating binary packages of NEdit.
 #
-RELEASE=xnedit-5.7-`uname -s`-`uname -m`
-BINDIST-FILES=source/xnedit source/xnc README COPYRIGHT ReleaseNotes doc/nedit.doc doc/nedit.html doc/nedit.man doc/nc.man doc/faq.txt
+RELEASE=xnedit-1.0-`uname -s`-`uname -m`
+BINDIST-FILES=source/xnedit source/xnc README LICENSE ReleaseNotes doc/xnedit.txt doc/xnedit.html doc/xnedit.man doc/xnc.man doc/faq.txt resources/desktop/xnedit.desktop resources/desktop/xnedit.png
 
 dist-bin: $(BINDIST-FILES)
 	rm -rf $(RELEASE)
 	mkdir -p $(RELEASE)
 	cp $(BINDIST-FILES) $(RELEASE)/
-	strip $(RELEASE)/nedit $(RELEASE)/nc
-	chmod 555 $(RELEASE)/nedit $(RELEASE)/nc
+	strip $(RELEASE)/xnedit $(RELEASE)/xnc
+	chmod 555 $(RELEASE)/xnedit $(RELEASE)/xnc
 	tar cf $(RELEASE).tar $(RELEASE)
-	compress -c $(RELEASE).tar > $(RELEASE).tar.Z
 	-gzip -9 -c $(RELEASE).tar > $(RELEASE).tar.gz
 	-bzip2 -9 -c $(RELEASE).tar > $(RELEASE).tar.bz2
 	rm -rf $(RELEASE) $(RELEASE).tar

@@ -1,13 +1,13 @@
-# $Id: nedit.pod,v 1.9 2005/06/20 10:54:45 edg Exp $
+# $Id: xnedit.pod,v 1.9 2005/06/20 10:54:45 edg Exp $
 =pod
 
 =head1 NAME
 
-NEdit - Text Editor
+XNEdit - Text Editor
 
 =head1 SYNOPSYS
 
-nedit [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-server>]
+xnedit [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-server>]
       [B<-do> I<command>] [B<-tags> I<file>] [B<-tabs> I<n>] 
       [B<-wrap>] [B<-nowrap>] [B<-autowrap>] 
       [B<-autoindent>] [B<-noautoindent>] 
@@ -24,7 +24,7 @@ nedit [B<-read>] [B<-create>] [B<-line> I<n> | B<+>I<n>] [B<-server>]
 
 =head1 DESCRIPTION
 
-NEdit is a standard GUI (Graphical User Interface) style text editor for
+XNEdit is a standard GUI (Graphical User Interface) style text editor for
 programs and plain-text files. It provides mouse based editing and a
 streamlined editing style, based on popular Macintosh and MS Windows editors,
 for users of X workstations and X terminals.
@@ -47,16 +47,16 @@ Go to line number I<n>.
 
 =item  B<-server> 
 
-Designate this session as an NEdit server, for processing commands from the
-L<nc(1)> program. L<nc(1)> can be used to interface NEdit to code development
+Designate this session as an XNEdit server, for processing commands from the
+L<nc(1)> program. L<nc(1)> can be used to interface XNEdit to code development
 environments, mailers, etc., or just as a quick way to open files from the
-shell command line without starting a new NEdit session.
+shell command line without starting a new XNEdit session.
 
 =item  B<-do> I<command> 
 
-Execute an NEdit macro or action on the file following the -do argument on the
+Execute an XNEdit macro or action on the file following the -do argument on the
 command line. B<-do> is particularly useful from the L<nc(1)> program, where
-`nc -do' can remotely execute commands in an nedit B<-server> session.
+`nc -do' can remotely execute commands in an xnedit B<-server> session.
 
 =item  B<-tags> I<file> 
 
@@ -144,17 +144,17 @@ Set the value of an X resource to override a default value.
 
 =item  B<-svrname> I<name> 
 
-When starting nedit in server mode, name the server, such that it responds to
+When starting xnedit in server mode, name the server, such that it responds to
 requests only when L<nc(1)> is given a corresponding B<-svrname> argument. By
 naming servers, you can run several simultaneously, and direct files and
 commands specifically to any one. Specifying a non-empty name automatically
-designates this session as an NEdit server, as though B<-server> were specified.
+designates this session as an XNEdit server, as though B<-server> were specified.
 
 =item  B<-import> I<file> 
 
 Loads an additional preferences file on top of the existing defaults saved in
 your I<nedit.rc> file.  To incorporate macros, language modes, and highlight
-patterns and styles written by other users, run nedit with B<-import>
+patterns and styles written by other users, run xnedit with B<-import>
 I<<file>>, then re-save your I<nedit.rc> file with
 Preferences->Save Defaults.
 
@@ -182,7 +182,7 @@ Prints the command line help and then exits.
 =item B<-->
 
 Treats all subsequent arguments as file names, even if they start with a dash.
-This is so NEdit can access files that begin with the dash character. 
+This is so XNEdit can access files that begin with the dash character. 
 
 =back
 
@@ -192,7 +192,7 @@ This is so NEdit can access files that begin with the dash character.
 
 =item  DISPLAY
 
-NEdit requires an X-based workstation or X-Terminal. If you have used  B<telnet>
+XNEdit requires an X-based workstation or X-Terminal. If you have used  B<telnet>
 or B<rlogin> to access the host Unix system, set the Unix environment variable for
 your display:
 
@@ -208,24 +208,22 @@ sh-type shells:
 
 This environment variable can be set to the name of a
 directory. This directory will then be used instead of
-`$HOME/.nedit' as the base directory for NEdit's special
+`$HOME/.xnedit' as the base directory for XNEdit's special
 files (see section FILES, below).
-
-This variable is new to NEdit 5.4.
 
 =back
 
 =head1 FILES
 
-From version 5.4 on, NEdit creates a directory in which NEdit's
-special files reside. This directory is named '.nedit' by default.
+XNEdit creates a directory in which XNEdit's
+special files reside. This directory is named '.xnedit' by default.
 
 =over
 
 =item I<nedit.rc>
 
 This is an X resource file which contains most user settings for
-NEdit. It is read at startup and written by selecting the item
+XNEdit. It is read at startup and written by selecting the item
 'Save Defaults...' in the Preferences menu. Do not edit this
 file by hand, all settings can be reached via the 'Default
 Settings' menu.
@@ -237,11 +235,11 @@ file by hand.
 
 =item I<autoload.nm >
 
-A file that can contain a number of NEdit Macro Language
+A file that can contain a number of XNEdit Macro Language
 statements and subroutine definitions. The statements will be
-executed when an NEdit server starts, the subroutines will be
+executed when an XNEdit server starts, the subroutines will be
 loaded for later reference.
-This file will not be created or modified by NEdit (unless
+This file will not be created or modified by XNEdit (unless
 you load it and edit it of course).
 
 =back
@@ -258,11 +256,11 @@ See also the entry for NEDIT_HOME under ENVIRONMENT, above.
 
 =head1 NOTES
 
-For more information see NEdit's online help, or nedit.doc in the NEdit
+For more information see XNEdit's online help, or xnedit.txt in the XNEdit
 distribution kit.
 
-NEdit sources, executables, additional documentation, and contributed software
-are available from the NEdit web site at http://nedit.org.
+XNEdit sources, executables, additional documentation, and contributed software
+are available from the XNEdit web site at https://unixwork.de/xnedit/
 
 =head1 SEE ALSO
 
@@ -270,13 +268,13 @@ nc(1), X(1), mwm(1), ctags(1), etags(1)
 
 =head1 AUTHORS
 
-NEdit was written by Mark Edel, Joy Kyriakopulos, Christopher Conrad, Jim
-Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max Vohlken,
-Yunliang Yu, Donna Reid, Arne Forlie, Eddy De Greef, Steve LoBasso, Alexander
-Mai, Scott Tringali, Thorsten Haude, Steve Haehn, Andrew Hood, Nathaniel Gray,
-and TK Soh.
+XNEdit was written by Olaf Winterman, Mark Edel, Joy Kyriakopulos, Christopher
+Conrad, Jim Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max
+Vohlken, Yunliang Yu, Donna Reid, Arne Forlie, Eddy De Greef, Steve LoBasso,
+Alexander Mai, Scott Tringali, Thorsten Haude, Steve Haehn, Andrew Hood,
+Nathaniel Gray and TK Soh.
 
-The regular expression matching routines used in NEdit are adapted (with
+The regular expression matching routines used in XNEdit are adapted (with
 permission) from original code written by Henry Spencer at the University of
 Toronto.
 
