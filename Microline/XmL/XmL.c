@@ -1035,7 +1035,9 @@ XmLRenderTableGetDimensions(
         int argCount = 0;
         XtSetArg(arglist[argCount], XmNfontType, &fontType); argCount++;
         XtSetArg(arglist[argCount], XmNfont, &font); argCount++;
+#ifdef XmNxftFont
         XtSetArg(arglist[argCount], XmNxftFont, &xftFont); argCount++;
+#endif
         XmRenditionRetrieve( rendition, arglist, argCount );
         switch(fontType) 
         {
@@ -1060,6 +1062,7 @@ XmLRenderTableGetDimensions(
                     h = fontsetExtents->max_logical_extent.height;
                 }
             } break;
+#ifdef XmFONT_IS_XFT
             case XmFONT_IS_XFT:
             {
                 if ( ( xftFont != NULL ) && ( xftFont != (XftFont*)XmAS_IS ) ) {
@@ -1083,6 +1086,7 @@ XmLRenderTableGetDimensions(
                     }
                 }
             } break;
+#endif
         }
         /* Compute the maximum */
         if (*height < h) {
