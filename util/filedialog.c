@@ -1681,10 +1681,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget lsFileLabel = XmCreateLabel(data.listform, "label", args, n);
     XtManageChild(lsFileLabel);
     XmStringFree(str);
-      
+    
+    Widget focus = NULL;
     switch(data.selectedview) {
-        case 0: XtManageChild(scrollw); break;
-        case 1: XtManageChild(data.listform); break;
+        case 0: XtManageChild(scrollw); focus = data.container; break;
+        case 1: XtManageChild(data.listform); focus = data.filelist; break;
         case 2: XtManageChild(data.grid); break;
     }
     
@@ -1695,7 +1696,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     PathBarSetPath(data.pathBar, defDir);
     
     /* event loop */
-    ManageDialogCenteredOnPointer(form);   
+    ManageDialogCenteredOnPointer(form);
+    
+    XmProcessTraversal(focus, XmTRAVERSE_CURRENT);
     
     XtAppContext app = XtWidgetToApplicationContext(dialog);
     while(!data.end && !XtAppGetExitFlag(app)) {
