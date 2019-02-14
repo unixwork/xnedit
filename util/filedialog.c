@@ -578,6 +578,10 @@ static int cleanupFileView(FileDialogData *data)
     }
     
     XtUnmanageChildren(data->gadgets, data->numGadgets);
+    for(int i=0;i<data->numGadgets;i++) {
+        XtDestroyWidget(data->gadgets[i]);
+    }
+    
     int ret = data->numGadgets;
     NEditFree(data->gadgets);
     data->gadgets = NULL;
@@ -1173,6 +1177,7 @@ static void select_iconview(Widget w, FileDialogData *data, XtPointer u)
     data->selectedview = 0;
     XtManageChild(data->scrollw);
     filedialog_update_dir(data, NULL);
+    filedialog_update_dir(data, NULL); // workaround for what I do not know
 }
 
 static void select_listview(Widget w, FileDialogData *data, XtPointer u)
