@@ -1,4 +1,5 @@
 SHELL=/bin/sh
+PREFIX=/usr
 #
 # Makefile for NEdit text editor
 #
@@ -51,6 +52,20 @@ clean:
 
 realclean: clean
 	(cd doc;    $(MAKE) clean)
+#
+# install binaries and other resources to $(PREFIX)
+#
+INSTALL_FILES=source/xnedit source/xnc
+install: $(INSTALL_FILES)
+	mkdir -p $(PREFIX)/bin
+	mkdir -p $(PREFIX)/share/icons
+	mkdir -p $(PREFIX)/share/applications
+	rm -f $(PREFIX)/bin/xnedit
+	rm -f $(PREFIX)/bin/xnc
+	cp source/xnedit $(PREFIX)/bin/xnedit
+	cp source/xnc $(PREFIX)/bin/xnc
+	cp resources/desktop/xnedit.png $(PREFIX)/share/icons/xnedit.png
+	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(PREFIX)/share/applications/xnedit.desktop
 
 #
 # The following is for creating binary packages of NEdit.

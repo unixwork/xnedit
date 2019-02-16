@@ -3,8 +3,8 @@ Version=1.0
 Name=XNEdit
 GenericName=XNEdit
 Comment=Nirvana Text Editor
-Exec=xnc -tabbed %U
-TryExec=xnc
+Exec=%PREFIX%/bin/xnc -tabbed %U
+TryExec=%PREFIX%/bin/xnc
 Categories=Utility;TextEditor;
 Icon=xnedit
 Terminal=false
@@ -68,7 +68,7 @@ Name[uk]=Створити вікно
 Name[vi]=Cửa sổ mới
 Name[zh_CN]=新建窗口
 Name[zh_TW]=新增視窗
-Exec=xnc -untabbed
+Exec=%PREFIX%/bin/xnc -untabbed
 
 [Desktop Action new-document]
 Name=New Document
@@ -125,4 +125,5 @@ Name[uk]=Створити документ
 Name[vi]=Tài liệu mới
 Name[zh_CN]=新建文档
 Name[zh_TW]=新增文件
-Exec=xnc -tabbed
+Exec=%PREFIX%/bin/xnc -tabbed
+
