@@ -217,11 +217,11 @@ static void freeBuildInfo(void)
 }
 
 static const char *const warning =
-    "\nThis NEdit was built with a known-bad version of Motif.  Please "
+    "\nThis XNEdit was built with a known-bad version of Motif.  Please "
     "do not report any bugs you encounter unless you can reproduce "
-    "them with a known-good binary from the www.nedit.org website. "
+    "them with a known-good binary from the unixwork.de/xnedit/ website. "
     "If this binary was supplied with your Linux distribution please "
-    "file a bug report with them asking them to build NEdit with a "
+    "file a bug report with them asking them to build XNEdit with a "
     "known-good version of Motif.\n";
 
 
@@ -389,12 +389,12 @@ static void loadFontsAndColors(Widget parent, int style)
         
         if (font == NULL)
         {
-            fprintf(stderr, "NEdit: help font, %s, not available\n",
+            fprintf(stderr, "XNEdit: help font, %s, not available\n",
                     GetPrefHelpFontName(StyleFonts[STYLE_INDEX(style)]));
             font = FontFromName(dp, "Monospace");
             if (font == NULL)
             {
-                fprintf(stderr, "NEdit: fallback help font, \"fixed\", not "
+                fprintf(stderr, "XNEdit: fallback help font, \"fixed\", not "
                         "available, cannot continue\n");
                 exit(EXIT_FAILURE);
             }
@@ -560,10 +560,10 @@ static void setHelpWinTitle(Widget win, enum HelpTopic topic)
     buf=(char*)NEditMalloc(strlen(topStr) + 24);
     topic++; 
     
-    sprintf(buf, "NEdit Help (%d)", (int)topic);
+    sprintf(buf, "XNEdit Help (%d)", (int)topic);
     XtVaSetValues(win, XmNiconName, buf, NULL);
     
-    sprintf(buf, "NEdit Help: %s (%d)", topStr, (int)topic);
+    sprintf(buf, "XNEdit Help: %s (%d)", topStr, (int)topic);
     XtVaSetValues(win, XmNtitle, buf, NULL);
   
     free(buf);

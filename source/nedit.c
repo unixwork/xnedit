@@ -383,7 +383,7 @@ static char *fallbackResources[] = {
     "*windowsMenu.closePane.accelerator: Ctrl<Key>1",
     "*windowsMenu.closePane.acceleratorText: Ctrl+1",
     "*helpMenu.mnemonic: H",
-    "nedit.help.helpForm.sw.helpText*baseTranslations: #override\
+    "?.help.helpForm.sw.helpText*baseTranslations: #override\
 <Key>Tab:help-focus-buttons()\\n\
 <Key>Return:help-button-action(\"close\")\\n\
 Ctrl<Key>F:help-button-action(\"find\")\\n\
@@ -402,7 +402,7 @@ Ctrl<Key>G:help-button-action(\"findAgain\")\\n\
 
 static const char cmdLineHelp[] =
 #ifndef VMS
-"Usage:  nedit [-read] [-create] [-line n | +n] [-server] [-do command]\n\
+"Usage: xnedit [-read] [-create] [-line n | +n] [-server] [-do command]\n\
 	      [-tags file] [-tabs n] [-wrap] [-nowrap] [-autowrap]\n\
 	      [-autoindent] [-noautoindent] [-autosave] [-noautosave]\n\
 	      [-lm languagemode] [-rows n] [-columns n] [-font font]\n\
@@ -415,7 +415,7 @@ static const char cmdLineHelp[] =
 "[Sorry, no on-line help available.]\n"; /* Why is that ? */
 #endif /*VMS*/
 
-static char *XNEditAppName = "xnedit";
+static char *XNEditAppName = "nedit";
 
 char* GetAppName(void)
 {
