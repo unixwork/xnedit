@@ -63,7 +63,7 @@ John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, Mike Duigou,
 Seak Teng-Fong, Joor Loohuis, Mark Jones, and Niek van den Berg.
 
 
-VERSION 5.6
+VERSION 1.0
 
 Version 5.6 is a maintenance release.
 
@@ -103,7 +103,7 @@ build NEdit from the root directory, issue the command: 'make <machine-type>';
 where <machine-type> is one of suffixes of a makefile in the directory
 'makefiles'. For example, to build the Silicon Graphics version, type:
 
-	make sgi
+	make linux
 
 If everything works properly, this will produce two executables called
 'xnedit' and 'xnc' in the directory called 'source'.
@@ -176,14 +176,14 @@ where your man command is able to find them (e.g. /usr/man/man1/xnedit.1).
 
 RUNNING XNEDIT
 
-To run XNEdit, simply type 'nedit', optionally followed by the name of a file
+To run XNEdit, simply type 'xnedit', optionally followed by the name of a file
 or files to edit. On-line help is available from the pulldown menu on the far
-right of the menu bar. For more information on the syntax of the nedit command
+right of the menu bar. For more information on the syntax of the xnedit command
 line, look under the heading of "XNEdit Command Line".
 
 The recommended way to use XNEdit, though, is in client/server mode, invoked by
 the xnc executable. It allows you to edit multiple files within the same
-instance of NEdit (but still in multiple windows). This saves memory (only one
+instance of XNEdit (but still in multiple windows). This saves memory (only one
 process keeps running), and enables additional functionality (such as find &
 replace accross multiple windows). See "Server Mode and xnc" in the help menu
 for more information.

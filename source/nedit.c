@@ -415,6 +415,13 @@ static const char cmdLineHelp[] =
 "[Sorry, no on-line help available.]\n"; /* Why is that ? */
 #endif /*VMS*/
 
+static char *XNEditAppName = "xnedit";
+
+char* GetAppName(void)
+{
+    return XNEditAppName;
+}
+
 int main(int argc, char **argv)
 {
     int i, lineNum, nRead, fileSpecified = FALSE, editFlags = CREATE;
@@ -432,6 +439,11 @@ int main(int argc, char **argv)
 
     /* Warn user if this has been compiled wrong. */
     enum MotifStability stability = GetMotifStability();
+    
+    char *appNameVar = getenv("XNEDIT_APPNAME");
+    if(appNameVar) {
+        XNEditAppName = appNameVar;
+    }
 
     if (stability == MotifKnownBad) {
         fputs("nedit: WARNING: This version of NEdit is built incorrectly, and will be unstable.\n",
