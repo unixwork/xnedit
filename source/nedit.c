@@ -1017,7 +1017,8 @@ static void patchResourcesForVisual(void)
             {
                 /* Qualify by application name to prevent them from being
                    converted against the wrong colormap. */
-                char buf[1024] = "*" APP_NAME;
+                char buf[1024];
+                snprintf(buf, 2, "*%s", APP_NAME);
                 strcat(buf, fallbackResources[resIndex]);
                 XrmPutLineResource(&db, buf);
             }
@@ -1081,13 +1082,13 @@ static void patchResourcesForKDEbug(void)
         const char* resource = buggyResources[i][0];
         const char* buggyValue = buggyResources[i][1];
         const char* defaultValue = buggyResources[i][2];
-        char name[128] = APP_NAME;
-        char class[128] = APP_CLASS;
+        char name[128];
+        char class[128];
         char* type;
         XrmValue resValue;
         
-        strcat(name, resource);
-        strcat(class, resource); /* Is this ok ? */
+        snprintf(name, 128, "%s%s", APP_NAME, resource);
+        snprintf(class, 128, "%s%s", APP_CLASS, resource); /* Is this ok ? */
         
         if (XrmGetResource(db, name, class, &type, &resValue) &&
             !strcmp(type, XmRString))

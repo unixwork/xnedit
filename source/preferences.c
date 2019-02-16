@@ -5561,29 +5561,55 @@ static void migrateColor(XrmDatabase prefDB, XrmDatabase appDB,
  */
 static void migrateColorResources(XrmDatabase prefDB, XrmDatabase appDB)
 {
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.Foreground",
-            APP_NAME ".text.foreground", TEXT_FG_COLOR, 
+    char classbuf[512];
+    char namebuf[512];
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.Foreground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.foreground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, TEXT_FG_COLOR, 
             NEDIT_DEFAULT_FG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.Background",
-            APP_NAME ".text.background", TEXT_BG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.Background");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.background");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, TEXT_BG_COLOR, 
             NEDIT_DEFAULT_TEXT_BG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.SelectForeground",
-            APP_NAME ".text.selectForeground", SELECT_FG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.SelectForeground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.selectForeground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, SELECT_FG_COLOR, 
             NEDIT_DEFAULT_SEL_FG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.SelectBackground",
-            APP_NAME ".text.selectBackground", SELECT_BG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.SelectBackground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.selectBackground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, SELECT_BG_COLOR, 
             NEDIT_DEFAULT_SEL_BG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.HighlightForeground",
-            APP_NAME ".text.highlightForeground", HILITE_FG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.HighlightForeground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.highlightForeground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, HILITE_FG_COLOR, 
             NEDIT_DEFAULT_HI_FG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.HighlightBackground",
-            APP_NAME ".text.highlightBackground", HILITE_BG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.HighlightBackground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.highlightBackground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, HILITE_BG_COLOR, 
             NEDIT_DEFAULT_HI_BG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.LineNumForeground",
-            APP_NAME ".text.lineNumForeground", LINENO_FG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.LineNumForeground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.lineNumForeground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, LINENO_FG_COLOR, 
             NEDIT_DEFAULT_LINENO_FG);
-    migrateColor(prefDB, appDB, APP_CLASS ".Text.CursorForeground",
-            APP_NAME ".text.cursorForeground", CURSOR_FG_COLOR, 
+    
+    snprintf(classbuf, 512, "%s%s", APP_CLASS, ".Text.CursorForeground");
+    snprintf(namebuf, 512, "%s%s", APP_NAME, ".text.cursorForeground");
+    migrateColor(prefDB, appDB, classbuf,
+            namebuf, CURSOR_FG_COLOR, 
             NEDIT_DEFAULT_CURSOR_FG);
 }
 
