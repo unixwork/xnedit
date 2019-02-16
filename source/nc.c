@@ -1001,7 +1001,7 @@ static void copyCommandLineArg(CommandLine *commandLine, const char *arg)
 /* Print version of 'xnc' */
 static void printNcVersion(void ) {
    static const char *const xncHelpText = \
-   "xnc (XNEdit) Version 0.9 (January 2019)\n\n\
+   "xnc (XNEdit) Version 1.0 (February 2019)\n\n\
      Built on: %s, %s, %s\n\
      Built at: %s, %s\n";
      

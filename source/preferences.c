@@ -97,7 +97,7 @@
 #define MENU_WIDGET(w) (w)
 #endif
 
-#define PREF_FILE_VERSION "1.0"
+#define PREF_FILE_VERSION "6.0"
 
 /* New styles added in 5.2 for auto-upgrade */
 #define ADD_5_2_STYLES " Pointer:#660000:Bold\nRegex:#009944:Bold\nWarning:brown2:Italic"
@@ -314,7 +314,7 @@ static struct prefData {
     char serverName[MAXPATHLEN];/* server name for multiple servers per disp. */
     char bgMenuBtn[MAX_ACCEL_LEN]; /* X event description for triggering
     	    	    	    	      posting of background menu */
-    char fileVersion[6]; 	/* Version of nedit which wrote the .nedit
+    char fileVersion[16]; 	/* Version of nedit which wrote the .nedit
     				   file we're reading */
     int findReplaceUsesSelection; /* whether the find replace dialog is automatically
                                      loaded with the primary selection */
