@@ -681,7 +681,11 @@ static void filedialog_update_iconview(
     WidgetList gadgets = NEditCalloc(dircount+filecount, sizeof(Widget));
     
     // TODO: better width calculation
-    XtVaSetValues(data->container, XmNlargeCellWidth, maxnamelen*8, NULL);
+    // FIXME: for some reason setting XmNlargeCellWidth on Solaris doesn't work
+#ifndef __sun
+    Dimension cellwidth = maxnamelen * 8;
+    XtVaSetValues(data->container, XmNlargeCellWidth, cellwidth, NULL);
+#endif
     
     char *filter = XmTextFieldGetString(data->filter);
     char *filterStr = filter;
@@ -954,7 +958,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     }
     
     update_view(data, data->dirs, data->files,
-                data->dircount, data->filecount, data->maxnamelen);
+            data->dircount, data->filecount, data->maxnamelen);
 }
 
 static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
@@ -1610,7 +1614,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNspatialStyle, XmGRID); n++;
     XtSetArg(args[n], XmNspatialIncludeModel, XmAPPEND); n++;
     XtSetArg(args[n], XmNspatialResizeModel, XmGROW_MINOR); n++;
-    //XtSetArg(args[n], XmNlargeCellWidth, 200); n++;
+    XtSetArg(args[n], XmNlargeCellWidth, 150); n++;
     data.container = XmCreateContainer(scrollw, "table", args, n);
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
