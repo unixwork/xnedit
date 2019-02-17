@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Feb 16, 2019 (Do NOT edit!)
+                 Generated on Feb 17, 2019 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2019 Mark Edel                                            *
@@ -4637,7 +4637,7 @@ static char * htxt_command_line [] = {
 "      [-\01Bxrm\01A resourcestring] [-\01Bsvrname\01A name] [-\01Bimport\01A file]\n",
 "      [-\01Bbackground\01A color] [-\01Bforeground\01A color] [-\01Bh\01A|-\01Bhelp\01A]\n",
 "      [-\01Btabbed\01A] [-\01Buntabbed\01A] [-\01Bgroup\01A] [-\01BV\01A|-\01Bversion\01A]\n",
-"      [--] [file...]\n",
+"      [-bgrun] [--] [file...]\n",
 "\01I\n",
 "\01A\01B-read\01A\n",
 "\01IOpen the file Read Only regardless of the actual file protection. ",
@@ -4753,6 +4753,9 @@ static char * htxt_command_line [] = {
 "your preferences file.  To incorporate macros, language modes, and highlight ",
 "patterns and styles written by other users, run XNEdit with -import <file>, ",
 "then re-save your preferences file with Preferences -> Save Defaults. ",
+"\n\n",
+"\01A\01B-bgrun\01A\n",
+"\01IRun xnedit in a background process ",
 "\n\n",
 "\01A\01B-version\01A\n",
 "\01IPrints out the XNEdit version information. The -V option is synonymous. ",
@@ -5756,4 +5759,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit 1.0\nFeb 16, 2019\n";
+static const char * NEditVersion = "XNEdit release of Feb 17, 2019\n";

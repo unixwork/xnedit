@@ -111,6 +111,7 @@ WindowInfo *WindowList = NULL;
 Display *TheDisplay = NULL;
 char *ArgV0 = NULL;
 Boolean IsServer = False;
+Boolean BackgroundRun = False;
 Widget TheAppShell;
 
 /* Reasons for choice of default font qualifications:
@@ -409,8 +410,8 @@ static const char cmdLineHelp[] =
 	      [-geometry geometry] [-iconic] [-noiconic] [-svrname name]\n\
 	      [-display [host]:server[.screen] [-xrm resourcestring]\n\
 	      [-import file] [-background color] [-foreground color]\n\
-	      [-tabbed] [-untabbed] [-group] [-V|-version] [-h|-help]\n\
-	      [--] [file...]\n";
+	      [-tabbed] [-untabbed] [-group] [-bgrun] [-V|-version]\n\
+	      [-h|-help] [--] [file...]\n";
 #else
 "[Sorry, no on-line help available.]\n"; /* Why is that ? */
 #endif /*VMS*/
@@ -457,6 +458,39 @@ int main(int argc, char **argv)
 
     /* Save the command which was used to invoke nedit for restart command */
     ArgV0 = argv[0];
+    
+    for (i=1; i<argc; i++) {
+        if(opts && !strcmp(argv[1], "--")) {
+            opts = False;
+            continue;
+        } else if (opts && !strcmp(argv[i], "-bgrun")) {
+            BackgroundRun = True;
+            break;
+        }
+    }
+    opts = True;
+    
+    int retpipe[2];
+    if(BackgroundRun) {
+        if(pipe(retpipe)) {
+            perror("pipe");
+            fprintf(stderr, "Abort.\n");
+            return 1;
+        }
+        pid_t pid = fork();
+        if(pid < 0) {
+            perror("fork");
+            fprintf(stderr, "Abort.\n");
+            return 1;
+        } else if(pid > 0) {
+            int ret = 0;
+            if(read(retpipe[0], &ret, sizeof(int)) != sizeof(int)) {
+                return 1;
+            }
+            return ret;
+        }
+    }
+    
 
     /* Set locale for C library, X, and Motif input functions. 
        Reverts to "C" if requested locale not available. */
@@ -660,6 +694,8 @@ int main(int argc, char **argv)
     	    	gotoLine = True;
     	} else if (opts && !strcmp(argv[i], "-server")) {
     	    IsServer = True;
+        } else if (opts && !strcmp(argv[i], "-bgrun")) {
+    	    /* noop */
         } else if (opts && !strcmp(argv[i], "-xwarn")) {
             XtAppSetWarningHandler(context, showWarningFilter);
 	} else if (opts && (!strcmp(argv[i], "-iconic") || 
@@ -845,7 +881,18 @@ int main(int argc, char **argv)
     /* Set up communication port and write ~/.nedit_server_process file */
     if (IsServer)
     	InitServerCommunication();
-
+    
+    if (BackgroundRun) {
+        /* Tell the parent process to return */
+        close(0);
+        close(1);
+        close(2);
+        int ret = 0;
+        write(retpipe[1], &ret, sizeof(int));
+        close(retpipe[0]);
+        close(retpipe[1]);
+    }
+    
     /* Process events. */
     if (IsServer)
     	ServerMainLoop(context);

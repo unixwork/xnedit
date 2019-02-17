@@ -2,7 +2,7 @@
 *                                                                              *
 * help_topic.h --  Nirvana Editor help display                                 *
 *                                                                              *
-                 Generated on Feb 16, 2019 (Do NOT edit!)
+                 Generated on Feb 17, 2019 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2019 Mark Edel                                            *

@@ -4832,7 +4832,7 @@ XNEdit Command Line
       [-**xrm** resourcestring] [-**svrname** name] [-**import** file]
       [-**background** color] [-**foreground** color] [-**h**|-**help**]
       [-**tabbed**] [-**untabbed**] [-**group**] [-**V**|-**version**]
-      [--] [file...]
+      [-bgrun] [--] [file...]
 
 **-read**
   Open the file Read Only regardless of the actual file protection.
@@ -4948,6 +4948,9 @@ XNEdit Command Line
   your preferences file.  To incorporate macros, language modes, and highlight
   patterns and styles written by other users, run XNEdit with -import <file>,
   then re-save your preferences file with Preferences -> Save Defaults.
+
+**-bgrun**
+  Run xnedit in a background process
 
 **-version**
   Prints out the XNEdit version information. The -V option is synonymous.
