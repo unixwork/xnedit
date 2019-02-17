@@ -1044,16 +1044,39 @@ void dirlist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
     }    
 }
 
+void dirlist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
+{
+    char *path = set_selected_path(data, cb->item);
+    if(path) {
+        data->selIsDir = TRUE;
+    }
+}
+
 void filelist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
     char *path = set_selected_path(data, cb->item);
     if(path) {
         data->end = True;
         data->status = FILEDIALOG_OK;
-        data->selIsDir = FALSE;
+        data->selIsDir = False;
     }
 }
 
+void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
+{
+    if(data->type == FILEDIALOG_SAVE) {
+        char *name = NULL;
+        XmStringGetLtoR(cb->item, XmFONTLIST_DEFAULT_TAG, &name);
+        XmTextFieldSetString(data->name, name);
+        XtFree(name);
+    } else {
+        char *path = set_selected_path(data, cb->item);
+        if(path) {
+            data->selIsDir = False;
+        }
+    }
+}
+ 
 static void filedialog_setshowhidden(
         Widget w,
         FileDialogData *data,
@@ -1070,9 +1093,6 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
             data->status = FILEDIALOG_OK;
             data->end = True;
             return;
-        } else {
-            filedialog_update_dir(data, data->selectedPath);
-            PathBarSetPath(data->pathBar, data->selectedPath);
         }
     }
     
@@ -1083,6 +1103,7 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
                 data->selectedPath = ConcatPath(data->currentPath, newName);
                 data->status = FILEDIALOG_OK;
                 data->end = True;
+                data->selIsDir = 0;
             }
             XtFree(newName);
         }
@@ -1383,7 +1404,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtManageChild(buttons);
     
     n = 0;
-    str = XmStringCreateLocalized("Open");
+    str = XmStringCreateLocalized(type == FILEDIALOG_OPEN ? "Open" : "Save");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
@@ -1659,6 +1680,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XmNdefaultActionCallback,
             (XtCallbackProc)dirlist_activate,
             &data); 
+    XtAddCallback(
+            data.dirlist,
+            XmNbrowseSelectionCallback,
+            (XtCallbackProc)dirlist_select,
+            &data);
     
     n = 0;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
@@ -1676,6 +1702,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XmNdefaultActionCallback,
             (XtCallbackProc)filelist_activate,
             &data); 
+    XtAddCallback(
+            data.filelist,
+            XmNbrowseSelectionCallback,
+            (XtCallbackProc)filelist_select,
+            &data);
     
     n = 0;
     str = XmStringCreateLocalized("Files");
