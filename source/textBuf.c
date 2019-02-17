@@ -1249,7 +1249,6 @@ int BufCountDispChars(const textBuffer* buf, int lineStartPos,
 */
 int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars)
 {
-    // TODO: unicode
     int pos, len, charCount = 0;
     char c;
     
