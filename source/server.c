@@ -326,7 +326,7 @@ static WindowInfo *findWindowOnDesktop(int tabbed, long currentDesktop)
             if (!IsTopDocument(window)) {
                 continue;
             }
-            if (isLocatedOnDesktop(window, currentDesktop)) {
+            if (isLocatedOnDesktop(window, currentDesktop) || !window->opened) {
                 return window;
             }
         }
@@ -413,10 +413,12 @@ static void processServerCommandString(char *string)
 	 *   choose a random window for executing the -do macro upon
 	 */
 	if (fileLen <= 0) {
-    	    for (window=WindowList; window!=NULL; window=window->next)
-    		if (!window->filenameSet && !window->fileChanged &&
-                    isLocatedOnDesktop(window, currentDesktop))
-    	    	    break;
+    	    for (window=WindowList; window!=NULL; window=window->next) {
+                if(!window->filenameSet && !window->fileChanged &&
+                  (!window->opened || isLocatedOnDesktop(window, currentDesktop))) {
+                    break;
+                }
+            }
 
     	    if (*doCommand == '\0') {
                 if (window == NULL) {

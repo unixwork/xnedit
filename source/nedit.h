@@ -569,6 +569,7 @@ typedef struct _WindowInfo {
     UserBGMenuCache  userBGMenuCache;   /* shell & macro menu are shared over all
                                            "tabbed" documents, while each document
                                            has its own background menu. */
+    Boolean opened;                     /* Set to true when the window is opened */
 } WindowInfo;
 
 extern WindowInfo *WindowList;

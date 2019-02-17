@@ -884,9 +884,9 @@ int main(int argc, char **argv)
     
     if (BackgroundRun) {
         /* Tell the parent process to return */
-        close(0);
-        close(1);
-        close(2);
+        //close(0);
+        //close(1);
+        //close(2);
         int ret = 0;
         write(retpipe[1], &ret, sizeof(int));
         close(retpipe[0]);
