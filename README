@@ -96,7 +96,7 @@ existing NEdit settings in XNEdit, copy the content from '~/.nedit/ to
 '~/.xnedit' or just rename the '~/.nedit' directory.
 
 After that, you need to adjust the font settings. To use the default XNEdit
-font settings, just delete the following lines from the nedit.rc file:
+font settings, delete the following lines from the nedit.rc file:
 
     nedit.textFont: ...
     nedit.boldHighlightFont: ...
