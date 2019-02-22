@@ -43,6 +43,8 @@ Available configurations are:
     linux
     solaris
     freebsd
+    netbsd
+    openbsd
     generic
 
 If everything works properly, this will produce two executables called
