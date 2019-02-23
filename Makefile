@@ -1,16 +1,16 @@
 SHELL=/bin/sh
 PREFIX=/usr
 #
-# Makefile for NEdit text editor
+# Makefile for XNEdit text editor
 #
 # Targets are the suffixes of the system-specific makefiles in
 # the makefiles/ directory.
-# For example, to build NEdit for Solaris, give the command
+# For example, to build XNEdit for Solaris, give the command
 #
 #   make solaris
 #
 # This builds an intermediate library in the util/ directory,
-# then builds the nedit and nc executables in the source/ directory.
+# then builds the xnedit and xnc executables in the source/ directory.
 #
 
 all:

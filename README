@@ -65,7 +65,7 @@ To install to another destination, specify a path prefix with
 
     make install PREFIX=/path  
 
-To install just the binaries, just copy the files 'xnedit' and 'xnc' from the
+To install just the binaries, copy the files 'xnedit' and 'xnc' from the
 'source' directory to your path.
 
 
