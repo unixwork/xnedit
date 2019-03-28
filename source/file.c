@@ -568,9 +568,6 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 free(enc_attr);
                 enc_attr = NULL;
             }
-        } else {
-            /* file has no extended attributes, use locale charset */
-            encoding = nl_langinfo(CODESET);
         }
     }
     
@@ -584,6 +581,9 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         if(!strcasecmp(encoding, "GB18030")) {
             checkBOM = 1; /* GB18030 is unicode and could have a BOM */
         }
+    } else {
+        /* file has no extended attributes, use locale charset */
+        encoding = nl_langinfo(CODESET);
     }
     
     char *setEncoding = NULL;
