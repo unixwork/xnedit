@@ -57,6 +57,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <iconv.h>
+#include <langinfo.h>
 
 #ifdef VMS
 #include "../util/VMSparam.h"
@@ -567,6 +568,9 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 free(enc_attr);
                 enc_attr = NULL;
             }
+        } else {
+            /* file has no extended attributes, use locale charset */
+            encoding = nl_langinfo(CODESET);
         }
     }
     
