@@ -689,6 +689,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     err = 0;
+    int skipped = 0;
     size_t r = 0;
     readLen = 0;
     char *outStr = fileString;
@@ -704,20 +705,39 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             
             if(rc == (size_t)-1) {
                 /* iconv wants more bytes */
-                if(outleft > 8) {
-                    /* iconv has enough bytes, something has gone wrong */
-                    err = 1;
+                switch(errno) {
+                    default: err = 1; break;
+                    case EILSEQ:
+                    case EINVAL: {
+                        if(inleft > 0) {
+                            outStr[0] = '?';
+                            outStr++;
+                            outleft--;
+                            
+                            str++;
+                            inleft--;
+                            
+                            skipped++;
+                            break;
+                        } // invalid char and output buffer to small
+                    }
+                    case E2BIG: {
+                        strAlloc += 512;
+                        size_t outpos = outStr - fileString;
+                        fileString = realloc(fileString, strAlloc + 1);
+                        outStr = fileString + outpos;
+                        if(!fileString) {
+                            err = 1;
+                            break;
+                        }
+                        outleft = strAlloc - readLen;
+                        break;
+                    }
+                }
+                
+                if(err) {
                     break;
                 }
-                strAlloc += 512;
-                size_t outpos = outStr - fileString;
-                fileString = realloc(fileString, strAlloc + 1);
-                outStr = fileString + outpos;
-                if(!fileString) {
-                    err = 1;
-                    break;
-                }
-                outleft = strAlloc - readLen;
             }
         }
     }
@@ -726,11 +746,27 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         iconv_close(ic);
     }
     
+    int show_err = TRUE;
+    if(skipped > 0) {
+        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+        int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
+                "%d non-convertible characters skipped\n"
+    		"Open anyway?", "NO", "YES",
+                skipped);
+        window->filenameSet = TRUE;
+        if(btn == 1) {
+            show_err = FALSE;
+            err = TRUE;
+        }
+    }
+    
     if (err || ferror(fp)) {
         fclose(fp);
         window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+        if(show_err) {
+             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                 "Error reading %s:\n%s", "OK", name, errorString());
+        }
         window->filenameSet = TRUE;
         NEditFree(fileString);
         return FALSE;
@@ -1344,38 +1380,68 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     
     /* convert text if required and write it to the file */
     int skipped = 0;
+    int nonreversible = 0;
+    int unerr = 0;
     char buf[IO_BUFSIZE];
     char *in = fileString;
     size_t inleft = fileLen;
-    while(inleft > 0) {
+    while(inleft >= 0) {
         char *out = buf;
         size_t outleft = IO_BUFSIZE;
         size_t w = outleft;
-        char *outBuf = out;
+        if (inleft == 0) {
+            /* be sure to flush out any partially converted input */
+            in = NULL;
+        }
         size_t rc = strconv(ic, &in, &inleft, &out, &outleft);
-        w = w - outleft;
+        w -= outleft;
         
         if(w > 0) {
-            FWRITE(fp, outBuf, w);
+            FWRITE(fp, buf, w);
         }
         
         if(rc == (size_t)-1) {
-            size_t skip = Utf8CharLen((const unsigned char*)in);
-            skipped++;
-            in += skip;
-            if(inleft >= skip) {
-                inleft -= skip;
-            } else {
+            size_t skip;
+            switch (errno) {
+            case EILSEQ:
+            case EINVAL:
+                /* An invalid multibyte sequence is encountered in the input */
+                skip = Utf8CharLen((const unsigned char*)in);
+                ++skipped;
+                in += skip;
+                if(inleft >= skip) {
+                    inleft -= skip;
+                } else {
+                    inleft = 0;
+                }
                 break;
+            case E2BIG:
+                /* Conversion succeeded but output buffer is full */
+                break;
+            default:
+            	/* Unknown error encountered */
+            	++unerr;
             }
         }
+
+        if (in == NULL) {
+        	break;
+        }
+
+        if (inleft == 0) {
+        	/* add # of nonreversible conversions */
+        	nonreversible += rc;
+        }
     }
-    
-    if (skipped > 0) {
-        char skippedStr[32];
-        snprintf(skippedStr, 32, "%d", skipped);
-        DialogF(DF_WARN, window->shell, 1, "Encoding warning",
-                "%s characters skipped", "OK", skippedStr);
+
+    unsigned int eresp = 0;
+    if (skipped > 0 || nonreversible > 0 || unerr > 0) {
+    	eresp = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
+                "%d non-convertible characters skipped\n"
+    			"%d non-reversible characters encountered\n"
+    			"%d unknown errors occurred\n"
+    			"Save anyway?", "NO", "YES",
+                skipped, nonreversible, unerr);
     }
     
     if(ic) {
@@ -1386,6 +1452,9 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     {
         DialogF(DF_ERR, window->shell, 1, "Error saving File",
                 "%s not saved:\n%s", "OK", window->filename, errorString());
+    }
+
+    if (ferror(fp) || eresp == 1) {
         fclose(fp);
         remove(fullname);
         NEditFree(fileString);
