@@ -385,8 +385,8 @@ size_t copyBytes(
         char **outbuf,
         size_t *outbytesleft)
 {
-    if(!inbuf) {
-        return;
+    if(!inbuf || !outbuf) {
+        return 0;
     }
     size_t in = *inbytesleft;
     size_t out = *outbytesleft;

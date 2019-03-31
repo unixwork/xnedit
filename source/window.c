@@ -68,6 +68,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <langinfo.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -262,7 +263,16 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->lastModTime = 0;
     window->fileMissing = True;
     strcpy(window->filename, name);
+    
     window->encoding[0] = '\0';
+    char *default_encoding = nl_langinfo(CODESET);
+    if(default_encoding) {
+        size_t defenc_len = strlen(default_encoding);
+        if(strlen(default_encoding) < MAX_ENCODING_LENGTH) {
+            memcpy(window->encoding, default_encoding, defenc_len+1);
+        }
+    }
+    
     window->bom = FALSE;
     window->undo = NULL;
     window->redo = NULL;
