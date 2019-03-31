@@ -385,6 +385,9 @@ size_t copyBytes(
         char **outbuf,
         size_t *outbytesleft)
 {
+    if(!inbuf) {
+        return;
+    }
     size_t in = *inbytesleft;
     size_t out = *outbytesleft;
     size_t cp = in > out ? out : in;
