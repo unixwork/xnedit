@@ -173,6 +173,10 @@ void CopyToClipboard(Widget w, Time time)
     	NEditFree(text);
     	return;
     }
+    char *locale_text = NULL;
+    if(!IsUtf8Locale()) {
+        locale_text = ConvertEncoding(text, GetLocaleEncoding(), "UTF-8");
+    }
 
     /* If the string contained ascii-nul characters, something else was
        substituted in the buffer.  Put the nulls back */
@@ -203,8 +207,14 @@ void CopyToClipboard(Widget w, Time time)
     res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "UTF8_STRING",
     	    text, length, 0, NULL);
     if(res == ClipboardSuccess) {
+        int l_length = length;
+        char *l_text = text;
+        if(locale_text) {
+            l_text = locale_text;
+            l_length = strlen(locale_text);
+        }
         res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "STRING",
-    	    text, length, 0, NULL);
+    	    l_text, l_length, 0, NULL);
     }
     
     if (res != ClipboardSuccess) {
@@ -214,6 +224,9 @@ void CopyToClipboard(Widget w, Time time)
     	return;
     }
     NEditFree(text);
+    if(locale_text) {
+        NEditFree(locale_text);
+    }
     SpinClipboardEndCopy(XtDisplay(w), XtWindow(w), itemID);
     SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
 }
@@ -318,6 +331,7 @@ void InsertClipboard(Widget w, int isColumnar)
     char *string;
     char *type = "UTF8_STRING";
     long id = 0;
+    int convert = FALSE;
 
     /* Get the clipboard contents.  Note: this code originally used the
        CLIPBOARD selection, rather than the Motif clipboard interface.  It
@@ -336,6 +350,9 @@ void InsertClipboard(Widget w, int isColumnar)
         type = "STRING";
         res = SpinClipboardInquireLength(XtDisplay(w), XtWindow(w),
                                         type, &length);
+        if(!IsUtf8Locale()) {
+            convert = TRUE;
+        }
     }
     
     if (res != ClipboardSuccess || length == 0) {
@@ -358,6 +375,15 @@ void InsertClipboard(Widget w, int isColumnar)
     	return;
     }
     string[retLength] = '\0';
+    
+    if(convert) {
+        char *c_string = ConvertEncoding(string, "UTF-8", GetLocaleEncoding());
+        if(c_string) {
+            NEditFree(string);
+            string = c_string;
+            retLength = strlen(c_string);
+        }
+    }
 
     /* If the string contains ascii-nul characters, substitute something
        else, or give up, warn, and refuse */

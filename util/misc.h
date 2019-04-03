@@ -144,5 +144,7 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
         unsigned long data2, unsigned long data3,
         unsigned long data4);
 char* ConvertEncoding(char *string, const char *to, const char *from);
+char* GetLocaleEncoding(void);
+int IsUtf8Locale(void);
 
 #endif /* NEDIT_MISC_H_INCLUDED */

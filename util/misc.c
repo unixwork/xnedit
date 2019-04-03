@@ -2469,6 +2469,10 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
 }
 
 char* ConvertEncoding(char *string, const char *to, const char *from) {
+    if(!to || !from) {
+        return NULL;
+    }
+    
     iconv_t ic = iconv_open(to, from);
     if(ic == (iconv_t) -1) {
         return NULL;
@@ -2516,4 +2520,16 @@ char* ConvertEncoding(char *string, const char *to, const char *from) {
     iconv_close(ic);
     result[pos] = '\0';
     return result;
+}
+
+char* GetLocaleEncoding(void) {
+    return nl_langinfo(CODESET);
+}
+
+int IsUtf8Locale(void) {
+    char *encoding = nl_langinfo(CODESET);
+    if(encoding && !strcmp(encoding, "UTF-8")) {
+        return TRUE;
+    }
+    return FALSE;
 }
