@@ -1,0 +1,17 @@
+CHANGELOG
+=========
+
+version 1.0.1 (2019-04-03)
+--------------------------
+
+ - fixed encoding conversion skipping bytes
+ - fixed encoding incompatibility between text widget and search dialog when
+   using a non-utf8 locale
+ - changed default encoding from utf8 to the locale encoding
+ - fixed encoding problems in the clipboard when no UTF8_STRING value available
+ 
+
+version 1.0.0 (2019-02-24)
+--------------------------
+
+ - first XNEdit release
