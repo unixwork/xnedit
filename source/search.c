@@ -2601,8 +2601,8 @@ static int getReplaceDlogInfo(WindowInfo *window, int *direction,
     
     /* Get the search and replace strings, search type, and direction
        from the dialog */
-    replaceText = XmTextGetString(window->replaceText);
-    replaceWithText = XmTextGetString(window->replaceWithText);
+    replaceText = TextGetStringUtf8(window->replaceText);
+    replaceWithText = TextGetStringUtf8(window->replaceWithText);
     
     if(XmToggleButtonGetState(window->replaceRegexToggle)) {
       int regexDefault;
@@ -2679,7 +2679,7 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
     char *compileMsg;
     
     /* Get the search string, search type, and direction from the dialog */
-    findText = XmTextGetString(window->findText);
+    findText = TextGetStringUtf8(window->findText);
     
     if(XmToggleButtonGetState(window->findRegexToggle)) {
       int regexDefault;
@@ -3157,7 +3157,7 @@ static void iSearchTextActivateCB(Widget w, WindowInfo *window,
        
     /* Fetch the string, search type and direction from the incremental
        search bar widgets at the top of the window */
-    searchString = XmTextGetString(window->iSearchText);
+    searchString = TextGetStringUtf8(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
 	searchType = SEARCH_REGEX;
@@ -3201,7 +3201,7 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
     
     /* Fetch the string, search type and direction from the incremental
        search bar widgets at the top of the window */
-    searchString = XmTextGetString(window->iSearchText);
+    searchString = TextGetStringUtf8(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
 	searchType = SEARCH_REGEX;

@@ -78,6 +78,7 @@ int GetFloatText(Widget text, double *value);
 int GetIntText(Widget text, int *value);
 int GetFloatTextWarn(Widget text, double *value, const char *fieldName, int warnBlank);
 int GetIntTextWarn(Widget text, int *value, const char *fieldName, int warnBlank);
+char* TextGetStringUtf8(Widget text);
 int TextWidgetIsBlank(Widget textW);
 void MakeSingleLineTextW(Widget textW);
 void BeginWait(Widget topCursorWidget);
@@ -142,5 +143,6 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
         unsigned long data0, unsigned long data1,
         unsigned long data2, unsigned long data3,
         unsigned long data4);
+char* ConvertEncoding(char *string, const char *to, const char *from);
 
 #endif /* NEDIT_MISC_H_INCLUDED */

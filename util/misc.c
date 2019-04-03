@@ -40,6 +40,9 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <time.h>
+#include <errno.h>
+#include <iconv.h>
+#include <langinfo.h>
 
 #ifdef __unix__
 #include <sys/time.h>
@@ -1282,6 +1285,22 @@ int GetIntTextWarn(Widget text, int *value, const char *fieldName, int warnBlank
     return result;
 }
 
+char* TextGetStringUtf8(Widget text) {
+    char *string = XmTextGetString(text);
+    if(!string || strlen(string) == 0) {
+        return string;
+    }
+    char *encoding = nl_langinfo(CODESET);
+    if(encoding && strcmp(encoding, "UTF-8")) {
+        char *newstring = ConvertEncoding(string, "UTF-8", encoding);
+        if(newstring) {
+            XtFree(string);
+            string = newstring;
+        }
+    }
+    return string;
+}
+
 int TextWidgetIsBlank(Widget textW)
 {
     char *str;
@@ -2447,4 +2466,54 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
     if (!XSendEvent(disp, DefaultRootWindow(disp), False, mask, &event)) {
         fprintf(stderr, "nedit: cannot send %s EWMH event.\n", msg);
     }
+}
+
+char* ConvertEncoding(char *string, const char *to, const char *from) {
+    iconv_t ic = iconv_open(to, from);
+    if(ic == (iconv_t) -1) {
+        return NULL;
+    }
+    
+    size_t len = strlen(string);
+    size_t size = len + 16;
+    size_t pos = 0;
+    size_t inleft = len;
+    size_t outleft = size;
+    
+    char *result = NEditMalloc(size+1);
+    char *in = string;
+    char *out = result;
+    while(inleft >= 0) {
+        if (inleft == 0) {
+            in = NULL;
+        }
+        
+        size_t rc = iconv(ic, &in, &inleft, &out, &outleft);
+        pos = out - result;
+        if(rc == (size_t)-1) {
+            switch(errno) {
+                case EILSEQ:
+                case EINVAL: {
+                    in++;
+                    inleft--;
+                    break;
+                }
+                case E2BIG: {
+                    size += 32;
+                    result = NEditRealloc(result, size+1);
+                    out = result + pos;
+                    outleft = size - pos;
+                    break;
+                }
+            }
+        }
+        
+        if(!in) {
+            break;
+        }
+    }
+    
+    iconv_close(ic);
+    result[pos] = '\0';
+    return result;
 }
