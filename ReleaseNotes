@@ -50,3 +50,60 @@ User Interface
 3. Removed Features
 
  - Removed support for many platforms
+
+
+XNEdit 1.0.1 Update
+
+Changes
+
+This update fixes an encoding conversion bug. Previously, there could be
+missing characters in converted files.
+
+Also using XNEdit with non-UTF8 locales is improved. When opening or saving
+files, the default encoding is now the locale encoding and not UTF-8.
+
+For a full list of changes, see the CHANGELOG file.
+
+Known issues
+
+With enabled Xft text rendering for Motif widgets, some user interface elements
+can only display ASCII characters when using non-UTF8 locales.
+
+The solution is to disable Xft text rendering. This can be done at compile-time
+or by changing X resources. The text widget used for editing documents is not
+affected.
+
+1. Disable at compile-time
+
+Add -DUSE_XFT=0 to your CFLAGS. This can be done in the platform-specific
+Makefile (for example: makefiles/Makefile.linux on Linux).
+
+This does only changes the default X resources.
+
+2. Disable with X resources
+
+Example X resources for using X bitmap fonts for UI elements:
+
+nedit*FontList: \
+	-*-helvetica-medium-r-normal-*-14-*-*-*-*-*-iso8859-1, \
+	-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-iso8859-1=BOLD, \
+	-*-helvetica-medium-o-normal-*-14-*-*-*-*-*-iso8859-1=ITALIC
+nedit*XmText.FontList: \
+	-*-courier-medium-r-normal-*-14-*-*-*-*-*-iso8859-1, \
+	-*-courier-bold-r-normal-*-14-*-*-*-*-*-iso8859-1=BOLD, \
+	-*-courier-medium-o-normal-*-14-*-*-*-*-*-iso8859-1=ITALIC
+nedit*XmTextField.FontList: \
+	-*-courier-medium-r-normal-*-14-*-*-*-*-*-iso8859-1, \
+	-*-courier-bold-r-normal-*-14-*-*-*-*-*-iso8859-1=BOLD, \
+	-*-courier-medium-o-normal-*-14-*-*-*-*-*-iso8859-1=ITALIC
+nedit*XmList.FontList: \
+	-*-courier-medium-r-normal-*-14-*-*-*-*-*-iso8859-1, \
+	-*-courier-bold-r-normal-*-14-*-*-*-*-*-iso8859-1=BOLD, \
+	-*-courier-medium-o-normal-*-14-*-*-*-*-*-iso8859-1=ITALIC
+nedit*XmFileSelectionBox*XmList.FontList: \
+	-*-courier-medium-r-normal-*-14-*-*-*-*-*-iso8859-1, \
+	-*-courier-bold-r-normal-*-14-*-*-*-*-*-iso8859-1=BOLD, \
+	-*-courier-medium-o-normal-*-14-*-*-*-*-*-iso8859-1=ITALIC
+			
+
+
