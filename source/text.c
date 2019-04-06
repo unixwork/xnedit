@@ -1212,7 +1212,6 @@ static void realize(Widget w, XtValueMask *valueMask,
     text->text.xim = XmImGetXIM(w);
     if(!text->text.xim) {
         fprintf(stderr, "Cannot get X Input Manager\n");
-        exit(1);
     } else {
         Window win = XtWindow(w);
         XIMStyle style = XIMPreeditNothing | XIMStatusNothing;
@@ -2294,13 +2293,19 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (nChars == 0)
     	return;
 #else
+    if(((TextWidget)w)->text.xic) {
 #ifdef X_HAVE_UTF8_STRING
-    nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
-     	   &status);
+        nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
+                &status);
 #else
-    nChars = XmbLookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
-     	   &status);
+        nChars = XmbLookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
+               &status);
 #endif
+    } else {
+        nChars = XmImMbLookupString(w, &event->xkey, chars, 127, &keysym, &status);
+    }
+    
+    
     if (nChars == 0 || status == XLookupNone ||
      	   status == XLookupKeySym || status == XBufferOverflow)
     	return;
