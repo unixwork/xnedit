@@ -3337,6 +3337,16 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->fileFormat = UNIX_FILE_FORMAT;
     window->lastModTime = 0;
     strcpy(window->filename, name);
+    
+    window->encoding[0] = '\0';
+    char *default_encoding = nl_langinfo(CODESET);
+    if(default_encoding) {
+        size_t defenc_len = strlen(default_encoding);
+        if(strlen(default_encoding) < MAX_ENCODING_LENGTH) {
+            memcpy(window->encoding, default_encoding, defenc_len+1);
+        }
+    }
+    
     window->undo = NULL;
     window->redo = NULL;
     window->nPanes = 0;
