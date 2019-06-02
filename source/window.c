@@ -205,6 +205,9 @@ static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 /* From Xt, Shell.c, "BIGSIZE" */
 static const Dimension XT_IGNORE_PPOSITION = 32767;
 
+static Atom wm_take_focus;
+static int take_focus_atom_is_init = 0;
+
 /*
 ** Create a new editor window
 */
@@ -791,10 +794,13 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     AddMotifCloseCallback(winShell, (XtCallbackProc)closeCB, window);
     
     /* window open callback */
-    Atom wm_take_focus = XmInternAtom(
+    if(!take_focus_atom_is_init) {
+        wm_take_focus = XmInternAtom(
             XtDisplay(winShell),
             "WM_TAKE_FOCUS",
             0);
+        take_focus_atom_is_init = 1;
+    }
     XmAddWMProtocolCallback(
             winShell,
             wm_take_focus,
@@ -4298,6 +4304,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     strcpy(window->path, orgWin->path);
     strcpy(window->filename, orgWin->filename);
+    strcpy(window->encoding, orgWin->encoding);
 
     ShowLineNumbers(window, orgWin->showLineNumbers);
 
@@ -4825,4 +4832,10 @@ void SetEncoding(WindowInfo *window, const char *encoding)
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)
 {
     window->opened = True;
+    
+    XmRemoveWMProtocolCallback(
+            shell,
+            wm_take_focus,
+            (XtCallbackProc)WindowTakeFocus,
+            window);
 }
