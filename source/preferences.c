@@ -2047,6 +2047,7 @@ char *GetPrefBoldItalicFontName(void)
     return PrefData.boldItalicFontString;
 }
 
+// TODO: remove
 XmFontList GetPrefFontList(void)
 {
     return PrefData.fontList;

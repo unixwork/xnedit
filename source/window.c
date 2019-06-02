@@ -315,7 +315,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->fontList = GetPrefFontList();
     window->font = GetPrefFont();
     window->italicFont = GetPrefItalicFont();
     window->boldFont = GetPrefBoldFont();
@@ -700,11 +699,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Manage the statsLineForm */
     if(window->showStats)
         XtManageChild(window->statsLineForm);
-    
-    /* If the fontList was NULL, use the magical default provided by Motif,
-       since it must have worked if we've gotten this far */
-    if (window->fontList == NULL)
-        XtVaGetValues(stats, XmNfontList, &window->fontList, NULL);
 
     /* Create the menu bar */
     menuBar = CreateMenuBar(mainWin, window);
@@ -3383,7 +3377,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->fontList = GetPrefFontList();
     window->font = GetPrefFont();
     window->italicFont = GetPrefItalicFont();
     window->boldFont = GetPrefBoldFont();
@@ -3409,10 +3402,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->bgMenuRedoItem = NULL;
     window->device = 0;
     window->inode = 0;
-
-    if (window->fontList == NULL)
-        XtVaGetValues(shellWindow->statsLine, XmNfontList, 
-    	    	&window->fontList,NULL);
 
     getTextPaneDimension(shellWindow, &nRows, &nCols);
     
@@ -4382,7 +4371,6 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     strcpy(window->italicFontName, orgWin->italicFontName);
     strcpy(window->boldFontName, orgWin->boldFontName);
     strcpy(window->boldItalicFontName, orgWin->boldItalicFontName);
-    window->fontList = orgWin->fontList;
     window->italicFontStruct = orgWin->italicFontStruct;
     window->boldFontStruct = orgWin->boldFontStruct;
     window->boldItalicFontStruct = orgWin->boldItalicFontStruct;
