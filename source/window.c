@@ -3385,6 +3385,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
     window->fontList = GetPrefFontList();
+    window->font = GetPrefFont();
     window->italicFont = GetPrefItalicFont();
     window->boldFont = GetPrefBoldFont();
     window->boldItalicFont = GetPrefBoldItalicFont();
