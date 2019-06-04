@@ -4073,6 +4073,12 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
     pattern = FcPatternDuplicate(pattern);
     FcPattern *match = XftFontMatch(dp, DefaultScreen(dp), pattern, &result);
     
+    double sz = 0;
+    result = FcPatternGetDouble (pattern, FC_SIZE, 0, &sz);
+    if(result != FcResultMatch) {
+        FcPatternGetDouble (match, FC_SIZE, 0, &sz);
+    }
+    
     XftFont *defaultFont = XftFontOpenPattern(dp, match);
     if(!defaultFont) {
         FcPatternDestroy(match);
@@ -4083,6 +4089,7 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
     font->display = dp;
     font->pattern = pattern;
     font->fail = NULL;
+    font->size = sz;
     font->ref = 1;
 
     NFontList *list = NEditMalloc(sizeof(NFontList));

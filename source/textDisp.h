@@ -58,6 +58,7 @@ struct NFont {
     NCharSetList *fail;
     Display *display;
     FcPattern *pattern;
+    double size;
     unsigned int ref;
 };
 
