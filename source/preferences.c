@@ -2006,6 +2006,7 @@ void SetPrefColorName(int index, const char *name)
 void SetPrefFont(char *fontName)
 {
     setStringPref(PrefData.fontString, fontName);
+    FontUnref(PrefData.font);
     PrefData.font = FontFromName(TheDisplay, fontName);
 }
 
@@ -2013,17 +2014,20 @@ void SetPrefBoldFont(char *fontName)
 {
     
     setStringPref(PrefData.boldFontString, fontName);
+    FontUnref(PrefData.boldFont);
     PrefData.boldFont = FontFromName(TheDisplay, fontName);
 }
 
 void SetPrefItalicFont(char *fontName)
 {
     setStringPref(PrefData.italicFontString, fontName);
+    FontUnref(PrefData.italicFont);
     PrefData.italicFont = FontFromName(TheDisplay, fontName);
 }
 void SetPrefBoldItalicFont(char *fontName)
 {
     setStringPref(PrefData.boldItalicFontString, fontName);
+    FontUnref(PrefData.boldItalicFont);
     PrefData.boldItalicFont = FontFromName(TheDisplay, fontName);
 }
 

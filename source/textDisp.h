@@ -58,6 +58,7 @@ struct NFont {
     NCharSetList *fail;
     Display *display;
     FcPattern *pattern;
+    unsigned int ref;
 };
 
 typedef struct {
@@ -258,6 +259,8 @@ XftFont *FontDefault(NFont *f);
 void FontAddFail(NFont *f, FcCharSet *c);
 XftFont *FindFont(NFont *f, FcChar32 c);
 void FontDestroy(NFont *f);
+NFont *FontRef(NFont *font);
+void FontUnref(NFont *font);
 
 XftColor PixelToColor(Widget w, Pixel p);
 XftColor RGBToColor(short r, short g, short b);

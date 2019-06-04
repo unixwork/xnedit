@@ -318,10 +318,10 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->font = GetPrefFont();
-    window->italicFont = GetPrefItalicFont();
-    window->boldFont = GetPrefBoldFont();
-    window->boldItalicFont = GetPrefBoldItalicFont();
+    window->font = FontRef(GetPrefFont());
+    window->italicFont = FontRef(GetPrefItalicFont());
+    window->boldFont = FontRef(GetPrefBoldFont());
+    window->boldItalicFont = FontRef(GetPrefBoldItalicFont());
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;
@@ -1135,6 +1135,12 @@ void CloseWindow(WindowInfo *window)
 	CloseAllPopupsFor(window->shell);
     	XtDestroyWidget(window->shell);
     }
+    
+    /* unref window fonts */
+    FontUnref(window->font);
+    FontUnref(window->boldFont);
+    FontUnref(window->italicFont);
+    FontUnref(window->boldItalicFont);
 
     /* deallocate the window data structure */
     NEditFree(window);
@@ -1859,16 +1865,31 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
             printf("implement fallback font\n");
         } else {
             //window->fontList = XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
+            FontUnref(window->font);
             window->font = font;
         }
     }
     if (highlightChanged) {
-        strcpy(window->italicFontName, italicName);
-        window->italicFont = FontFromName(TheDisplay, italicName);
-        strcpy(window->boldFontName, boldName);
-        window->boldFont = FontFromName(TheDisplay, boldName);
-        strcpy(window->boldItalicFontName, boldItalicName);
-        window->boldItalicFont = FontFromName(TheDisplay, boldItalicName);
+        NFont *newitalic = FontFromName(TheDisplay, italicName);
+        if(newitalic) {
+            strcpy(window->italicFontName, italicName);
+            FontUnref(window->italicFont);
+            window->italicFont = newitalic;
+        }
+
+        NFont *newbold = FontFromName(TheDisplay, boldName);
+        if(newbold) {
+            strcpy(window->boldFontName, boldName);
+            FontUnref(window->boldFont);
+            window->boldFont = newbold;
+        }
+        
+        NFont *newbolditalic = FontFromName(TheDisplay, boldItalicName);
+        if(newbolditalic) {
+            strcpy(window->boldItalicFontName, boldItalicName);
+            FontUnref(window->boldItalicFont);
+            window->boldItalicFont = newbolditalic;
+        }
     }
 
     /* Change the primary font in all the widgets */
@@ -3383,10 +3404,10 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->font = GetPrefFont();
-    window->italicFont = GetPrefItalicFont();
-    window->boldFont = GetPrefBoldFont();
-    window->boldItalicFont = GetPrefBoldItalicFont();
+    window->font = FontRef(GetPrefFont());
+    window->italicFont = FontRef(GetPrefItalicFont());
+    window->boldFont = FontRef(GetPrefBoldFont());
+    window->boldItalicFont = FontRef(GetPrefBoldItalicFont());
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;

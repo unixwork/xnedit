@@ -221,7 +221,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->visibility = VisibilityUnobscured;
     textD->hScrollBar = hScrollBar;
     textD->vScrollBar = vScrollBar;
-    textD->font = font;
+    textD->font = FontRef(font);
     textD->ascent = xftFont->ascent;
     textD->descent = xftFont->descent;
     /* TODO: think about renabling textD->fixedFontWidth */
@@ -341,6 +341,8 @@ void TextDInitXft(textDisp *textD) {
 */
 void TextDFree(textDisp *textD)
 {
+    FontUnref(textD->font);
+    
     BufRemoveModifyCB(textD->buffer, bufModifiedCB, textD);
     BufRemovePreDeleteCB(textD->buffer, bufPreDeleteCB, textD);
     releaseGC(textD->w, textD->gc);
@@ -453,7 +455,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
 ** Change the (non highlight) font
 */
 void TextDSetFont(textDisp *textD, NFont *font)
-{
+{   
     XftFont *fontStruct = FontDefault(font);
     Display *display = XtDisplay(textD->w);
     int i, maxAscent = fontStruct->ascent, maxDescent = fontStruct->descent;
@@ -507,7 +509,10 @@ void TextDSetFont(textDisp *textD, NFont *font)
        affected GCs (they are shared with other widgets, and if the primary
        font changes, must be re-allocated to change it). Unfortunately,
        this requres recovering all of the colors from the existing GCs */
-    textD->font = font;
+    
+    FontUnref(textD->font);
+    textD->font = FontRef(font); 
+    
     XGetGCValues(display, textD->gc, GCForeground|GCBackground, &values);
     fgPixel = values.foreground;
     bgPixel = values.background;
@@ -4078,6 +4083,7 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
     font->display = dp;
     font->pattern = pattern;
     font->fail = NULL;
+    font->ref = 1;
 
     NFontList *list = NEditMalloc(sizeof(NFontList));
     list->font = defaultFont;
@@ -4227,4 +4233,15 @@ void FontDestroy(NFont *f)
     
     FcPatternDestroy(f->pattern);
     NEditFree(f);
+}
+
+NFont *FontRef(NFont *font)  {
+    font->ref++;
+    return font;
+}
+
+void FontUnref(NFont *font) {
+    if(--font->ref == 0) {
+        FontDestroy(font);
+    }
 }
