@@ -322,6 +322,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());
     window->boldItalicFont = FontRef(GetPrefBoldItalicFont());
+    window->resizeOnFontChange = True;
+    
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;
@@ -1906,25 +1908,27 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
        primary font is read through the style table for syntax highlighting */
     if (window->highlightData != NULL)
         UpdateHighlightStyles(window);
-        
-    /* Change the window manager size hints. 
-       Note: this has to be done _before_ we set the new sizes. ICCCM2
-       compliant window managers (such as fvwm2) would otherwise resize
-       the window twice: once because of the new sizes requested, and once
-       because of the new size increments, resulting in an overshoot. */
-    UpdateWMSizeHints(window);
     
-    /* Use the information from the old window to re-size the window to a
-       size appropriate for the new font, but only do so if there's only
-       _one_ document in the window, in order to avoid growing-window bug */
-    if (NDocuments(window) == 1) {
-        fontWidth = window->font->fonts->font->max_advance_width;
-	fontHeight = textD->ascent + textD->descent;
-	newWindowWidth = (oldTextWidth*fontWidth) / oldFontWidth + borderWidth;
-	newWindowHeight = (oldTextHeight*fontHeight) / oldFontHeight + 
-	        borderHeight;
-	XtVaSetValues(window->shell, XmNwidth, newWindowWidth, XmNheight,
-        	newWindowHeight, NULL);
+    if(window->resizeOnFontChange) {
+        /* Change the window manager size hints. 
+            Note: this has to be done _before_ we set the new sizes. ICCCM2
+            compliant window managers (such as fvwm2) would otherwise resize
+            the window twice: once because of the new sizes requested, and once
+            because of the new size increments, resulting in an overshoot. */
+        UpdateWMSizeHints(window);
+
+        /* Use the information from the old window to re-size the window to a
+            size appropriate for the new font, but only do so if there's only
+            _one_ document in the window, in order to avoid growing-window bug */
+        if (NDocuments(window) == 1) {
+            fontWidth = window->font->fonts->font->max_advance_width;
+            fontHeight = textD->ascent + textD->descent;
+            newWindowWidth = (oldTextWidth*fontWidth) / oldFontWidth + borderWidth;
+            newWindowHeight = (oldTextHeight*fontHeight) / oldFontHeight + 
+                    borderHeight;
+            XtVaSetValues(window->shell, XmNwidth, newWindowWidth, XmNheight,
+                    newWindowHeight, NULL);
+        }
     }
     
     /* Change the minimum pane height */

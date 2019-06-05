@@ -38,6 +38,7 @@
 #include "calltips.h"
 #include "../util/DialogF.h"
 #include "window.h"
+#include "preferences.h"
 #include "../util/nedit_malloc.h"
 
 #include <stdio.h>
@@ -212,6 +213,9 @@ static void focusInAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void focusOutAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
+static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+
 static void checkMoveSelectionChange(Widget w, XEvent *event, int startPos,
 	String *args, Cardinal *nArgs);
 static void keyMoveExtendSelection(Widget w, XEvent *event, int startPos,
@@ -379,6 +383,10 @@ static char defaultTranslations[] =
     "Meta Shift<KeyPress>osfPageRight: page_right(\"extend\", \"rect\")\n"
     "Shift<KeyPress>osfPageRight: page_right(\"extend\")\n"
     "~Alt ~Shift ~Ctrl ~Meta<KeyPress>osfPageRight: page_right()\n"
+
+    /* change font size */
+    "Ctrl <Key>+: zoom_in()\n"
+    "Ctrl <Key>-: zoom_out()\n"
 
     "Shift<KeyPress>osfSelect: key_select()\n"
     "<KeyPress>osfCancel: process_cancel()\n"
@@ -574,6 +582,8 @@ static XtActionsRec actionsList[] = {
     {"insert-string", insertStringAP},
     {"insert_string", insertStringAP},
     {"mouse_pan", mousePanAP},
+    {"zoom_in", zoomInAP},
+    {"zoom_out", zoomOutAP},
 };
 
 /* The motif text widget defined a bunch of actions which the nedit text
@@ -3437,6 +3447,45 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 
     /* Call any registered focus-out callbacks */
     XtCallCallbacks((Widget)w, textNlosingFocusCallback, (XtPointer)event);
+}
+
+#define MIN_FONT_SIZE 5
+#define MAX_FONT_SIZE 800
+
+static void zoom(Widget w, int step) {
+    WindowInfo *win = WidgetToWindow(w);
+    
+    int font_sz = win->font->size + step;
+    int italic_sz = win->italicFont->size + step;
+    int bold_sz = win->boldFont->size + step;
+    int bolditalic_sz = win->italicFont->size + step;
+    
+    if(
+            font_sz < MIN_FONT_SIZE || italic_sz < MIN_FONT_SIZE ||
+            bold_sz < MIN_FONT_SIZE || bolditalic_sz < MIN_FONT_SIZE ||
+            font_sz > MAX_FONT_SIZE || italic_sz > MAX_FONT_SIZE ||
+            bold_sz > MAX_FONT_SIZE || bolditalic_sz > MAX_FONT_SIZE)
+    {
+        return;
+    }
+    
+    char *font = ChangeFontSize(win->fontName, font_sz);
+    char *italic = ChangeFontSize(win->italicFontName, italic_sz);
+    char *bold = ChangeFontSize(win->boldFontName, italic_sz);
+    char *bolditalic = ChangeFontSize(win->boldItalicFontName, italic_sz);
+    
+    Boolean rz = win->resizeOnFontChange;
+    win->resizeOnFontChange = False; // disable window resizing on font change
+    SetFonts(win, font, italic, bold, bolditalic);
+    win->resizeOnFontChange = rz;
+}
+
+static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    zoom(w, 1);
+}
+
+static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    zoom(w, -1);
 }
 
 /*

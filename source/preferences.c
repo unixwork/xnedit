@@ -6535,3 +6535,18 @@ static const char* getDefaultShell(void)
 
     return shellBuffer;
 }
+
+
+char* ChangeFontSize(const char *name, int newsize)
+{
+    char sizestr[32];
+    snprintf(sizestr, 32, "%d", newsize);
+    
+    char* newFontName = FontNameAddAttribute(
+        name,
+        strlen(name),
+        "size",
+        sizestr);
+    
+    return newFontName;
+}
