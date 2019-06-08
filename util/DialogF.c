@@ -644,7 +644,6 @@ static void recurseCreateMnemonics(Widget w, Boolean *mnemonicUsed)
 static void createMnemonics(Widget w)
 {
     Boolean mnemonicUsed[UCHAR_MAX + 1];
-    
-    memset(mnemonicUsed, FALSE, sizeof mnemonicUsed / sizeof *mnemonicUsed);
+    memset(mnemonicUsed, FALSE, sizeof(mnemonicUsed));
     recurseCreateMnemonics(w, mnemonicUsed);
 }
