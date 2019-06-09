@@ -518,6 +518,24 @@ static char *DefaultPatternSets[] = {
 	define:\"^( *| [ \\t]*)<define>[ \\t]\":\"$\"::Keyword::D\n\
 	define var:\".[A-Za-z0-9_+]*\":\"$\"::Preprocessor:define:D\n\
 	define Ends:\"^( *| [ \\t]*)<endef>\":::Keyword::D}",
+    "Markdown:2:0{\n\
+	CodeBlock:\"^[ \\t]*```\":\"^[ \\t]*```\"::Text Escape::\n\
+	CodeBlock2:\"^[ \\t]*\\n(    |\t)\":\"^<\"::Text Escape::\n\
+	Blockquote:\"^[ \\t]*\\>\":\"$\"::Comment::\n\
+	Link1:\"\\[.*?\\](\\[.*?\\])\":::Preprocessor1::\n\
+	Link2:\"\\[.*?\\](\\(.*?\\))\":::Preprocessor1::\n\
+	Link3:\"^[ \\t]*\\[.*?\\]:(.*)\":::Preprocessor1::\n\
+	Link4:\"\\[.*?\\]\":::Preprocessor1::D\n\
+	Link1Part:\"\\1\":\"\"::Text Comment:Link1:C\n\
+	Link2Part:\"\\1\":\"\"::Text Comment:Link2:C\n\
+	Link3Part:\"\\1\":\"\"::Text Comment:Link3:C\n\
+	Header:\"^#.*\":::Header::\n\
+	HeaderLine:\".*\\n(-----*|=====*)\":::Header::\n\
+	Strong1:\"\\*\\*.*?\\*\\*\":::Strong::\n\
+	Strong2:\"__.*?__\":::Strong::\n\
+	Emphasis1:\"\\*.*?\\*\":::Emphasis::D\n\
+	Emphasis2:\"_.*?_\":::Emphasis::D\n\
+	Code:\"`\":\"`\":\"$\":Text Comment::}",
     "Matlab:1:0{\n\
 	Comment:\"%\":\"$\"::Comment::\n\
 	Comment in Octave:\"#\":\"$\"::Comment::\n\

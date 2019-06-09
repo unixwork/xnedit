@@ -93,10 +93,13 @@
 #define MENU_WIDGET(w) (w)
 #endif
 
-#define PREF_FILE_VERSION "6.0"
+#define PREF_FILE_VERSION "6.1"
 
 /* New styles added in 5.2 for auto-upgrade */
-#define ADD_5_2_STYLES " Pointer:#660000:Bold\nRegex:#009944:Bold\nWarning:brown2:Italic"
+#define ADD_5_2_STYLES " Pointer:#660000:Bold\nRegex:#009944:Bold\nWarning:brown2:Italic\n"
+
+/* New Styles added in 6.1 */
+#define ADD_6_1_STYLES " Emphasis:black:Italic\nStrong:black:Bold\nHeader:brown:Bold\n"
 
 /* maximum number of word delimiters allowed (256 allows whole character set) */
 #define MAX_WORD_DELIMITERS 256
@@ -691,6 +694,7 @@ static PrefDescripRec PrefDescrip[] = {
         LaTeX:Default\n\
         Lex:Default\n\
         Makefile:Default\n\
+        Markdown:Default\n\
         Matlab:Default\n\
         NEdit Macro:Default\n\
         Pascal:Default\n\
@@ -721,6 +725,7 @@ static PrefDescripRec PrefDescrip[] = {
         LaTeX:.tex .sty .cls .ltx .ins .clo .fd:::::::\n\
         Lex:.lex:::::::\n\
         Makefile:Makefile makefile .gmk:::None:8:8::\n\
+        Markdown:.md .markdown .mdtxt .mdtext:::::::\n\
         Matlab:.m .oct .sci:::::::\n\
         NEdit Macro:.nm .neditmacro:::::::\n\
         Pascal:.pas .p .int:::::::\n\
@@ -768,7 +773,8 @@ static PrefDescripRec PrefDescrip[] = {
 	Text Arg2:RoyalBlue4:Plain\n\
     	Text Escape:gray30:Bold\n\
 	LaTeX Math:darkGreen:Plain\n"
-        ADD_5_2_STYLES,
+        ADD_5_2_STYLES
+        ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
         "C:Default\n\
@@ -1165,6 +1171,7 @@ static void updateShellCmdsTo5dot3(void);
 static void updateShellCmdsTo5dot4(void);
 static void updateMacroCmdsTo5dot5(void);
 static void updatePatternsTo5dot6(void);
+static void updatePatternsTo6dot1(void);
 static void updateMacroCmdsTo5dot6(void);
 static void migrateColorResources(XrmDatabase prefDB, XrmDatabase appDB);
 static void spliceString(char **intoString, const char *insertString, const char *atExpr);
@@ -1225,6 +1232,10 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
                 fileVer = major * 1000 + minor;
             }
         }
+    }
+    
+    if (PrefData.prefFileRead && fileVer < 6001) {
+        updatePatternsTo6dot1();
     }
 
     /* Note that we don't care about unreleased file versions.  Anyone
@@ -5356,6 +5367,35 @@ static void updatePatternsTo5dot6(void)
     if (!regexFind(TempStringPrefs.styles, "^[ \t]*Operator:"))
 	spliceString(&TempStringPrefs.styles, "Operator:dark blue:Bold",
 		"^[ \t]*Bracket:");
+}
+
+static void updatePatternsTo6dot1(void)
+{
+    const char *markdownLm6dot1 =
+        "Markdown:.md .markdown .mdtxt .mdtext:::::::";
+    const char *markdownHl6dot1 = "Markdown:Default";
+    
+    const char *emphStyle = "Emphasis:black:Italic";
+    const char *strongStyle = "Strong:black:Bold";
+    const char *hdrStyle = "Header:brown:Bold";
+    
+    /* Add new patterns if there aren't already existing patterns with
+       the same name. */
+    if (!regexFind(TempStringPrefs.language, "^[ \t]*Markdown:"))
+	spliceString(&TempStringPrefs.language, markdownLm6dot1, "^[ \t]*Matlab:");
+    
+    /* Enable default highlighting patterns for these modes, unless already
+       present */
+    if (!regexFind(TempStringPrefs.highlight, "^[ \t]*Markdown:"))
+	spliceString(&TempStringPrefs.highlight, markdownHl6dot1, "^[ \t]*Matlab:");
+    
+    /* Add new styles */
+    if (!regexFind(TempStringPrefs.styles, "^[ \t]*Emphasis:"))
+	spliceString(&TempStringPrefs.styles, emphStyle, NULL);
+    if (!regexFind(TempStringPrefs.styles, "^[ \t]*Strong:"))
+	spliceString(&TempStringPrefs.styles, strongStyle, "^[ \t]*Emphasis:");
+    if (!regexFind(TempStringPrefs.styles, "^[ \t]*Header:"))
+	spliceString(&TempStringPrefs.styles, hdrStyle, "^[ \t]*Strong:");
 }
 
 
