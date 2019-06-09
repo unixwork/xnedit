@@ -1824,6 +1824,11 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     Dimension textHeight, newWindowWidth, newWindowHeight;
     textDisp *textD = ((TextWidget)window->textArea)->text.textD;
     
+    NFont *unrefFont = NULL;
+    NFont *unrefItalic = NULL;
+    NFont *unrefBold = NULL;
+    NFont *unrefBoldItalic = NULL;
+    
     /* Check which fonts have changed */
     primaryChanged = strcmp(fontName, window->fontName);
     if (strcmp(italicName, window->italicFontName)) highlightChanged = True;
@@ -1866,8 +1871,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
             //        NULL);
             printf("implement fallback font\n");
         } else {
-            //window->fontList = XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
-            FontUnref(window->font);
+            unrefFont = window->font;
             window->font = font;
         }
     }
@@ -1875,21 +1879,21 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
         NFont *newitalic = FontFromName(TheDisplay, italicName);
         if(newitalic) {
             strcpy(window->italicFontName, italicName);
-            FontUnref(window->italicFont);
+            unrefItalic = window->italicFont; // unref later
             window->italicFont = newitalic;
         }
 
         NFont *newbold = FontFromName(TheDisplay, boldName);
         if(newbold) {
             strcpy(window->boldFontName, boldName);
-            FontUnref(window->boldFont);
+            unrefBold = window->boldFont; // unref later
             window->boldFont = newbold;
         }
         
         NFont *newbolditalic = FontFromName(TheDisplay, boldItalicName);
         if(newbolditalic) {
             strcpy(window->boldItalicFontName, boldItalicName);
-            FontUnref(window->boldItalicFont);
+            unrefBoldItalic = window->boldItalicFont;
             window->boldItalicFont = newbolditalic;
         }
     }
@@ -1908,6 +1912,16 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
        primary font is read through the style table for syntax highlighting */
     if (window->highlightData != NULL)
         UpdateHighlightStyles(window);
+    
+    /* unref highlight fonts */
+    if(unrefFont)
+        FontUnref(unrefFont);
+    if(unrefItalic)
+        FontUnref(unrefItalic);
+    if(unrefBold)
+        FontUnref(unrefBold);
+    if(unrefBoldItalic)
+        FontUnref(unrefBoldItalic);
     
     if(window->resizeOnFontChange) {
         /* Change the window manager size hints. 
