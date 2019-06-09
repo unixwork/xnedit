@@ -2280,7 +2280,7 @@ static int updateHSList(void)
     
     /* Redisplay highlighted windows which use changed style(s) */
     for (window=WindowList; window!=NULL; window=window->next)
-    	UpdateHighlightStyles(window);
+    	UpdateHighlightStyles(window, True);
     
     /* Note that preferences have been changed */
     MarkPrefsChanged();

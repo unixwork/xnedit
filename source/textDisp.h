@@ -186,6 +186,7 @@ typedef struct _textDisp {
     					   modified */
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
+    Boolean disableRedisplay;
     graphicExposeTranslationEntry *graphicsExposeQueue;
 } textDisp;
 

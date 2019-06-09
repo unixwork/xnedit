@@ -266,6 +266,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->nLinesDeleted = 0;
     textD->modifyingTabDist = 0;
     textD->pointerHidden = False;
+    textD->disableRedisplay = False;
     textD->graphicsExposeQueue = NULL;
 
     /* Attach an event handler to the widget so we can know the visibility
@@ -467,7 +468,9 @@ void TextDSetFont(textDisp *textD, NFont *font)
     NFont *styleFontList;
     
     /* If font size changes, cursor will be redrawn in a new position */
-    blankCursorProtrusions(textD);
+    if(!textD->disableRedisplay) {
+        blankCursorProtrusions(textD);
+    }
     
     /* If there is a (syntax highlighting) style table in use, find the new
        maximum font height for this text display */
@@ -487,8 +490,8 @@ void TextDSetFont(textDisp *textD, NFont *font)
     if (fontWidth != 0)
         fontWidth = -1;
     else {
-        for (i=0; i<textD->nStyles; i++) {
-            styleFont = FontDefault(textD->styleTable[i].font);
+        //for (i=0; i<textD->nStyles; i++) {
+            //styleFont = FontDefault(textD->styleTable[i].font);
             // TODO: fix
             /*
             if (styleFont != NULL && 
@@ -496,8 +499,9 @@ void TextDSetFont(textDisp *textD, NFont *font)
                     styleFont->max_bounds.width != styleFont->min_bounds.width))
                 fontWidth = -1;
             */
-            fontWidth = -1;
-        }
+            //fontWidth = -1;
+        //}
+        fontWidth = -1;
     }
     textD->fixedFontWidth = fontWidth;
     
@@ -532,6 +536,10 @@ void TextDSetFont(textDisp *textD, NFont *font)
     releaseGC(textD->w, textD->lineNumGC);
     allocateFixedFontGCs(textD, NULL, bgPixel, fgPixel, selectFGPixel,
             selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel);
+    
+    if(textD->disableRedisplay) {
+        return;
+    }
     
     /* Do a full resize to force recalculation of font related parameters */
     width = textD->width;

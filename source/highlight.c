@@ -407,7 +407,7 @@ void RemoveWidgetHighlight(Widget widget)
 ** Change highlight fonts and/or styles in a highlighted window, without
 ** re-parsing.
 */
-void UpdateHighlightStyles(WindowInfo *window)
+void UpdateHighlightStyles(WindowInfo *window, Boolean redisplay)
 {
     patternSet *patterns;
     windowHighlightData *highlightData;
@@ -446,9 +446,14 @@ void UpdateHighlightStyles(WindowInfo *window)
     
     /* Attach new highlight information to text widgets in each pane
        (and redraw) */
+    ((TextWidget)window->textArea)->text.textD->disableRedisplay = !redisplay;
     AttachHighlightToWidget(window->textArea, window);
-    for (i=0; i<window->nPanes; i++)
+    ((TextWidget)window->textArea)->text.textD->disableRedisplay = 0;    
+    for (i=0; i<window->nPanes; i++) {
+        ((TextWidget)window->textPanes[i])->text.textD->disableRedisplay = !redisplay;
 	AttachHighlightToWidget(window->textPanes[i], window);
+        ((TextWidget)window->textPanes[i])->text.textD->disableRedisplay = 0;
+    }
 }
 
 /*

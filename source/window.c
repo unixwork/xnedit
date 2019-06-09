@@ -1898,6 +1898,11 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
         }
     }
 
+    /* Change the highlight fonts, even if they didn't change, because
+       primary font is read through the style table for syntax highlighting */
+    if (window->highlightData != NULL)
+        UpdateHighlightStyles(window, False);    
+    
     /* Change the primary font in all the widgets */
     if (primaryChanged) {
         //font = GetDefaultFontStruct(TheDisplay, window->fontList);
@@ -1908,14 +1913,9 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
         }
     }
     
-    /* Change the highlight fonts, even if they didn't change, because
-       primary font is read through the style table for syntax highlighting */
-    if (window->highlightData != NULL)
-        UpdateHighlightStyles(window);
-    
     /* unref highlight fonts */
     if(unrefFont)
-        FontUnref(unrefFont);
+        //FontUnref(unrefFont);
     if(unrefItalic)
         FontUnref(unrefItalic);
     if(unrefBold)
@@ -1993,7 +1993,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
     
     /* Redo any syntax highlighting */
     if (window->highlightData != NULL)
-        UpdateHighlightStyles(window);
+        UpdateHighlightStyles(window, True);
 }
 
 /*
