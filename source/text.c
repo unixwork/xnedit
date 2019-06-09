@@ -3449,7 +3449,7 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     XtCallCallbacks((Widget)w, textNlosingFocusCallback, (XtPointer)event);
 }
 
-#define MIN_FONT_SIZE 5
+#define MIN_FONT_SIZE 2
 #define MAX_FONT_SIZE 800
 
 static void zoom(Widget w, int step) {
