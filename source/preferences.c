@@ -285,10 +285,6 @@ static struct prefData {
     char boldFontString[MAX_FONT_LEN];
     char italicFontString[MAX_FONT_LEN];
     char boldItalicFontString[MAX_FONT_LEN];
-    XmFontList fontList;	/* XmFontLists corresp. to above named fonts */
-    XFontStruct *boldFontStruct;
-    XFontStruct *italicFontStruct;
-    XFontStruct *boldItalicFontStruct;
     
     NFont *font;
     NFont *boldFont;
@@ -1320,19 +1316,6 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	TempStringPrefs.smartIndentCommon = NULL;
     }
     
-    /* translate the font names into fontLists suitable for the text widget */
-    font = XLoadQueryFont(TheDisplay, PrefData.fontString);
-    PrefData.fontList = font==NULL ? NULL :
-	    XmFontListCreate(font, XmSTRING_DEFAULT_CHARSET);
-    /*
-    PrefData.boldFontStruct = XLoadQueryFont(TheDisplay,
-    	    PrefData.boldFontString);
-    PrefData.italicFontStruct = XLoadQueryFont(TheDisplay,
-    	    PrefData.italicFontString);
-    PrefData.boldItalicFontStruct = XLoadQueryFont(TheDisplay,
-    	    PrefData.boldItalicFontString);
-    */
-    
     PrefData.font = FontFromName(TheDisplay, PrefData.fontString);
     PrefData.boldFont = FontFromName(TheDisplay, PrefData.boldFontString);
     PrefData.italicFont = FontFromName(TheDisplay, PrefData.italicFontString);
@@ -1982,12 +1965,6 @@ char *GetPrefItalicFontName(void)
 char *GetPrefBoldItalicFontName(void)
 {
     return PrefData.boldItalicFontString;
-}
-
-// TODO: remove
-XmFontList GetPrefFontList(void)
-{
-    return PrefData.fontList;
 }
 
 NFont *GetPrefFont(void)
