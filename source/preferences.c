@@ -322,10 +322,10 @@ static struct prefData {
     char tooltipBgColor[MAX_COLOR_LEN];
     int  undoModifiesSelection;
     int  focusOnRaise;
-    Boolean honorSymlinks;
+    int honorSymlinks;
     int truncSubstitution;
-    Boolean forceOSConversion;
-    Boolean autoEnableXattr;
+    int forceOSConversion;
+    int autoEnableXattr;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
