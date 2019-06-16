@@ -325,6 +325,7 @@ static struct prefData {
     Boolean honorSymlinks;
     int truncSubstitution;
     Boolean forceOSConversion;
+    Boolean autoEnableXattr;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1008,7 +1009,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"truncSubstitution", "TruncSubstitution", PREF_ENUM, "Fail",
             &PrefData.truncSubstitution, TruncSubstitutionModes, False},
     {"honorSymlinks", "HonorSymlinks", PREF_BOOLEAN, "True",
-            &PrefData.honorSymlinks, NULL, False}
+            &PrefData.honorSymlinks, NULL, False},
+    {"autoEnableXattr", "AutoEnableXattr", PREF_BOOLEAN, "True",
+            &PrefData.autoEnableXattr, NULL, False}
 };
 
 static XrmOptionDescRec OpTable[] = {
