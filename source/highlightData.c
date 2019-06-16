@@ -520,7 +520,7 @@ static char *DefaultPatternSets[] = {
 	define Ends:\"^( *| [ \\t]*)<endef>\":::Keyword::D}",
     "Markdown:2:0{\n\
 	CodeBlock:\"^[ \\t]*```\":\"^[ \\t]*```\"::Text Escape::\n\
-	CodeBlock2:\"^[ \\t]*\\n(    |\t)\":\"^<\"::Text Escape::\n\
+	CodeBlock2:\"^[ \\t]*\\n(    |\t)\":\"^<|^[ \\t]*$\"::Text Escape::\n\
 	Blockquote:\"^[ \\t]*\\>\":\"$\"::Comment::\n\
 	Link1:\"\\[.*?\\](\\[.*?\\])\":::Preprocessor1::\n\
 	Link2:\"\\[.*?\\](\\(.*?\\))\":::Preprocessor1::\n\
