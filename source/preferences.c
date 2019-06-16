@@ -2088,6 +2088,11 @@ Boolean GetPrefHonorSymlinks(void)
     return PrefData.honorSymlinks;
 }
 
+Boolean GetAutoEnableXattr(void)
+{
+    return PrefData.autoEnableXattr;
+}
+
 int GetPrefOverrideVirtKeyBindings(void)
 {
     return PrefData.virtKeyOverride;
