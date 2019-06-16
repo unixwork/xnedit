@@ -2085,12 +2085,12 @@ Boolean GetPrefForceOSConversion(void)
 
 Boolean GetPrefHonorSymlinks(void)
 {
-    return PrefData.honorSymlinks;
+    return (Boolean)PrefData.honorSymlinks;
 }
 
 Boolean GetAutoEnableXattr(void)
 {
-    return PrefData.autoEnableXattr;
+    return (Boolean)PrefData.autoEnableXattr;
 }
 
 int GetPrefOverrideVirtKeyBindings(void)

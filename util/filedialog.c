@@ -43,6 +43,8 @@
 #include "getfiles.h"
 #include "misc.h"
 
+#include "../source/preferences.h"
+
 #define WIDGET_SPACING 5
 #define WINDOW_SPACING 8
 
@@ -1151,7 +1153,9 @@ static void adjust_enc_settings(FileDialogData *data){
     if(encPos > 6) {
         /* no unicode no bom */
         XtSetSensitive(data->bom, False);
-        XtVaSetValues(data->xattr, XmNset, 1, NULL);
+        if(GetAutoEnableXattr()) {
+            XtVaSetValues(data->xattr, XmNset, 1, NULL);
+        }
     } else {
         XtSetSensitive(data->bom, True);
         if(encPos > 0) {
