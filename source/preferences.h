@@ -70,6 +70,7 @@ void SetPrefISearchLine(int state);
 int GetPrefISearchLine(void);
 void SetPrefTabBar(int state);
 int GetPrefTabBar(void);
+int GetZoomStep(void);
 void SetPrefSortTabs(int state);
 int GetPrefSortTabs(void);
 void SetPrefTabBarHideOne(int state);

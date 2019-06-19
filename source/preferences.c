@@ -291,6 +291,7 @@ static struct prefData {
     NFont *italicFont;
     NFont *boldItalicFont;
     
+    int zoomStep;
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -833,6 +834,8 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.statsLine, NULL, True},
     {"iSearchLine", "ISearchLine", PREF_BOOLEAN, "False",
     	&PrefData.iSearchLine, NULL, True},
+    {"zoomStep", "ZoomStep", PREF_INT, "1",
+    	&PrefData.zoomStep, NULL, False},
     {"sortTabs", "SortTabs", PREF_BOOLEAN, "False",
     	&PrefData.sortTabs, NULL, True},
     {"tabBar", "TabBar", PREF_BOOLEAN, "True",
@@ -1588,6 +1591,11 @@ void SetPrefISearchLine(int state)
 int GetPrefISearchLine(void)
 {
     return PrefData.iSearchLine;
+}
+
+int GetZoomStep(void)
+{
+    return PrefData.zoomStep;
 }
 
 void SetPrefSortTabs(int state)
