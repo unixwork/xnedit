@@ -3671,7 +3671,7 @@ static int getTabPosition(Widget tab)
 void RefreshTabState(WindowInfo *win)
 {
     XmString s1, tipString;
-    char labelString[MAXPATHLEN];
+    char labelString[2*MAXPATHLEN+4];
     char *tag = XmFONTLIST_DEFAULT_TAG;
     unsigned char alignment;
 
@@ -4607,7 +4607,7 @@ void MoveDocumentDialog(WindowInfo *window)
 {
     WindowInfo *win, *targetWin, **shellWinList;
     int i, nList=0, nWindows=0, ac;
-    char tmpStr[MAXPATHLEN+50];
+    char tmpStr[2*MAXPATHLEN];
     Widget parent, dialog, listBox, moveAllOption;
     XmString *list = NULL;
     XmString popupTitle, s1;

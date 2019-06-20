@@ -1863,7 +1863,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char stringStorage[TYPE_INT_STR_SIZE(int)], *string;
     WindowInfo *w;
-    char fullname[MAXPATHLEN];
+    char fullname[2*MAXPATHLEN];
     char normalizedString[MAXPATHLEN];
 
     /* Read the argument representing the window to focus to, and translate
