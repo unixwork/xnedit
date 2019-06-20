@@ -4131,7 +4131,7 @@ static void reg_error (char *str) {
 
    fprintf (
       stderr,
-      "nedit: Internal error processing regular expression (%s)\n",
+      "xnedit: Internal error processing regular expression (%s)\n",
       str);
 }
 

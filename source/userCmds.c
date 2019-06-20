@@ -360,7 +360,7 @@ void EditShellMenu(WindowInfo *window)
     
     ac = 0;
     XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
-    XtSetArg(args[ac], XmNiconName, "NEdit Shell Menu"); ac++;
+    XtSetArg(args[ac], XmNiconName, "XNEdit Shell Menu"); ac++;
     XtSetArg(args[ac], XmNtitle, "Shell Menu"); ac++;
     ucd->dlogShell = CreateWidget(TheAppShell, "shellCommands",
 	    topLevelShellWidgetClass, args, ac);
@@ -2840,7 +2840,7 @@ static int loadMenuItemString(char *inString, menuItemRec **menuItems,
 
 static int parseError(const char *message)
 {
-    fprintf(stderr, "NEdit: Parse error in user defined menu item, %s\n",
+    fprintf(stderr, "XNEdit: Parse error in user defined menu item, %s\n",
     	    message);
     return False;
 }

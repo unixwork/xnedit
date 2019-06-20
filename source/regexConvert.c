@@ -972,6 +972,6 @@ static void reg_error (char *str) {
 
    fprintf (
       stderr,
-      "NEdit: Internal error processing regular expression (%s)\n",
+      "XNEdit: Internal error processing regular expression (%s)\n",
       str);
 }

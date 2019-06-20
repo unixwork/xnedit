@@ -479,7 +479,7 @@ void BufInsertCol(textBuffer *buf, int column, int startPos, const char *text,
     insertCol(buf, column, lineStartPos, text, &insertDeleted, &nInserted,
     	    &buf->cursorPosHint);
     if (nDeleted != insertDeleted)
-    	fprintf(stderr, "NEdit internal consistency check ins1 failed");
+        fprintf(stderr, "XNEdit internal consistency check ins1 failed");
     callModifyCBs(buf, lineStartPos, nDeleted, nInserted, 0, deletedText);
     NEditFree(deletedText);
     if (charsInserted != NULL)
@@ -513,7 +513,7 @@ void BufOverlayRect(textBuffer *buf, int startPos, int rectStart,
     overlayRect(buf, lineStartPos, rectStart, rectEnd, text, &insertDeleted,
     	    &nInserted, &buf->cursorPosHint);
     if (nDeleted != insertDeleted)
-    	fprintf(stderr, "NEdit internal consistency check ovly1 failed");
+        fprintf(stderr, "XNEdit internal consistency check ovly1 failed");
     callModifyCBs(buf, lineStartPos, nDeleted, nInserted, 0, deletedText);
     NEditFree(deletedText);
     if (charsInserted != NULL)
@@ -908,7 +908,7 @@ void BufRemoveModifyCB(textBuffer *buf, bufModifyCallbackProc bufModifiedCB,
     	}
     }
     if (toRemove == -1) {
-    	fprintf(stderr, "NEdit Internal Error: Can't find modify CB to remove\n");
+        fprintf(stderr, "XNEdit Internal Error: Can't find modify CB to remove\n");
     	return;
     }
     
@@ -986,7 +986,7 @@ void BufRemovePreDeleteCB(textBuffer *buf, bufPreDeleteCallbackProc bufPreDelete
     	}
     }
     if (toRemove == -1) {
-    	fprintf(stderr, "NEdit Internal Error: Can't find pre-delete CB to remove\n");
+        fprintf(stderr, "XNEdit Internal Error: Can't find pre-delete CB to remove\n");
     	return;
     }
     

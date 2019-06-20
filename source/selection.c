@@ -209,7 +209,7 @@ static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
     }
     /* should be of type text??? */
     if (*format != 8) {
-    	fprintf(stderr, "NEdit: Can't handle non 8-bit text\n");
+        fprintf(stderr, "XNEdit: Can't handle non 8-bit text\n");
     	XBell(TheDisplay, 0);
 	NEditFree(value);
 	return;
@@ -278,7 +278,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     }
     /* should be of type text??? */
     if (*format != 8) {
-    	fprintf(stderr, "NEdit: Can't handle non 8-bit text\n");
+        fprintf(stderr, "XNEdit: Can't handle non 8-bit text\n");
     	XBell(TheDisplay, 0);
 	NEditFree(value);
 	return;

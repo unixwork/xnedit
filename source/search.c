@@ -576,7 +576,7 @@ static void getSelectionCB(Widget w, XtPointer si, Atom *selection,
     /* return an empty string if the data is not of the correct format. */
     if (*format != 8) {
         DialogF(DF_WARN, window->shell, 1, "Invalid Format",
-                "NEdit can't handle non 8-bit text", "OK");
+                "XNEdit can't handle non 8-bit text", "OK");
         NEditFree(value);
         selectionInfo->selection = 0;
         selectionInfo->done = 1;
@@ -2869,7 +2869,7 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
     }
     /* should be of type text??? */
     if (*format != 8) {
-    	fprintf(stderr, "NEdit: can't handle non 8-bit text\n");
+    	fprintf(stderr, "XNEdit: can't handle non 8-bit text\n");
     	XBell(TheDisplay, 0);
 	NEditFree(value);
         NEditFree(callData);

@@ -205,7 +205,7 @@ static char *expandAllTabs( char *text, int tab_width ) {
     textCpy = (char*)NEditMalloc( len + 1 );
     if( !textCpy ) {
         fprintf(stderr, 
-                "nedit: Out of heap memory in expandAllTabs!\n");
+                "xnedit: Out of heap memory in expandAllTabs!\n");
         return NULL;
     }
     

@@ -2266,7 +2266,7 @@ long QueryDesktop(Display *display, Widget shell)
 */
 static void warning(const char* mesg)
 {
-  fprintf(stderr, "NEdit warning:\n%s\n", mesg);
+  fprintf(stderr, "XNEdit warning:\n%s\n", mesg);
 }
 
 /*

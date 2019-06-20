@@ -160,7 +160,7 @@ void RefStringFree(const char *rcs_str)
         
         if (rp->usage < 0) /* D'OH! */
         {
-            fprintf(stderr, "NEdit: internal error deallocating shared string.");
+            fprintf(stderr, "XNEdit: internal error deallocating shared string.");
             return;
         }
 
@@ -176,7 +176,7 @@ void RefStringFree(const char *rcs_str)
     }
     else    /* Doesn't appear to be a shared string */
     {
-        fprintf(stderr, "NEdit: attempt to free a non-shared string.");
+        fprintf(stderr, "XNEdit: attempt to free a non-shared string.");
         return;
     }
 }

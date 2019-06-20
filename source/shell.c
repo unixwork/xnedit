@@ -510,12 +510,12 @@ static void issueCommand(WindowInfo *window, const char *command, char *input,
     
     /* set the pipes connected to the process for non-blocking i/o */
     if (fcntl(stdinFD, F_SETFL, O_NONBLOCK) < 0)
-    	perror("nedit: Internal error (fcntl)");
+    	perror("xnedit: Internal error (fcntl)");
     if (fcntl(stdoutFD, F_SETFL, O_NONBLOCK) < 0)
-    	perror("nedit: Internal error (fcntl1)");
+    	perror("xnedit: Internal error (fcntl1)");
     if (flags & ERROR_DIALOGS) {
 	if (fcntl(stderrFD, F_SETFL, O_NONBLOCK) < 0)
-    	    perror("nedit: Internal error (fcntl2)");
+    	    perror("xnedit: Internal error (fcntl2)");
     }
     
     /* if there's nothing to write to the process' stdin, close it now */
@@ -594,7 +594,7 @@ static void stdoutReadProc(XtPointer clientData, int *source, XtInputId *id)
     /* error in read */
     if (nRead == -1) { /* error */
 	if (errno != EWOULDBLOCK && errno != EAGAIN) {
-	    perror("nedit: Error reading shell command output");
+	    perror("xnedit: Error reading shell command output");
 	    NEditFree(buf);
 	    finishCmdExecution(window, True);
 	}
@@ -635,7 +635,7 @@ static void stderrReadProc(XtPointer clientData, int *source, XtInputId *id)
     /* error in read */
     if (nRead == -1) {
 	if (errno != EWOULDBLOCK && errno != EAGAIN) {
-	    perror("nedit: Error reading shell command error stream");
+	    perror("xnedit: Error reading shell command error stream");
 	    NEditFree(buf);
 	    finishCmdExecution(window, True);
 	}
@@ -678,7 +678,7 @@ static void stdinWriteProc(XtPointer clientData, int *source, XtInputId *id)
     	    close(cmdData->stdinFD);
     	    cmdData->inPtr = NULL;
     	} else if (errno != EWOULDBLOCK && errno != EAGAIN) {
-    	    perror("nedit: Write to shell command failed");
+    	    perror("xnedit: Write to shell command failed");
     	    finishCmdExecution(window, True);
     	}
     } else {
@@ -776,7 +776,7 @@ static void flushTimeoutProc(XtPointer clientData, XtIntervalId *id)
 	    cmdData->leftPos += len;
 	    cmdData->rightPos = cmdData->leftPos;
 	} else
-	    fprintf(stderr, "nedit: Too much binary data\n");
+	    fprintf(stderr, "xnedit: Too much binary data\n");
     }
     NEditFree(outText);
 
@@ -901,7 +901,7 @@ static void finishCmdExecution(WindowInfo *window, int terminatedOnError)
     } else {
 	buf = TextGetBuffer(cmdData->textW);
 	if (!BufSubstituteNullChars(outText, outTextLen, buf)) {
-	    fprintf(stderr,"nedit: Too much binary data in shell cmd output\n");
+	    fprintf(stderr,"xnedit: Too much binary data in shell cmd output\n");
 	    outText[0] = '\0';
 	}
 	if (cmdData->flags & REPLACE_SELECTION) {
@@ -952,13 +952,13 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
        returned to the caller, the other half is spliced to stdin, stdout
        and stderr in the child process */
     if (pipe(pipeFDs) != 0) {
-    	perror("nedit: Internal error (opening stdout pipe)");
+    	perror("xnedit: Internal error (opening stdout pipe)");
         return -1;
     }
     *stdoutFD = pipeFDs[0];
     childStdoutFD = pipeFDs[1];
     if (pipe(pipeFDs) != 0) {
-    	perror("nedit: Internal error (opening stdin pipe)");
+    	perror("xnedit: Internal error (opening stdin pipe)");
         return -1;
     }
     *stdinFD = pipeFDs[1];
@@ -967,7 +967,7 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
     	childStderrFD = childStdoutFD;
     else {
 	if (pipe(pipeFDs) != 0) {
-    	    perror("nedit: Internal error (opening stdin pipe)");
+    	    perror("xnedit: Internal error (opening stdin pipe)");
             return -1;
         }
 	*stderrFD = pipeFDs[0];

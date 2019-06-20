@@ -749,7 +749,7 @@ void Replay(WindowInfo *window)
         prog = ParseMacro(ReplayMacro, &errMsg, &stoppedAt);
         if (prog == NULL) {
             fprintf(stderr,
-                "NEdit internal error, learn/replay macro syntax error: %s\n",
+                "XNEdit internal error, learn/replay macro syntax error: %s\n",
                 errMsg);
             return;
         }
@@ -1480,7 +1480,7 @@ selEnd += $text_length - startLength\n}\n";
     /* Parse the resulting macro into an executable program "prog" */
     prog = ParseMacro(loopedCmd, &errMsg, &stoppedAt);
     if (prog == NULL) {
-	fprintf(stderr, "NEdit internal error, repeat macro syntax wrong: %s\n",
+	fprintf(stderr, "XNEdit internal error, repeat macro syntax wrong: %s\n",
     		errMsg);
     	return;
     }

@@ -1432,7 +1432,7 @@ static void incrementalReparse(windowHighlightData *highlightData,
 	    	    max(endAt, max(lastModified(styleBuf), lastMod)));
 	    if (IS_PLAIN(parseInStyle)) {
 		fprintf(stderr,
-			"NEdit internal error: incr. reparse fell short\n");
+			"XNEdit internal error: incr. reparse fell short\n");
 		return;
 	    }
 	    parseInStyle = parentStyleOf(parentStyles, parseInStyle);
