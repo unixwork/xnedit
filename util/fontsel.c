@@ -631,7 +631,7 @@ char* FontNameAddAttribute(
     
     if(b < len) {
         if(b > 0 && name[b-1] == ':') b--;
-        snprintf(newfont, newlen, "%.*s%.*s:%s=%s", b, name, len-e, name+e, attribute, value);
+        snprintf(newfont, newlen, "%.*s%.*s:%s=%s", b, name, (int)(len-e), name+e, attribute, value);
     } else {
         snprintf(newfont, newlen, "%s:%s=%s", name, attribute, value);
     }
