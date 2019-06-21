@@ -458,7 +458,7 @@ static void processServerCommandString(char *string)
 	editFlags = (readFlag ? PREF_READ_ONLY : 0) | CREATE |
 		(createFlag ? SUPPRESS_CREATE_WARN : 0);
 	if (ParseFilename(fullname, filename, pathname) != 0) {
-	   fprintf(stderr, "NEdit: invalid file name\n");
+	   fprintf(stderr, "XNEdit: invalid file name\n");
            deleteFileClosedProperty2(filename, pathname);
 	   break;
 	}
@@ -542,6 +542,6 @@ static void processServerCommandString(char *string)
     return;
 
 readError:
-    fprintf(stderr, "NEdit: error processing server request\n");
+    fprintf(stderr, "XNEdit: error processing server request\n");
     return;
 }

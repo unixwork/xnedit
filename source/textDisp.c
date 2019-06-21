@@ -1290,7 +1290,7 @@ void TextDMakeInsertPosVisible(textDisp *textD)
                     cursorPos, True);
     }
     if (topLine < 1) {
-        fprintf(stderr, "nedit: internal consistency check tl1 failed\n");
+        fprintf(stderr, "xnedit: internal consistency check tl1 failed\n");
         topLine = 1;
     }
     
@@ -1830,7 +1830,7 @@ static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum)
     	if (emptyLinesVisible(textD)) {
     	    if (textD->lastChar < textD->buffer->length) {
     		if (!posToVisibleLineNum(textD, textD->lastChar, lineNum)) {
-    		    fprintf(stderr, "nedit: Consistency check ptvl failed\n");
+    		    fprintf(stderr, "xnedit: Consistency check ptvl failed\n");
     		    return False;
     		}
     		return ++(*lineNum) <= textD->nVisibleLines-1;

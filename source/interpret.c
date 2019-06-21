@@ -794,7 +794,7 @@ Symbol *PromoteToGlobal(Symbol *sym)
         /* case a)
            just make this symbol a GLOBAL_SYM symbol and return */
         fprintf(stderr,
-                "nedit: To boldly go where no local sym has gone before: %s\n",
+                "xnedit: To boldly go where no local sym has gone before: %s\n",
                 sym->name);
         sym->type = GLOBAL_SYM;
         return sym;
@@ -802,7 +802,7 @@ Symbol *PromoteToGlobal(Symbol *sym)
         /* case b)
            sym will shadow the old symbol from the GlobalSymList */
         fprintf(stderr,
-                "nedit: duplicate symbol in LocalSymList and GlobalSymList: %s\n",
+                "xnedit: duplicate symbol in LocalSymList and GlobalSymList: %s\n",
                 sym->name);
     }
 

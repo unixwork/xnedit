@@ -408,7 +408,7 @@ int AddTagsFile(const char *tagSpec, int file_type)
     
     /* To prevent any possible segfault */
     if (tagSpec == NULL) {
-        fprintf(stderr, "nedit: Internal Error!\n"
+        fprintf(stderr, "xnedit: Internal Error!\n"
                 "  Passed NULL pointer to AddTagsFile!\n");
         return FALSE;
     }
@@ -477,7 +477,7 @@ int DeleteTagsFile(const char *tagSpec, int file_type, Boolean force_unload)
     
     /* To prevent any possible segfault */
     if (tagSpec == NULL) {
-        fprintf(stderr, "nedit: Internal Error: Passed NULL pointer to DeleteTagsFile!\n");
+        fprintf(stderr, "xnedit: Internal Error: Passed NULL pointer to DeleteTagsFile!\n");
         return FALSE;
     }
     
@@ -1199,7 +1199,7 @@ static int findAllMatches(WindowInfo *window, const char *string)
     
     if (nMatches>1) {
         if (!(dupTagsList = (char **) NEditMalloc(sizeof(char *) * nMatches))) {
-            fprintf(stderr, "nedit: findAllMatches(): out of heap space!\n");
+            fprintf(stderr, "xnedit: findAllMatches(): out of heap space!\n");
             XBell(TheDisplay, 0);
             return -1;
         }
@@ -1224,7 +1224,7 @@ static int findAllMatches(WindowInfo *window, const char *string)
 
             if (NULL == (dupTagsList[i] = (char*) NEditMalloc(strlen(temp) + 1))) {
                 int j;
-                fprintf(stderr, "nedit: findAllMatches(): out of heap space!\n");
+                fprintf(stderr, "xnedit: findAllMatches(): out of heap space!\n");
 
                 /*  dupTagsList[i] is unallocated, let's free [i - 1] to [0]  */
                 for (j = i - 1; j > -1; j--) {
@@ -1635,7 +1635,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
             if (!status) 
                 return TF_ERROR_EOF;
             if (lineEmpty( line )) {
-                fprintf( stderr, "nedit: Warning: empty '* alias *' "
+                fprintf( stderr, "xnedit: Warning: empty '* alias *' "
                         "block in calltips file.\n" );
                 return TF_ERROR;
             }
@@ -1656,7 +1656,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
         /* Correct currLine for the empty line it read at the end */
         --(*currLine);
         if (incLines == 0) {
-            fprintf( stderr, "nedit: Warning: empty '* include *' or"
+            fprintf( stderr, "xnedit: Warning: empty '* include *' or"
                     " '* alias *' block in calltips file.\n" );
             return TF_ERROR;
         }
@@ -1692,7 +1692,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
         if (!status) 
             return TF_ERROR_EOF;
         if (lineEmpty( line )) {
-            fprintf( stderr, "nedit: Warning: empty '* language *' block in calltips file.\n" );
+            fprintf( stderr, "xnedit: Warning: empty '* language *' block in calltips file.\n" );
             return TF_ERROR;
         }
         *blkLine = *currLine;
@@ -1707,7 +1707,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
         if (!status) 
             return TF_ERROR_EOF;
         if (lineEmpty( line )) {
-            fprintf( stderr, "nedit: Warning: empty '* version *' block in calltips file.\n" );
+            fprintf( stderr, "xnedit: Warning: empty '* version *' block in calltips file.\n" );
             return TF_ERROR;
         }
         *blkLine = *currLine;
@@ -1726,7 +1726,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
         if (!status) 
             return TF_ERROR_EOF;
         if (lineEmpty( line )) {
-            fprintf( stderr, "nedit: Warning: empty calltip block:\n"
+            fprintf( stderr, "xnedit: Warning: empty calltip block:\n"
                      "   \"%s\"\n", header);
             return TF_ERROR;
         }
@@ -1745,7 +1745,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
     
     /* Warn about any unneeded extra lines (which are ignored). */
     if (dummy1+1 < *currLine && code != TF_BLOCK) {
-        fprintf( stderr, "nedit: Warning: extra lines in language or version block ignored.\n" );
+        fprintf( stderr, "xnedit: Warning: extra lines in language or version block ignored.\n" );
     }
     
     return code;
@@ -1810,7 +1810,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
     tf_alias *aliases=NULL, *tmp_alias;
     
     if(recLevel > MAX_TAG_INCLUDE_RECURSION_LEVEL) {
-        fprintf(stderr, "nedit: Warning: Reached recursion limit before loading calltips file:\n\t%s\n", tipsFile);
+        fprintf(stderr, "xnedit: Warning: Reached recursion limit before loading calltips file:\n\t%s\n", tipsFile);
         return 0;
     }
     
@@ -1837,7 +1837,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
     while( 1 ) {
         code = nextTFBlock(fp, header, &body, &blkLine, &currLine);
         if( code == TF_ERROR_EOF ) {
-            fprintf(stderr,"nedit: Warning: unexpected EOF in calltips file.\n");
+            fprintf(stderr,"xnedit: Warning: unexpected EOF in calltips file.\n");
             break;
         }
         if( code == TF_EOF ) 
@@ -1859,7 +1859,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
                 for(tipIncFile=strtok(body,":"); tipIncFile; 
                         tipIncFile=strtok(NULL,":")) {
                     /* fprintf(stderr,
-                        "nedit: DEBUG: including tips file '%s'\n",
+                        "xnedit: DEBUG: including tips file '%s'\n",
                         tipIncFile); */
                     nTipsAdded += loadTipsFile( tipIncFile, index, recLevel+1);
                 }
@@ -1873,14 +1873,14 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
                 if (langMode == PLAIN_LANGUAGE_MODE && 
                         strcmp(header, "Plain")) {
                     fprintf(stderr,
-                            "nedit: Error reading calltips file:\n\t%s\n"
+                            "xnedit: Error reading calltips file:\n\t%s\n"
                             "Unknown language mode: \"%s\"\n",
                             tipsFile, header);
                     langMode = oldLangMode;
                 }
                 break;
             case TF_ERROR:
-                fprintf(stderr,"nedit: Warning: Recoverable error while "
+                fprintf(stderr,"xnedit: Warning: Recoverable error while "
                         "reading calltips file:\n   \"%s\"\n",
                         resolvedTipsFile);
                 break;
@@ -1889,7 +1889,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
                 tmp_alias = aliases;
                 aliases = new_alias(header, body);
                 if( !aliases ) {
-                    fprintf(stderr,"nedit: Can't allocate memory for tipfile " 
+                    fprintf(stderr,"xnedit: Can't allocate memory for tipfile " 
                             "alias in calltips file:\n   \"%s\"\n",
                             resolvedTipsFile);
                     /* Deallocate any allocated aliases */
@@ -1912,7 +1912,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
         char *src;
         t = getTag(tmp_alias->dest, TIP);
         if (!t) {
-            fprintf(stderr, "nedit: Can't find destination of alias \"%s\"\n"
+            fprintf(stderr, "xnedit: Can't find destination of alias \"%s\"\n"
                     "  in calltips file:\n   \"%s\"\n",
                     tmp_alias->dest, resolvedTipsFile);
         } else {

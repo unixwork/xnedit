@@ -182,7 +182,7 @@ ExpandTilde(char *pathname)
     	passwdEntry = getpwuid(getuid());
 	if ((passwdEntry == NULL) || (*(passwdEntry->pw_dir)== '\0')) {
   	   /* This is really serious, so just exit. */
-           perror("NEdit/nc: getpwuid() failed ");
+           perror("XNEdit/nc: getpwuid() failed ");
            exit(EXIT_FAILURE);
 	}
     }

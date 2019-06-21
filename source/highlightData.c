@@ -1271,7 +1271,7 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
     } else{
 	newRE = ConvertRE(*patternRE, &errorText);
 	if (newRE == NULL) {
-	    fprintf(stderr, "NEdit error converting old format regular "
+	    fprintf(stderr, "XNEdit error converting old format regular "
 		    "expression in pattern set %s, pattern %s: %s\n",
 		    patSetName, patName, errorText);
 	} 
@@ -1756,7 +1756,7 @@ void EditHighlightStyles(const char *initialStyle)
     /* Create a form widget in an application shell */
     ac = 0;
     XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
-    XtSetArg(args[ac], XmNiconName, "NEdit Text Drawing Styles"); ac++;
+    XtSetArg(args[ac], XmNiconName, "XNEdit Text Drawing Styles"); ac++;
     XtSetArg(args[ac], XmNtitle, "Text Drawing Styles"); ac++;
     HSDialog.shell = CreateWidget(TheAppShell, "textStyles",
 	    topLevelShellWidgetClass, args, ac);
@@ -2339,7 +2339,7 @@ void EditHighlightPatterns(WindowInfo *window)
     /* Create a form widget in an application shell */
     n = 0;
     XtSetArg(args[n], XmNdeleteResponse, XmDO_NOTHING); n++;
-    XtSetArg(args[n], XmNiconName, "NEdit Highlight Patterns"); n++;
+    XtSetArg(args[n], XmNiconName, "XNEdit Highlight Patterns"); n++;
     XtSetArg(args[n], XmNtitle, "Syntax Highlighting Patterns"); n++;
     HighlightDialog.shell = CreateWidget(TheAppShell, "syntaxHighlight",
 	    topLevelShellWidgetClass, args, n);

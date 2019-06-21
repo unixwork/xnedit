@@ -1179,7 +1179,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     if (otherWindow != NULL)
     {
         response = DialogF(DF_WARN, window->shell, 2, "File open",
-        "%s is open in another NEdit window", "Cancel",
+        "%s is open in another XNEdit window", "Cancel",
         "Close Other Window", filename);
 
         if (response == 1)
