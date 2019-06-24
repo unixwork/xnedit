@@ -1883,7 +1883,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
     } else {
         /* just use the plain name as supplied */
 	for (w=WindowList; w != NULL; w = w->next) {
-	    sprintf(fullname, "%s%s", w->path, w->filename);
+	    snprintf(fullname, sizeof(fullname), "%s%s", w->path, w->filename);
 	    if (!strcmp(string, fullname)) {
 		break;
 	    }
@@ -1898,7 +1898,8 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
                 return False;
             }
             for (w=WindowList; w != NULL; w = w->next) {
-                sprintf(fullname, "%s%s", w->path, w->filename);
+                snprintf(fullname, sizeof(fullname),
+                        "%s%s", w->path, w->filename);
                 if (!strcmp(normalizedString, fullname))
                     break;
             }
@@ -1922,8 +1923,9 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
 
     /* Return the name of the window */
     result->tag = STRING_TAG;
-    AllocNString(&result->val.str, strlen(w->path)+strlen(w->filename)+1);
-    sprintf(result->val.str.rep, "%s%s", w->path, w->filename);
+    size_t result_str_len = strlen(w->path)+strlen(w->filename)+1;
+    AllocNString(&result->val.str, result_str_len);
+    snprintf(result->val.str.rep, result_str_len, "%s%s", w->path, w->filename);
     return True;
 }
 

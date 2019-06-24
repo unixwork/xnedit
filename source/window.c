@@ -3679,11 +3679,11 @@ void RefreshTabState(WindowInfo *win)
        "*" (modified) will change per label alignment setting */
     XtVaGetValues(win->tab, XmNalignment, &alignment, NULL);
     if (alignment != XmALIGNMENT_END) {
-       sprintf(labelString, "%s%s",
+       snprintf(labelString, sizeof(labelString),"%s%s", 
                win->fileChanged? "*" : "",
                win->filename);
     } else {
-       sprintf(labelString, "%s%s",
+       snprintf(labelString, sizeof(labelString),"%s%s", 
                win->filename,
                win->fileChanged? "*" : "");
     }
@@ -4624,7 +4624,7 @@ void MoveDocumentDialog(WindowInfo *window)
 	if (!IsTopDocument(win) || win->shell == window->shell)
 	    continue;
 	
-	sprintf(tmpStr, "%s%s",
+	snprintf(tmpStr, sizeof(tmpStr), "%s%s",
 		win->filenameSet? win->path : "", win->filename);
 
 	list[nList] = XmStringCreateSimple(tmpStr);
@@ -4642,7 +4642,8 @@ void MoveDocumentDialog(WindowInfo *window)
     /* create the dialog */
     parent = window->shell;
     popupTitle = XmStringCreateSimple("Move Document");
-    sprintf(tmpStr, "Move %s into window of", window->filename);
+    snprintf(tmpStr, sizeof(tmpStr),
+            "Move %s into window of", window->filename);
     s1 = XmStringCreateSimple(tmpStr);
     ac = 0;
     XtSetArg(csdargs[ac], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL); ac++;

@@ -712,7 +712,8 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     form = CreateFormDialog(parent, "replaceDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-    	sprintf(title, "Replace/Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title),
+                "Replace/Find (in %s)", window->filename);
     	XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
     	XtVaSetValues(XtParent(form), XmNtitle, "Replace/Find", NULL);
@@ -1202,7 +1203,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     form = CreateFormDialog(parent, "findDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-    	sprintf(title, "Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
     	XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
     	XtVaSetValues(XtParent(form), XmNtitle, "Find", NULL);
@@ -1698,7 +1699,8 @@ static void rKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-    	sprintf(title, "Replace/Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title),
+                "Replace/Find (in %s)", window->filename);
     	XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
     } else
     	XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, "Replace/Find", NULL);
@@ -1710,7 +1712,7 @@ static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-    	sprintf(title, "Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
     	XtVaSetValues(XtParent(window->findDlog), XmNtitle, title, NULL);
     } else
     	XtVaSetValues(XtParent(window->findDlog), XmNtitle, "Find", NULL);
@@ -2064,9 +2066,9 @@ static void uploadFileListItems(WindowInfo* window, Bool replace)
     for (i = 0; i < nWritable; ++i) {
        w = window->writableWindows[i];
        if (usePathNames && window->filenameSet) {
-          sprintf(buf, "%s%s", w->path, w->filename);
+          snprintf(buf, sizeof(buf), "%s%s", w->path, w->filename);
        } else {
-          sprintf(buf, "%s", w->filename);
+          snprintf(buf, sizeof(buf), "%s", w->filename);
        }
        names[i] = XmStringCreateSimple(buf);
     }
