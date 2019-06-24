@@ -3126,7 +3126,7 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (GetPrefWarnExit() && !(window == WindowList && window->next == NULL)) {
         int resp, titleLen, lineLen;
         char exitMsg[DF_MAX_MSG_LENGTH], *ptr, *title;
-	char filename[MAXPATHLEN];
+	char filename[MAXPATHLEN + 1];
         WindowInfo *win;
 
         /* List the windows being edited and make sure the
@@ -3135,7 +3135,8 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 	lineLen = 0;
         strcpy(ptr, "Editing: "); ptr += 9; lineLen += 9;
         for (win=WindowList; win!=NULL; win=win->next) {
-    	    sprintf(filename, "%s%s", win->filename, win->fileChanged? "*": "");
+    	    snprintf(filename, sizeof(filename),
+                    "%s%s", win->filename, win->fileChanged? "*": "");
 	    title = filename;
             titleLen = strlen(title);
             if (ptr - exitMsg + titleLen + 30 >= DF_MAX_MSG_LENGTH) {

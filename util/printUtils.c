@@ -885,11 +885,12 @@ static int foundTag(const char *tagfilename, const char *tagname, char *result)
     tfile = fopen(tagfilename,"r");
     if (tfile != NULL) {
 	while (!feof(tfile)) {
-            fgets(line,sizeof(line),tfile);
-            if (sscanf(line,tagformat,result) != 0) {
-		fclose(tfile);
-        	return True;
-	    }
+            if (fgets(line,sizeof(line),tfile)) {
+                if (sscanf(line,tagformat,result) != 0) {
+                    fclose(tfile);
+                    return True;
+                }
+            }
 	}
 	fclose(tfile);
     }
