@@ -1879,7 +1879,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     NFont *charFL;
     XftFont *styleFont;
     XftFont *charFont;
-     
+      
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -1890,7 +1890,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     if (leftClip > rightClip) {
         return;
-    }
+    } 
 
     /* Calculate y coordinate of the string to draw */
     fontHeight = textD->ascent + textD->descent;
@@ -1993,12 +1993,13 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             XRectangle rect;
             rect.x = 0;
             rect.y = 0;
-            rect.width = rightClip - leftClip;
+            //rect.width = rightClip - leftClip;
+            rect.width = rightClip;
             rect.height = textD->ascent + textD->descent;
             XRenderSetPictureClipRectangles(
                     XtDisplay(textD->w),
                     pic,
-                    leftClip,
+                    0,
                     y,
                     &rect,
                     1);
