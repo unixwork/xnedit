@@ -211,6 +211,7 @@ Boolean GetPrefUndoModifiesSelection(void);
 Boolean GetPrefFocusOnRaise(void);
 Boolean GetPrefHonorSymlinks(void);
 Boolean GetAutoEnableXattr(void);
+Boolean GetWindowDarkTheme(void);
 Boolean GetPrefForceOSConversion(void);
 void SetPrefFocusOnRaise(Boolean);
 

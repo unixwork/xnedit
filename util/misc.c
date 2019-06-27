@@ -88,6 +88,8 @@
 #include "../debug.h"
 #endif
 
+Boolean GetWindowDarkTheme(void);
+
 #ifndef LESSTIF_VERSION
 extern void _XmDismissTearOff(Widget w, XtPointer call, XtPointer x);
 #endif
@@ -840,6 +842,10 @@ void ManageDialogCenteredOnPointer(Widget dialogChild)
 
     /* Restore the value of XmNmappedWhenManaged */
     XtVaSetValues(shell, XmNmappedWhenManaged, mappedWhenManaged, NULL);
+    
+    if(GetWindowDarkTheme()) {
+        EnableWindowDarkTheme(XtDisplay(shell), XtWindow(shell));
+    }
 }
 
 /*
@@ -2532,4 +2538,19 @@ int IsUtf8Locale(void) {
         return TRUE;
     }
     return FALSE;
+}
+
+void EnableWindowDarkTheme(Display *dp, Window window)
+{
+    Atom atom = XInternAtom(dp, "_GTK_THEME_VARIANT", False);
+    Atom type = XInternAtom(dp, "UTF8_STRING", False);
+    XChangeProperty(
+            dp, 
+            window, 
+            atom,
+            type,
+            8,
+            PropModeReplace,
+            "dark",
+            4);
 }

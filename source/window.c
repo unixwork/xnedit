@@ -411,7 +411,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     winShell = CreateWidget(TheAppShell, "textShell",
                 topLevelShellWidgetClass, al, ac);
     window->shell = winShell;
-
+    
 #ifdef EDITRES
     XtAddEventHandler (winShell, (EventMask)0, True,
                 (XtEventHandler)_XEditResCheckMessages, NULL);
@@ -790,6 +790,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     
     /* realize all of the widgets in the new window */
     RealizeWithoutForcingPosition(winShell);
+    if(GetWindowDarkTheme()) {
+        EnableWindowDarkTheme(XtDisplay(winShell), XtWindow(winShell));
+    }
     XmProcessTraversal(text, XmTRAVERSE_CURRENT);
 
     /* Make close command in window menu gracefully prompt for close */

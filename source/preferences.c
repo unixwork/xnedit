@@ -327,6 +327,7 @@ static struct prefData {
     int truncSubstitution;
     int forceOSConversion;
     int autoEnableXattr;
+    int windowDarkTheme;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1014,7 +1015,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"honorSymlinks", "HonorSymlinks", PREF_BOOLEAN, "True",
             &PrefData.honorSymlinks, NULL, False},
     {"autoEnableXattr", "AutoEnableXattr", PREF_BOOLEAN, "True",
-            &PrefData.autoEnableXattr, NULL, False}
+            &PrefData.autoEnableXattr, NULL, False},
+    {"windowDarkTheme", "WindowDarkTheme", PREF_BOOLEAN, "False",
+            &PrefData.windowDarkTheme, NULL, False}
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2099,6 +2102,11 @@ Boolean GetPrefHonorSymlinks(void)
 Boolean GetAutoEnableXattr(void)
 {
     return (Boolean)PrefData.autoEnableXattr;
+}
+
+Boolean GetWindowDarkTheme(void)
+{
+    return (Boolean)PrefData.windowDarkTheme;
 }
 
 int GetPrefOverrideVirtKeyBindings(void)

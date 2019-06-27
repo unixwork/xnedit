@@ -146,5 +146,6 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
 char* ConvertEncoding(char *string, const char *to, const char *from);
 char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
+void EnableWindowDarkTheme(Display *dp, Window window);
 
 #endif /* NEDIT_MISC_H_INCLUDED */
