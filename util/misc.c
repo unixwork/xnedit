@@ -346,6 +346,10 @@ void RealizeWithoutForcingPosition(Widget shell)
     
     /* Restore the value of XmNmappedWhenManaged */
     XtVaSetValues(shell, XmNmappedWhenManaged, mappedWhenManaged, NULL);
+    
+    if(GetWindowDarkTheme()) {
+        EnableWindowDarkTheme(XtDisplay(shell), XtWindow(shell));
+    }
 }
 
 /*
