@@ -2069,7 +2069,7 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     }
 #else
     char *prevPath = NULL;
-    if(window->path[0] != '\0' && window->filename[0] != '\0') {
+    if(window->path[0] != '\0' && window->filename[0] != '\0' && window->filenameSet) {
         size_t plen = strlen(window->path);
         size_t nlen = strlen(window->filename);
         prevPath = NEditMalloc(plen + nlen + 2);
