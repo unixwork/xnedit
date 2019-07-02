@@ -1265,6 +1265,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtAddCallback(goUp, XmNactivateCallback,
                  (XtCallbackProc)filedialog_goup, &data);
     
+    // View Option Menu
     n = 0;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
@@ -1315,7 +1316,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNsubMenuId, menu); n++;
     Widget view = XmCreateOptionMenu(viewframe, "option_menu", args, n);
     XtManageChild(view);
-
+    
+    // pathbar
     n = 0;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
@@ -1733,11 +1735,22 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         case 2: XtManageChild(data.grid); break;
     }
     
-    char *defDirStr = GetDefaultDirectoryStr();
-    char *defDir = defDirStr ? defDirStr : getenv("HOME");
+    if(file->path) {
+        char *defDir = ParentPath(file->path);
+        filedialog_update_dir(&data, defDir);
+        PathBarSetPath(data.pathBar, defDir);
+        NEditFree(defDir);
+        
+        XmTextFieldSetString(data.name, FileName(file->path));
+    } else {
+        char *defDirStr = GetDefaultDirectoryStr();
+        char *defDir = defDirStr ? defDirStr : getenv("HOME");
+        
+        filedialog_update_dir(&data, defDir);
+        PathBarSetPath(data.pathBar, defDir);
+    }
+    
     //init_container_size(&data);
-    filedialog_update_dir(&data, defDir);
-    PathBarSetPath(data.pathBar, defDir);
     
     /* event loop */
     ManageDialogCenteredOnPointer(form);

@@ -2068,7 +2068,25 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
         }
     }
 #else
+    char *prevPath = NULL;
+    if(window->path[0] != '\0' && window->filename[0] != '\0') {
+        size_t plen = strlen(window->path);
+        size_t nlen = strlen(window->filename);
+        prevPath = NEditMalloc(plen + nlen + 2);
+        memcpy(prevPath, window->path, plen);
+        if(window->path[plen-1] != '/') {
+            prevPath[plen] = '/';
+            plen++;
+        }
+        memcpy(prevPath+plen, window->filename, nlen);
+        prevPath[plen+nlen] = '\0';
+    }
+    
+    file->path = prevPath;
     retVal = GetNewFilename(window->shell, prompt, file, "");
+    if(prevPath) {
+        NEditFree(prevPath);
+    }
 #endif
 
     if (retVal != GFN_OK)
