@@ -512,11 +512,10 @@ void PathBarSetPath(PathBar *bar, char *path)
 
 /* -------------------- file dialog -------------------- */
 
-typedef struct FileList FileList;
-struct FileList {
+typedef struct FileElm FileElm;
+struct FileElm {
     char *path;
     int isDirectory;
-    FileList *next;
 };
 
 typedef struct FileDialogData {
@@ -547,8 +546,8 @@ typedef struct FileDialogData {
     Widget bom;
     Widget xattr;
     
-    FileList *dirs;
-    FileList *files;
+    FileElm *dirs;
+    FileElm *files;
     int dircount;
     int filecount;
     int maxnamelen;
@@ -608,39 +607,15 @@ static void filedialog_cleanup(FileDialogData *data)
     }
 }
 
-static int filecmp(FileList *file1, FileList *file2)
+static int filecmp(const void *f1, const void *f2)
 {
+    const FileElm *file1 = f1;
+    const FileElm *file2 = f2;
     if(file1->isDirectory != file2->isDirectory) {
         return file1->isDirectory < file2->isDirectory;
     }
     
     return strcmp(FileName(file1->path), FileName(file2->path));
-}
-
-static FileList* filelist_add(FileList *list, FileList *newelm)
-{
-    if(!list) {
-        return newelm;
-    }
-    
-    FileList *l = list;
-    FileList *prev = NULL;
-    while(l) {
-        if(filecmp(l, newelm) > 0) {
-            if(prev) {
-                prev->next = newelm;
-            } else {
-                list = newelm;
-            }
-            newelm->next = l;
-            return list;
-        }
-        prev = l;
-        l = l->next;
-    }
-    
-    prev->next = newelm;
-    return list;
 }
 
 static void resize_container(Widget w, FileDialogData *data, XtPointer d) 
@@ -667,12 +642,12 @@ static void init_container_size(FileDialogData *data)
     XtVaSetValues(data->container, XtNwidth, width, XtNheight, 100, NULL);
 }
 
-typedef void(*ViewUpdateFunc)(FileDialogData*,FileList*,FileList*,int,int,int);
+typedef void(*ViewUpdateFunc)(FileDialogData*,FileElm*,FileElm*,int,int,int);
 
 static void filedialog_update_iconview(
         FileDialogData *data,
-        FileList *dirs,
-        FileList *files,
+        FileElm *dirs,
+        FileElm *files,
         int dircount,
         int filecount,
         int maxnamelen)
@@ -696,13 +671,15 @@ static void filedialog_update_iconview(
     }
     
     int numgadgets = 0;
-    FileList *e = dirs;
+    FileElm *ls = dirs;
+    int count = dircount;
     int pos = 0;
     for(int i=0;i<2;i++) {
-        while(e) {
+        for(int j=0;j<count;j++) {
+            FileElm *e = &ls[j];
+            
             char *name = FileName(e->path);
             if((!data->showHidden && name[0] == '.') || (!e->isDirectory && fnmatch(filterStr, name, 0))) {
-                e = e->next;
                 continue;
             }
             
@@ -726,10 +703,10 @@ static void filedialog_update_iconview(
 
             gadgets[pos] = item;
             XmStringFree(str);
-            e = e->next;
             pos++;
         }
-        e = files;
+        ls = files;
+        count = filecount;
     }
     
     if(filter) {
@@ -743,21 +720,21 @@ static void filedialog_update_iconview(
     resize_container(XtParent(data->container), data, NULL);
 }
 
-static void filelistwidget_add(Widget w, int showHidden, char *filter, FileList *ls, int count)
+static void filelistwidget_add(Widget w, int showHidden, char *filter, FileElm *ls, int count)
 {   
     if(count > 0) {
         XmStringTable items = NEditCalloc(count, sizeof(XmString));
         int i = 0;
-        FileList *e = ls;
-        while(e) {
+        
+        for(int j=0;j<count;j++) {
+            FileElm *e = &ls[j];
+            
             char *name = FileName(e->path);
             if((!showHidden && name[0] == '.') || fnmatch(filter, name, 0)) {
-                e = e->next;
                 continue;
             }
             
             items[i] = XmStringCreateLocalized(name);
-            e = e->next;
             i++;
         }
         XmListAddItems(w, items, i, 0);
@@ -768,22 +745,11 @@ static void filelistwidget_add(Widget w, int showHidden, char *filter, FileList 
     }
 }
 
-static void filelist_free(FileList *list)
-{
-    FileList *l = list;
-    FileList *n = NULL;
-    while(l) {
-        NEditFree(l->path);
-        n = l->next;
-        NEditFree(l);
-        l = n;
-    }
-}
 
 static void filedialog_update_lists(
         FileDialogData *data,
-        FileList *dirs,
-        FileList *files,
+        FileElm *dirs,
+        FileElm *files,
         int dircount,
         int filecount,
         int maxnamelen)
@@ -804,8 +770,8 @@ static void filedialog_update_lists(
 
 static void filedialog_update_grid(
         FileDialogData *data,
-        FileList *dirs,
-        FileList *files,
+        FileElm *dirs,
+        FileElm *files,
         int dircount,
         int filecount,
         int maxnamelen)
@@ -819,9 +785,12 @@ static void filedialog_update_grid(
     }
     
     XmLGridAddRows(data->grid, XmCONTENT, 1, dircount+filecount);
-    FileList *e = dirs;
+    FileElm *ls = dirs;
+    int count = dircount;
     for(int i=0;i<2;i++) {
-        while(e) {
+        for(int j=0;j<count;j++) {
+            FileElm *e = &ls[j];
+            
             char *name = FileName(e->path);
             XmString str = XmStringCreateLocalized(name);
 
@@ -832,9 +801,9 @@ static void filedialog_update_grid(
             XmStringFree(str);
 
             row++;
-            e = e->next;
         }
-        e = files;
+        ls = files;
+        count = filecount;
     }
     
     if(filter) {
@@ -849,10 +818,20 @@ static void cleanupGrid(FileDialogData *data)
     XmLGridDeleteRows(data->grid, XmCONTENT, 0, rows);
 }
 
+static void free_files(FileElm *ls, int count)
+{
+    for(int i=0;i<count;i++) {
+        if(ls[i].path) {
+            free(ls[i].path);
+        }
+    }
+    free(ls);
+}
+
 static void filedialog_cleanup_filedata(FileDialogData *data)
 {
-    filelist_free(data->dirs);
-    filelist_free(data->files);
+    free_files(data->dirs, data->dircount);
+    free_files(data->files, data->filecount);
     data->dirs = NULL;
     data->files = NULL;
     data->dircount = 0;
@@ -861,6 +840,25 @@ static void filedialog_cleanup_filedata(FileDialogData *data)
 }
 
 #define FILEDIALOG_FALLBACK_PATH "/"
+
+#define FILE_ARRAY_SIZE 1024
+
+void file_array_add(FileElm **files, int *alloc, int *count, FileElm elm) {
+    int c = *count;
+    int a = *alloc;
+    if(c >= a) {
+        a *= 2;
+        FileElm *newarray = realloc(*files, sizeof(FileElm) * a);
+        
+        *files = newarray;
+        *alloc = a;
+    }
+    
+    (*files)[c] = elm;
+    c++;
+    *count = c;
+}
+
 static void filedialog_update_dir(FileDialogData *data, char *path)
 {
     Arg args[16];
@@ -890,12 +888,14 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     /* read dir and insert items */
     if(path) {
-        FileList *dirs = NULL;
-        FileList *files = NULL;
+        FileElm *dirs = calloc(sizeof(FileElm), FILE_ARRAY_SIZE);
+        FileElm *files = calloc(sizeof(FileElm), FILE_ARRAY_SIZE);
+        int dirs_alloc = FILE_ARRAY_SIZE;
+        int files_alloc = FILE_ARRAY_SIZE;
+        
         int dircount = 0; 
         int filecount = 0;
         size_t maxNameLen = 0;
-        
         DIR *dir = opendir(path);
         if(!dir) {
             if(path == FILEDIALOG_FALLBACK_PATH) {
@@ -932,22 +932,19 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
                 continue;
             }
 
-            FileList *new_entry = NEditMalloc(sizeof(FileList));
-            new_entry->path = entpath;
-            new_entry->isDirectory = S_ISDIR(s.st_mode);
-            new_entry->next = NULL;
+            FileElm new_entry;
+            new_entry.path = entpath;
+            new_entry.isDirectory = S_ISDIR(s.st_mode);
 
             size_t nameLen = strlen(ent->d_name);
             if(nameLen > maxNameLen) {
                 maxNameLen = nameLen;
             }
 
-            if(new_entry->isDirectory) {
-                dirs = filelist_add(dirs, new_entry);
-                dircount++;
+            if(new_entry.isDirectory) {
+                file_array_add(&dirs, &dirs_alloc, &dircount, new_entry);
             } else {
-                files = filelist_add(files, new_entry);
-                filecount++;
+                file_array_add(&files, &files_alloc, &filecount, new_entry);
             }
         }
         closedir(dir);
@@ -957,6 +954,10 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         data->dircount = dircount;
         data->filecount = filecount;
         data->maxnamelen = maxNameLen;
+        
+        // sort file arrays
+        qsort(dirs, dircount, sizeof(FileElm), filecmp);
+        qsort(files, filecount, sizeof(FileElm), filecmp);
     }
     
     update_view(data, data->dirs, data->files,
@@ -976,7 +977,7 @@ static void filedialog_setselection(
         XmContainerSelectCallbackStruct *sel)
 {
     if(sel->selected_item_count > 0) {
-        FileList *file = NULL;
+        FileElm *file = NULL;
         XtVaGetValues(sel->selected_items[0], XmNuserData, &file, NULL);
         if(file) {
             if(data->selectedPath) {
