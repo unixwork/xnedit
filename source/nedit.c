@@ -231,7 +231,8 @@ static char *fallbackResources[] = {
        jammed into the database, rather than fallbacks.  We really want
        the accelerators to be there even if someone creates an app-defaults
        file against our wishes. */
-
+    
+    "*newFolder.labelString: New Folder",
     "*text.lineNumForeground: " NEDIT_DEFAULT_LINENO_FG,
     "*text.background: " NEDIT_DEFAULT_TEXT_BG,
     "*text.foreground: " NEDIT_DEFAULT_FG,
