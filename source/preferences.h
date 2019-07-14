@@ -212,6 +212,8 @@ Boolean GetPrefFocusOnRaise(void);
 Boolean GetPrefHonorSymlinks(void);
 Boolean GetAutoEnableXattr(void);
 Boolean GetWindowDarkTheme(void);
+int GetFsbView(void);
+Boolean GetFsbShowHidden(void);
 Boolean GetPrefForceOSConversion(void);
 void SetPrefFocusOnRaise(Boolean);
 

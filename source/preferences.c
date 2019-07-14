@@ -328,6 +328,8 @@ static struct prefData {
     int forceOSConversion;
     int autoEnableXattr;
     int windowDarkTheme;
+    int fsbView;
+    int fsbShowHidden;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1017,7 +1019,11 @@ static PrefDescripRec PrefDescrip[] = {
     {"autoEnableXattr", "AutoEnableXattr", PREF_BOOLEAN, "True",
             &PrefData.autoEnableXattr, NULL, False},
     {"windowDarkTheme", "WindowDarkTheme", PREF_BOOLEAN, "False",
-            &PrefData.windowDarkTheme, NULL, False}
+            &PrefData.windowDarkTheme, NULL, False},
+    {"fsbView", "FsbView", PREF_INT, "1",
+            &PrefData.fsbView, NULL, False},
+    {"fsbShowHidden", "FsbShowHidden", PREF_BOOLEAN, "False",
+            &PrefData.fsbShowHidden, NULL, False}
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2107,6 +2113,16 @@ Boolean GetAutoEnableXattr(void)
 Boolean GetWindowDarkTheme(void)
 {
     return (Boolean)PrefData.windowDarkTheme;
+}
+
+int GetFsbView(void)
+{
+    return PrefData.fsbView;
+}
+
+Boolean GetFsbShowHidden(void)
+{
+    return (Boolean)PrefData.fsbShowHidden;
 }
 
 int GetPrefOverrideVirtKeyBindings(void)

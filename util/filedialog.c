@@ -57,7 +57,7 @@ static Pixmap fileIcon;
 static Pixmap folderShape;
 static Pixmap fileShape;
 
-static int LastView = 1; // 0: icon   1: list   2: grid(not finished yet)
+static int LastView = -1; // 0: icon   1: list   2: grid(not finished yet)
 
 void initPixmaps(Display *dp, Drawable d)
 {
@@ -1278,6 +1278,14 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         initPixmaps(XtDisplay(parent), XtWindow(parent));
     }
     
+    if(LastView == -1) {
+        LastView = GetFsbView();
+        if(LastView < 0 || LastView > 1) {
+            LastView = 1;
+        }
+    }
+    Boolean showHiddenValue = GetFsbShowHidden();
+    
     FileDialogData data;
     memset(&data, 0, sizeof(FileDialogData));
     data.type = type;
@@ -1426,11 +1434,13 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNset, showHiddenValue); n++;
     Widget showHidden = XmCreateToggleButton(filterform, "showHidden", args, n);
     XtManageChild(showHidden);
     XmStringFree(str);
     XtAddCallback(showHidden, XmNvalueChangedCallback,
                  (XtCallbackProc)filedialog_setshowhidden, &data);
+    data.showHidden = showHiddenValue;
     
     n = 0;
     str = XmStringCreateLocalized("Filter");
