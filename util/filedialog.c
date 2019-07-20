@@ -388,7 +388,6 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
     XPutImage(dp, pix, gc, img, 0, 0, 0, 0, wh, wh);
     
     XDestroyImage(img);
-    free(imgdata);
     XFreeGC(dp, gc);
 }
 
