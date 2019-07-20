@@ -2555,6 +2555,6 @@ void EnableWindowDarkTheme(Display *dp, Window window)
             type,
             8,
             PropModeReplace,
-            "dark",
+            (unsigned char*)"dark",
             4);
 }

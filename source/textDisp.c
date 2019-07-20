@@ -425,6 +425,8 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     /* Update the stored pixels */
     textD->fgPixel = textFgP;
     textD->fgColor = PixelToColor(textD->w, textFgP);
+    textD->selectFGColor = PixelToColor(textD->w, selectFgP);
+    textD->highlightFGColor = PixelToColor(textD->w, hiliteFgP);
     textD->bgPixel = textBgP;
     textD->selectFGPixel = selectFgP;
     textD->selectBGPixel = selectBgP;
@@ -2128,7 +2130,6 @@ static void drawString(textDisp *textD, int style, int x, int y, int fromX,
     int underlineStyle = FALSE;
     
     XftColor color = textD->fgColor;
-    int colorSet = 0;
     
     /* Don't draw if widget isn't realized */
     if (XtWindow(textD->w) == 0)
@@ -2141,10 +2142,12 @@ static void drawString(textDisp *textD, int style, int x, int y, int fromX,
     else if (style & HIGHLIGHT_MASK) {
         gc = textD->highlightGC;
         bgGC = textD->highlightBGGC;
+        color = textD->highlightFGColor;
     }
     else if (style & PRIMARY_MASK) {
         gc = textD->selectGC;
         bgGC = textD->selectBGGC;
+        color = textD->selectFGColor;
     }
     else {
         gc = bgGC = textD->gc;

@@ -167,7 +167,9 @@ typedef struct _textDisp {
     Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
     Pixel cursorFGPixel;
     Pixel *bgClassPixel;		/* table of colors for each BG class */
-    XftColor fgColor;                   /* Foreground color */
+    XftColor fgColor;                   /* Foreground text color */
+    XftColor selectFGColor;             /* Foreground color for selected text */
+    XftColor highlightFGColor;          /* Foreground highlighted text color */
     XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
