@@ -36,6 +36,9 @@
 
 #include <X11/xpm.h>
 
+#include <Xm/PrimitiveP.h>
+#include <X11/CoreP.h>
+
 #include"../Microline/XmL/Grid.h"
 
 /* nedit utils */
@@ -336,29 +339,30 @@ static int get_shift(unsigned long mask) {
     return shift;
 }
 
-static void create_image(Display *dp, XVisualInfo *visual, Pixmap pix, const char *data, int wh) {
+static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, const char *data, int wh) {
     size_t imglen = wh*wh*4;
     char *imgdata = malloc(imglen);
-    
     int red_shift = get_shift(visual->red_mask);
     int green_shift = get_shift(visual->green_mask);
     int blue_shift = get_shift(visual->blue_mask);
     
     uint32_t *src = (uint32_t*)data;
     uint32_t *dst = (uint32_t*)imgdata;
+    uint32_t pixel_init = UINT32_MAX ^ (visual->red_mask ^ visual->green_mask ^ visual->blue_mask);
     size_t len = wh*wh;
     for(int i=0;i<len;i++) {
         uint32_t pixel = src[i];
         uint8_t red = pixel & 0xFF;
         uint8_t green = (pixel & 0xFF00) >> 8;
         uint8_t blue = (pixel & 0xFF0000) >> 16;
-        uint32_t out = red << red_shift;
-        out ^= green << green_shift;
-        out ^= blue << blue_shift;
+        uint32_t out = pixel_init;
+        out ^= (red << red_shift);
+        out ^= (green << green_shift);
+        out ^= (blue << blue_shift);
         dst[i] = out;
     }
     
-    XImage *img = XCreateImage(dp, visual->visual, 24, ZPixmap, 0, imgdata, wh, wh, 32, 0);
+    XImage *img = XCreateImage(dp, visual, depth, ZPixmap, 0, imgdata, wh, wh, 32, 0);
     
     XGCValues gcval;
     gcval.graphics_exposures = 0;
@@ -367,11 +371,12 @@ static void create_image(Display *dp, XVisualInfo *visual, Pixmap pix, const cha
     
     XPutImage(dp, pix, gc, img, 0, 0, 0, 0, wh, wh);
     
+    XDestroyImage(img);
     free(imgdata);
     XFreeGC(dp, gc);
 }
 
-static void initPixmaps(Display *dp, Drawable d)
+static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
 {
     if(XpmCreatePixmapFromData(dp, d, DtdirB_m_pm, &folderIcon, &folderShape, NULL)) {
         fprintf(stderr, "failed to create folder pixmap\n");
@@ -380,41 +385,49 @@ static void initPixmaps(Display *dp, Drawable d)
         fprintf(stderr, "failed to create file pixmap\n");
     }
     
-    int screen = DefaultScreen(dp);
-    XVisualInfo visual;
-    XMatchVisualInfo(dp, screen, 24, DirectColor, &visual);
-    if(visual.bits_per_rgb != 8) {
-        XMatchVisualInfo(dp, screen, 24, TrueColor, &visual);
-        if(visual.bits_per_rgb != 8) {
-            fprintf(stderr, "can't use images with this visual\n");
-            pixmaps_initialized = 1;
-            pixmaps_error = 1;
-            return;
+    Visual *visual = NULL;
+    for(int i=0;i<screen->ndepths;i++) {
+        Depth d = screen->depths[i];
+        if(d.depth == depth) {
+            for(int v=0;v<d.nvisuals;v++) {
+                Visual *vs = &d.visuals[v];
+                if(vs->bits_per_rgb == 8) {
+                    visual = vs;
+                    break;
+                }
+            }
         }
     }
     
-    newFolderIcon16 = XCreatePixmap(dp, d, 16, 16, 24);
+    if(!visual) {
+        fprintf(stderr, "no visual\n");
+        pixmaps_initialized = 1;
+        pixmaps_error = 1;
+        return;
+    }
+    
+    newFolderIcon16 = XCreatePixmap(dp, d, 16, 16, depth);
     if(newFolderIcon16 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon16 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, &visual, newFolderIcon16, newFolder16Data, 16);
+        create_image(dp, visual, depth, newFolderIcon16, newFolder16Data, 16);
     }
     
-    newFolderIcon24 = XCreatePixmap(dp, d, 24, 24, 24);
+    newFolderIcon24 = XCreatePixmap(dp, d, 24, 24, depth);
     if(newFolderIcon24 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon24 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, &visual, newFolderIcon24, newFolder24Data, 24);
+        create_image(dp, visual, depth, newFolderIcon24, newFolder24Data, 24);
     }
     
-    newFolderIcon32 = XCreatePixmap(dp, d, 32, 32, 24);
+    newFolderIcon32 = XCreatePixmap(dp, d, 32, 32, depth);
     if(newFolderIcon32 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon32 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, &visual, newFolderIcon32, newFolder32Data, 32);
+        create_image(dp, visual, depth, newFolderIcon32, newFolder32Data, 32);
     }
     
     pixmaps_initialized = 1;
@@ -1817,7 +1830,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     // init pixmaps after we got the background color
     if(!pixmaps_initialized) {
-        initPixmaps(XtDisplay(parent), XtWindow(parent));
+        initPixmaps(XtDisplay(parent), XtWindow(parent), newFolder->core.screen, newFolder->core.depth);
     }
     
     if(pixmaps_error) {

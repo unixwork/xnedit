@@ -2495,7 +2495,7 @@ char* ConvertEncoding(char *string, const char *to, const char *from) {
     size_t outleft = size;
     
     char *result = NEditMalloc(size+1);
-    char *in = string;
+    const char *in = string;
     char *out = result;
     while(inleft >= 0) {
         if (inleft == 0) {
