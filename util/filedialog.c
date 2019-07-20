@@ -55,6 +55,7 @@
 #define BUTTON_EXTRA_SPACE 4
 
 static int pixmaps_initialized = 0;
+static int pixmaps_error = 0;
 static Pixmap folderIcon;
 static Pixmap fileIcon;
 static Pixmap folderShape;
@@ -383,14 +384,19 @@ static void initPixmaps(Display *dp, Drawable d)
     XVisualInfo visual;
     XMatchVisualInfo(dp, screen, 24, DirectColor, &visual);
     if(visual.bits_per_rgb != 8) {
-        fprintf(stderr, "can't use images with this visual\n");
-        pixmaps_initialized = 1;
-        return;
+        XMatchVisualInfo(dp, screen, 24, TrueColor, &visual);
+        if(visual.bits_per_rgb != 8) {
+            fprintf(stderr, "can't use images with this visual\n");
+            pixmaps_initialized = 1;
+            pixmaps_error = 1;
+            return;
+        }
     }
     
     newFolderIcon16 = XCreatePixmap(dp, d, 16, 16, 24);
     if(newFolderIcon16 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon16 pixmap\n");
+        pixmaps_error = 1;
     } else {
         create_image(dp, &visual, newFolderIcon16, newFolder16Data, 16);
     }
@@ -398,6 +404,7 @@ static void initPixmaps(Display *dp, Drawable d)
     newFolderIcon24 = XCreatePixmap(dp, d, 24, 24, 24);
     if(newFolderIcon24 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon24 pixmap\n");
+        pixmaps_error = 1;
     } else {
         create_image(dp, &visual, newFolderIcon24, newFolder24Data, 24);
     }
@@ -405,6 +412,7 @@ static void initPixmaps(Display *dp, Drawable d)
     newFolderIcon32 = XCreatePixmap(dp, d, 32, 32, 24);
     if(newFolderIcon32 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon32 pixmap\n");
+        pixmaps_error = 1;
     } else {
         create_image(dp, &visual, newFolderIcon32, newFolder32Data, 32);
     }
@@ -1812,7 +1820,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         initPixmaps(XtDisplay(parent), XtWindow(parent));
     }
     
-    if(xh > 32+BUTTON_EXTRA_SPACE) {
+    if(pixmaps_error) {
+        XtVaSetValues(newFolder, XmNlabelType, XmSTRING, NULL);
+    } else if(xh > 32+BUTTON_EXTRA_SPACE) {
         XtVaSetValues(newFolder, XmNlabelPixmap, newFolderIcon32, NULL);
     } else if(xh > 24+BUTTON_EXTRA_SPACE) {
         XtVaSetValues(newFolder, XmNlabelPixmap, newFolderIcon24, NULL);
