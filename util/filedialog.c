@@ -339,6 +339,22 @@ static int get_shift(unsigned long mask) {
     return shift;
 }
 
+static int get_mask_len(unsigned long mask) {
+    if(mask == 0) {
+        return 0;
+    }
+    
+    while((mask & 1L) == 0) {
+        mask >>= 1;
+    }
+    int len = 0;
+    while((mask & 1L) == 1) {
+        len++;
+        mask >>= 1;
+    }
+    return len;
+}
+
 static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, const char *data, int wh) {
     size_t imglen = wh*wh*4;
     char *imgdata = malloc(imglen);
@@ -391,7 +407,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
         if(d.depth == depth) {
             for(int v=0;v<d.nvisuals;v++) {
                 Visual *vs = &d.visuals[v];
-                if(vs->bits_per_rgb == 8) {
+                if(get_mask_len(vs->red_mask) == 8) {
                     visual = vs;
                     break;
                 }
@@ -400,7 +416,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     }
     
     if(!visual) {
-        fprintf(stderr, "no visual\n");
+        fprintf(stderr, "can't use images with this visual\n");
         pixmaps_initialized = 1;
         pixmaps_error = 1;
         return;
