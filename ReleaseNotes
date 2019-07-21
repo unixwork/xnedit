@@ -1,4 +1,4 @@
-          Release Notes for XNEdit Version 1.0.1, April 2019
+          Release Notes for XNEdit Version 1.1.0, July 2019
 
 
 This file contains last minute notes to users about the release, which are not
@@ -7,64 +7,53 @@ kits.  It also contains change information, for users who are interested in
 what bugs have been fixed, and what features have been added in the current
 version.
 
-Changes in XNEdit 1.0 compared to NEdit 5.7
+New XNEdit 1.1 preferences
+--------------------------
 
-1. New Features
+XNEdit 1.1 introduces some new preferences, that can be set in the nedit.rc file (~/.xnedit/nedit.rc). Currently there is no way to set these via GUI.
 
-Text rendering
+1. nedit.zoomStep: <int>
 
-XNEdit has a new Xft-based text renderer, which uses client-side fonts and
-supports antialiased text rendering and fallback fonts.
+Configures how much the zoom-shortcuts Ctrl++ and Ctrl+- change the font size. Default value is 1.
 
-Unicode
+2. nedit.autoEnableXattr: <boolean>
 
-Without specific encoding informations, XNEdit assumes that a file is UTF-8
-encoded. This is completely independent of the user's locale setting. There are
-several ways to load differently encoded files:
+If true, changing the encoding in the file save dialog to a non-unicode encoding will activate the "Store encoding in extended attribute" automatically. Default value is True.
 
- - If the file uses a different unicode encoding and has a byte order mark,
-   XNEdit automatically detects the correct encoding.
+3. nedit.fsbView: <int>
 
- - When using the Open File dialog, you can choose the encoding from a list.
+Configures the default view in the file dialog. Possible values are:
+    0: icon view
+	1: list view
+	2: detail view (feature disabled by default)
+Default value is 1.
 
- - XNEdit uses an extended attribute for storing encoding informations. If a
-   file has an extended attribute with the name "charset" (or "user.charset"
-   on Linux), the value is used as the encoding name.
+4. nedit.fsbShowHidden: <boolean>
 
-By default, the "charset" attribute is only stored when using non-unicode
-encodings. The Save File dialog allows you to choose if you want to store
-the attribute.
+Configures the default value of the "Show hidden files" togglebutton in the file dialog. Default value is False.
 
-User Interface
+5. nedit.windowDarkTheme: <boolean>
 
- - Revised Font Selector to work with client-side fonts
- 
- - Added new File Selector
+This feature is only available on Gnome 3 and similar desktops. If it is set to true, 
+the gtk theme variant of the window is set to "dark". This will only affect the window decoration and not the content.
 
 
-2. Bugs fixed
+New feature: "New folder" button
+--------------------------------
 
- - Fixed language mode menu rendering issues
+The file dialog has a new button for creating directories. By default, the button has an icon and no label. To show the label and no icon, set the following X resource:
 
-
-3. Removed Features
-
- - Removed support for many platforms
+nedit*newFolder.labelType: XmSTRING
 
 
-XNEdit 1.0.1 Update
+Beta feature: detail file view
+------------------------------
 
-Changes
+Additionally to the icon view and list view, the file dialog supports a detail view, which shows the size and modification date of each file. This feature is disabled by default. To enable it, add -DFSB_ENABLE_DETAIL to the CFLAGS.
 
-This update fixes an encoding conversion bug. Previously, there could be
-missing characters in converted files.
-
-Also using XNEdit with non-UTF8 locales is improved. When opening or saving
-files, the default encoding is now the locale encoding and not UTF-8.
-
-For a full list of changes, see the CHANGELOG file.
 
 Known issues
+------------
 
 With enabled Xft text rendering for Motif widgets, some user interface elements
 can only display ASCII characters when using non-UTF8 locales.

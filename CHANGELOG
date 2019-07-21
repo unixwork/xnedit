@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+version 1.1.0 (2019-07-21)
+--------------------------
+
+ - added markdown syntax highlighting
+ - added ctrl++ and ctrl+- shortcuts for changing font size
+ - added file dialog button for creating directories
+ - added some additional preferences (not changeable via menu)
+ - fixed text widget rendering issues with non-compositing window manager
+ - fixed internal window/document initalization (encoding, fonts)
+ - fixed text color settings being ignored when syntax highlighting is disabled
+ - fixed window resizing on font changes
+
 version 1.0.1 (2019-04-03)
 --------------------------
 
