@@ -12,6 +12,7 @@ version 1.1.0 (2019-07-21)
  - fixed internal window/document initalization (encoding, fonts)
  - fixed text color settings being ignored when syntax highlighting is disabled
  - fixed window resizing on font changes
+ - improved file dialog performance
 
 version 1.0.1 (2019-04-03)
 --------------------------

@@ -77,8 +77,7 @@ static Pixmap newFolderIcon16;
 static Pixmap newFolderIcon24;
 static Pixmap newFolderIcon32;
 
-static Pixel buttonFg;
-static Pixel buttonBg;
+static XColor bgColor;
 
 static int LastView = -1; // 0: icon   1: list   2: grid
 
@@ -414,6 +413,13 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
         uint8_t red = pixel & 0xFF;
         uint8_t green = (pixel & 0xFF00) >> 8;
         uint8_t blue = (pixel & 0xFF0000) >> 16;
+        // TODO: work with alpha value
+        if(pixel == UINT32_MAX) {
+            red = bgColor.red;
+            green = bgColor.green;
+            blue = bgColor.blue;
+        }
+        
         uint32_t out = pixel_init;
         out ^= (red << red_shift);
         out ^= (green << green_shift);
@@ -444,7 +450,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     if(XpmCreatePixmapFromData(dp, d, Dtdata_m_pm, &fileIcon, &fileShape, NULL)) {
         fprintf(stderr, "failed to create file pixmap\n");
     }
-    
+      
     // get the correct visual for current screen/depth
     Visual *visual = NULL;
     for(int i=0;i<screen->ndepths;i++) {
@@ -2010,7 +2016,14 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             &data);
     
     Dimension xh;
+    Pixel buttonFg;
+    Pixel buttonBg;
     XtVaGetValues(newFolder, XmNheight, &xh, XmNforeground, &buttonFg, XmNbackground, &buttonBg, NULL);
+    
+    // get rgb value of buttonBg
+    memset(&bgColor, 0, sizeof(XColor));
+    bgColor.pixel = buttonBg;
+    XQueryColor(XtDisplay(newFolder), newFolder->core.colormap, &bgColor);
     
     // init pixmaps after we got the background color
     if(!pixmaps_initialized) {
