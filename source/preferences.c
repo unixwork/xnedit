@@ -838,7 +838,7 @@ static PrefDescripRec PrefDescrip[] = {
     {"iSearchLine", "ISearchLine", PREF_BOOLEAN, "False",
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
-    	&PrefData.zoomStep, NULL, False},
+    	&PrefData.zoomStep, NULL, True},
     {"sortTabs", "SortTabs", PREF_BOOLEAN, "False",
     	&PrefData.sortTabs, NULL, True},
     {"tabBar", "TabBar", PREF_BOOLEAN, "True",
@@ -1021,9 +1021,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"windowDarkTheme", "WindowDarkTheme", PREF_BOOLEAN, "False",
             &PrefData.windowDarkTheme, NULL, False},
     {"fsbView", "FsbView", PREF_INT, "1",
-            &PrefData.fsbView, NULL, False},
+            &PrefData.fsbView, NULL, True},
     {"fsbShowHidden", "FsbShowHidden", PREF_BOOLEAN, "False",
-            &PrefData.fsbShowHidden, NULL, False}
+            &PrefData.fsbShowHidden, NULL, True}
 };
 
 static XrmOptionDescRec OpTable[] = {
