@@ -1814,9 +1814,9 @@ static void unselect_view(FileDialogData *data)
             break;
         }
         case 2: {
-            // TODO
             XtUnmanageChild(data->listform);
             XtUnmanageChild(data->gridcontainer);
+            cleanupGrid(data);
             break;
         }
     }
@@ -1895,10 +1895,15 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     if(LastView == -1) {
         LastView = GetFsbView();
-        if(LastView < 0 || LastView > 1) {
+        if(LastView < 0 || LastView > 2) {
             LastView = 1;
         }
     }
+#ifndef FSB_ENABLE_DETAIL
+    if(LastView == 2) {
+        LastView = 1;
+    }
+#endif
     Boolean showHiddenValue = GetFsbShowHidden();
     
     FileDialogData data;
