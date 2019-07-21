@@ -57,6 +57,14 @@
 
 #define BUTTON_EXTRA_SPACE 4
 
+#define DATE_FORMAT_SAME_YEAR  "%b %d %H:%M"
+#define DATE_FORMAT_OTHER_YEAR "%b %d  %Y"
+
+#define KB_SUFFIX "KiB"
+#define MB_SUFFIX "MiB"
+#define GB_SUFFIX "GiB"
+#define TB_SUFFIX "TiB"
+
 static int pixmaps_initialized = 0;
 static int pixmaps_error = 0;
 static Pixmap folderIcon;
@@ -70,6 +78,10 @@ static Pixmap newFolderIcon32;
 
 static Pixel buttonFg;
 static Pixel buttonBg;
+
+static int LastView = -1; // 0: icon   1: list   2: grid
+
+//define FSB_ENABLE_DETAIL
 
 const char *newFolder16Data = "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
@@ -341,8 +353,9 @@ const char *newFolder32Data = "\377\377\377\377\377\377\377\377\377\377\377\377\
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377";
 
-static int LastView = -1; // 0: icon   1: list   2: grid(not finished yet)
-
+/*
+ * get number of shifts for specific color mask
+ */
 static int get_shift(unsigned long mask) {
     if(mask == 0) {
         return 0;
@@ -356,6 +369,9 @@ static int get_shift(unsigned long mask) {
     return shift;
 }
 
+/*
+ * get number of bits from color mask
+ */
 static int get_mask_len(unsigned long mask) {
     if(mask == 0) {
         return 0;
@@ -372,16 +388,25 @@ static int get_mask_len(unsigned long mask) {
     return len;
 }
 
+/*
+ * create an image from data and copy image to the specific pixmap
+ */
 static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, const char *data, int wh) {
+    // wh is width and height
     size_t imglen = wh*wh*4;
-    char *imgdata = malloc(imglen);
+    char *imgdata = malloc(imglen); // will be freed with XDestroyImage
+    
+    //get number of shifts required for each color bit mask
     int red_shift = get_shift(visual->red_mask);
     int green_shift = get_shift(visual->green_mask);
     int blue_shift = get_shift(visual->blue_mask);
     
     uint32_t *src = (uint32_t*)data;
     uint32_t *dst = (uint32_t*)imgdata;
+    // init all bits that are not in any mask
     uint32_t pixel_init = UINT32_MAX ^ (visual->red_mask ^ visual->green_mask ^ visual->blue_mask);
+    
+    // convert pixels to visual-specific format
     size_t len = wh*wh;
     for(int i=0;i<len;i++) {
         uint32_t pixel = src[i];
@@ -395,6 +420,7 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
         dst[i] = out;
     }
     
+    // create rgb image (32 bit alignment)
     XImage *img = XCreateImage(dp, visual, depth, ZPixmap, 0, imgdata, wh, wh, 32, 0);
     
     XGCValues gcval;
@@ -410,6 +436,7 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
 
 static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
 {
+    // TODO: remove Xpm dependency and use create_image
     if(XpmCreatePixmapFromData(dp, d, DtdirB_m_pm, &folderIcon, &folderShape, NULL)) {
         fprintf(stderr, "failed to create folder pixmap\n");
     }
@@ -417,6 +444,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
         fprintf(stderr, "failed to create file pixmap\n");
     }
     
+    // get the correct visual for current screen/depth
     Visual *visual = NULL;
     for(int i=0;i<screen->ndepths;i++) {
         Depth d = screen->depths[i];
@@ -432,12 +460,14 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     }
     
     if(!visual) {
+        // no visual found for using rgb images
         fprintf(stderr, "can't use images with this visual\n");
         pixmaps_initialized = 1;
         pixmaps_error = 1;
         return;
     }
     
+    // create pixmaps and load images
     newFolderIcon16 = XCreatePixmap(dp, d, 16, 16, depth);
     if(newFolderIcon16 == BadValue) {
         fprintf(stderr, "failed to create newFolderIcon16 pixmap\n");
@@ -914,13 +944,9 @@ typedef struct FileElm FileElm;
 struct FileElm {
     char *path;
     int isDirectory;
+    uint64_t size;
+    time_t lastModified;
 };
-
-// translates an row index to dirs/files index
-typedef struct FIndex {
-    int type; // 0: dir  1: file
-    int index;
-} FIndex;
 
 typedef struct FileDialogData {
     Widget shell;
@@ -939,9 +965,11 @@ typedef struct FileDialogData {
     Widget listform;
     Widget dirlist;
     Widget filelist;
+    Widget filelistcontainer;
     
     // detail view
     Widget grid;
+    Widget gridcontainer;
     
     Widget name;
     Widget wrap;
@@ -957,7 +985,6 @@ typedef struct FileDialogData {
     int dircount;
     int filecount;
     int maxnamelen;
-    FIndex *itrans;
     
     WidgetList gadgets;
     int numGadgets;
@@ -1175,6 +1202,169 @@ static void filedialog_update_lists(
     }
 }
 
+/*
+ * create file size string with kb/mb/gb/tb suffix
+ */
+static char* size_str(FileElm *f) {
+    char *str = malloc(16);
+    uint64_t size = f->size;
+    
+    if(f->isDirectory) {
+        str[0] = '\0';
+    } else if(size < 0x400) {
+        snprintf(str, 16, "%d bytes", (int)size);
+    } else if(size < 0x100000) {
+        float s = (float)size/0x400;
+        int diff = (s*100 - (int)s*100);
+        if(diff > 90) {
+            diff = 0;
+            s += 0.10f;
+        }
+        if(size < 0x2800 && diff != 0) {
+            // size < 10 KiB
+            snprintf(str, 16, "%.1f " KB_SUFFIX, s);
+        } else {
+            snprintf(str, 16, "%.0f " KB_SUFFIX, s);
+        }
+    } else if(size < 0x40000000) {
+        float s = (float)size/0x100000;
+        int diff = (s*100 - (int)s*100);
+        if(diff > 90) {
+            diff = 0;
+            s += 0.10f;
+        }
+        if(size < 0xa00000 && diff != 0) {
+            // size < 10 MiB
+            snprintf(str, 16, "%.1f " MB_SUFFIX, s);
+        } else {
+            size /= 0x100000;
+            snprintf(str, 16, "%.0f " MB_SUFFIX, s);
+        }
+    } else if(size < 0x1000000000ULL) {
+        float s = (float)size/0x40000000;
+        int diff = (s*100 - (int)s*100);
+        if(diff > 90) {
+            diff = 0;
+            s += 0.10f;
+        }
+        if(size < 0x280000000 && diff != 0) {
+            // size < 10 GiB
+            snprintf(str, 16, "%.1f " GB_SUFFIX, s);
+        } else {
+            size /= 0x40000000;
+            snprintf(str, 16, "%.0f " GB_SUFFIX, s);
+        }
+    } else {
+        size /= 1024;
+        float s = (float)size/0x40000000;
+        int diff = (s*100 - (int)s*100);
+        if(diff > 90) {
+            diff = 0;
+            s += 0.10f;
+        }
+        if(size < 0x280000000 && diff != 0) {
+            // size < 10 TiB
+            snprintf(str, 16, "%.1f " TB_SUFFIX, s);
+        } else {
+            size /= 0x40000000;
+            snprintf(str, 16, "%.0f " TB_SUFFIX, s);
+        }
+    }
+    return str;
+}
+
+static char* date_str(time_t tm) {
+    struct tm t;
+    struct tm n;
+    time_t now = time(NULL);
+    
+    localtime_r(&tm, &t);
+    localtime_r(&now, &n);
+    
+    char *str = malloc(16);
+    if(t.tm_year == n.tm_year) {
+        strftime(str, 16, DATE_FORMAT_SAME_YEAR, &t);
+    } else {
+        strftime(str, 16, DATE_FORMAT_OTHER_YEAR, &t);
+    }
+    return str;
+}
+
+static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileElm *ls, int count, int maxWidth)
+{
+    XmLGridAddRows(grid, XmCONTENT, 1, count);
+    
+    int row = 0;
+    for(int i=0;i<count;i++) {
+        FileElm *e = &ls[i];
+        
+        char *name = FileName(e->path);
+        if((!showHidden && name[0] == '.') || (!e->isDirectory && fnmatch(filter, name, 0))) {
+            continue;
+        }
+        
+        // name
+        XmString str = XmStringCreateLocalized(name);
+        XtVaSetValues(grid,
+                XmNcolumn, 0, 
+                XmNrow, row,
+                XmNcellString, str, NULL);
+        XmStringFree(str);
+        // size
+        char *szbuf = size_str(e);
+        str = XmStringCreateLocalized(szbuf);
+        XtVaSetValues(grid,
+                XmNcolumn, 1, 
+                XmNrow, row,
+                XmNcellString, str, NULL);
+        free(szbuf);
+        XmStringFree(str);
+        // date
+        char *datebuf = date_str(e->lastModified);
+        str = XmStringCreateLocalized(datebuf);
+        XtVaSetValues(grid,
+                XmNcolumn, 2, 
+                XmNrow, row,
+                XmNcellString, str, NULL);
+        free(datebuf);
+        XmStringFree(str);
+        
+        XtVaSetValues(grid, XmNrow, row, XmNrowUserData, e, NULL);
+        row++;
+    }
+    
+    // remove unused rows
+    if(count > row) {
+        XmLGridDeleteRows(grid, XmCONTENT, row, count-row);
+    }
+    
+    if(maxWidth < 16) {
+        maxWidth = 16;
+    }
+    
+    XtVaSetValues(grid,
+        XmNcolumnRangeStart, 0,
+        XmNcolumnRangeEnd, 0,
+        XmNcolumnWidth, maxWidth,
+        XmNcellAlignment, XmALIGNMENT_LEFT,
+        XmNcolumnSizePolicy, XmVARIABLE,
+        NULL);
+    XtVaSetValues(grid,
+        XmNcolumnRangeStart, 1,
+        XmNcolumnRangeEnd, 1,
+        XmNcolumnWidth, 9,
+        XmNcellAlignment, XmALIGNMENT_LEFT,
+        XmNcolumnSizePolicy, XmVARIABLE,
+        NULL);
+    XtVaSetValues(grid,
+        XmNcolumnRangeStart, 2,
+        XmNcolumnRangeEnd, 2,
+        XmNcolumnWidth, 16,
+        XmNcellAlignment, XmALIGNMENT_RIGHT,
+        XmNcolumnSizePolicy, XmVARIABLE,
+        NULL);
+}
+
 static void filedialog_update_grid(
         FileDialogData *data,
         FileElm *dirs,
@@ -1183,66 +1373,16 @@ static void filedialog_update_grid(
         int filecount,
         int maxnamelen)
 {
-    int row = 0;
-    
     char *filter = XmTextFieldGetString(data->filter);
     char *filterStr = filter;
     if(!filter || strlen(filter) == 0) {
         filterStr = "*";
     }
     
-    if(data->itrans) {
-        NEditFree(data->itrans);
-    }
-    data->itrans = NEditCalloc(dircount + filecount, sizeof(FIndex));
-    
-    int maxWidth = 20; // initialize with a bigger value to prevent small columns
-    
-    XmLGridAddRows(data->grid, XmCONTENT, 1, dircount+filecount);
-    FileElm *ls = dirs;
-    int count = dircount;
-    for(int i=0;i<2;i++) {
-        for(int j=0;j<count;j++) {
-            FileElm *e = &ls[j];
-            
-            char *name = FileName(e->path);
-            if((!data->showHidden && name[0] == '.') || (!e->isDirectory && fnmatch(filterStr, name, 0))) {
-                continue;
-            }
-            
-            size_t namelen = strlen(name);
-            if(namelen > maxWidth) {
-                maxWidth = namelen;
-            }
-            
-            XmString str = XmStringCreateLocalized(name);
-
-            XtVaSetValues(data->grid,
-                    XmNcolumn, 0, 
-                    XmNrow, row,
-                    XmNcellString, str, NULL);
-            XmStringFree(str);
-            
-            FIndex fi = { i, j };
-            data->itrans[row] = fi;
-            row++;
-        }
-        ls = files;
-        count = filecount;
-    }
-    
-    // remove unused rows
-    if(dircount+filecount > row) {
-        XmLGridDeleteRows(data->grid, XmCONTENT, row, dircount+filecount - row);
-    }
-    
-    XtVaSetValues(data->grid,
-        XmNcolumnRangeStart, 0,
-        XmNcolumnRangeEnd, 0,
-        XmNcolumnWidth, maxWidth,
-        XmNcellAlignment, XmALIGNMENT_LEFT,
-        XmNcolumnSizePolicy, XmVARIABLE,
-        NULL);
+    // update dir list
+    filelistwidget_add(data->dirlist, data->showHidden, "*", dirs, dircount);
+    // update file detail grid
+    filegridwidget_add(data->grid, data->showHidden, filterStr, files, filecount, maxnamelen);
     
     if(filter) {
         XtFree(filter);
@@ -1251,13 +1391,13 @@ static void filedialog_update_grid(
 
 static void cleanupGrid(FileDialogData *data)
 {
+    // cleanup dir list widget
+    XmListDeleteAllItems(data->dirlist);
+    
+    // cleanup grid
     Cardinal rows = 0;
     XtVaGetValues(data->grid, XmNrows, &rows, NULL);
     XmLGridDeleteRows(data->grid, XmCONTENT, 0, rows);
-    if(data->itrans) {
-        NEditFree(data->itrans);
-        data->itrans = NULL;
-    }
 }
 
 static void free_files(FileElm *ls, int count)
@@ -1377,6 +1517,8 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
             FileElm new_entry;
             new_entry.path = entpath;
             new_entry.isDirectory = S_ISDIR(s.st_mode);
+            new_entry.size = (uint64_t)s.st_size;
+            new_entry.lastModified = s.st_mtime;
 
             size_t nameLen = strlen(ent->d_name);
             if(nameLen > maxNameLen) {
@@ -1480,32 +1622,29 @@ char* set_selected_path(FileDialogData *data, XmString item)
 }
 
 void set_path_from_row(FileDialogData *data, int row, Boolean update) {
-    FIndex i = data->itrans[row];
-    char *path = NULL;
-    if(i.type == 0) {
-        path = NEditStrdup(data->dirs[i.index].path);   
-        data->selIsDir = TRUE;
-        
-        if(update) {
-            filedialog_update_dir(data, path);
-            PathBarSetPath(data->pathBar, path);
-        }
-    } else if(i.type == 1) {
-        path = NEditStrdup(data->files[i.index].path);
-        
-        if(update) {
-            data->end = True;
-            data->status = FILEDIALOG_OK;
-            data->selIsDir = False;
-        }
+    FileElm *elm = NULL;
+    XmLGridRow rowPtr = XmLGridGetRow(data->grid, XmCONTENT, row);
+    XtVaGetValues(data->grid, XmNrowPtr, rowPtr, XmNrowUserData, &elm, NULL);
+    if(!elm) {
+        fprintf(stderr, "error: no row data\n");
+        return;
     }
     
-    if(path) {
-        if(data->selectedPath) {
-            NEditFree(data->selectedPath);
-        }
-        data->selectedPath = path;
+    char *path = NEditStrdup(elm->path);
+        
+    if(update) {
+        data->end = True;
+        data->status = FILEDIALOG_OK;
+        data->selIsDir = False;
     }
+    if(data->type == FILEDIALOG_SAVE) {
+        XmTextFieldSetString(data->name, FileName(path));
+    }
+    
+    if(data->selectedPath) {
+        NEditFree(data->selectedPath);
+    }
+    data->selectedPath = path;
 }
 
 void grid_select(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
@@ -1670,11 +1809,14 @@ static void unselect_view(FileDialogData *data)
         }
         case 1: {
             XtUnmanageChild(data->listform);
+            XtUnmanageChild(data->filelistcontainer);
             cleanupLists(data);
             break;
         }
         case 2: {
             // TODO
+            XtUnmanageChild(data->listform);
+            XtUnmanageChild(data->gridcontainer);
             break;
         }
     }
@@ -1694,6 +1836,7 @@ static void select_listview(Widget w, FileDialogData *data, XtPointer u)
     unselect_view(data);
     data->selectedview = 1;
     XtManageChild(data->listform);
+    XtManageChild(data->filelistcontainer);
     filedialog_update_dir(data, NULL);
 }
 
@@ -1701,7 +1844,8 @@ static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
 {
     unselect_view(data);
     data->selectedview = 2;
-    XtManageChild(data->grid);
+    XtManageChild(data->listform);
+    XtManageChild(data->gridcontainer);
     filedialog_update_dir(data, NULL);
 }
 
@@ -1813,7 +1957,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget mitem2 = XmCreatePushButton(menu, "menuitem", args, 2);
     XtManageChild(mitem0);
     XtManageChild(mitem1);
-    //XtManageChild(mitem2);
+#ifdef FSB_ENABLE_DETAIL
+    XtManageChild(mitem2);
+#endif
     XmStringFree(v0);
     XmStringFree(v1);
     XmStringFree(v2);
@@ -2183,20 +2329,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget scrollw = XmCreateScrolledWindow(form, "scroll_win", args, n);
     data.scrollw = scrollw;
     
-    // detail view
-    n = layout;
-    XtSetArg(args[n], XmNcolumns, 3); n++;
-    XtSetArg(args[n], XmNheadingColumns, 0); n++;
-    XtSetArg(args[n], XmNheadingRows, 1); n++;
-    XtSetArg(args[n], XmNallowColumnResize, 1); n++;
-    //XtSetArg(args[n], XmNsimpleWidths, "60c 15c 25c"); n++;
-    XtSetArg(args[n], XmNhorizontalSizePolicy, XmCONSTANT); n++;
-    data.grid = XmLCreateGrid(form, "grid", args, n);
-    XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
-    XtAddCallback(data.grid, XmNselectCallback, (XtCallbackProc)grid_select, &data);
-    XtAddCallback(data.grid, XmNactivateCallback, (XtCallbackProc)grid_activate, &data);
-    
-    // icon view again
     n = 0;
     XtSetArg(args[n], XmNlayoutType,  XmSPATIAL); n++;
     XtSetArg(args[n], XmNselectionPolicy, XmSINGLE_SELECT); n++;
@@ -2264,7 +2396,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNleftWidget, data.dirlist); n++;
     XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
-    data.filelist = XmCreateScrolledList(data.listform, "filelist", args, n);
+    XtSetArg(args[n], XmNshadowThickness, 0); n++;
+    data.filelistcontainer = XmCreateFrame(data.listform, "filelistframe", args, n);
+    //XtManageChild(data.filelistcontainer);
+    
+    data.filelist = XmCreateScrolledList(data.filelistcontainer, "filelist", NULL, 0);
     XtManageChild(data.filelist);
     XtAddCallback(
             data.filelist,
@@ -2276,6 +2412,38 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XmNbrowseSelectionCallback,
             (XtCallbackProc)filelist_select,
             &data);
+    
+    // Detail FileList
+    // the detail view shares widgets with the list view
+    // switching between list and detail view only changes
+    // filelistcontainer <-> gridcontainer
+    n = 0;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, lsDirLabel); n++;
+    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, data.dirlist); n++;
+    XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNshadowThickness, 0); n++;
+    data.gridcontainer = XmCreateFrame(data.listform, "gridcontainer", args, n);
+    //XtManageChild(data.gridcontainer);
+    
+    n = 0;
+    XtSetArg(args[n], XmNcolumns, 3); n++;
+    XtSetArg(args[n], XmNheadingColumns, 0); n++;
+    XtSetArg(args[n], XmNheadingRows, 1); n++;
+    XtSetArg(args[n], XmNallowColumnResize, 1); n++;
+    XtSetArg(args[n], XmNhorizontalSizePolicy, XmCONSTANT); n++;
+    
+    data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
+    XtManageChild(data.grid);
+    
+    XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
+    XtAddCallback(data.grid, XmNselectCallback, (XtCallbackProc)grid_select, &data);
+    XtAddCallback(data.grid, XmNactivateCallback, (XtCallbackProc)grid_activate, &data);
+    
     
     n = 0;
     str = XmStringCreateLocalized("Files");
@@ -2294,8 +2462,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget focus = NULL;
     switch(data.selectedview) {
         case 0: XtManageChild(scrollw); focus = data.container; break;
-        case 1: XtManageChild(data.listform); focus = data.filelist; break;
-        case 2: XtManageChild(data.grid); break;
+        case 1: XtManageChild(data.listform); XtManageChild(data.filelistcontainer); focus = data.filelist; break;
+        case 2: XtManageChild(data.listform); XtManageChild(data.gridcontainer); focus = data.grid; break;
     }
     
     if(file->path) {
