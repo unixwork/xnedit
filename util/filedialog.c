@@ -899,7 +899,7 @@ void PathBarSetPath(PathBar *bar, char *path)
     int begin = i;
     for(;i<=len;i++) {
         char c = path[i];
-        if(c == '/' || c == '\0' && i > begin+1) {
+        if((c == '/' || c == '\0') && i > begin+1) {
             char *segStr = NEditMalloc(i - begin + 1);
             memcpy(segStr, path+begin, i-begin);
             segStr[i-begin] = '\0';
@@ -2234,7 +2234,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         char *defEncoding = type == FILEDIALOG_OPEN ? NULL : file->encoding;
         int hasDef = 0;
         int i;
-        for(i=skip;encStr=default_encodings[i];i++) {
+        for(i=skip;(encStr=default_encodings[i]);i++) {
             if(i >= arraylen) {
                 arraylen *= 2;
                 encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
