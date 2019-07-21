@@ -27,6 +27,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include <errno.h>
