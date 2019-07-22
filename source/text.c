@@ -387,6 +387,8 @@ static char defaultTranslations[] =
     /* change font size */
     "Ctrl <Key>+: zoom_in()\n"
     "Ctrl <Key>-: zoom_out()\n"
+    "Ctrl <Key>KP_Add: zoom_in()\n"
+    "Ctrl <Key>KP_Subtract: zoom_out()\n"
 
     "Shift<KeyPress>osfSelect: key_select()\n"
     "<KeyPress>osfCancel: process_cancel()\n"
