@@ -244,7 +244,6 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     items = NEditCalloc(sel->list->nfont, sizeof(XmString));
     for(int i=0;i<nfonts;i++) {
         name = NULL;
-        //printf("font: %lld\n", sel->list->fonts[i]);
         FcPatternGetString(sel->list->fonts[i], FC_FULLNAME, 0, &name);
         if(name) {
             items[nfound] = XmStringCreateSimple((char*)name);
