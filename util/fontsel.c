@@ -195,6 +195,23 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
     }
 }
 
+static int compare_font(const void *d1, const void *d2) {
+    const FcPattern *f1 = *((const FcPattern**)d1);
+    const FcPattern *f2 = *((const FcPattern**)d2);
+    
+    FcChar8 *name1 = NULL;
+    FcChar8 *name2 = NULL;
+    
+    FcPatternGetString(f1, FC_FULLNAME, 0, &name1);
+    FcPatternGetString(f2, FC_FULLNAME, 0, &name2);
+    
+    if(name1 && name2) {
+        return strcmp((char*)name1, (char*)name2);
+    } else {
+        return 0;
+    }
+}
+
 static void UpdateFontList(FontSelector *sel, char *pattern)
 {
     XmStringTable items;
@@ -217,12 +234,17 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     FcObjectSetAdd(os, FC_FULLNAME);
     sel->list = FcFontList(NULL, sel->filter, os);
     FcObjectSetDestroy(os);
+    
     nfonts = sel->list->nfont;
     nfound = 0;
+    
+    // sort fonts
+    qsort(sel->list->fonts, nfonts, sizeof(FcPattern*), compare_font);
     
     items = NEditCalloc(sel->list->nfont, sizeof(XmString));
     for(int i=0;i<nfonts;i++) {
         name = NULL;
+        //printf("font: %lld\n", sel->list->fonts[i]);
         FcPatternGetString(sel->list->fonts[i], FC_FULLNAME, 0, &name);
         if(name) {
             items[nfound] = XmStringCreateSimple((char*)name);
