@@ -1001,14 +1001,17 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
 	/* duplicate the child ends of the pipes to have the same numbers
 	   as stdout & stderr, so it can substitute for stdout & stderr */
  	dupFD = dup2(childStdinFD, fileno(stdin));
-	if (dupFD == -1)
-	    perror("dup of stdin failed");
+	if (dupFD == -1) {
+            perror("dup of stdin failed");
+        }
  	dupFD = dup2(childStdoutFD, fileno(stdout));
-	if (dupFD == -1)
-	    perror("dup of stdout failed");
+	if (dupFD == -1) {
+            perror("dup of stdout failed");
+        }
  	dupFD = dup2(childStderrFD, fileno(stderr));
-	if (dupFD == -1)
-	    perror("dup of stderr failed");
+	if (dupFD == -1) {
+            perror("dup of stderr failed");
+        }
 
         /* now close the original child end of the pipes
            (we now have the 0, 1 and 2 descriptors in their place) */

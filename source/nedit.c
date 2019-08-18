@@ -478,13 +478,14 @@ int main(int argc, char **argv)
     opts = True;
     
     int retpipe[2];
+    pid_t pid = -1;
     if(BackgroundRun) {
         if(pipe(retpipe)) {
             perror("pipe");
             fprintf(stderr, "Abort.\n");
             return 1;
         }
-        pid_t pid = fork();
+        pid = fork();
         if(pid < 0) {
             perror("fork");
             fprintf(stderr, "Abort.\n");
@@ -890,10 +891,12 @@ int main(int argc, char **argv)
     	InitServerCommunication();
     
     if (BackgroundRun) {
-        /* Tell the parent process to return */
-        close(0);
-        close(1);
-        close(2);
+        if(pid != 0) {
+            /* Tell the parent process to return */
+            close(0);
+            close(1);
+            close(2);
+        }
         int ret = 0;
         write(retpipe[1], &ret, sizeof(int));
         close(retpipe[0]);
