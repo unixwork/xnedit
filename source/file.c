@@ -575,6 +575,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     int checkBOM = 1;
+    int checkEncoding = 0;
     if(encoding) {
         /* check if the encoding string starts with UTF */
         if(strcasecmp(encoding, "UTF")) {
@@ -587,6 +588,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     } else {
         /* file has no extended attributes, use locale charset */
         encoding = nl_langinfo(CODESET);
+        checkEncoding = 1;
     }
     
     char *setEncoding = NULL;
@@ -641,9 +643,20 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         } while (0);
         fseek(fp, bom, SEEK_SET);
     }
-    if(!encoding) {
+    if(setEncoding) {
         encoding = setEncoding;
+        checkEncoding = 0;
     }
+    
+    if(checkEncoding) {
+        size_t r = fread(buf, 1, IO_BUFSIZE, fp);
+        const char *newEnc = DetectEncoding(buf, r);
+        if(newEnc && newEnc != encoding) {
+            encoding = newEnc;
+        }
+        fseek(fp, 0, SEEK_SET);
+    }
+    
     
     /* Allocate space for the whole contents of the file (unfortunately) */
     size_t strAlloc = fileLen;
@@ -2619,4 +2632,43 @@ static void forceShowLineNumbers(WindowInfo *window)
 static int min(int i1, int i2)
 {
     return i1 <= i2 ? i1 : i2;
+}
+
+
+const char * DetectEncoding(const char *buf, size_t len) {
+    int utf8Err = 0; // number of utf8 encoding errors
+    int utf8Mb = 0;  // number of multibyte characters 
+    
+    const unsigned char *u = (const unsigned char*)buf;
+    int charLen = 0; // length of char - 1
+    for(size_t i=0;i<len;i++) {
+        unsigned char c = u[i];
+        if(charLen == 0) {
+            if(c > 240) {
+                charLen = 3;
+            } else if(c > 224) {
+                charLen = 2;
+            } else if(c > 192) {
+                charLen = 1;
+            }
+            if(charLen > 0) {
+                utf8Mb++;
+            }
+        } else {
+            int x = c & 192;
+            if((c & 192) == 128) {
+                charLen--;
+            } else {
+                utf8Err++;
+                charLen = 0;
+                break;
+            }
+        }
+    }  
+    
+    if(utf8Err == 0 || utf8Err < utf8Mb) {
+        return "UTF-8";
+    } else {
+        return "ISO8859-1";
+    }
 }

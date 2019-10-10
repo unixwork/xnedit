@@ -64,4 +64,6 @@ void RemoveBackupFile(WindowInfo *window);
 void UniqueUntitledName(char *name);
 void CheckForChangesToFile(WindowInfo *window);
 
+const char * DetectEncoding(const char *buf, size_t len);
+
 #endif /* NEDIT_FILE_H_INCLUDED */
