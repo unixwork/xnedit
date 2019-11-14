@@ -821,8 +821,7 @@ File Format
   challenge to portability, they affect XNEdit only indirectly via the same font
   and localization mechanisms common to all X applications.  If your system is
   set up properly, you will probably never see character-set related problems
-  in XNEdit.  XNEdit cannot display Unicode text files, nor any multi-byte
-  character set.
+  in XNEdit.
 
   The primary difference between an MS DOS format file and a Unix format file,
   is how the lines are terminated.  Unix uses a single newline character.  MS
