@@ -918,7 +918,7 @@ static void finishCmdExecution(WindowInfo *window, int terminatedOnError)
 
     /* If the command requires the file to be reloaded afterward, reload it */
     if (cmdData->flags & RELOAD_FILE_AFTER)
-    	RevertToSaved(window);
+    	RevertToSaved(window, NULL);
 
     /* Command is complete, free data structure and continue macro execution */
     NEditFree(outText);

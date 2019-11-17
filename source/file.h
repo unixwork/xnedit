@@ -47,7 +47,7 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         const char *path, const char *encoding, int flags, char *geometry,
         int iconic, const char *languageMode, int tabbed, int bgOpen);
-void RevertToSaved(WindowInfo *window);
+void RevertToSaved(WindowInfo *window, char *newEncoding);
 int SaveWindow(WindowInfo *window);
 int SaveWindowAs(WindowInfo *window, FileSelection *file);
 int CloseAllFilesAndWindows(void);

@@ -2928,7 +2928,7 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
 
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
-    RevertToSaved(WidgetToWindow(w));
+    RevertToSaved(WidgetToWindow(w), NULL);
 }
 
 static void includeDialogAP(Widget w, XEvent *event, String *args,

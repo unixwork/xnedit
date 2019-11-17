@@ -202,11 +202,43 @@ static void cancelTimeOut(XtIntervalId *timer);
 
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 
+static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
+static void reloadCB(Widget w, Widget mainWin, void *callData);
+
 /* From Xt, Shell.c, "BIGSIZE" */
 static const Dimension XT_IGNORE_PPOSITION = 32767;
 
 static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
+
+// TODO: remove code dup (filadialog.c)
+#define DETECT_ENCODING "detect"
+static char *default_encodings[] = {
+    DETECT_ENCODING,
+    "UTF-8",
+    "UTF-16",
+    "UTF-16BE",
+    "UTF-16LE",
+    "UTF-32",
+    "UTF-32BE",
+    "UTF-32LE",
+    "ISO8859-1",
+    "ISO8859-2",
+    "ISO8859-3",
+    "ISO8859-4",
+    "ISO8859-5",
+    "ISO8859-6",
+    "ISO8859-7",
+    "ISO8859-8",
+    "ISO8859-9",
+    "ISO8859-10",
+    "ISO8859-13",
+    "ISO8859-14",
+    "ISO8859-15",
+    "ISO8859-16",
+    NULL
+};
+
 
 /*
 ** Create a new editor window
@@ -295,6 +327,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showStats = GetPrefStatsLine();
     window->showISearchLine = GetPrefISearchLine();
     window->showLineNumbers = GetPrefLineNums();
+    window->showInfoBar = False;
     window->highlightSyntax = GetPrefHighlightSyntax();
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
@@ -429,7 +462,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->mainWin = mainWin;
     XtManageChild(mainWin);
     
-    /* The statsAreaForm holds the stats line and the I-Search line. */
+    // The statsAreaForm holds the stats line, the I-Search line
+    // and the encodingInfoBar
     statsAreaForm = XtVaCreateWidget("statsAreaForm", 
             xmFormWidgetClass, mainWin,
             XmNmarginWidth, STAT_SHADOW_THICKNESS,
@@ -645,7 +679,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNtopWidget, window->iSearchForm,
             XmNrightAttachment, XmATTACH_FORM,
             XmNleftAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
+            //XmNbottomAttachment, XmATTACH_FORM,
             XmNresizable, False,    /*  */
             NULL);
     
@@ -704,7 +738,78 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Manage the statsLineForm */
     if(window->showStats)
         XtManageChild(window->statsLineForm);
+    
+    // Create encodingInfoBar form
+    window->encodingInfoBar = XtVaCreateWidget(
+            "infobar",
+            xmFormWidgetClass,
+            statsAreaForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, window->statsLineForm,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            NULL);
+    
+    // create encoding dropdown list 
+    ac = 0;
+    XtSetArg(al[ac], XmNcolumns, 15); ac++;
 
+    XtSetArg(al[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNbottomAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNhighlightThickness, 1); ac++;
+    window->encInfoBarList = XmCreateDropDownList(
+            window->encodingInfoBar,
+            "combobox",
+            al,
+            ac);
+    XtManageChild(window->encInfoBarList);
+    
+    // infobar label
+    window->encInfoBarLabel = XtVaCreateManagedWidget(
+            "ibarlabel",
+            xmLabelWidgetClass,
+            window->encodingInfoBar,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, window->encInfoBarList,
+            NULL);
+    
+    Widget btnClose = XtVaCreateManagedWidget(
+            "ibarbutton",
+            xmPushButtonWidgetClass,
+            window->encodingInfoBar,
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, closeTabPixmap,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, window->encInfoBarList,
+            XmNhighlightThickness, 1,
+            NULL);
+    XtAddCallback(btnClose, XmNactivateCallback, (XtCallbackProc)closeInfoBarCB, 
+	    mainWin);
+    
+    s1 = XmStringCreateSimple("Reload");
+    Widget btnReload = XtVaCreateManagedWidget(
+            "ibarbutton",
+            xmPushButtonWidgetClass,
+            window->encodingInfoBar,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, btnClose,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, window->encInfoBarList,
+            XmNleftAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNleftWidget, window->encInfoBarList,
+            XmNhighlightThickness, 1,
+            NULL);
+    XtAddCallback(btnReload, XmNactivateCallback, (XtCallbackProc)reloadCB, 
+	    mainWin);
+    XmStringFree(s1);
+    
     /* Create the menu bar */
     menuBar = CreateMenuBar(mainWin, window);
     window->menuBar = menuBar;
@@ -785,8 +890,10 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     manageToolBars(statsAreaForm);
 
     if (showTabBar || window->showISearchLine || 
-    	    window->showStats)
+    	    window->showStats || window->showInfoBar)
+    {
         XtManageChild(statsAreaForm);
+    }
     
     /* realize all of the widgets in the new window */
     RealizeWithoutForcingPosition(winShell);
@@ -1475,6 +1582,89 @@ void ShowLineNumbers(WindowInfo *window, int state)
     /* Tell WM that the non-expandable part of the window has changed size */
     UpdateWMSizeHints(window);
 }
+
+/*
+** Turn on and off the display of the encoding infobar
+*/
+void ShowEncodingInfoBar(WindowInfo *window, int state)
+{
+    if (window->showInfoBar == state && XtIsManaged(window->encodingInfoBar) == state) {
+        return;
+    }
+    window->showInfoBar = state;
+    
+    if(state == 0) {
+        XtUnmanageChild(window->encodingInfoBar);
+        showStatsForm(window);
+        return;
+    }
+    
+    // current document encoding
+    char *def = strlen(window->encoding) > 0 ? window->encoding : NULL;
+    
+    int arraylen = 22;
+    XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
+    char *encStr;
+    int i;
+    int index = 0;
+    
+    // add default encodings
+    for(i=0;(encStr=default_encodings[i]);i++) {
+        if(i >= arraylen) {
+            arraylen *= 2;
+            encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
+        }
+        encodings[i] = XmStringCreateSimple(encStr);
+        
+        if(def) {
+            if(!strcasecmp(def, encStr)) {
+                def = NULL;
+                index = i;
+            }
+        }
+    }
+    
+    // add document encoding, if it isn't already in the list
+    if(def) {
+        if(i >= arraylen) {
+            arraylen += 2;
+            encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
+        }
+        encodings[i] = XmStringCreateSimple(def);
+        index = i;
+        i++;
+    }
+    
+    // set dropdownlist values
+    XtVaSetValues(
+            window->encInfoBarList,
+            XmNitemCount, i,
+            XmNitems, encodings,
+            NULL);
+    XmComboBoxSelectItem(window->encInfoBarList, encodings[index]);
+    
+    // cleanup
+    for(int j=0;j<i;j++) {
+        XmStringFree(encodings[j]);
+    }
+    NEditFree(encodings);
+    
+    // show infobar
+    XtManageChild(window->encodingInfoBar);
+    
+    showStatsForm(window);
+}
+
+/*
+ * Set the text message for the encoding infobar
+ */
+void SetEncodingInfoBarLabel(WindowInfo *window, char *message)
+{
+    XmString s1 = XmStringCreateLocalized(message);
+    XtVaSetValues(window->encInfoBarLabel, XmNlabelString, s1, NULL);
+    XmStringFree(s1);
+}
+
 
 void SetTabDist(WindowInfo *window, int tabDist)
 {
@@ -3364,6 +3554,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->showStats = GetPrefStatsLine();
     window->showISearchLine = GetPrefISearchLine();
 #endif
+    
+    window->showInfoBar = FALSE;
 
     window->multiFileReplSelected = FALSE;
     window->multiFileBusy = FALSE;
@@ -4061,7 +4253,7 @@ void RaiseDocument(WindowInfo *window)
     /* document already on top? */
     XtVaGetValues(window->mainWin, XmNuserData, &win, NULL);
     if (win == window)
-    	return;    
+    	return;
 
     /* set the document as top document */
     XtVaSetValues(window->mainWin, XmNuserData, window, NULL);
@@ -4171,13 +4363,22 @@ int NDocuments(WindowInfo *window)
 */
 void RefreshWindowStates(WindowInfo *window)
 {
+    int updateStatsFormStatus = 0;
+    
     if (!IsTopDocument(window))
     	return;
 	
-    if (window->modeMessageDisplayed)
+    if(!window->showInfoBar && XtIsManaged(window->encodingInfoBar)) {
+        XtUnmanageChild(window->encodingInfoBar);
+        updateStatsFormStatus = 1;
+    }
+    
+    if (window->modeMessageDisplayed) {
     	XmTextSetString(window->statsLine, window->modeMessage);
-    else
+    } else {
     	UpdateStatsLine(window);
+    }
+    
     UpdateWindowReadOnly(window);
     UpdateWindowTitle(window);
 
@@ -4194,7 +4395,11 @@ void RefreshWindowStates(WindowInfo *window)
              XtIsManaged(window->statsLineForm)) {
     	/* turn off statsline since there's nothing to show */
     	showStats(window, False);
+    } else if(updateStatsFormStatus) {
+        showStatsForm(window);
     }
+    
+    ShowEncodingInfoBar(window, window->showInfoBar);
     
     /* signal if macro/shell is running */
     if (window->shellCmdData || window->macroCmdData)
@@ -4881,4 +5086,45 @@ static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)
             wm_take_focus,
             (XtCallbackProc)WindowTakeFocus,
             window);
+}
+
+
+static void closeInfoBarCB(Widget w, Widget mainWin, void *callData)
+{
+    WindowInfo *window = GetTopDocument(mainWin);
+    if(!window) {
+        return;
+    }
+    window->showInfoBar = FALSE;
+    XtUnmanageChild(window->encodingInfoBar);
+    showStatsForm(window);
+}
+
+static void reloadCB(Widget w, Widget mainWin, void *callData)
+{
+    WindowInfo *window = GetTopDocument(mainWin);
+    if(!window) {
+        return;
+    }
+    
+    char *encoding = NULL;
+    
+    
+    XmString item;
+    XtVaGetValues(window->encInfoBarList, XmNselectedItem, &item, NULL);
+    if(!item) {
+        return;
+    }
+    
+    // convert XmString to char*
+    XmStringGetLtoR(item, XmFONTLIST_DEFAULT_TAG, &encoding);
+    
+    // reload file with new encoding
+    char *enc = strcmp(encoding, "detect") ? encoding : NULL;
+    
+    RevertToSaved(window, enc);
+    
+    // cleanup
+    XmStringFree(item);
+    XtFree(encoding);
 }

@@ -2240,6 +2240,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
 
         n = 0;
         int arraylen = 22;
+        
+        // TODO: code dup of encoding list generation (window.c)
+        
         char *encStr;
         XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
         /* skip the "detect" item on type == save */

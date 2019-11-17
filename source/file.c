@@ -287,7 +287,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     return window;
 }
 
-void RevertToSaved(WindowInfo *window)
+void RevertToSaved(WindowInfo *window, char *newEncoding)
 {
     char name[MAXPATHLEN], path[MAXPATHLEN];
     char *encoding;
@@ -316,7 +316,16 @@ void RevertToSaved(WindowInfo *window)
     /* re-read the file, update the window title if new file is different */
     strcpy(name, window->filename);
     strcpy(path, window->path);
-    encoding = window->encoding[0] != '\0' ? window->encoding : NULL;
+    
+    if(newEncoding) {
+        encoding = newEncoding;
+    } else if(window->encoding[0] != '\0') {
+        encoding = window->encoding;
+    } else {
+        encoding = NULL;
+    }
+    
+    
     RemoveBackupFile(window);
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
@@ -763,8 +772,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     int show_err = TRUE;
+    int show_infobar = FALSE;
     if(skipped > 0) {
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+        /*
+        window->filenameSet = FALSE; // Temp. prevent check for changes.
         int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
     		"Open anyway?", "NO", "YES",
@@ -774,6 +785,15 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             show_err = FALSE;
             err = TRUE;
         }
+        */
+        
+        char msgbuf[256];
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped", skipped);
+        
+        show_infobar = TRUE;
+        SetEncodingInfoBarLabel(window, msgbuf);
+    } else {
+        SetEncodingInfoBarLabel(window, "No conversion errors");
     }
     
     if (err || ferror(fp)) {
@@ -870,6 +890,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
     }
     UpdateWindowReadOnly(window);
+    
+    // show infobar, if needed
+    if(show_infobar) {
+        ShowEncodingInfoBar(window, 1);
+    }
     
     return TRUE;
 }   
@@ -2352,7 +2377,7 @@ void CheckForChangesToFile(WindowInfo *window)
                     "%s has been modified by another\nprogram.  Reload?",
                     "Reload", "Cancel", window->filename);
         if (resp == 1)
-            RevertToSaved(window);
+            RevertToSaved(window, NULL);
     }
 }
 

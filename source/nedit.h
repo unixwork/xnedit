@@ -294,6 +294,9 @@ typedef struct _WindowInfo {
     Widget  	iSearchRegexToggle;
     Widget  	iSearchCaseToggle;
     Widget  	iSearchRevToggle;
+    Widget      encodingInfoBar;
+    Widget      encInfoBarLabel;
+    Widget      encInfoBarList;
     Widget	menuBar;    	    	/* the main menu bar */
     Widget	tabBar;			/* tab bar for tabbed window */
     Widget	tab;			/* tab for this document */
@@ -515,6 +518,7 @@ typedef struct _WindowInfo {
     Boolean	showStats;		/* is stats line supposed to be shown */
     Boolean 	showISearchLine;    	/* is incr. search line to be shown */
     Boolean 	showLineNumbers;    	/* is the line number display shown */
+    Boolean     showInfoBar;            /* is the infobar shown */
     Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
     Boolean	backlightChars;		/* is char backlighting turned on? */
     char	*backlightCharTypes;	/* what backlighting to use */
