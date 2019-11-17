@@ -424,6 +424,18 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     int resp;
     int err;
     
+    // make sure, encoding doesn't point to window->encoding
+    char encoding_buffer[MAX_ENCODING_LENGTH];
+    if(encoding == window->encoding) {
+        size_t enclen = strlen(window->encoding);
+        if(enclen > MAX_ENCODING_LENGTH) {
+            enclen = MAX_ENCODING_LENGTH-1;
+        }
+        memcpy(encoding_buffer, window->encoding, enclen);
+        encoding_buffer[enclen] = 0;
+        encoding = encoding_buffer;
+    }
+    
     /* initialize lock reasons */
     CLEAR_ALL_LOCKS(window->lockReasons);
     
