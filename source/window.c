@@ -5107,8 +5107,16 @@ static void reloadCB(Widget w, Widget mainWin, void *callData)
         return;
     }
     
-    char *encoding = NULL;
+    if(window->fileChanged) {
+        int b = DialogF(DF_QUES, window->shell, 2, "Discard Changes",
+                "Discard changes to\n%s%s?", "OK", "Cancel", window->path,
+                window->filename);
+        if(b == 2) {
+            return;
+        }
+    }
     
+    char *encoding = NULL;
     
     XmString item;
     XtVaGetValues(window->encInfoBarList, XmNselectedItem, &item, NULL);
