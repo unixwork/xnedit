@@ -599,9 +599,19 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     int checkEncoding = 0;
     if(encoding) {
         /* check if the encoding string starts with UTF */
-        if(strcasecmp(encoding, "UTF")) {
+        if(strlen(encoding) < 3) {
             /* no UTF encoding */
             checkBOM = 0;
+        } else {
+            char encpre[4];
+            encpre[0] = encoding[0];
+            encpre[1] = encoding[1];
+            encpre[2] = encoding[2];
+            encpre[3] = 0;
+            if(strcasecmp(encpre, "UTF")) {
+                // encoding doesn't start with "UTF" -> no BOM
+                checkBOM = 0;
+            }
         }
         if(!strcasecmp(encoding, "GB18030")) {
             checkBOM = 1; /* GB18030 is unicode and could have a BOM */
