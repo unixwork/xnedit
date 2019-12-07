@@ -681,7 +681,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     
     if(checkEncoding) {
         size_t r = fread(buf, 1, IO_BUFSIZE, fp);
-        const char *newEnc = DetectEncoding(buf, r);
+        const char *newEnc = DetectEncoding(buf, r, encoding);
         if(newEnc && newEnc != encoding) {
             encoding = newEnc;
         }
@@ -2681,8 +2681,7 @@ static int min(int i1, int i2)
     return i1 <= i2 ? i1 : i2;
 }
 
-
-const char * DetectEncoding(const char *buf, size_t len) {
+const char * DetectEncoding(const char *buf, size_t len, const char *def) {
     int utf8Err = 0; // number of utf8 encoding errors
     int utf8Mb = 0;  // number of multibyte characters 
     
@@ -2716,6 +2715,10 @@ const char * DetectEncoding(const char *buf, size_t len) {
     if(utf8Err == 0 || utf8Err < utf8Mb) {
         return "UTF-8";
     } else {
-        return "ISO8859-1";
+        if(def) {
+            return def;
+        } else {
+            
+        }
     }
 }

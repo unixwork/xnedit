@@ -42,6 +42,11 @@
 #define YES_SBC_DIALOG_RESPONSE 1
 #define NO_SBC_DIALOG_RESPONSE 2
 
+typedef struct DefaultEncoding {
+    char *locale;
+    char *encoding;
+} DefaultEncoding;
+
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
         const char *languageMode, const char *defaultPath);
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
@@ -64,6 +69,6 @@ void RemoveBackupFile(WindowInfo *window);
 void UniqueUntitledName(char *name);
 void CheckForChangesToFile(WindowInfo *window);
 
-const char * DetectEncoding(const char *buf, size_t len);
+const char * DetectEncoding(const char *buf, size_t len, const char *def);
 
 #endif /* NEDIT_FILE_H_INCLUDED */
