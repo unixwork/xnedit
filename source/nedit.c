@@ -234,7 +234,7 @@ static char *fallbackResources[] = {
     
     "*newFolder.labelString: New Folder",
     "*newFolder.labelType: XmPIXMAP",
-    
+       
     "*text.lineNumForeground: " NEDIT_DEFAULT_LINENO_FG,
     "*text.background: " NEDIT_DEFAULT_TEXT_BG,
     "*text.foreground: " NEDIT_DEFAULT_FG,

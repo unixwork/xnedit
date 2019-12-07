@@ -287,7 +287,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     return window;
 }
 
-void RevertToSaved(WindowInfo *window)
+void RevertToSaved(WindowInfo *window, char *newEncoding)
 {
     char name[MAXPATHLEN], path[MAXPATHLEN];
     char *encoding;
@@ -316,7 +316,16 @@ void RevertToSaved(WindowInfo *window)
     /* re-read the file, update the window title if new file is different */
     strcpy(name, window->filename);
     strcpy(path, window->path);
-    encoding = window->encoding[0] != '\0' ? window->encoding : NULL;
+    
+    if(newEncoding) {
+        encoding = newEncoding;
+    } else if(window->encoding[0] != '\0') {
+        encoding = window->encoding;
+    } else {
+        encoding = NULL;
+    }
+    
+    
     RemoveBackupFile(window);
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
@@ -414,6 +423,18 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     int fd;
     int resp;
     int err;
+    
+    // make sure, encoding doesn't point to window->encoding
+    char encoding_buffer[MAX_ENCODING_LENGTH];
+    if(encoding == window->encoding) {
+        size_t enclen = strlen(window->encoding);
+        if(enclen > MAX_ENCODING_LENGTH) {
+            enclen = MAX_ENCODING_LENGTH-1;
+        }
+        memcpy(encoding_buffer, window->encoding, enclen);
+        encoding_buffer[enclen] = 0;
+        encoding = encoding_buffer;
+    }
     
     /* initialize lock reasons */
     CLEAR_ALL_LOCKS(window->lockReasons);
@@ -575,11 +596,22 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     int checkBOM = 1;
+    int checkEncoding = 0;
     if(encoding) {
         /* check if the encoding string starts with UTF */
-        if(strcasecmp(encoding, "UTF")) {
+        if(strlen(encoding) < 3) {
             /* no UTF encoding */
             checkBOM = 0;
+        } else {
+            char encpre[4];
+            encpre[0] = encoding[0];
+            encpre[1] = encoding[1];
+            encpre[2] = encoding[2];
+            encpre[3] = 0;
+            if(strcasecmp(encpre, "UTF")) {
+                // encoding doesn't start with "UTF" -> no BOM
+                checkBOM = 0;
+            }
         }
         if(!strcasecmp(encoding, "GB18030")) {
             checkBOM = 1; /* GB18030 is unicode and could have a BOM */
@@ -587,6 +619,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     } else {
         /* file has no extended attributes, use locale charset */
         encoding = nl_langinfo(CODESET);
+        checkEncoding = 1;
     }
     
     char *setEncoding = NULL;
@@ -641,9 +674,20 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         } while (0);
         fseek(fp, bom, SEEK_SET);
     }
-    if(!encoding) {
+    if(setEncoding) {
         encoding = setEncoding;
+        checkEncoding = 0;
     }
+    
+    if(checkEncoding) {
+        size_t r = fread(buf, 1, IO_BUFSIZE, fp);
+        const char *newEnc = DetectEncoding(buf, r, encoding);
+        if(newEnc && newEnc != encoding) {
+            encoding = newEnc;
+        }
+        fseek(fp, 0, SEEK_SET);
+    }
+    
     
     /* Allocate space for the whole contents of the file (unfortunately) */
     size_t strAlloc = fileLen;
@@ -713,7 +757,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     case EILSEQ:
                     case EINVAL: {
                         if(inleft > 0) {
-                            outStr[0] = '?';
+                            outStr[0] = '?'; // TODO: use unicode replacement char
                             outStr++;
                             outleft--;
                             
@@ -750,8 +794,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     int show_err = TRUE;
+    int show_infobar = FALSE;
     if(skipped > 0) {
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+        /*
+        window->filenameSet = FALSE; // Temp. prevent check for changes.
         int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
     		"Open anyway?", "NO", "YES",
@@ -761,6 +807,15 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             show_err = FALSE;
             err = TRUE;
         }
+        */
+        
+        char msgbuf[256];
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped", skipped);
+        
+        show_infobar = TRUE;
+        SetEncodingInfoBarLabel(window, msgbuf);
+    } else {
+        SetEncodingInfoBarLabel(window, "No conversion errors");
     }
     
     if (err || ferror(fp)) {
@@ -857,6 +912,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
     }
     UpdateWindowReadOnly(window);
+    
+    // show infobar, if needed
+    if(show_infobar) {
+        ShowEncodingInfoBar(window, 1);
+    }
     
     return TRUE;
 }   
@@ -2339,7 +2399,7 @@ void CheckForChangesToFile(WindowInfo *window)
                     "%s has been modified by another\nprogram.  Reload?",
                     "Reload", "Cancel", window->filename);
         if (resp == 1)
-            RevertToSaved(window);
+            RevertToSaved(window, NULL);
     }
 }
 
@@ -2619,4 +2679,46 @@ static void forceShowLineNumbers(WindowInfo *window)
 static int min(int i1, int i2)
 {
     return i1 <= i2 ? i1 : i2;
+}
+
+const char * DetectEncoding(const char *buf, size_t len, const char *def) {
+    int utf8Err = 0; // number of utf8 encoding errors
+    int utf8Mb = 0;  // number of multibyte characters 
+    
+    const unsigned char *u = (const unsigned char*)buf;
+    int charLen = 0; // length of char - 1
+    for(size_t i=0;i<len;i++) {
+        unsigned char c = u[i];
+        if(charLen == 0) {
+            if(c > 240) {
+                charLen = 3;
+            } else if(c > 224) {
+                charLen = 2;
+            } else if(c > 192) {
+                charLen = 1;
+            }
+            if(charLen > 0) {
+                utf8Mb++;
+            }
+        } else {
+            int x = c & 192;
+            if((c & 192) == 128) {
+                charLen--;
+            } else {
+                utf8Err++;
+                charLen = 0;
+                break;
+            }
+        }
+    }  
+    
+    if(utf8Err == 0 || utf8Err < utf8Mb) {
+        return "UTF-8";
+    } else {
+        if(def) {
+            return def;
+        } else {
+            
+        }
+    }
 }

@@ -2908,27 +2908,29 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
     /* re-reading file is irreversible, prompt the user first */
     if (window->fileChanged)
     {
-        b = DialogF(DF_QUES, window->shell, 2, "Discard Changes",
-                "Discard changes to\n%s%s?", "OK", "Cancel", window->path,
+        b = DialogF(DF_QUES, window->shell, 3, "Reload File",
+                "Re-load file and discard changes to\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
                 window->filename);
     } else
     {
-        b = DialogF(DF_QUES, window->shell, 2, "Reload File",
-                "Re-load file\n%s%s?", "Re-read", "Cancel", window->path,
+        b = DialogF(DF_QUES, window->shell, 3, "Reload File",
+                "Re-load file\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
                 window->filename);
     }
 
-    if (b != 1)
-    {
-        return;
+    if(b == 1) {
+        // reload
+        XtCallActionProc(window->lastFocus, "revert_to_saved", event, NULL, 0);
+    } else if(b == 2) {
+        // change encoding
+        ShowEncodingInfoBar(window, TRUE);
     }
-    XtCallActionProc(window->lastFocus, "revert_to_saved", event, NULL, 0);
 }
 
 
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
-    RevertToSaved(WidgetToWindow(w));
+    RevertToSaved(WidgetToWindow(w), NULL);
 }
 
 static void includeDialogAP(Widget w, XEvent *event, String *args,

@@ -66,6 +66,8 @@ void ShowStatsLine(WindowInfo *window, int state);
 void ShowISearchLine(WindowInfo *window, int state);
 void TempShowISearch(WindowInfo *window, int state);
 void ShowLineNumbers(WindowInfo *window, int state);
+void ShowEncodingInfoBar(WindowInfo *window, int state);
+void SetEncodingInfoBarLabel(WindowInfo *window, char *message);
 void SetModeMessage(WindowInfo *window, const char *message);
 void ClearModeMessage(WindowInfo *window);
 WindowInfo *WidgetToWindow(Widget w);
