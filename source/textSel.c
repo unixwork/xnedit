@@ -252,7 +252,13 @@ void InsertPrimarySelection(Widget w, Time time, int isColumnar)
     void *data[2] = { sel, sel };
     
     selectionTime = time;
+    
+#ifdef __APPLE__
+    XtGetSelectionValue(w, XA_PRIMARY, targets[1], getSelectionCB, sel, time);
+    XtGetSelectionValue(w, XA_PRIMARY, targets[0], getSelectionCB, sel, time);
+#else
     XtGetSelectionValues(w, XA_PRIMARY, targets, 2, getSelectionCB, data, time);
+#endif
 }
 
 /*
