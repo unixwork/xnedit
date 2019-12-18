@@ -756,10 +756,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     default: err = 1; break;
                     case EILSEQ:
                     case EINVAL: {
-                        if(inleft > 0) {
+                        if(inleft > 0) {    
                             outStr[0] = '?'; // TODO: use unicode replacement char
                             outStr++;
                             outleft--;
+                            readLen++;
                             
                             str++;
                             inleft--;
