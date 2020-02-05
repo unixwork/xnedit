@@ -1418,6 +1418,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         {
             DialogF(DF_ERR, window->shell, 1, "Out of Memory",
                     "Out of memory!  Try\nsaving in Unix format", "OK");
+            fclose(fp);
             return FALSE;
         }
     } else if (window->fileFormat == MAC_FILE_FORMAT)
