@@ -722,6 +722,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             if(enc_attr) {
                 free(enc_attr);
             }
+            free(fileString);
             return FALSE;
         }
         strconv = (ConvertFunc)iconv;
