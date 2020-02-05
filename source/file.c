@@ -741,10 +741,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     size_t r = 0;
     readLen = 0;
     char *outStr = fileString;
-    while((r = fread(buf, 1, IO_BUFSIZE, fp)) > 0 && !err) {
+    size_t prev = 0;
+    while((r = fread(buf+prev, 1, IO_BUFSIZE-prev, fp)) > 0 && !err) {
         char *str = buf;
-        size_t inleft = r;
-        size_t outleft = strAlloc - readLen;
+        size_t inleft = prev + r;
+        size_t outleft = strAlloc - readLen;   
+        prev = 0;  
         while(inleft > 0) { 
             size_t w = outleft;
             size_t rc = strconv(ic, &str, &inleft, &outStr, &outleft);
@@ -755,8 +757,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 /* iconv wants more bytes */
                 switch(errno) {
                     default: err = 1; break;
-                    case EILSEQ:
-                    case EINVAL: {
+                    case EILSEQ: {
                         if(inleft > 0) {    
                             outStr[0] = '?'; // TODO: use unicode replacement char
                             outStr++;
@@ -767,8 +768,14 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                             inleft--;
                             
                             skipped++;
-                            break;
-                        } // invalid char and output buffer to small
+                        }
+                        break;
+                    }
+                    case EINVAL: {
+                        memcpy(buf, str, inleft); 
+                        prev = inleft;
+                        inleft = 0;
+                        break;
                     }
                     case E2BIG: {
                         strAlloc += 512;
