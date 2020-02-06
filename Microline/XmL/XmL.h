@@ -226,6 +226,7 @@ typedef struct
 #define XmNscrollBarMargin "scrollBarMargin"
 #define XmCScrollBarMargin "ScrollBarMargin"
 #define XmNscrollCallback "scrollCallback"
+#define XmNheaderClickCallback "headerClickCallback"
 #define XmNscrollColumn "scrollColumn"
 #define XmCScrollColumn "ScrollColumn"
 #define XmNscrollRow "scrollRow"

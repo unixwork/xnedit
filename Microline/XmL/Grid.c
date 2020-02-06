@@ -790,6 +790,14 @@ static XtResource resources[] =
 		XtOffset(XmLGridWidget, grid.scrollCallback),
 		XmRImmediate, (XtPointer)0,
 		},
+                /* XNEdit begin */
+                {
+		XmNheaderClickCallback, XmCCallback,
+		XmRCallback, sizeof(XtCallbackList),
+		XtOffset(XmLGridWidget, grid.headerClickCallback),
+		XmRImmediate, (XtPointer)0,
+		},
+                /* XNEdit end */
 		{
 		XmNscrollColumn, XmCScrollColumn,
 		XmRInt, sizeof(int),
@@ -7689,15 +7697,35 @@ Select(Widget w,
 			return;
 		if (RowPosToType(g, row) == XmCONTENT &&
 			ColPosToType(g, col) == XmCONTENT)
-			{
-			TextAction(g, TEXT_EDIT_COMPLETE);
-			if (q != qEXTEND)
-				{
-				SetFocus(g, row, col, 0, 1);
-				ExtendSelect(g, event, False, -1, -1);
-				}
-			XmProcessTraversal(g->grid.text, XmTRAVERSE_CURRENT);
-			}
+                    {
+                    TextAction(g, TEXT_EDIT_COMPLETE);
+                    if (q != qEXTEND)
+                            {
+                            SetFocus(g, row, col, 0, 1);
+                            ExtendSelect(g, event, False, -1, -1);
+                            }
+                    XmProcessTraversal(g->grid.text, XmTRAVERSE_CURRENT);
+                    }
+                else {
+                    /* XNEdit Addition */
+                    
+                    // header licked
+                    //printf("header clicked\n");
+                    
+                    XmLGridCallbackStruct cbs;
+                    cbs.event = event;
+                    cbs.rowType = XmHEADING;
+                    cbs.columnType = XmHEADING;
+                    cbs.reason = XmCR_SELECT_CELL;
+                    cbs.column = col;
+                    cbs.row = row;
+                    
+                    XtCallCallbackList(
+                            w,
+                            g->grid.headerClickCallback,
+                            (XtPointer)&cbs);
+                }
+                
 		if (g->grid.selectionPolicy == XmSELECT_MULTIPLE_ROW &&
 			RowPosToType(g, row) == XmCONTENT)
 			{
