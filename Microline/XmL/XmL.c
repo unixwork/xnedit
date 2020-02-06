@@ -1062,7 +1062,7 @@ XmLRenderTableGetDimensions(
                     h = fontsetExtents->max_logical_extent.height;
                 }
             } break;
-#ifdef XmFONT_IS_XFT
+#if defined(XmFONT_IS_XFT) || defined(USE_XFT)
             case XmFONT_IS_XFT:
             {
                 if ( ( xftFont != NULL ) && ( xftFont != (XftFont*)XmAS_IS ) ) {
