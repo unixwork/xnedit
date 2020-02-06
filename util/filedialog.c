@@ -81,7 +81,7 @@ static XColor bgColor;
 
 static int LastView = -1; // 0: icon   1: list   2: grid
 
-//define FSB_ENABLE_DETAIL
+#define FSB_ENABLE_DETAIL
 
 const char *newFolder16Data = "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
@@ -1048,6 +1048,19 @@ static void filedialog_cleanup(FileDialogData *data)
     }
 }
 
+/*
+ * file_cmp_field
+ * 0: compare path
+ * 1: compare size
+ * 2: compare mtime
+ */
+static int file_cmp_field = 0;
+
+/*
+ * 1 or -1
+ */
+static int file_cmp_order = 1;
+
 static int filecmp(const void *f1, const void *f2)
 {
     const FileElm *file1 = f1;
@@ -1056,7 +1069,42 @@ static int filecmp(const void *f1, const void *f2)
         return file1->isDirectory < file2->isDirectory;
     }
     
-    return strcmp(FileName(file1->path), FileName(file2->path));
+    int cmp_field = file_cmp_field;
+    int cmp_order = file_cmp_order;
+    if(file1->isDirectory) {
+        cmp_field = 0;
+        cmp_order = 1;
+    }
+    
+    int ret = 0;
+    switch(cmp_field) {
+        case 0: {
+            ret = strcmp(FileName(file1->path), FileName(file2->path));
+            break;
+        }
+        case 1: {
+            if(file1->size < file2->size) {
+                ret = -1;
+            } else if(file1->size == file2->size) {
+                ret = 0;
+            } else {
+                ret = 1;
+            }
+            break;
+        }
+        case 2: {
+            if(file1->lastModified < file2->lastModified) {
+                ret = -1;
+            } else if(file1->lastModified == file2->lastModified) {
+                ret = 0;
+            } else {
+                ret = 1;
+            }
+            break;
+        }
+    }
+    
+    return ret * cmp_order;
 }
 
 static void resize_container(Widget w, FileDialogData *data, XtPointer d) 
@@ -1662,6 +1710,39 @@ void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     set_path_from_row(data, cb->row, True);
 }
 
+void grid_header_clicked(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) { 
+    int new_cmp_field = 0;
+    switch(cb->column) {
+        case 0: {
+            new_cmp_field = 0;            
+            break;
+        }
+        case 1: {
+            new_cmp_field = 1;
+            break;
+        }
+        case 2: {
+            new_cmp_field = 2;
+            break;
+        }
+    }
+    
+    if(new_cmp_field == file_cmp_field) {
+        file_cmp_order = -file_cmp_order; // revert sort order
+    } else {
+        file_cmp_field = new_cmp_field; // change file cmp order to new field
+        file_cmp_order = 1;
+    }
+    
+    int sort_type = file_cmp_order == 1 ? XmSORT_ASCENDING : XmSORT_DESCENDING;
+    XmLGridSetSort(data->grid, file_cmp_field, sort_type);
+    
+    qsort(data->files, data->filecount, sizeof(FileElm), filecmp);
+    
+    // refresh widget
+    filedialog_update_dir(data, NULL);
+} 
+
 void dirlist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
     char *path = set_selected_path(data, cb->item);
@@ -1824,6 +1905,12 @@ static void unselect_view(FileDialogData *data)
             XtUnmanageChild(data->listform);
             XtUnmanageChild(data->gridcontainer);
             cleanupGrid(data);
+            
+            // reset sort options and resort files
+            file_cmp_field = 0;
+            file_cmp_order = 1;
+            qsort(data->files, data->filecount, sizeof(FileElm), filecmp);
+            
             break;
         }
     }
@@ -1849,6 +1936,8 @@ static void select_listview(Widget w, FileDialogData *data, XtPointer u)
 
 static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
 {
+    XmLGridSetSort(data->grid, 0, XmSORT_ASCENDING);
+    
     unselect_view(data);
     data->selectedview = 2;
     XtManageChild(data->listform);
@@ -2457,14 +2546,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNheadingColumns, 0); n++;
     XtSetArg(args[n], XmNheadingRows, 1); n++;
     XtSetArg(args[n], XmNallowColumnResize, 1); n++;
+    XtSetArg(args[n], XmNsimpleHeadings, "Name|Size|Last Modified"); n++;
     XtSetArg(args[n], XmNhorizontalSizePolicy, XmCONSTANT); n++;
     
     data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
     XtManageChild(data.grid);
     
-    XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
+    //XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
     XtAddCallback(data.grid, XmNselectCallback, (XtCallbackProc)grid_select, &data);
     XtAddCallback(data.grid, XmNactivateCallback, (XtCallbackProc)grid_activate, &data);
+    XtAddCallback(data.grid, XmNheaderClickCallback, (XtCallbackProc)grid_header_clicked, &data);
     
     
     n = 0;
