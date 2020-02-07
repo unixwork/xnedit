@@ -293,7 +293,9 @@ static Boolean XmLGridColumnIsHidden(XmLGridColumn column);
 static Boolean XmLGridColumnIsSelected(XmLGridColumn column);
 static void XmLGridColumnSetSelected(XmLGridColumn column, Boolean selected);
 static void XmLGridColumnSetVisPos(XmLGridColumn column, int visPos);
-static int XmLGridColumnWidthInPixels(XmLGridColumn column);
+/* BEGIN XNEDIT MODIFICATION */
+int XmLGridColumnWidthInPixels(XmLGridColumn column);
+/* END XNEDIT MODIFICATION */
 static void XmLGridColumnWidthChanged(XmLGridColumn column);
 
 /* XmLGridCell */
@@ -8629,7 +8631,8 @@ XmLGridColumnSetVisPos(XmLGridColumn column,
 	column->grid.visPos = visPos;
 	}
 
-static int
+/* XNEdit modification: XmLGridColumnWidthInPixels was static */
+int
 XmLGridColumnWidthInPixels(XmLGridColumn column)
 	{
 	int i, count;
@@ -8673,6 +8676,13 @@ XmLGridColumnWidthInPixels(XmLGridColumn column)
 		}
 	return column->grid.widthInPixels;
 	}
+
+int XmLGridVSBWidth(Widget w) {
+    XmLGridWidget g = (XmLGridWidget)w;
+    Dimension width = 0;
+    XtVaGetValues(g->grid.vsb, XmNwidth, &width, NULL);
+    return (int)width;
+}
 
 static void
 XmLGridColumnWidthChanged(XmLGridColumn column)

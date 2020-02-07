@@ -146,6 +146,9 @@ void XmLGridUnhideRightColumn(Widget w);
 int XmLGridGetRowCount(Widget w);
 int XmLGridGetColumnCount(Widget w);
 
+int XmLGridColumnWidthInPixels(XmLGridColumn column);
+int XmLGridVSBWidth(Widget w);
+
 /* extern */ void 
 XmLGridXYToCellTracking(Widget			widget, 
 						int				x, /* input only args. */

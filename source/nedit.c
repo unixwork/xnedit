@@ -206,7 +206,7 @@ static char *fallbackResources[] = {
     "*XmContainer.outlineIndentation:	30",
     "*XmContainer.outlineColumnWidth:	6cm",
     "*XmContainer.detailTabList:		+3cm,+3cm,+3cm",
-
+    
     /* Use baseTranslations as per Xt Programmer's Manual, 10.2.12 */
     "*XmText.baseTranslations: " NEDIT_TEXT_TRANSLATIONS,
     "*XmTextField.baseTranslations: " NEDIT_TEXT_TRANSLATIONS,

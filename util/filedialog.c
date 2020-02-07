@@ -1418,6 +1418,32 @@ static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileEl
         XmNcellAlignment, XmALIGNMENT_RIGHT,
         XmNcolumnSizePolicy, XmVARIABLE,
         NULL);
+    
+    XmLGridColumn column0 = XmLGridGetColumn(grid, XmCONTENT, 1);
+    XmLGridColumn column1 = XmLGridGetColumn(grid, XmCONTENT, 1);
+    XmLGridColumn column2 = XmLGridGetColumn(grid, XmCONTENT, 2);
+    
+    Dimension col0Width = XmLGridColumnWidthInPixels(column1);
+    Dimension col1Width = XmLGridColumnWidthInPixels(column1);
+    Dimension col2Width = XmLGridColumnWidthInPixels(column2);
+    col0Width = 0;
+    
+    Dimension totalWidth = col0Width + col1Width + col2Width;
+    
+    Dimension gridWidth = 0;
+    Dimension gridShadow = 0;
+    XtVaGetValues(grid, XmNwidth, &gridWidth, XmNshadowThickness, &gridShadow, NULL);
+    
+    Dimension widthDiff = gridWidth - totalWidth - gridShadow - gridShadow;
+    
+    if(gridWidth > totalWidth) {
+            XtVaSetValues(grid,
+            XmNcolumnRangeStart, 0,
+            XmNcolumnRangeEnd, 0,
+            XmNcolumnWidth, col0Width + widthDiff - XmLGridVSBWidth(grid) - 2,
+            XmNcolumnSizePolicy, XmCONSTANT,
+            NULL);
+    }
 }
 
 static void filedialog_update_grid(
@@ -2551,6 +2577,13 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
     XtManageChild(data.grid);
+    
+    XtVaSetValues(
+            data.grid,
+            XmNcellDefaults, True,
+            XtVaTypedArg, XmNblankBackground, XmRString, "white", 6,
+            XtVaTypedArg, XmNcellBackground, XmRString, "white", 6,
+            NULL);
     
     //XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
     XtAddCallback(data.grid, XmNselectCallback, (XtCallbackProc)grid_select, &data);
