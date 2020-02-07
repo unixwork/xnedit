@@ -244,6 +244,9 @@ static void TextModifyVerify(Widget w, XtPointer clientData,
 	XtPointer callData);
 static void Traverse(Widget w, XEvent *event, String *, Cardinal *);
 
+static void ScrollUp(Widget w, XEvent *event, String *, Cardinal *);
+static void ScrollDown(Widget w, XEvent *event, String *, Cardinal *);
+
 /* XFE Additions */
 static void EditTimer(XtPointer, XtIntervalId *);
 static void CreateHideUnhideButtons(XmLGridWidget g);
@@ -357,6 +360,8 @@ static XtActionsRec actions[] =
 	{ "XmLGridPopupSelect",  PopupSelect  },
 	{ "XmLGridDragStart",    DragStart    },
 	{ "XmLGridTraverse",     Traverse     },
+        { "ScrollUp",            ScrollUp     },
+        { "ScrollDown",          ScrollDown   },
 	/* XFE Additions */
 	{ "XmLGridHideColumn",   HideAction   },
 	{ "XmLGridUnhideColumn", UnhideAction },
@@ -428,7 +433,9 @@ Ctrl ~Shift <Btn3Down>:  XmLGridPopupSelect(TOGGLE)\n\
 <EnterWindow>:           ManagerEnter()\n\
 <LeaveWindow>:           ManagerLeave()\n\
 <FocusOut>:              ManagerFocusOut()\n\
-<FocusIn>:               ManagerFocusIn()";
+<FocusIn>:               ManagerFocusIn()\n\
+<Btn4Down>,<Btn4Up>:     ScrollUp(0)\n\
+<Btn5Down>,<Btn5Up>:     ScrollDown(0)";
 
 /* Text Translations */
 
@@ -1581,7 +1588,7 @@ Initialize(Widget reqW,
 	g->grid.vsb = XtVaCreateWidget(
 		"vsb", xmScrollBarWidgetClass, (Widget)g,
 		XmNorientation, XmVERTICAL,
-		XmNincrement, 1,
+		XmNincrement, 3,
 		XmNtraversalOn, False,
 		XmNbackground, g->core.background_pixel,
 /* Don't force foreground on IRIX - it screws up the thumb color in sgiMode */
@@ -8291,6 +8298,18 @@ Traverse(Widget w,
 	else
 		MakeColVisible(g, focusCol);
 	}
+
+/* BEGIN XNEDIT EXTENSION */
+static void ScrollUp(Widget w, XEvent *event, String *s, Cardinal *c) {
+    XmLGridWidget g = (XmLGridWidget)w;
+    XtCallActionProc(g->grid.vsb, "IncrementUpOrLeft", event, s, *c);
+}
+
+static void ScrollDown(Widget w, XEvent *event, String *s, Cardinal *c) {
+    XmLGridWidget g = (XmLGridWidget)w;
+    XtCallActionProc(g->grid.vsb, "IncrementDownOrRight", event, s, *c);
+}
+/* END XNEDIT EXTENSION */
 
 static void
 TextActivate(Widget w,
