@@ -127,6 +127,7 @@ static void noWrapCB(Widget w, WindowInfo *window, caddr_t callData);
 static void continuousWrapCB(Widget w, WindowInfo *window, caddr_t callData);
 static void wrapMarginCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontCB(Widget w, WindowInfo *window, caddr_t callData);
+static void resetZoomCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1106,6 +1107,11 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     createMenuItem(menuPane, "tabs", "Tab Stops...", 'T', tabsCB, window, SHORT);
     createMenuItem(menuPane, "textFont", "Text Fonts...", 'F', fontCB, window,
     	    FULL);
+    
+    window->resetZoomItem = createMenuItem(menuPane, "resetZoom", "Reset Zoom", 'Z', resetZoomCB, NULL,
+    	    SHORT);
+    XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
+    
     window->highlightItem = createMenuToggle(menuPane, "highlightSyntax",
 	    "Highlight Syntax", 'H', doActionCB, "set_highlight_syntax",
 	    GetPrefHighlightSyntax(), SHORT);
@@ -1686,6 +1692,14 @@ static void matchSyntaxBasedCB(Widget w, WindowInfo *window, caddr_t callData)
 static void fontCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     ChooseFonts(WidgetToWindow(MENU_WIDGET(w)), True);
+}
+
+static void resetZoomCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    WindowInfo *window = WidgetToWindow(MENU_WIDGET(w));
+    if(window->zoom != 0) {
+        SetZoom(window, -window->zoom); // reverse previous steps
+    }
 }
 
 static void noWrapCB(Widget w, WindowInfo *window, caddr_t callData)

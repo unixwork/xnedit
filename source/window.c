@@ -3621,6 +3621,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());
     window->boldItalicFont = FontRef(GetPrefBoldItalicFont());
+    window->zoom = 0;
     window->fontDialog = NULL;
     window->nMarks = 0;
     window->markTimeoutID = 0;
@@ -4011,6 +4012,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XmToggleButtonSetState(window->iSearchLineItem, window->showISearchLine, False);
     XmToggleButtonSetState(window->lineNumsItem, window->showLineNumbers, False);
     XmToggleButtonSetState(window->highlightItem, window->highlightSyntax, False);
+    XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
     XtSetSensitive(window->highlightItem, window->languageMode != PLAIN_LANGUAGE_MODE);
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
 #ifndef VMS
@@ -4575,6 +4577,8 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     params[2] = orgWin->boldFontName;
     params[3] = orgWin->boldItalicFontName;
     XtCallActionProc(window->textArea, "set_fonts", NULL, params, 4);
+    
+    window->zoom = orgWin->zoom;
 
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
@@ -5075,6 +5079,39 @@ void SetEncoding(WindowInfo *window, const char *encoding)
     
     memcpy(window->encoding, encoding, len);
     window->encoding[len] = '\0';
+}
+
+#define MIN_FONT_SIZE 2
+#define MAX_FONT_SIZE 800
+void SetZoom(WindowInfo *window, int step)
+{
+    int font_sz = window->font->size + step;
+    int italic_sz = window->italicFont->size + step;
+    int bold_sz = window->boldFont->size + step;
+    int bolditalic_sz = window->italicFont->size + step; 
+  
+    if(
+            font_sz < MIN_FONT_SIZE || italic_sz < MIN_FONT_SIZE ||
+            bold_sz < MIN_FONT_SIZE || bolditalic_sz < MIN_FONT_SIZE ||
+            font_sz > MAX_FONT_SIZE || italic_sz > MAX_FONT_SIZE ||
+            bold_sz > MAX_FONT_SIZE || bolditalic_sz > MAX_FONT_SIZE)
+    {
+        return;
+    }
+    
+    window->zoom += step;
+    
+    char *font = ChangeFontSize(window->fontName, font_sz);
+    char *italic = ChangeFontSize(window->italicFontName, italic_sz);
+    char *bold = ChangeFontSize(window->boldFontName, italic_sz);
+    char *bolditalic = ChangeFontSize(window->boldItalicFontName, italic_sz);
+    
+    Boolean rz = window->resizeOnFontChange;
+    window->resizeOnFontChange = False; // disable window resizing on font change
+    SetFonts(window, font, italic, bold, bolditalic);
+    window->resizeOnFontChange = rz;
+    
+    XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
 }
 
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)
