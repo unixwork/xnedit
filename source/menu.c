@@ -4331,6 +4331,8 @@ static void setFontsAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     if (*nArgs >= 4) {
         SetFonts(window, args[0], args[1], args[2], args[3]);
+        window->zoom = 0;
+        XtSetSensitive(window->resetZoomItem, False);
     }
     else {
         fprintf(stderr, "xnedit: set_fonts requires 4 arguments\n");

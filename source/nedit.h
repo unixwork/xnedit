@@ -488,11 +488,6 @@ typedef struct _WindowInfo {
     char	boldFontName[MAX_FONT_LEN];
     char	boldItalicFontName[MAX_FONT_LEN];
     
-    char	fontNameZoom[MAX_FONT_LEN];	/* font names with zoom */
-    char	italicFontNameZoom[MAX_FONT_LEN];
-    char	boldFontNameZoom[MAX_FONT_LEN];
-    char	boldItalicFontNameZoom[MAX_FONT_LEN];
-    
     int         zoom;
     
     NFont       *font;
