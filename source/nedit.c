@@ -316,6 +316,8 @@ static char *fallbackResources[] = {
     "*editMenu.insertFormFeed.acceleratorText: Alt+Ctrl+L",
     "*editMenu.insertCtrlCode.accelerator: Alt Ctrl<Key>i",
     "*editMenu.insertCtrlCode.acceleratorText: Alt+Ctrl+I",
+    "*editMenu.insertUnicode.accelerator: Alt Ctrl<Key>u",
+    "*editMenu.insertUnicode.acceleratorText: Alt+Ctrl+U",
     "*searchMenu.mnemonic: S",
     "*searchMenu.find.accelerator: Ctrl<Key>f",
     "*searchMenu.find.acceleratorText: [Shift]Ctrl+F",

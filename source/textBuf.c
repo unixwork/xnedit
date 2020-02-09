@@ -2769,3 +2769,8 @@ int Utf8ToUcs4(const char *src_orig, FcChar32 *dst, int len)
     }
     return ret;
 }
+
+int Ucs4ToUtf8(FcChar32 ucs4, char *dst)
+{
+    return FcUcs4ToUtf8(ucs4, (FcChar8*)dst);
+}

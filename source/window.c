@@ -2525,7 +2525,7 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNhidePointer, (Boolean) GetPrefTypingHidesPointer(),
             textNcursorVPadding, GetVerticalAutoScroll(),
             NULL);
-
+    
     XtVaSetValues(sw, XmNworkWindow, frame, XmNhorizontalScrollBar, 
                     hScrollBar, XmNverticalScrollBar, vScrollBar, NULL);
 
