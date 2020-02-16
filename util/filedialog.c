@@ -1501,8 +1501,6 @@ static void filedialog_cleanup_filedata(FileDialogData *data)
     data->maxnamelen = 0;
 }
 
-#define FILEDIALOG_FALLBACK_PATH "/"
-
 #define FILE_ARRAY_SIZE 1024
 
 void file_array_add(FileElm **files, int *alloc, int *count, FileElm elm) {
@@ -1555,21 +1553,24 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         int dirs_alloc = FILE_ARRAY_SIZE;
         int files_alloc = FILE_ARRAY_SIZE;
         
+        filedialog_cleanup_filedata(data);
+        
         int dircount = 0; 
         int filecount = 0;
         size_t maxNameLen = 0;
         DIR *dir = opendir(path);
         if(!dir) {
-            if(path == FILEDIALOG_FALLBACK_PATH) {
-                // TODO: ERROR
-                fprintf(stderr, "Cannot open directory: %s\n", path);
-                perror("opendir");
-            } else {
-                filedialog_update_dir(data, FILEDIALOG_FALLBACK_PATH);
-            }
+            DialogF(
+                    DF_ERR,
+                    data->shell,
+                    1,
+                    "Error",
+                    "Directory %s cannot be opened: %s",
+                    "OK",
+                    path,
+                    strerror(errno));
             return;
         }
-        filedialog_cleanup_filedata(data);
     
         /* dir reading complete - set the path textfield */  
         XmTextFieldSetString(data->path, path);
