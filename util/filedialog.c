@@ -1426,7 +1426,6 @@ static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileEl
     Dimension col0Width = XmLGridColumnWidthInPixels(column1);
     Dimension col1Width = XmLGridColumnWidthInPixels(column1);
     Dimension col2Width = XmLGridColumnWidthInPixels(column2);
-    col0Width = 0;
     
     Dimension totalWidth = col0Width + col1Width + col2Width;
     
