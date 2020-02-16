@@ -2309,6 +2309,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtSetArg(args[n], XmNlabelString, str); n++;
         Widget nameLabel = XmCreateLabel(form, "label", args, n);
         XtManageChild(nameLabel);
+        XmStringFree(str);
 
         n = 0;
         str = XmStringCreateSimple("Add line breaks where wrapped");
