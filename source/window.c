@@ -3904,6 +3904,194 @@ void RefreshTabState(WindowInfo *win)
     XmStringFree(tipString);
 }
 
+
+typedef struct SaveFilesData {
+    Widget shell;
+    
+    int status; /* 0: ok, 1: cancel */
+    int end;
+} SaveFilesData;
+
+void savefiles_cancel(Widget w, SaveFilesData *data, XtPointer d)
+{
+    data->status = 1;
+    data->end = 1;
+}
+
+#define WIDGET_SPACING 5
+#define WINDOW_SPACING 8
+
+/*
+ * Shows a dialog, where all files, that should be saved, can be selected
+ */
+int SaveFilesDialog(WindowInfo *window)
+{
+    Arg args[32];
+    int n = 0;
+    XmString str;
+    
+    Widget winShell = window->shell;
+    
+    Widget dialog = CreateDialogShell(window->shell, "Save Files", args, 0);
+    
+    SaveFilesData data;
+    memset(&data, 0, sizeof(SaveFilesData));
+    data.shell = dialog;
+    
+    AddMotifCloseCallback(dialog, (XtCallbackProc)savefiles_cancel, &data);
+    
+    // create dialog
+    n = 0;
+    XtSetArg(args[0], XmNshadowThickness, 0); n++;
+    Widget form = XmCreateForm(dialog, "form", args, n);
+    
+    // top label
+    n = 0;
+    str = XmStringCreateLocalized("Save files before closing?");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget label = XmCreateLabel(form, "label", args, n);
+    XtManageChild(label);
+    XmStringFree(str);
+    
+    // bottom buttons form
+    n = 0;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNshadowThickness, 1); n++;
+    XtSetArg(args[n], XmNshadowType, XmSHADOW_ETCHED_OUT); n++;
+    Widget buttons = XmCreateForm(form, "btnform", args, n);
+    XtManageChild(buttons);
+    
+    n = 0;
+    str = XmStringCreateLocalized("Save");
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+    Widget btnSave = XmCreatePushButton(buttons, "button", args, n);
+    XtManageChild(btnSave);
+    XmStringFree(str);
+    
+    n = 0;
+    str = XmStringCreateLocalized("Cancel");
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+    Widget btnCancel = XmCreatePushButton(buttons, "button", args, n);
+    XtManageChild(btnCancel);
+    XmStringFree(str);
+    
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, btnSave); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNrightWidget, btnCancel); n++;
+    XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNshadowThickness, 0); n++;
+    Widget centerFrame = XmCreateFrame(buttons, "frame", args, n);
+    XtManageChild(centerFrame);
+    
+    n = 0;
+    str = XmStringCreateLocalized("Don't Save");
+    XtSetArg(args[n], XmNchildHorizontalAlignment, XmALIGNMENT_CENTER); n++;
+    XtSetArg(args[n], XmNchildType, XmFRAME_TITLE_CHILD); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget btnDontSave = XmCreatePushButton(centerFrame, "button", args, n);
+    XtManageChild(btnDontSave);
+    XmStringFree(str);
+
+    
+    // create the ScrolledWindow for the documents checkboxes 
+    n = 0;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, label); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, buttons); n++;
+    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmAS_NEEDED); n++;
+    XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
+    Widget scrollW = XmCreateScrolledWindow(form, "scrolledwindow", args, n);
+    XtManageChild(scrollW);
+    
+    n = 0;
+    XtSetArg(args[n], XmNshadowThickness, 0); n++;
+    Widget docForm = XmCreateForm(scrollW, "form", args, n);
+    
+    // create togglebuttons for unsaved documents
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNset, 1); n++;
+    int k = n;
+    Widget topWid = NULL;
+    for (WindowInfo *win=WindowList;win;win=win->next) {
+        if(win->shell == winShell && win->fileChanged) {
+            n = k;
+            str = XmStringCreateLocalized(win->filename);
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            XtSetArg(args[n], XmNuserData, win); n++;
+            if(topWid) {
+                XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+                XtSetArg(args[n], XmNtopWidget, topWid); n++;
+            } else {
+                XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+            }
+            topWid = XmCreateToggleButton(docForm, "sfbutton", args, n);
+            XtManageChild(topWid);            
+            XmStringFree(str);
+        }
+    }
+    XtManageChild(docForm);
+    
+    
+    // checkbox form
+    n = 0;
+    Widget cbForm = XmCreateForm(scrollW, "cbform", args, n);
+    XtManageChild(cbForm);
+    
+    Widget b1 = XmCreatePushButton(cbForm, "button", args, 0);
+    XtManageChild(b1);
+    
+    // show dialog
+    ManageDialogCenteredOnPointer(form);
+    
+    XtAppContext app = XtWidgetToApplicationContext(dialog);
+    while(!data.end && !XtAppGetExitFlag(app)) {
+        XEvent event;
+        XtAppNextEvent(app, &event);
+        XtDispatchEvent(&event);
+    }
+    
+    XtUnmapWidget(dialog);
+    XtDestroyWidget(dialog);
+    
+    return data.status;
+}
+
+
 /*
 ** close all the documents in a window
 */
@@ -3918,6 +4106,11 @@ int CloseAllDocumentInWindow(WindowInfo *window)
     else {
 	Widget winShell = window->shell;
 	WindowInfo *topDocument;
+        
+        // get all unsaved files
+        // TODO: insert SaveFilesDialog here
+        //SaveFilesDialog(window);
+        //return False;
 
     	/* close all _modified_ documents belong to this window */
 	for (win = WindowList; win; ) {

@@ -1044,7 +1044,7 @@ int CloseAllFilesAndWindows(void)
          * may get closed because it is in the same window as another 
          * document that gets closed, but it won't disappear; it becomes
          * Untitled.)
-         */
+         */     
         if (WindowList == MacroRunWindow() && WindowList->next != NULL) {
             if (!CloseAllDocumentInWindow(WindowList->next)) {
                 return False;
