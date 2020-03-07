@@ -4137,16 +4137,18 @@ int SaveFilesDialog(WindowInfo *window)
             &data);
     
     // show dialog
-    ManageDialogCenteredOnPointer(form);
+    if(dsize > 0) {
+        ManageDialogCenteredOnPointer(form);
     
-    XmProcessTraversal(buttons, XmTRAVERSE_CURRENT);
-    
-    XtAppContext app = XtWidgetToApplicationContext(dialog);
-    while(!data.end && !XtAppGetExitFlag(app)) {
-        XEvent event;
-        XtAppNextEvent(app, &event);
-        XtDispatchEvent(&event);
-    }
+        XmProcessTraversal(buttons, XmTRAVERSE_CURRENT);
+
+        XtAppContext app = XtWidgetToApplicationContext(dialog);
+        while(!data.end && !XtAppGetExitFlag(app)) {
+            XEvent event;
+            XtAppNextEvent(app, &event);
+            XtDispatchEvent(&event);
+        }
+    } // else: no unsaved documents
     
     XtUnmapWidget(dialog);
     
