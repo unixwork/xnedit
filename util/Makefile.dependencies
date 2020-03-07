@@ -13,3 +13,4 @@ refString.o: refString.c
 rbTree.o: rbTree.c
 libxattr.o: libxattr.c
 filedialog.o: filedialog.c filedialog.h
+xdnd.o: xdnd.c xdnd.h

@@ -34,6 +34,8 @@
 #include "DialogF.h"
 #include "nedit_malloc.h"
 
+#include "xdnd.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -350,6 +352,8 @@ void RealizeWithoutForcingPosition(Widget shell)
     if(GetWindowDarkTheme()) {
         EnableWindowDarkTheme(XtDisplay(shell), XtWindow(shell));
     }
+    
+    XdndEnable(shell);
 }
 
 /*

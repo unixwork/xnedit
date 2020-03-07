@@ -37,6 +37,7 @@
 #include "nedit.h"
 #include "calltips.h"
 #include "../util/DialogF.h"
+#include "../util/xdnd.h"
 #include "window.h"
 #include "preferences.h"
 #include "../util/nedit_malloc.h"
@@ -585,7 +586,7 @@ static XtActionsRec actionsList[] = {
     {"insert_string", insertStringAP},
     {"mouse_pan", mousePanAP},
     {"zoom_in", zoomInAP},
-    {"zoom_out", zoomOutAP},
+    {"zoom_out", zoomOutAP}
 };
 
 /* The motif text widget defined a bunch of actions which the nedit text
@@ -797,7 +798,7 @@ void TextWidgetClassInit(Display *dp, const char *fontname)
             fprintf(stderr, "Cannot open default font\n");
             exit(1);
         }
-    }
+    } 
 }
 
 /*
@@ -1239,6 +1240,8 @@ static void realize(Widget w, XtValueMask *valueMask,
     }
     
     TextDInitXft(text->text.textD);
+    
+    XdndEnable(w);
 }
 
 /*
