@@ -86,6 +86,7 @@ void NextDocument(WindowInfo *window);
 void PreviousDocument(WindowInfo *window);
 void LastDocument(WindowInfo *window);
 int NDocuments(WindowInfo *window);
+int NUnsavedDocuments(WindowInfo *window);
 WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window);
 WindowInfo *DetachDocument(WindowInfo *window);
 void MoveDocumentDialog(WindowInfo *window);

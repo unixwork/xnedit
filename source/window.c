@@ -4187,7 +4187,7 @@ int CloseAllDocumentInWindow(WindowInfo *window)
 {
     WindowInfo *win;
     
-    if (NDocuments(window) == 1) {
+    if (NUnsavedDocuments(window) == 1) {
     	/* only one document in the window */
     	return CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
     }
@@ -4637,6 +4637,20 @@ int NDocuments(WindowInfo *window)
     
     for (win = WindowList; win; win = win->next) {
     	if (win->shell == window->shell)
+	    nDocument++;
+    }
+    
+    return nDocument;
+}
+
+int NUnsavedDocuments(WindowInfo *window)
+{
+    WindowInfo *win;
+    Widget winShell = window->shell;
+    int nDocument = 0;
+    
+    for (win = WindowList; win; win = win->next) {
+    	if(win->shell == winShell && win->fileChanged)
 	    nDocument++;
     }
     
