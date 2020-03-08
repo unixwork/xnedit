@@ -1,4 +1,4 @@
-                    XNEdit Version 1.1, July 2019
+                    XNEdit Version 1.2, March 2020
 
 XNEdit is a multi-purpose text editor for the X Window System, which combines
 a standard, easy to use, graphical user interface with the thorough
@@ -45,6 +45,7 @@ Available configurations are:
     freebsd
     netbsd
     openbsd
+	macosx
     generic
 
 If everything works properly, this will produce two executables called
@@ -121,7 +122,7 @@ DOCUMENTATION
 More information is available in the file xnedit.txt in this kit, from XNEdit's
 on-line help system, the man-pages and from the web page for XNEdit at:
 
-http://www.unixwork.de/xnedit/
+https://www.unixwork.de/xnedit/
 
 SUPPORT
 -------

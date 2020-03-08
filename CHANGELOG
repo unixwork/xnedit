@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+version 1.2.0 (2020-03-08)
+--------------------------
+
+ - added simple encoding detection
+ - added option to change encoding on "Revert to Saved"
+ - added dialog for inserting unicode codepoints (replaces "Insert Ctrl Code")
+ - added detail view to the file dialog
+ - added menu entry for resetting font zoom (caused by ctrl +/- or mouse wheel)
+ - added support for opening files by drag'n'drop to the main window (xdnd)
+ - added new dialog for saving files on window-close
+ - fixed paste from primary selection on macOS
+ - fixed encoding conversion bug
+ - some code cleanup
+
 version 1.1.1 (2019-08-18)
 --------------------------
 
@@ -15,6 +29,7 @@ version 1.1.0 (2019-07-21)
  - added ctrl++ and ctrl+- shortcuts for changing font size
  - added file dialog button for creating directories
  - added some additional preferences (not changeable via menu)
+ - added macOS makefile
  - fixed text widget rendering issues with non-compositing window manager
  - fixed internal window/document initalization (encoding, fonts)
  - fixed text color settings being ignored when syntax highlighting is disabled
