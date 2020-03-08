@@ -3958,17 +3958,7 @@ int SaveFilesDialog(WindowInfo *window)
     XtSetArg(args[0], XmNshadowThickness, 0); n++;
     Widget form = XmCreateForm(dialog, "form", args, n);
     
-    // top label
-    n = 0;
-    str = XmStringCreateLocalized("Save files before closing?");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    Widget label = XmCreateLabel(form, "label", args, n);
-    XtManageChild(label);
-    XmStringFree(str);
+    
     
     // bottom buttons form
     n = 0;
@@ -4043,21 +4033,45 @@ int SaveFilesDialog(WindowInfo *window)
     Widget space = XmCreateSeparator(buttons, "space", args, n);
     XtManageChild(space);
     
+    n = 0;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, buttons); n++;
+    XtSetArg(args[n], XmNshadowThickness, 1); n++;
+    XtSetArg(args[n], XmNshadowType, XmSHADOW_ETCHED_OUT); n++;
+    Widget topForm = XmCreateForm(form, "frame", args, n);
+    XtManageChild(topForm);
+    
+    // top label
+    n = 0;
+    str = XmStringCreateLocalized("Save files before closing?");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    Widget label = XmCreateLabel(topForm, "label", args, n);
+    XtManageChild(label);
+    XmStringFree(str);
+    
+    
     // create the ScrolledWindow for the documents checkboxes 
     n = 0;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, label); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, buttons); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmAS_NEEDED); n++;
     XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
-    Widget scrollW = XmCreateScrolledWindow(form, "scrolledwindow", args, n);
+    XtSetArg(args[n], XmNshadowThickness, 1); n++;
+    Widget scrollW = XmCreateScrolledWindow(topForm, "scrolledwindow", args, n);
     XtManageChild(scrollW);
     
     n = 0;
