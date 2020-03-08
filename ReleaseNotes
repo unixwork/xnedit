@@ -7,6 +7,21 @@ kits.  It also contains change information, for users who are interested in
 what bugs have been fixed, and what features have been added in the current
 version.
 
+New XNEdit 1.2 "Insert Unicode" menu entry
+------------------------------------------
+
+The new "Insert Unicode" replaces the "Insert Ctrl Code" menu entry, which wasn't fully functional in XNEdit.
+
+The Insert Unicode dialog allows specifying an Unicode Codepoint in a variety of formats:
+
+Decimal number, for example: 122
+Possible Hex formats (case insensitive):
+U+007A
+\U007A
+U007A
+0x7A
+
+
 New XNEdit 1.1 preferences
 --------------------------
 
