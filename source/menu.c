@@ -758,8 +758,8 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     createMenuSeparator(menuPane, "sep3", FULL);
     createMenuItem(menuPane, "insertFormFeed", "Insert Form Feed", 'I',
     	    formFeedCB, window, FULL);
-    createMenuItem(menuPane, "insertCtrlCode", "Insert Ctrl Code...", 'n',
-    	    doActionCB, "control_code_dialog", FULL);
+    //createMenuItem(menuPane, "insertCtrlCode", "Insert Ctrl Code...", 'n',
+    //	    doActionCB, "control_code_dialog", FULL);
     createMenuItem(menuPane, "insertUnicode", "Insert Unicode...", 'U',
     	    doActionCB, "unicode_dialog", FULL);
 #ifdef SGI_CUSTOM
