@@ -2,10 +2,10 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Nov 14, 2019 (Do NOT edit!)
+                 Generated on Mar 8, 2020 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2019 Mark Edel                                            *
+* Copyright (c) 1999-2020 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
@@ -5758,4 +5758,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit release of Nov. 14, 2019\n";
+static const char * NEditVersion = "XNEdit 1.2.0\nMar 8, 2020\n";
