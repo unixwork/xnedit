@@ -1702,7 +1702,7 @@ char* set_selected_path(FileDialogData *data, XmString item)
     return path;
 }
 
-void set_path_from_row(FileDialogData *data, int row, Boolean update) {
+void set_path_from_row(FileDialogData *data, int row) {
     FileElm *elm = NULL;
     XmLGridRow rowPtr = XmLGridGetRow(data->grid, XmCONTENT, row);
     XtVaGetValues(data->grid, XmNrowPtr, rowPtr, XmNrowUserData, &elm, NULL);
@@ -1712,12 +1712,8 @@ void set_path_from_row(FileDialogData *data, int row, Boolean update) {
     }
     
     char *path = NEditStrdup(elm->path);
-        
-    if(update) {
-        data->end = True;
-        data->status = FILEDIALOG_OK;
-        data->selIsDir = False;
-    }
+    
+    data->selIsDir = False;
     if(data->type == FILEDIALOG_SAVE) {
         XmTextFieldSetString(data->name, FileName(path));
     }
@@ -1729,11 +1725,13 @@ void set_path_from_row(FileDialogData *data, int row, Boolean update) {
 }
 
 void grid_select(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
-    set_path_from_row(data, cb->row, False);
+    set_path_from_row(data, cb->row);
 }
 
 void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
-    set_path_from_row(data, cb->row, True);
+    set_path_from_row(data, cb->row);
+    data->end = True;
+    data->status = FILEDIALOG_OK;
 }
 
 void grid_header_clicked(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) { 
