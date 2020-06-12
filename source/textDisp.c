@@ -3069,16 +3069,7 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
     XSetClipRectangles(display, textD->lineNumGC, 0, 0,
     	    &clipRect, 1, Unsorted);
     if(textD->d) {
-        Picture pic = XftDrawPicture(textD->d);
-        if(pic != 0) {
-            XRenderSetPictureClipRectangles(
-                    XtDisplay(textD->w),
-                    pic,
-                    0,
-                    0,
-                    &clipRect,
-                    1);
-        }
+        XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
     }
     
     /* Erase the previous contents of the line number area, if requested */
