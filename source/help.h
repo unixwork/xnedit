@@ -71,6 +71,7 @@ extern const char linktime[];
 
 void Help(enum HelpTopic topic);
 void PrintVersion(void);
+void SetHelpZoom(Widget textWidget, int step);
 void InstallHelpLinkActions(XtAppContext context);
 
 #endif /* NEDIT_HELP_H_INCLUDED */

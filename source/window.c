@@ -5423,6 +5423,11 @@ void SetZoom(WindowInfo *window, int step)
     window->resizeOnFontChange = rz;
     
     XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
+    
+    NEditFree(font);
+    NEditFree(italic);
+    NEditFree(bold);
+    NEditFree(bolditalic);
 }
 
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)

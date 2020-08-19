@@ -41,6 +41,7 @@
 #include "window.h"
 #include "preferences.h"
 #include "../util/nedit_malloc.h"
+#include "help.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3457,7 +3458,11 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 
 static void zoom(Widget w, int step) {
     WindowInfo *win = WidgetToWindow(w);
-    SetZoom(win, step);
+    if(win) {
+        SetZoom(win, step);
+    } else {
+        SetHelpZoom(w, step);
+    }
 }
 
 static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {

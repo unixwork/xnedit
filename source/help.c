@@ -157,6 +157,8 @@ static int StyleUnderlines[] =
 
 static styleTableEntry HelpStyleInfo[ N_STYLES ];
 
+static int HelpZoom;
+
 /* Translation table for style codes (A, B, C, ...) to their ASCII codes.
    For systems using ASCII, this is just a one-to-one mapping, but the
    table makes it possible to use the style codes also on an EBCDIC system.
@@ -1295,6 +1297,30 @@ static void initNavigationHistory(void) {
 extern void XmRegisterConverters(void);
 #endif
 
+void SetHelpZoom(Widget textWidget, int step)
+{
+    Display *dp = XtDisplay(textWidget);
+    HelpZoom += step;
+    
+    for(int i=0;i<N_STYLES;i++) {
+        if(HelpStyleInfo[i].font) {
+            int font_sz = HelpStyleInfo[i].font->size + step;
+            char *fontName = GetPrefHelpFontName(StyleFonts[STYLE_INDEX(i)]);
+            
+            char *newFontName = ChangeFontSize(fontName, font_sz);
+            
+            NFont *newFont = FontFromName(dp, newFontName);
+            NEditFree(newFontName);
+            
+            if(newFont) {
+                FontUnref(HelpStyleInfo[i].font);
+                HelpStyleInfo[i].font = newFont;
+            }
+        }
+    }
+    
+    XtVaSetValues(textWidget, textNXftFont, HelpStyleInfo[0].font, NULL);
+}
 
 /* Print version info to stdout */
 void PrintVersion(void)
