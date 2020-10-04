@@ -3,12 +3,15 @@
 Microline/XmL/Makefile.linux
 Microline/XmL/Makefile.linux-static
 Microline/XmL/Makefile.solaris
+Microline/XmL/Makefile.freebsd
 Xlt/Makefile.linux
 Xlt/Makefile.linux-static
 Xlt/Makefile.solaris
+Xlt/Makefile.freebsd
 source/Makefile.linux
 source/Makefile.linux-static
 source/Makefile.solaris
+source/Makefile.freebsd
 source/nc
 source/nedit
 source/xnc
@@ -17,4 +20,5 @@ source/parse.c
 util/Makefile.linux
 util/Makefile.linux-static
 util/Makefile.solaris
+util/Makefile.freebsd
 util/check_lin_tif

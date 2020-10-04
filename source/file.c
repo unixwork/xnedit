@@ -1186,6 +1186,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
 	response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
 	if (response != GFN_OK)
     	    return FALSE;
+        window->bom = newFile.writebom;
 	window->fileFormat = newFile.format;
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
@@ -1429,23 +1430,18 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             return FALSE;
         }
     } else if (window->fileFormat == MAC_FILE_FORMAT)
-    {
+    { 
         ConvertToMacFileString(fileString, fileLen);
     }
 
     /* write to the file */
-#ifdef IBM_FWRITE_BUG
-#define FWRITE(fd, buf, len) write(fileno(fd), buf, len)
-#else
-#define FWRITE(fd, buf, len) fwrite(buf, 1, len, fd)
-#endif
     
     /* write bom if requsted */
     if(window->bom) {
         char *bom;
         int bomLen = getBOM(window->encoding, &bom);
         if(bomLen > 0) {
-            if(FWRITE(fp, bom, bomLen) != bomLen) {
+            if(fwrite(bom, 1, bomLen, fp) != bomLen) {
                 fileLen = 0;
             }
         }
@@ -1470,7 +1466,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         w -= outleft;
         
         if(w > 0) {
-            FWRITE(fp, buf, w);
+            fwrite(buf, 1, w, fp);
         }
         
         if(rc == (size_t)-1) {
@@ -1665,11 +1661,7 @@ int WriteBackupFile(WindowInfo *window)
     	fileString[fileLen++] = '\n'; 	 /* null terminator no longer needed */
     
     /* write out the file */
-#ifdef IBM_FWRITE_BUG
-    write(fileno(fp), fileString, fileLen);
-#else
     fwrite(fileString, sizeof(char), fileLen, fp);
-#endif
     if (ferror(fp))
     {
         DialogF(DF_ERR, window->shell, 1, "Error saving Backup",
@@ -1947,11 +1939,7 @@ void PrintString(const char *string, int length, Widget parent, const char *jobN
 #endif
     
     /* write to the file */
-#ifdef IBM_FWRITE_BUG
-    write(fileno(fp), string, length);
-#else
     fwrite(string, sizeof(char), length, fp);
-#endif
     if (ferror(fp))
     {
         DialogF(DF_ERR, parent, 1, "Error while Printing",
