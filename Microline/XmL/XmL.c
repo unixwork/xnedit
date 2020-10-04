@@ -1078,7 +1078,7 @@ XmLRenderTableGetDimensions(
                         XftTextExtentsUtf8 (
                             dpy,
 		                    xftFont,
-		                    testString,
+		                    (const FcChar8*)testString,
 		                    testStringLen,
 		                    &extents
                         );

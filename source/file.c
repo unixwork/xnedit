@@ -2712,11 +2712,6 @@ const char * DetectEncoding(const char *buf, size_t len, const char *def) {
     
     if(utf8Err == 0 || utf8Err < utf8Mb) {
         return "UTF-8";
-    } else {
-        if(def) {
-            return def;
-        } else {
-            
-        }
     }
+    return def;
 }
