@@ -2482,7 +2482,7 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
     }
 }
 
-char* ConvertEncoding(char *string, const char *to, const char *from) {
+char* ConvertEncodingLen(const char *string, size_t len, const char *to, const char *from) {
     if(!to || !from) {
         return NULL;
     }
@@ -2492,14 +2492,13 @@ char* ConvertEncoding(char *string, const char *to, const char *from) {
         return NULL;
     }
     
-    size_t len = strlen(string);
     size_t size = len + 16;
     size_t pos = 0;
     size_t inleft = len;
     size_t outleft = size;
     
     char *result = NEditMalloc(size+1);
-    char *in = string;
+    char *in = (char*)string;
     char *out = result;
     while(inleft >= 0) {
         if (inleft == 0) {
@@ -2534,6 +2533,10 @@ char* ConvertEncoding(char *string, const char *to, const char *from) {
     iconv_close(ic);
     result[pos] = '\0';
     return result;
+}
+
+char* ConvertEncoding(const char *string, const char *to, const char *from) {
+    return ConvertEncodingLen(string, strlen(string), to, from);
 }
 
 char* GetLocaleEncoding(void) {

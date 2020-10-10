@@ -156,36 +156,27 @@ void StopHandlingXSelections(Widget w)
     }
 }
 
-/*
-** Copy the primary selection to the clipboard
-*/
-void CopyToClipboard(Widget w, Time time)
-{
-    char *text;
+
+
+void CopyStringToClipboard(Widget w, Time time, const char *text, size_t length) {
     long itemID = 0;
     XmString s;
-    int stat, length;
+    int stat;
     int res;
     
-    /* Get the selected text, if there's no selection, do nothing */
-    text = BufGetSelectionText(((TextWidget)w)->text.textD->buffer);
-    if (*text == '\0') {
-    	NEditFree(text);
-    	return;
+    if(!text || text[0] == '\0')
+    {
+        return;
     }
+    
     char *locale_text = NULL;
     if(!IsUtf8Locale()) {
-        locale_text = ConvertEncoding(text, GetLocaleEncoding(), "UTF-8");
+        locale_text = ConvertEncodingLen(text, length, GetLocaleEncoding(), "UTF-8");
     }
-
-    /* If the string contained ascii-nul characters, something else was
-       substituted in the buffer.  Put the nulls back */
-    length = strlen(text);
-    BufUnsubstituteNullChars(text, ((TextWidget)w)->text.textD->buffer);
     
     /* Shut up LessTif */
     if (SpinClipboardLock(XtDisplay(w), XtWindow(w)) != ClipboardSuccess) {
-        NEditFree(text);
+        if(locale_text) NEditFree(locale_text);
         return;
     }
     
@@ -205,30 +196,37 @@ void CopyToClipboard(Widget w, Time time)
        including a terminating null but not mentioning it in the length */
     
     res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "UTF8_STRING",
-    	    text, length, 0, NULL);
+    	    (char*)text, length, 0, NULL);
     if(res == ClipboardSuccess) {
         int l_length = length;
-        char *l_text = text;
+        const char *l_text = text;
         if(locale_text) {
             l_text = locale_text;
             l_length = strlen(locale_text);
         }
         res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "STRING",
-    	    l_text, l_length, 0, NULL);
+    	    (char*)l_text, l_length, 0, NULL);
     }
     
-    if (res != ClipboardSuccess) {
-    	NEditFree(text);
-        SpinClipboardEndCopy(XtDisplay(w), XtWindow(w), itemID);
-        SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return;
-    }
-    NEditFree(text);
     if(locale_text) {
         NEditFree(locale_text);
     }
+    
     SpinClipboardEndCopy(XtDisplay(w), XtWindow(w), itemID);
     SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
+}
+
+/*
+** Copy the primary selection to the clipboard
+*/
+void CopyToClipboard(Widget w, Time time)
+{
+    char *text = BufGetSelectionText(((TextWidget)w)->text.textD->buffer);
+    size_t length = strlen(text);
+    BufUnsubstituteNullChars(text, ((TextWidget)w)->text.textD->buffer);
+    
+    CopyStringToClipboard(w, time, text, length);
+    NEditFree(text);
 }
 
 /*
@@ -323,16 +321,9 @@ void MovePrimarySelection(Widget w, Time time, int isColumnar)
    XtGetSelectionValues(w, XA_PRIMARY, targets, 3, getSelectionCB, data, time);
 }
 
-/*
-** Insert the X CLIPBOARD selection at the cursor position.  If isColumnar,
-** do an BufInsertCol for a columnar paste instead of BufInsert.
-*/
-void InsertClipboard(Widget w, int isColumnar)
-{
+
+char* GetClipboard(Widget w) {
     unsigned long length, retLength;
-    textDisp *textD = ((TextWidget)w)->text.textD;
-    textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
-    int cursorLineStart, column, cursorPos;
     int res;
     char *string;
     char *type = "UTF8_STRING";
@@ -367,7 +358,7 @@ void InsertClipboard(Widget w, int isColumnar)
          * a failure, so we try to remove the lock, just to be sure.
          */
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return;
+    	return NULL;
     }
     string = (char*)NEditMalloc(length+1);
     if (SpinClipboardRetrieve(XtDisplay(w), XtWindow(w), type, string,
@@ -378,7 +369,7 @@ void InsertClipboard(Widget w, int isColumnar)
          * a failure, so we try to remove the lock, just to be sure.
          */
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return;
+    	return NULL;
     }
     string[retLength] = '\0';
     
@@ -391,6 +382,26 @@ void InsertClipboard(Widget w, int isColumnar)
         }
     }
 
+    return string;
+}
+
+/*
+** Insert the X CLIPBOARD selection at the cursor position.  If isColumnar,
+** do an BufInsertCol for a columnar paste instead of BufInsert.
+*/
+void InsertClipboard(Widget w, int isColumnar)
+{
+    unsigned long retLength;
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
+    int cursorLineStart, column, cursorPos; 
+    
+    char *string = GetClipboard(w);
+    if(!string) {
+        return;
+    }
+    retLength = strlen(string);
+    
     /* If the string contains ascii-nul characters, substitute something
        else, or give up, warn, and refuse */
     if (!BufSubstituteNullChars(string, retLength, buf)) {

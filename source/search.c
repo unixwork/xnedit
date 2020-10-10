@@ -50,6 +50,8 @@
 #include "../util/misc.h"
 #include "../util/nedit_malloc.h"
 
+#include "../util/textfield.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -458,7 +460,7 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
     }
     	
     /* Blank the Replace with field */
-    XmTextSetString(window->replaceWithText, "");
+    XNETextSetString(window->replaceWithText, "");
         
     /* Set the initial search type */
     initToggleButtons(searchType, window->replaceRegexToggle,
@@ -553,7 +555,7 @@ static void setTextField(WindowInfo *window, Time time, Widget textField)
     }
 
     /* Update the field */
-    XmTextSetString(textField, primary_selection);
+    XNETextSetString(textField, primary_selection);
 
     NEditFree(primary_selection);
     NEditFree(selectionInfo);
@@ -758,7 +760,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNrightOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNmaxLength, SEARCHMAX); argcnt++;
-    findText = XmCreateText(form, "replaceString", args, argcnt);
+    findText = XNECreateText(form, "replaceString", args, argcnt);
     XtAddCallback(findText, XmNfocusCallback, (XtCallbackProc)rFocusCB, window);
     XtAddCallback(findText, XmNvalueChangedCallback, 
       (XtCallbackProc)rFindTextValueChangedCB, window);
@@ -796,7 +798,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNrightOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNmaxLength, SEARCHMAX); argcnt++;
-    replaceText = XmCreateText(form, "replaceWithString", args, argcnt);
+    replaceText = XNECreateText(form, "replaceWithString", args, argcnt);
     XtAddEventHandler(replaceText, KeyPressMask, False,
     	    (XtEventHandler)replaceArrowKeyCB, window);
     RemapDeleteKey(replaceText);
@@ -1248,7 +1250,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNrightOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNmaxLength, SEARCHMAX); argcnt++;
-    findText = XmCreateText(form, "searchString", args, argcnt);
+    findText = XNECreateText(form, "searchString", args, argcnt);
     XtAddCallback(findText, XmNfocusCallback, (XtCallbackProc)fFocusCB, window);
     XtAddCallback(findText, XmNvalueChangedCallback, 
       (XtCallbackProc)findTextValueChangedCB, window);
@@ -1389,7 +1391,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtManageChild(cancelBtn);
     XtVaSetValues(form, XmNcancelButton, cancelBtn, NULL);
     AddDialogMnemonicHandler(form, FALSE);
-    
+        
     window->findDlog = form;
     window->findText = findText;
     window->findRevToggle = reverseBtn;
@@ -2404,7 +2406,7 @@ static void replaceAllScopeCB(Widget w, WindowInfo *window,
 
 static int textFieldNonEmpty(Widget w)
 {
-    char *str = XmTextGetString(w);
+    char *str = XNETextGetString(w);
     int nonEmpty = (str[0] != '\0');
     NEditFree(str);
     return(nonEmpty);
@@ -2458,8 +2460,8 @@ static void rFindArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
                       &window->replaceLastLiteralCase,
                       &window->replaceLastRegexCase);
     
-    XmTextSetString(window->replaceText, searchStr);
-    XmTextSetString(window->replaceWithText, replaceStr);
+    XNETextSetString(window->replaceText, searchStr);
+    XNETextSetString(window->replaceWithText, replaceStr);
     
     /* Set the state of the Replace, Find ... buttons */
     UpdateReplaceActionButtons(window);
@@ -2492,9 +2494,9 @@ static void replaceArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
 
     /* change only the replace field information */
     if (index == 0)
-    	XmTextSetString(window->replaceWithText, "");
+    	XNETextSetString(window->replaceWithText, "");
     else
-    	XmTextSetString(window->replaceWithText,
+    	XNETextSetString(window->replaceWithText,
     		ReplaceHistory[historyIndex(index)]);
     window->rHistIndex = index;
 }
@@ -2549,7 +2551,7 @@ static void findArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
                       window->findCaseToggle, &window->findWordToggle,
                       &window->findLastLiteralCase,
                       &window->findLastRegexCase);
-    XmTextSetString(window->findText, searchStr);
+    XNETextSetString(window->findText, searchStr);
 
     /* Set the state of the Find ... button */
     fUpdateActionButtons(window);
@@ -2603,8 +2605,8 @@ static int getReplaceDlogInfo(WindowInfo *window, int *direction,
     
     /* Get the search and replace strings, search type, and direction
        from the dialog */
-    replaceText = TextGetStringUtf8(window->replaceText);
-    replaceWithText = TextGetStringUtf8(window->replaceWithText);
+    replaceText = XNETextGetString(window->replaceText);
+    replaceWithText = XNETextGetString(window->replaceWithText);
     
     if(XmToggleButtonGetState(window->replaceRegexToggle)) {
       int regexDefault;
@@ -2681,7 +2683,7 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
     char *compileMsg;
     
     /* Get the search string, search type, and direction from the dialog */
-    findText = TextGetStringUtf8(window->findText);
+    findText = XNETextGetString(window->findText);
     
     if(XmToggleButtonGetState(window->findRegexToggle)) {
       int regexDefault;
@@ -2902,7 +2904,7 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
 void BeginISearch(WindowInfo *window, int direction)
 {
     window->iSearchStartPos = -1;
-    XmTextSetString(window->iSearchText, "");
+    XNETextSetString(window->iSearchText, "");
     XmToggleButtonSetState(window->iSearchRevToggle,
 	    direction == SEARCH_BACKWARD, FALSE);
     /* Note: in contrast to the replace and find dialogs, the regex and
@@ -3097,7 +3099,7 @@ static void iSearchTextSetString(Widget w, WindowInfo *window,
     XtRemoveAllCallbacks(window->iSearchText, XmNvalueChangedCallback);
     XtRemoveAllCallbacks(window->iSearchText, XmNactivateCallback);
     /* empty the text */
-    XmTextSetString(window->iSearchText, str ? str : "");
+    XNETextSetString(window->iSearchText, str ? str : "");
     /* put back the callbacks */
     XtAddCallback(window->iSearchText, XmNactivateCallback, 
       (XtCallbackProc)iSearchTextActivateCB, window);
@@ -3124,7 +3126,7 @@ static void iSearchTextClearAndPasteAP(Widget w, XEvent *event, String *args,
     selText = GetAnySelection(window);
     iSearchTextSetString(w, window, selText);
     if (selText) {
-        XmTextSetInsertionPosition(window->iSearchText, strlen(selText));
+        XNETextSetInsertionPosition(window->iSearchText, strlen(selText));
         NEditFree(selText);
     }
     iSearchTextActivateCB(w, window, &cbdata);
@@ -3159,7 +3161,7 @@ static void iSearchTextActivateCB(Widget w, WindowInfo *window,
        
     /* Fetch the string, search type and direction from the incremental
        search bar widgets at the top of the window */
-    searchString = TextGetStringUtf8(window->iSearchText);
+    searchString = XNETextGetString(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
 	searchType = SEARCH_REGEX;
@@ -3203,7 +3205,7 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
     
     /* Fetch the string, search type and direction from the incremental
        search bar widgets at the top of the window */
-    searchString = TextGetStringUtf8(window->iSearchText);
+    searchString = XNETextGetString(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
 	searchType = SEARCH_REGEX;
@@ -3307,9 +3309,9 @@ static void iSearchTextKeyEH(Widget w, WindowInfo *window,
                       &window->iSearchLastRegexCase);
     
     /* Beware the value changed callback is processed as part of this call */
-    XmTextSetString(window->iSearchText, searchStr);
-    XmTextSetInsertionPosition(window->iSearchText, 
-	    XmTextGetLastPosition(window->iSearchText));
+    XNETextSetString(window->iSearchText, searchStr);
+    XNETextSetInsertionPosition(window->iSearchText, 
+	    XNETextGetLastPosition(window->iSearchText));
 }
 
 /*

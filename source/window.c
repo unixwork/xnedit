@@ -63,6 +63,7 @@
 #include "../Xlt/BubbleButtonP.h"
 #include "../Microline/XmL/Folder.h"
 #include "../util/nedit_malloc.h"
+#include "../util/textfield.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -590,7 +591,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     XmStringFree(s1);
 
     window->iSearchText = XtVaCreateManagedWidget("iSearchText",
-            xmTextWidgetClass, window->iSearchForm,
+            XNEtextfieldWidgetClass, window->iSearchForm,
             XmNmarginHeight, 1,
             XmNnavigationType, XmEXCLUSIVE_TAB_GROUP,
             XmNleftAttachment, XmATTACH_WIDGET,

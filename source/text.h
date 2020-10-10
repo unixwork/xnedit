@@ -139,6 +139,9 @@ typedef struct {
     char *charsTyped;
 } smartIndentCBStruct;
 
+
+Widget XNECreateTextField(Widget parent, char *name, ArgList arglist, Cardinal argcount);
+
 void TextWidgetClassInit(Display *dp, const char *fontname);
 
 /* User callable routines */

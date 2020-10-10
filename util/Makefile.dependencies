@@ -14,3 +14,4 @@ rbTree.o: rbTree.c
 libxattr.o: libxattr.c
 filedialog.o: filedialog.c filedialog.h
 xdnd.o: xdnd.c xdnd.h
+textfield.o: textfield.c textfield.h

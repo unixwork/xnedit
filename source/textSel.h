@@ -30,6 +30,9 @@
 #include <X11/Intrinsic.h>
 #include <X11/X.h>
 
+void CopyStringToClipboard(Widget w, Time time, const char *str, size_t len);
+char* GetClipboard(Widget w);
+
 void HandleXSelections(Widget w);
 void StopHandlingXSelections(Widget w);
 void CopyToClipboard(Widget w, Time time);

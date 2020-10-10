@@ -143,7 +143,8 @@ void WmClientMsg(Display *disp, Window win, const char *msg,
         unsigned long data0, unsigned long data1,
         unsigned long data2, unsigned long data3,
         unsigned long data4);
-char* ConvertEncoding(char *string, const char *to, const char *from);
+char* ConvertEncoding(const char *string, const char *to, const char *from);
+char* ConvertEncodingLen(const char *string, size_t len, const char *to, const char *from);
 char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
 void EnableWindowDarkTheme(Display *dp, Window window);
