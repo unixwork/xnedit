@@ -65,6 +65,7 @@ static void copyAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void selectAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 
 static void tfCalcCursorPos(TextFieldWidget tf);
 
@@ -110,6 +111,7 @@ static XtActionsRec actionslist[] = {
   {"paste-clipboard",pasteAP},
   {"endLine",endLineAP},
   {"beginLine",beginLineAP},
+  {"selectAll",selectAllAP},
   {"NULL",NULL}
 };
 
@@ -136,6 +138,7 @@ Ctrl<KeyPress>osfDelete:    deletenextword()\n\
 <Key>osfEndLine:            endLine()\n\
 Ctrl<KeyPress>osfLeft:      moveleftword()\n\
 Ctrl<KeyPress>osfRight:     moverightword()\n\
+Ctrl<Key>a:                 selectAll()\n\
 <KeyPress>osfLeft:          moveleft()\n\
 <KeyPress>osfRight:         moveright()\n\
 <KeyPress>:	            insert()";
@@ -222,6 +225,8 @@ void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_arg
     tf->textfield.selStart = 0;
     tf->textfield.selEnd = 0;
     
+    tf->textfield.btn1ClickPrev = 0;
+    tf->textfield.btn1ClickPrev2 = 0;
 }
 
 static void tfInitXft(TextFieldWidget w) {
@@ -502,17 +507,66 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int pos = tfXToPos(tf, event->xbutton.x);
     tf->textfield.pos = pos;
     
-    tfRedrawText(tf);
+    Time t = event->xbutton.time;
+    int multiclicktime = XtGetMultiClickTime(XtDisplay(w));
+    if(t - tf->textfield.btn1ClickPrev2 < 2*multiclicktime) {
+        // triple click
+        t = 0;
+        
+        tf->textfield.hasSelection = 1;
+        tf->textfield.selStart = 0;
+        tf->textfield.selEnd = tf->textfield.length;
+        
+        tf->textfield.dontAdjustSel = 1;
+    } else if(t - tf->textfield.btn1ClickPrev < multiclicktime) {
+        // double click
+        
+        // is current char space?
+        int spc = pos < tf->textfield.length ? isspace(tf->textfield.buffer[pos]) : 0;
+        
+        int wleft, wright;
+        // get left word bound
+        for(wleft=pos;wleft>=0;wleft--) {
+            if(isspace(tf->textfield.buffer[wleft]) != spc) {
+                wleft++;
+                break;
+            }
+        }
+        if(wleft < 0) wleft = 0;
+        // get right word bound
+        for(wright=pos;wright<tf->textfield.length;wright++) {
+            if(isspace(tf->textfield.buffer[wright]) != spc) {
+                break;
+            }
+        }
+        
+        tf->textfield.hasSelection = 1;
+        tf->textfield.selStart = wleft;
+        tf->textfield.selEnd = wright; 
+        tf->textfield.dontAdjustSel = 1;
+    } else {
+        tf->textfield.hasSelection = 1;
+        tf->textfield.selStart = pos;
+        tf->textfield.selEnd = pos;
+        
+        tf->textfield.dontAdjustSel = 0;
+    }
     
-    tf->textfield.hasSelection = 1;
-    tf->textfield.selStart = pos;
-    tf->textfield.selEnd = pos;
+    tf->textfield.btn1ClickPrev2 = tf->textfield.btn1ClickPrev;
+    tf->textfield.btn1ClickPrev = t;
     
     tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
+    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
+    
+    tfRedrawText(tf);
+    
+    
 }
 
 static void mouse1UpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    if(tf->textfield.dontAdjustSel) return;
+    
     adjustSelection(tf, event->xbutton.x);
     
     if(tf->textfield.selStart == tf->textfield.selEnd) {
@@ -759,6 +813,16 @@ static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
     TextFieldWidget tf = (TextFieldWidget)w;
     tf->textfield.pos = 0;
     tf->textfield.hasSelection = 0;
+    tfRedrawText(tf);
+}
+
+static void selectAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tf->textfield.selStart = 0;
+    tf->textfield.selEnd = tf->textfield.length;
+    tf->textfield.hasSelection = 1;
+    tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
+    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
     tfRedrawText(tf);
 }
 

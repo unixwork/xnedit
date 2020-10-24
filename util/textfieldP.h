@@ -81,6 +81,10 @@ typedef struct TextFieldPart {
     
     int         selStartX;
     int         selEndX;
+    
+    Time        btn1ClickPrev;
+    Time        btn1ClickPrev2;
+    int         dontAdjustSel;
 } TextFieldPart;
 
 typedef struct TextFieldRec {
