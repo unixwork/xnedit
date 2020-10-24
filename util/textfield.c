@@ -61,6 +61,8 @@ static void leaveAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void cutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void copyAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 
 static void tfCalcCursorPos(TextFieldWidget tf);
 
@@ -104,6 +106,8 @@ static XtActionsRec actionslist[] = {
   {"cut-clipboard",cutAP},
   {"copy-clipboard",copyAP},
   {"paste-clipboard",pasteAP},
+  {"endLine",endLineAP},
+  {"beginLine",beginLineAP},
   {"NULL",NULL}
 };
 
@@ -128,6 +132,8 @@ Ctrl<KeyPress>osfBackSpace: deleteprevword()\n\
 Ctrl<KeyPress>osfDelete:    deletenextword()\n\
 <KeyPress>osfBackSpace:     deleteprev()\n\
 <KeyPress>osfDelete:        deletenext()\n\
+<Key>osfBeginLine:          beginLine()\n\
+<Key>osfEndLine:            endLine()\n\
 <KeyPress>:	            insert()";
 
 
@@ -706,6 +712,20 @@ static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     
     insertText(tf, clipboard, len, event);
     XtFree(clipboard);
+}
+
+static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tf->textfield.pos = tf->textfield.length;
+    tf->textfield.hasSelection = 0;
+    tfRedrawText(tf);
+}
+
+static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tf->textfield.pos = 0;
+    tf->textfield.hasSelection = 0;
+    tfRedrawText(tf);
 }
 
 static int tfPosToX(TextFieldWidget tf, int pos) {
