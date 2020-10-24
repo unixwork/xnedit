@@ -25,6 +25,8 @@
 #include <Xm/DrawP.h>
 
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 
 #include "../source/textBuf.h" /* Utf8CharLen */
 #include "../source/textSel.h"
@@ -126,14 +128,16 @@ Button1<MotionNotify>:      adjustselection()\n\
 <KeyPress>Return:           PrimitiveParentActivate() action()\n\
 <Key>osfActivate:           PrimitiveParentActivate() action()\n\
 <Key>osfCancel:             PrimitiveParentCancel()\n\
-<KeyPress>osfLeft:          moveleft()\n\
-<KeyPress>osfRight:         moveright()\n\
 Ctrl<KeyPress>osfBackSpace: deleteprevword()\n\
 Ctrl<KeyPress>osfDelete:    deletenextword()\n\
 <KeyPress>osfBackSpace:     deleteprev()\n\
 <KeyPress>osfDelete:        deletenext()\n\
 <Key>osfBeginLine:          beginLine()\n\
 <Key>osfEndLine:            endLine()\n\
+Ctrl<KeyPress>osfLeft:      moveleftword()\n\
+Ctrl<KeyPress>osfRight:     moverightword()\n\
+<KeyPress>osfLeft:          moveleft()\n\
+<KeyPress>osfRight:         moveright()\n\
 <KeyPress>:	            insert()";
 
 
@@ -629,12 +633,42 @@ static void moveRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 
 static void moveLeftWordAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    // TODO
+    
+    int pos = tf->textfield.pos;
+    int word = 0; // cursor inside a word?
+    while(pos > 0) {
+        pos = TFLeftPos(tf);
+        
+        if(isspace(tf->textfield.buffer[pos])) {
+            if(word) {
+                break;
+            }
+        } else {
+            word = 1;
+        }
+        tf->textfield.pos = pos;
+    }
+    
+    tfRedrawText(tf);
 }
 
 static void moveRightWordAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    // TODO
+    
+    int space = 0; // cursor inside a word?
+    while(tf->textfield.pos < tf->textfield.length) {
+        tf->textfield.pos = TFRightPos(tf);
+        
+        if(!isspace(tf->textfield.buffer[tf->textfield.pos])) {
+            if(space) {
+                break;
+            }
+        } else {
+            space = 1;
+        }
+    }
+    
+    tfRedrawText(tf);
 }
 
 
