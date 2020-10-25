@@ -87,6 +87,7 @@ static  int TFLeftPos(TextFieldWidget tf);
 static  int TFRightPos(TextFieldWidget tf);
 static void TFDelete(TextFieldWidget tf, int from, int to);
 
+static void wordbounds(TextFieldWidget tf, int index, int *out_wleft, int *out_wright);
 
 static Atom aTargets;
 static Atom aUtf8String;
@@ -554,24 +555,8 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     } else if(t - tf->textfield.btn1ClickPrev < multiclicktime) {
         // double click
         
-        // is current char space?
-        int spc = index < tf->textfield.length ? isspace(tf->textfield.buffer[index]) : 0;
-        
         int wleft, wright;
-        // get left word bound
-        for(wleft=index;wleft>=0;wleft--) {
-            if(isspace(tf->textfield.buffer[wleft]) != spc) {
-                wleft++;
-                break;
-            }
-        }
-        if(wleft < 0) wleft = 0;
-        // get right word bound
-        for(wright=index;wright<tf->textfield.length;wright++) {
-            if(isspace(tf->textfield.buffer[wright]) != spc) {
-                break;
-            }
-        }
+        wordbounds(tf, index, &wleft, &wright);
         
         selStart = wleft;
         selEnd = wright; 
@@ -692,14 +677,65 @@ static void deleteNextCharAP(Widget w, XEvent *event, String *args, Cardinal *nA
     deleteText(tf, from, to, event);
 }
 
+static void wordbounds(TextFieldWidget tf, int index, int *out_wleft, int *out_wright) {
+    // is current char space?
+    int spc = index < tf->textfield.length ? isspace(tf->textfield.buffer[index]) : 1;
+
+    int wleft, wright;
+    
+    // get left word bound
+    if(out_wleft) {
+        for(wleft=index;wleft>=0;wleft--) {
+            if(isspace(tf->textfield.buffer[wleft]) != spc) {
+                wleft++;
+                break;
+            }
+        }
+        if(wleft < 0) wleft = 0;
+        *out_wleft = wleft;
+    }
+    
+    // get right word bound
+    if(out_wright) {
+        for(wright=index;wright<tf->textfield.length;wright++) {
+            if(isspace(tf->textfield.buffer[wright]) != spc) {
+                break;
+            }
+        }
+        *out_wright = wright;
+    }
+}
+
 static void deletePrevWordAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    // TODO
+    if(tf->textfield.pos == 0 || tf->textfield.length == 0) return;
+    
+    int wleft;
+    int index = tf->textfield.pos > 0 ? tf->textfield.pos - 1 : 0;
+    for(int n=0;n<2;n++) {
+        wordbounds(tf, index, &wleft, NULL);
+        // in case we found only space, try wordbounds again
+        if(wleft == tf->textfield.length || !isspace(tf->textfield.buffer[wleft])) {
+            break; // char at wleft is not space
+        }
+        index = wleft > 0 ? wleft - 1 : 0;
+    }
+    
+    TFDelete(tf, wleft, tf->textfield.pos);
+    tf->textfield.pos = wleft;
+    tfRedrawText(tf);
 }
 
 static void deleteNextWordAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    // TODO
+    if(tf->textfield.pos == tf->textfield.length || tf->textfield.length == 0) return;
+    
+    int wright;
+    int index = tf->textfield.pos;
+    wordbounds(tf, tf->textfield.pos, NULL, &wright);
+    
+    TFDelete(tf, tf->textfield.pos, wright);
+    tfRedrawText(tf);
 }
 
 static void moveLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
