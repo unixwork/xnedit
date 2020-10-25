@@ -70,8 +70,10 @@ static void insertPrimaryAP(Widget w, XEvent *event, String *args, Cardinal *nAr
 
 static void tfCalcCursorPos(TextFieldWidget tf);
 
+static int  tfPosToIndex(TextFieldWidget tf, int pos);
+
 static int  tfXToPos(TextFieldWidget tf, int x);
-static int  tfPosToX(TextFieldWidget tf, int pos);
+static int  tfIndexToX(TextFieldWidget tf, int pos);
 static void tfSelection(TextFieldWidget tf, int *start, int *end, int *startX, int *endX);
 static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end);
 
@@ -412,7 +414,7 @@ static void tfRedrawText(TextFieldWidget tf) {
         XftFont *cFont = FindFont(tf->textfield.font, c);
         XftColor *cColor = &tf->textfield.textColor;
         if(tf->textfield.hasSelection) {
-            if(pos >= selStart && pos < selEnd) {
+            if(i >= selStart && i < selEnd) {
                 cColor = &tf->textfield.selTextColor;
             }
         }
@@ -521,10 +523,11 @@ void textfield_recalc_size(TextFieldWidget w) {
 
 static void adjustSelection(TextFieldWidget tf, int x) {
     int pos = tfXToPos(tf, x);
+    int index = tfPosToIndex(tf, pos);
     
-    tf->textfield.selEnd = pos;
-    tf->textfield.pos = pos;
-    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
+    tf->textfield.selEnd = index;
+    tf->textfield.pos = index;
+    tf->textfield.selEndX = tfIndexToX(tf, index);
 }
 
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
@@ -533,7 +536,8 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
     
     int pos = tfXToPos(tf, event->xbutton.x);
-    tf->textfield.pos = pos;
+    int index = tfPosToIndex(tf, pos);
+    tf->textfield.pos = index;
     
     int selStart, selEnd;
     
@@ -551,11 +555,11 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         // double click
         
         // is current char space?
-        int spc = pos < tf->textfield.length ? isspace(tf->textfield.buffer[pos]) : 0;
+        int spc = index < tf->textfield.length ? isspace(tf->textfield.buffer[index]) : 0;
         
         int wleft, wright;
         // get left word bound
-        for(wleft=pos;wleft>=0;wleft--) {
+        for(wleft=index;wleft>=0;wleft--) {
             if(isspace(tf->textfield.buffer[wleft]) != spc) {
                 wleft++;
                 break;
@@ -563,7 +567,7 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         }
         if(wleft < 0) wleft = 0;
         // get right word bound
-        for(wright=pos;wright<tf->textfield.length;wright++) {
+        for(wright=index;wright<tf->textfield.length;wright++) {
             if(isspace(tf->textfield.buffer[wright]) != spc) {
                 break;
             }
@@ -573,8 +577,8 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         selEnd = wright; 
         tf->textfield.dontAdjustSel = 1;
     } else {
-        selStart = pos;
-        selEnd = pos;
+        selStart = index;
+        selEnd = index;
         
         tf->textfield.dontAdjustSel = 0;
     }
@@ -706,7 +710,10 @@ static void moveLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 
 static void moveRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    int p1, p2;
+    p1 = tf->textfield.pos;
     tf->textfield.pos = TFRightPos(tf);
+    p2 = tf->textfield.pos;
     tfRedrawText(tf);
 }
 
@@ -792,7 +799,7 @@ static void cutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     if(!tf->textfield.hasSelection) return;
     
     int from, to;
-    tfSelection(tf, &from, &to, NULL, NULL);
+    tfSelectionIndex(tf, &from, &to);
     
     size_t len = to - from;
     
@@ -808,7 +815,7 @@ static void copyAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     if(!tf->textfield.hasSelection) return;
     
     int from, to;
-    tfSelection(tf, &from, &to, NULL, NULL);
+    tfSelectionIndex(tf, &from, &to);
     
     size_t len = to - from;
     
@@ -852,7 +859,7 @@ static void insertPrimaryAP(Widget w, XEvent *event, String *args, Cardinal *nAr
     tfInsertPrimary(tf);
 }
 
-static int tfPosToX(TextFieldWidget tf, int pos) {
+static int  tfIndexToX(TextFieldWidget tf, int pos) {
     XftFont *font = tf->textfield.font->fonts->font;
     const char *buf = tf->textfield.buffer;
     size_t length = tf->textfield.length;
@@ -862,12 +869,9 @@ static int tfPosToX(TextFieldWidget tf, int pos) {
     
     int xoff = tf->textfield.textarea_xoff;
     
-    int p = 0;
     int i;
     int charlen = 1;
-    for(i=0;i<length;i+=charlen) {
-        if(p == pos) break;
-        
+    for(i=0;i<pos;i+=charlen) {
         FcChar32 c;
         charlen = Utf8ToUcs4(buf + i, &c, length - i);
         
@@ -888,7 +892,6 @@ static int tfPosToX(TextFieldWidget tf, int pos) {
             }
             font = cFont;
         }
-        p++;
     }
     int drawLen = i - start;
     if(drawLen > 0) {
@@ -926,6 +929,9 @@ static void tfSelection(TextFieldWidget tf, int *start, int *end, int *startX, i
 }
 
 static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
+    tfSelection(tf, start, end, NULL, NULL);
+    
+    /*
     int s = 0;
     int e = -1;
     
@@ -958,6 +964,7 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
     
     if(start) *start = s;
     if(end)   *end = e;
+    */
 }
 
 static void tfSetSelection(TextFieldWidget tf, int from, int to) {
@@ -967,8 +974,8 @@ static void tfSetSelection(TextFieldWidget tf, int from, int to) {
     tf->textfield.hasSelection = 1;
     tf->textfield.selStart = from;
     tf->textfield.selEnd = to > tf->textfield.length ? tf->textfield.length : to;
-    tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
-    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
+    tf->textfield.selStartX = tfIndexToX(tf, tf->textfield.selStart);
+    tf->textfield.selEndX = tfIndexToX(tf, tf->textfield.selEnd);
 }
 
 static void tfClearSelection(TextFieldWidget tf) {
@@ -980,7 +987,7 @@ static void tfClearSelection(TextFieldWidget tf) {
 static void tfCalcCursorPos(TextFieldWidget tf) {
     if(tf->textfield.pos == tf->textfield.posCalc) return;
     
-    int xoff = tfPosToX(tf, tf->textfield.pos);
+    int xoff = tfIndexToX(tf, tf->textfield.pos);
 
     tf->textfield.posX = xoff;
     tf->textfield.posCalc = tf->textfield.pos;
@@ -992,6 +999,24 @@ static void tfCalcCursorPos(TextFieldWidget tf) {
     } else if(posX < tf->textfield.scrollX + margin) {
         tf->textfield.scrollX = posX - tf->textfield.textarea_xoff;
     }
+}
+
+static int  tfPosToIndex(TextFieldWidget tf, int pos) {
+    const char *buf = tf->textfield.buffer;
+    size_t length = tf->textfield.length;
+    
+    int p = 0;
+    int charlen = 1;
+    int i;
+    for(i=0;i<length;i+=charlen) {
+        if(p == pos) break;
+        
+        FcChar32 c;
+        charlen = Utf8ToUcs4(buf + i, &c, length - i);
+        
+        p++;
+    }
+    return i;
 }
 
 static int tfXToPos(TextFieldWidget tf, int x) {
@@ -1188,7 +1213,7 @@ static Boolean convertSelection(
         
         if(tf->textfield.hasSelection) {
             int from, to;
-            tfSelection(tf, &from, &to, NULL, NULL);
+            tfSelectionIndex(tf, &from, &to);
             len = to - from;
             selectedText = XtMalloc(len + 1);
             memcpy(selectedText, tf->textfield.buffer + from, len);
