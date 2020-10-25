@@ -66,6 +66,7 @@ static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void selectAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void insertPrimaryAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 
 static void tfCalcCursorPos(TextFieldWidget tf);
 
@@ -74,12 +75,30 @@ static int  tfPosToX(TextFieldWidget tf, int pos);
 static void tfSelection(TextFieldWidget tf, int *start, int *end, int *startX, int *endX);
 static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end);
 
+static void tfSetSelection(TextFieldWidget tf, int from, int to);
 static void tfClearSelection(TextFieldWidget tf);
+
+static void tfInsertPrimary(TextFieldWidget tf);
 
 static void TFInsert(TextFieldWidget tf, const char *chars, size_t nchars);
 static  int TFLeftPos(TextFieldWidget tf);
 static  int TFRightPos(TextFieldWidget tf);
 static void TFDelete(TextFieldWidget tf, int from, int to);
+
+
+static Atom aTargets;
+static Atom aUtf8String;
+
+static Boolean convertSelection(
+        Widget w,
+        Atom *seltype,
+        Atom *target,
+        Atom *type,
+        XtPointer *value,
+        unsigned long *length,
+        int *format);
+
+static void loseSelection(Widget w, Atom *type);
 
 static XtResource resources[] = {
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
@@ -112,6 +131,7 @@ static XtActionsRec actionslist[] = {
   {"endLine",endLineAP},
   {"beginLine",beginLineAP},
   {"selectAll",selectAllAP},
+  {"insertPrimary",insertPrimaryAP},
   {"NULL",NULL}
 };
 
@@ -125,6 +145,7 @@ s ~m ~a <Key>Tab:           PrimitivePrevTabGroup()\n\
 ~m ~a <Key>Tab:             PrimitiveNextTabGroup()\n\
 <Btn1Down>:                 mouse1down()\n\
 <Btn1Up>:                   mouse1up()\n\
+<Btn2Up>:                   insertPrimary()\n\
 Ctrl<KeyPress>v:            paste-clipboard()\n\
 Button1<MotionNotify>:      adjustselection()\n\
 <KeyPress>Return:           PrimitiveParentActivate() action()\n\
@@ -227,6 +248,13 @@ void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_arg
     
     tf->textfield.btn1ClickPrev = 0;
     tf->textfield.btn1ClickPrev2 = 0;
+    
+    if(aTargets == 0) {
+        aTargets = XInternAtom(XtDisplay(request), "TARGETS", 0);
+    }
+    if(aUtf8String == 0) {
+        aUtf8String = XInternAtom(XtDisplay(request), "UTF8_STRING", 0);
+    }
 }
 
 static void tfInitXft(TextFieldWidget w) {
@@ -507,15 +535,16 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int pos = tfXToPos(tf, event->xbutton.x);
     tf->textfield.pos = pos;
     
+    int selStart, selEnd;
+    
     Time t = event->xbutton.time;
     int multiclicktime = XtGetMultiClickTime(XtDisplay(w));
     if(t - tf->textfield.btn1ClickPrev2 < 2*multiclicktime) {
         // triple click
         t = 0;
         
-        tf->textfield.hasSelection = 1;
-        tf->textfield.selStart = 0;
-        tf->textfield.selEnd = tf->textfield.length;
+        selStart = 0;
+        selEnd = tf->textfield.length;
         
         tf->textfield.dontAdjustSel = 1;
     } else if(t - tf->textfield.btn1ClickPrev < multiclicktime) {
@@ -540,14 +569,12 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
             }
         }
         
-        tf->textfield.hasSelection = 1;
-        tf->textfield.selStart = wleft;
-        tf->textfield.selEnd = wright; 
+        selStart = wleft;
+        selEnd = wright; 
         tf->textfield.dontAdjustSel = 1;
     } else {
-        tf->textfield.hasSelection = 1;
-        tf->textfield.selStart = pos;
-        tf->textfield.selEnd = pos;
+        selStart = pos;
+        selEnd = pos;
         
         tf->textfield.dontAdjustSel = 0;
     }
@@ -555,8 +582,7 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     tf->textfield.btn1ClickPrev2 = tf->textfield.btn1ClickPrev;
     tf->textfield.btn1ClickPrev = t;
     
-    tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
-    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
+    tfSetSelection(tf, selStart, selEnd);
     
     tfRedrawText(tf);
     
@@ -570,7 +596,7 @@ static void mouse1UpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     adjustSelection(tf, event->xbutton.x);
     
     if(tf->textfield.selStart == tf->textfield.selEnd) {
-        tf->textfield.hasSelection = 0;
+        tfClearSelection(tf);
     }
     
     tfRedrawText(tf);
@@ -591,7 +617,7 @@ static void insertText(TextFieldWidget tf, char *chars, int nchars, XEvent *even
         int selStart, selEnd;
         tfSelectionIndex(tf, &selStart, &selEnd);
         TFDelete(tf, selStart, selEnd);
-        tf->textfield.hasSelection = 0;
+        tfClearSelection(tf);
         tf->textfield.pos = selStart;
     }
     TFInsert(tf, chars, nchars);
@@ -619,7 +645,6 @@ static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 
 static void actionAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    
 }
 
 static void deleteText(TextFieldWidget tf, int from, int to, XEvent *event) {
@@ -638,7 +663,7 @@ static void deletePrevCharAP(Widget w, XEvent *event, String *args, Cardinal *nA
     int to;
     if(tf->textfield.hasSelection) {
         tfSelectionIndex(tf, &from, &to);
-        tf->textfield.hasSelection = 0;
+        tfClearSelection(tf);
     } else {
         from = TFLeftPos(tf);
         to = tf->textfield.pos;
@@ -654,7 +679,7 @@ static void deleteNextCharAP(Widget w, XEvent *event, String *args, Cardinal *nA
     int to;
     if(tf->textfield.hasSelection) {
         tfSelectionIndex(tf, &from, &to);
-        tf->textfield.hasSelection = 0;
+        tfClearSelection(tf);
     } else {
         from = tf->textfield.pos;
         to = TFRightPos(tf);
@@ -805,25 +830,26 @@ static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     tf->textfield.pos = tf->textfield.length;
-    tf->textfield.hasSelection = 0;
+    tfClearSelection(tf);
     tfRedrawText(tf);
 }
 
 static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     tf->textfield.pos = 0;
-    tf->textfield.hasSelection = 0;
+    tfClearSelection(tf);
     tfRedrawText(tf);
 }
 
 static void selectAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    tf->textfield.selStart = 0;
-    tf->textfield.selEnd = tf->textfield.length;
-    tf->textfield.hasSelection = 1;
-    tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
-    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
+    tfSetSelection(tf, 0, tf->textfield.length);
     tfRedrawText(tf);
+}
+
+static void insertPrimaryAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tfInsertPrimary(tf);
 }
 
 static int tfPosToX(TextFieldWidget tf, int pos) {
@@ -932,6 +958,17 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
     
     if(start) *start = s;
     if(end)   *end = e;
+}
+
+static void tfSetSelection(TextFieldWidget tf, int from, int to) {
+    if(!tf->textfield.hasSelection) {
+        XtOwnSelection((Widget)tf, XA_PRIMARY, XtLastTimestampProcessed(XtDisplay((Widget)tf)), convertSelection, loseSelection, NULL);
+    }
+    tf->textfield.hasSelection = 1;
+    tf->textfield.selStart = from;
+    tf->textfield.selEnd = to > tf->textfield.length ? tf->textfield.length : to;
+    tf->textfield.selStartX = tfPosToX(tf, tf->textfield.selStart);
+    tf->textfield.selEndX = tfPosToX(tf, tf->textfield.selEnd);
 }
 
 static void tfClearSelection(TextFieldWidget tf) {
@@ -1051,6 +1088,133 @@ static void TFDelete(TextFieldWidget tf, int from, int to) {
 }
 
 
+struct PSelection {
+    TextFieldWidget tf;
+    char *xastring;
+    char *utf8string;
+    int target;
+};
+
+static void getPrimary(
+        Widget w,
+        XtPointer clientData,
+        Atom *selType,
+	Atom *type,
+        XtPointer value,
+        unsigned long *length,
+        int *format)
+{
+    struct PSelection *sel = clientData;
+    sel->target++;
+    
+    if(value && *format == 8 && *length > 0 && (*type == XA_STRING || *type == aUtf8String)) {
+        char *str = XtMalloc((*length) + 1);
+        memcpy(str, value, *length);
+        str[*length] = 0;
+        
+        if(*type == aUtf8String) {
+            sel->utf8string = str;
+        } else {
+            sel->xastring = str;
+        }
+    }
+    
+    if(sel->target == 2) {
+        char *insert = sel->utf8string ? sel->utf8string : sel->xastring;
+        if(insert) {
+            TFInsert(sel->tf, insert, strlen(insert));
+            tfRedrawText(sel->tf);
+        }
+        
+        if(sel->utf8string) {
+            XtFree(sel->utf8string);
+        }
+        if(sel->xastring) {
+            XtFree(sel->xastring);
+        }
+        XtFree((void*)sel);
+    }
+}
+
+static void tfInsertPrimary(TextFieldWidget tf) {
+    struct PSelection *sel = (void*)XtMalloc(sizeof(struct PSelection));
+    sel->tf = tf;
+    sel->target = 0;
+    sel->xastring = NULL;
+    sel->utf8string = NULL;
+    
+    Atom targets[2] = {aUtf8String, XA_STRING};
+    Time time = XtLastTimestampProcessed(XtDisplay((Widget)tf));
+    
+    void *data[2] = { sel, sel };
+    
+#ifdef __APPLE__
+    XtGetSelectionValue(w, XA_PRIMARY, targets[0], getSelectionCB, sel, time);
+    XtGetSelectionValue(w, XA_PRIMARY, targets[1], getSelectionCB, sel, time);
+#else
+    XtGetSelectionValues((Widget)tf, XA_PRIMARY, targets, 2, getPrimary, data, time);
+#endif
+}
+
+
+// Atoms: aTargets, XA_STRING, aUtf8String
+
+static Boolean convertSelection(
+        Widget w,
+        Atom *seltype,
+        Atom *target,
+        Atom *type,
+        XtPointer *value,
+        unsigned long *length,
+        int *format)
+{
+    TextFieldWidget tf = (TextFieldWidget)w;
+    
+    if(*target == aTargets) {
+        Atom *retTargets = calloc(3, sizeof(Atom));
+        retTargets[0] = XA_STRING;
+        retTargets[1] = aUtf8String;
+        retTargets[2] = aTargets;
+        *type = XA_ATOM;
+	*value = retTargets;
+	*length = 3;
+	*format = 32;
+        return True;
+    }
+    
+    if(*target == XA_STRING || *target == aUtf8String) {
+        char *selectedText = NULL;
+        size_t len = 0;
+        
+        if(tf->textfield.hasSelection) {
+            int from, to;
+            tfSelection(tf, &from, &to, NULL, NULL);
+            len = to - from;
+            selectedText = XtMalloc(len + 1);
+            memcpy(selectedText, tf->textfield.buffer + from, len);
+            selectedText[len] = 0;
+        } else {
+            selectedText = XtMalloc(4);
+            selectedText[0] = 0;
+        }
+        
+        *type = *target == aUtf8String ? aUtf8String : XA_STRING;
+        *value = selectedText;
+        *length = len;
+        *format = 8;
+        return True;
+    }
+    
+    return False;
+}
+
+static void loseSelection(Widget w, Atom *type) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tfClearSelection(tf);
+    tfRedrawText(tf);
+}
+
+
 // --------------------- public API --------------------------
 
 void XNETextFieldSetString(Widget widget, char *value) {
@@ -1093,6 +1257,4 @@ void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i) {
     TextFieldWidget tf = (TextFieldWidget)widget;
     tf->textfield.pos = i <= tf->textfield.length ? i : tf->textfield.length;
 } 
-
-
 
