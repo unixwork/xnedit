@@ -1734,6 +1734,51 @@ void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     data->status = FILEDIALOG_OK;
 }
 
+void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
+    char chars[16];
+    KeySym keysym;
+    int nchars;
+    int status;
+    
+    nchars = XLookupString(&cb->event->xkey, chars, 15, &keysym, NULL);
+    
+    if(nchars == 0) return;
+
+    // if data->showHidden is 0, data->files contains more items than the grid
+    // this means SelectedRow might not be the correct index for data->files
+    // we have to count files manually and increase 'row', if the file
+    // is actually displayed in the grid
+    int row = 0;
+    int selectedRow = XmLGridGetSelectedRow(w);
+    
+    int firstMatch = -1;
+    
+    for(int i=0;i<data->filecount;i++) {
+        const char *name = FileName(data->files[i].path);
+        if(!data->showHidden && name[0] == '.') continue;
+        
+        size_t namelen = strlen(name);
+        
+        size_t cmplen = namelen < nchars ? namelen : nchars;
+        if(!memcmp(name, chars, cmplen)) {
+            if(row <= selectedRow) {
+                if(firstMatch == -1) {
+                    firstMatch = row;
+                }
+            } else {
+                XmLGridSelectRow(w, row, True);
+                return;
+            }
+        }
+        
+        row++;
+    }
+    
+    if(firstMatch > -1) {
+        XmLGridSelectRow(w, firstMatch, True);
+    }
+}
+
 void grid_header_clicked(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) { 
     int new_cmp_field = 0;
     switch(cb->column) {
@@ -1947,6 +1992,7 @@ static void select_iconview(Widget w, FileDialogData *data, XtPointer u)
     XtManageChild(data->scrollw);
     filedialog_update_dir(data, NULL);
     filedialog_update_dir(data, NULL); // workaround for what I do not know
+    XmProcessTraversal(data->scrollw, XmTRAVERSE_CURRENT);
 }
 
 static void select_listview(Widget w, FileDialogData *data, XtPointer u)
@@ -1956,6 +2002,7 @@ static void select_listview(Widget w, FileDialogData *data, XtPointer u)
     XtManageChild(data->listform);
     XtManageChild(data->filelistcontainer);
     filedialog_update_dir(data, NULL);
+    XmProcessTraversal(data->filelist, XmTRAVERSE_CURRENT);
 }
 
 static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
@@ -1967,6 +2014,7 @@ static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
     XtManageChild(data->listform);
     XtManageChild(data->gridcontainer);
     filedialog_update_dir(data, NULL);
+    XmProcessTraversal(data->grid, XmTRAVERSE_CURRENT);
 }
 
 static void new_folder(Widget w, FileDialogData *data, XtPointer u)
@@ -2588,8 +2636,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtAddCallback(data.grid, XmNselectCallback, (XtCallbackProc)grid_select, &data);
     XtAddCallback(data.grid, XmNactivateCallback, (XtCallbackProc)grid_activate, &data);
     XtAddCallback(data.grid, XmNheaderClickCallback, (XtCallbackProc)grid_header_clicked, &data);
+    XtAddCallback(data.grid, XmNgridKeyPressedCallback, (XtCallbackProc)grid_key_pressed, &data);
     
-    
+       
     n = 0;
     str = XmStringCreateLocalized("Files");
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;

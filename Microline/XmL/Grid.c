@@ -295,6 +295,7 @@ static void XmLGridColumnSetSelected(XmLGridColumn column, Boolean selected);
 static void XmLGridColumnSetVisPos(XmLGridColumn column, int visPos);
 /* BEGIN XNEDIT MODIFICATION */
 int XmLGridColumnWidthInPixels(XmLGridColumn column);
+static void SelectK(Widget w, XEvent *event, String *, Cardinal *);
 /* END XNEDIT MODIFICATION */
 static void XmLGridColumnWidthChanged(XmLGridColumn column);
 
@@ -359,6 +360,7 @@ static XtActionsRec actions[] =
 	{ "XmLGridEditCancel",   EditCancel   },
 	{ "XmLGridEdit",         Edit         },
 	{ "XmLGridSelect",       Select       },
+        { "XmLGridSelectK",      SelectK      },
 	{ "XmLGridPopupSelect",  PopupSelect  },
 	{ "XmLGridDragStart",    DragStart    },
 	{ "XmLGridTraverse",     Traverse     },
@@ -475,7 +477,8 @@ Ctrl ~Shift <Key>End:             XmLGridTraverse(TO_BOTTOM_RIGHT)\n\
 ~Ctrl ~Shift <KeyDown>space:      XmLGridSelect(BEGIN)\n\
 ~Ctrl Shift <KeyDown>space:       XmLGridSelect(EXTEND)\n\
 Ctrl ~Shift <KeyDown>space:       XmLGridSelect(TOGGLE)\n\
-<KeyUp>space:                     XmLGridSelect(END)";
+<KeyUp>space:                     XmLGridSelect(END)\n\
+<KeyUp>:                          XmLGridSelectK()";
 
 /* You can't put multiple actions for any translation
    where one translation changes the translation table
@@ -804,6 +807,12 @@ static XtResource resources[] =
 		XmNheaderClickCallback, XmCCallback,
 		XmRCallback, sizeof(XtCallbackList),
 		XtOffset(XmLGridWidget, grid.headerClickCallback),
+		XmRImmediate, (XtPointer)0,
+		},
+                {
+		XmNgridKeyPressedCallback, XmCCallback,
+		XmRCallback, sizeof(XtCallbackList),
+		XtOffset(XmLGridWidget, grid.keyPressedCallback),
 		XmRImmediate, (XtPointer)0,
 		},
                 /* XNEdit end */
@@ -7728,6 +7737,7 @@ Select(Widget w,
                     cbs.reason = XmCR_SELECT_CELL;
                     cbs.column = col;
                     cbs.row = row;
+                    cbs.object = NULL;
                     
                     XtCallCallbackList(
                             w,
@@ -8311,6 +8321,15 @@ static void ScrollDown(Widget w, XEvent *event, String *s, Cardinal *c) {
     XmLGridWidget g = (XmLGridWidget)w;
     XtCallActionProc(g->grid.vsb, "IncrementDownOrRight", event, s, *c);
 }
+
+static void SelectK(Widget w, XEvent *event, String *s, Cardinal *c) {
+    XmLGridWidget g = (XmLGridWidget)XtParent(w);
+    XmLGridCallbackStruct cbs;
+    memset(&cbs, 0, sizeof(XmLGridCallbackStruct));
+    cbs.event = event;
+    XtCallCallbackList((Widget)g, g->grid.keyPressedCallback, (XtPointer)&cbs);
+}
+
 /* END XNEDIT EXTENSION */
 
 static void

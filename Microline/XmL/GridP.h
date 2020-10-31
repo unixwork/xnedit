@@ -355,9 +355,11 @@ typedef struct _XmLGridPart
 	XtCallbackList selectCallback, deselectCallback;
 	XtCallbackList resizeCallback, scrollCallback;
         
-        /* XNEdit Addition */
+        /* BEGIN XNEdit Addition */
         XtCallbackList headerClickCallback;
-
+        XtCallbackList keyPressedCallback;
+        /* END XNEdit Addition */
+                
 	XtCallbackList enterCellCallback;
 	XtCallbackList leaveCellCallback;
 	XtCallbackList enterGridCallback;

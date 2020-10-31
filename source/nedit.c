@@ -51,6 +51,7 @@
 #include "../util/misc.h"
 #include "../util/printUtils.h"
 #include "../util/fileUtils.h"
+#include "../util/filedialog.h"
 #include "../util/getfiles.h"
 #include "../util/motif.h"
 #include "../util/nedit_malloc.h"
@@ -636,7 +637,7 @@ int main(int argc, char **argv)
     /* Add actions for mouse wheel support in scrolled windows (except text
        area) */
     InstallMouseWheelActions(context);
-    
+       
     /* Install word delimiters for regular expression matching */
     SetREDefaultWordDelimiters(GetPrefDelimiters());
     
