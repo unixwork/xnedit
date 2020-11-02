@@ -80,7 +80,7 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end);
 static void tfSetSelection(TextFieldWidget tf, int from, int to);
 static void tfClearSelection(TextFieldWidget tf);
 
-static void tfInsertPrimary(TextFieldWidget tf);
+static void tfInsertPrimary(TextFieldWidget tf, XEvent *event);
 
 static void TFInsert(TextFieldWidget tf, const char *chars, size_t nchars);
 static  int TFLeftPos(TextFieldWidget tf);
@@ -892,7 +892,7 @@ static void selectAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 
 static void insertPrimaryAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    tfInsertPrimary(tf);
+    tfInsertPrimary(tf, event);
 }
 
 static int  tfIndexToX(TextFieldWidget tf, int pos) {
@@ -1151,6 +1151,7 @@ static void TFDelete(TextFieldWidget tf, int from, int to) {
 
 struct PSelection {
     TextFieldWidget tf;
+    XEvent *event;
     char *xastring;
     char *utf8string;
     int target;
@@ -1183,8 +1184,7 @@ static void getPrimary(
     if(sel->target == 2) {
         char *insert = sel->utf8string ? sel->utf8string : sel->xastring;
         if(insert) {
-            TFInsert(sel->tf, insert, strlen(insert));
-            tfRedrawText(sel->tf);
+            insertText(sel->tf, insert, strlen(insert), sel->event);
         }
         
         if(sel->utf8string) {
@@ -1197,9 +1197,10 @@ static void getPrimary(
     }
 }
 
-static void tfInsertPrimary(TextFieldWidget tf) {
+static void tfInsertPrimary(TextFieldWidget tf, XEvent *event) {
     struct PSelection *sel = (void*)XtMalloc(sizeof(struct PSelection));
     sel->tf = tf;
+    sel->event = event;
     sel->target = 0;
     sel->xastring = NULL;
     sel->utf8string = NULL;
