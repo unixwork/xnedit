@@ -140,32 +140,38 @@ static XtActionsRec actionslist[] = {
 
 
 static char defaultTranslations[] = "\
-<FocusIn>:		    focusIn()\n\
-<FocusOut>:                 focusOut()\n\
-<EnterWindow>:		    leave()\n\
-<LeaveWindow>:              enter()\n\
-s ~m ~a <Key>Tab:           PrimitivePrevTabGroup()\n\
-~m ~a <Key>Tab:             PrimitiveNextTabGroup()\n\
-<Btn1Down>:                 mouse1down()\n\
-<Btn1Up>:                   mouse1up()\n\
-<Btn2Up>:                   insertPrimary()\n\
-Ctrl<KeyPress>v:            paste-clipboard()\n\
-Button1<MotionNotify>:      adjustselection()\n\
-<KeyPress>Return:           PrimitiveParentActivate() action()\n\
-<Key>osfActivate:           PrimitiveParentActivate() action()\n\
-<Key>osfCancel:             PrimitiveParentCancel()\n\
-Ctrl<KeyPress>osfBackSpace: deleteprevword()\n\
-Ctrl<KeyPress>osfDelete:    deletenextword()\n\
-<KeyPress>osfBackSpace:     deleteprev()\n\
-<KeyPress>osfDelete:        deletenext()\n\
-<Key>osfBeginLine:          beginLine()\n\
-<Key>osfEndLine:            endLine()\n\
-Ctrl<KeyPress>osfLeft:      moveleftword()\n\
-Ctrl<KeyPress>osfRight:     moverightword()\n\
-Ctrl<Key>a:                 selectAll()\n\
-<KeyPress>osfLeft:          moveleft()\n\
-<KeyPress>osfRight:         moveright()\n\
-<KeyPress>:	            insert()";
+<FocusIn>:		        focusIn()\n\
+<FocusOut>:                     focusOut()\n\
+<EnterWindow>:		        leave()\n\
+<LeaveWindow>:                  enter()\n\
+s ~m ~a <Key>Tab:               PrimitivePrevTabGroup()\n\
+~m ~a <Key>Tab:                 PrimitiveNextTabGroup()\n\
+<Btn1Down>:                     mouse1down()\n\
+<Btn1Up>:                       mouse1up()\n\
+<Btn2Up>:                       insertPrimary()\n\
+Ctrl<KeyPress>v:                paste-clipboard()\n\
+Button1<MotionNotify>:          adjustselection()\n\
+<KeyPress>Return:               PrimitiveParentActivate() action()\n\
+<Key>osfActivate:               PrimitiveParentActivate() action()\n\
+<Key>osfCancel:                 PrimitiveParentCancel()\n\
+Ctrl<KeyPress>osfBackSpace:     deleteprevword()\n\
+Ctrl<KeyPress>osfDelete:        deletenextword()\n\
+<KeyPress>osfBackSpace:         deleteprev()\n\
+<KeyPress>osfDelete:            deletenext()\n\
+Shift<Key>osfBeginLine:         beginLine(l)\n\
+<Key>osfBeginLine:              beginLine()\n\
+Shift<Key>osfEndLine:           endLine(r)\n\
+<Key>osfEndLine:                endLine()\n\
+Ctrl Shift<KeyPress>osfLeft:    moveleftword(l)\n\
+Ctrl Shift<KeyPress>osfRight:   moverightword(r)\n\
+Ctrl<KeyPress>osfLeft:          moveleftword()\n\
+Ctrl<KeyPress>osfRight:         moverightword()\n\
+Ctrl<Key>a:                     selectAll()\n\
+Shift<KeyPress>osfLeft:         moveleft(l)\n\
+Shift<KeyPress>osfRight:        moveright(r)\n\
+<KeyPress>osfLeft:              moveleft()\n\
+<KeyPress>osfRight:             moveright()\n\
+<KeyPress>:	                insert()";
 
 
 
@@ -738,18 +744,41 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args, Cardinal *nA
     tfRedrawText(tf);
 }
 
+static void moveSelect(TextFieldWidget tf, String *args, Cardinal *nArgs, int old_pos, int new_pos) {
+    if(*nArgs == 1) {
+        String d = args[0];
+        // select
+        if(tf->textfield.hasSelection) {
+            if(new_pos == (d[0] == 'l' ? tf->textfield.selStart : tf->textfield.selEnd)) {
+                tf->textfield.hasSelection = 0;
+            } else if(d[0] == 'r' && new_pos < tf->textfield.selEnd) {
+                tfSetSelection(tf, new_pos, tf->textfield.selEnd);
+            } else if(new_pos > tf->textfield.selStart) {
+                tfSetSelection(tf, tf->textfield.selStart, new_pos);
+            } else {
+                tfSetSelection(tf, new_pos, tf->textfield.selEnd);
+            }
+        } else {
+            tfSetSelection(tf, old_pos, new_pos);
+        }
+    } else {
+        tf->textfield.hasSelection = 0;
+    }
+}
+
 static void moveLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    int old_pos = tf->textfield.pos;
     tf->textfield.pos = TFLeftPos(tf);
+    moveSelect(tf, args, nArgs, old_pos, tf->textfield.pos);
     tfRedrawText(tf);
 }
 
 static void moveRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
-    int p1, p2;
-    p1 = tf->textfield.pos;
+    int old_pos = tf->textfield.pos;
     tf->textfield.pos = TFRightPos(tf);
-    p2 = tf->textfield.pos;
+    moveSelect(tf, args, nArgs, old_pos, tf->textfield.pos);
     tfRedrawText(tf);
 }
 
@@ -757,6 +786,7 @@ static void moveLeftWordAP(Widget w, XEvent *event, String *args, Cardinal *nArg
     TextFieldWidget tf = (TextFieldWidget)w;
     
     int pos = tf->textfield.pos;
+    int old_pos = pos;
     int word = 0; // cursor inside a word?
     while(pos > 0) {
         pos = TFLeftPos(tf);
@@ -771,11 +801,16 @@ static void moveLeftWordAP(Widget w, XEvent *event, String *args, Cardinal *nArg
         tf->textfield.pos = pos;
     }
     
+    int new_pos = tf->textfield.pos;
+    
+    moveSelect(tf, args, nArgs, old_pos, new_pos);
+    
     tfRedrawText(tf);
 }
 
 static void moveRightWordAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    int old_pos = tf->textfield.pos;
     
     int space = 0; // cursor inside a word?
     while(tf->textfield.pos < tf->textfield.length) {
@@ -789,6 +824,9 @@ static void moveRightWordAP(Widget w, XEvent *event, String *args, Cardinal *nAr
             space = 1;
         }
     }
+    int new_pos = tf->textfield.pos;
+    
+    moveSelect(tf, args, nArgs, old_pos, new_pos);
     
     tfRedrawText(tf);
 }
@@ -872,15 +910,17 @@ static void pasteAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 
 static void endLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    int old_pos = tf->textfield.pos;
     tf->textfield.pos = tf->textfield.length;
-    tfClearSelection(tf);
+    moveSelect(tf, args, nArgs, old_pos, tf->textfield.pos);
     tfRedrawText(tf);
 }
 
 static void beginLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
+    int old_pos = tf->textfield.pos;
     tf->textfield.pos = 0;
-    tfClearSelection(tf);
+    moveSelect(tf, args, nArgs, 0, old_pos);
     tfRedrawText(tf);
 }
 
@@ -1004,9 +1044,20 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
 }
 
 static void tfSetSelection(TextFieldWidget tf, int from, int to) {
+    if(from == to) {
+        tf->textfield.hasSelection = 0;
+        return;
+    }
     if(!tf->textfield.hasSelection) {
         XtOwnSelection((Widget)tf, XA_PRIMARY, XtLastTimestampProcessed(XtDisplay((Widget)tf)), convertSelection, loseSelection, NULL);
     }
+    
+    if(from > to) {
+        int f = from;
+        from = to;
+        to = f;
+    }
+    
     tf->textfield.hasSelection = 1;
     tf->textfield.selStart = from;
     tf->textfield.selEnd = to > tf->textfield.length ? tf->textfield.length : to;
