@@ -39,6 +39,8 @@
 static NFont *defaultFont;
 static Dimension defaultMaxLength = 4;
 
+static void textfield_class_init(void);
+
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void mouse1UpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void adjustselectionAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
@@ -182,7 +184,7 @@ TextFieldClassRec tfWidgetClassRec = {
         (WidgetClass)&xmPrimitiveClassRec,
         "XmTextField",                   // class_name
         sizeof(TextFieldRec),            // widget_size
-        NULL,                            // class_initialize
+        textfield_class_init,            // class_initialize
         NULL,                            // class_part_initialize
         FALSE,                           // class_inited
         textfield_init,                  // initialize
@@ -230,6 +232,29 @@ TextFieldClassRec tfWidgetClassRec = {
 
 WidgetClass textfieldWidgetClass = (WidgetClass)&tfWidgetClassRec;
 
+
+static Boolean XftFontConvert(
+    Display*   dpy,
+    XrmValue*  args,
+    Cardinal*  num_args,
+    XrmValue*  from,
+    XrmValue*  to,
+    XtPointer* converter_data)
+{
+    NFont *font = FontFromName(dpy, from->addr);
+    if(font) {
+        memcpy(to->addr, &font, sizeof(NFont*));
+        return True;
+    } else {
+        to->addr = 0;
+        to->size = 0;
+        return True;
+    }
+}
+
+static void textfield_class_init(void) {
+    XtSetTypeConverter(XmRString, textTXftFont, XftFontConvert, NULL, 0, XtCacheNone, NULL); // TODO: cache, destructor
+}
 
 Widget XNECreateTextField(Widget parent, char *name, ArgList arglist, Cardinal argcount) {
     return XtCreateWidget(name, textfieldWidgetClass, parent, arglist, argcount);
