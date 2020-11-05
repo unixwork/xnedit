@@ -110,7 +110,8 @@ static XtResource resources[] = {
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
     {XmNvalueChangedCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.valueChangedCB), XmRCallback, NULL},
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
-    {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.activateCB), XmRCallback, NULL}
+    {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.activateCB), XmRCallback, NULL},
+    {XmNblinkRate, XmCBlinkRate , XmRInt, sizeof(int), XtOffset(TextFieldWidget, textfield.blinkrate), XmRImmediate, (XtPointer)500}
 };
 
 static XtActionsRec actionslist[] = {
@@ -284,6 +285,9 @@ void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_arg
     tf->textfield.btn1ClickPrev = 0;
     tf->textfield.btn1ClickPrev2 = 0;
     
+    tf->textfield.blinkProcId = 0;
+    tf->textfield.cursorOn = 0;
+    
     if(aTargets == 0) {
         aTargets = XInternAtom(XtDisplay(request), "TARGETS", 0);
     }
@@ -356,6 +360,10 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
     gcvals.background = text->core.background_pixel;
     text->textfield.gc = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
+    gcvals.foreground = text->core.background_pixel;
+    gcvals.background = text->primitive.foreground;
+    text->textfield.gcInv = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
+    
     gcvals.foreground = XtParent(text)->core.background_pixel;
     gcvals.background = XtParent(text)->core.background_pixel;
     text->textfield.highlightBackground = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
@@ -373,6 +381,7 @@ void textfield_destroy(Widget widget) {
         FontUnref(tf->textfield.font);
     }
     XFreeGC(XtDisplay(widget), tf->textfield.gc);
+    XFreeGC(XtDisplay(widget), tf->textfield.gcInv);
     XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
 }
 
@@ -394,6 +403,17 @@ static int tfDrawString(TextFieldWidget tf, XftFont *font, XftColor *color, int 
     XGlyphInfo extents;
     XftTextExtentsUtf8(XtDisplay(tf), font, (FcChar8*)text, len, &extents);
     return extents.xOff;
+}
+
+static void tfDrawCursor(TextFieldWidget tf) {
+    XDrawLine(
+            XtDisplay(tf),
+            XtWindow(tf),
+            tf->textfield.cursorOn ? tf->textfield.gc : tf->textfield.gcInv,
+            tf->textfield.posX - tf->textfield.scrollX,
+            tf->textfield.textarea_yoff,
+            tf->textfield.posX - tf->textfield.scrollX,
+            tf->core.height-tf->textfield.textarea_yoff);
 }
 
 static void tfRedrawText(TextFieldWidget tf) {
@@ -467,14 +487,7 @@ static void tfRedrawText(TextFieldWidget tf) {
         tfDrawString(tf, font, color, xoff, buf + start, drawLen);
     }
     
-    XDrawLine(
-            XtDisplay(tf),
-            XtWindow(tf),
-            tf->textfield.gc,
-            tf->textfield.posX - tf->textfield.scrollX,
-            tf->textfield.textarea_yoff,
-            tf->textfield.posX - tf->textfield.scrollX,
-            tf->core.height-tf->textfield.textarea_yoff);
+    tfDrawCursor(tf);
 }
 
 static void tfDrawHighlight(TextFieldWidget tf) {
@@ -854,12 +867,23 @@ static void moveRightWordAP(Widget w, XEvent *event, String *args, Cardinal *nAr
     tfRedrawText(tf);
 }
 
+static void blinkCB(XtPointer data, XtIntervalId *id) {
+    TextFieldWidget tf = data;
+    tf->textfield.cursorOn = !tf->textfield.cursorOn;
+    
+    tfDrawCursor(tf);
+    
+    tf->textfield.blinkProcId = XtAppAddTimeOut(
+                XtWidgetToApplicationContext((Widget)tf),
+                tf->textfield.blinkrate,
+                blinkCB,
+                tf);
+}
 
 static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     if(!event->xfocus.send_event) return;
-    
-    
+     
     tf->textfield.hasFocus = 1;
     
     XSetICFocus(tf->textfield.xic);
@@ -869,6 +893,14 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     cb.event = event;
     XtCallCallbackList (w, tf->textfield.focusCB, (XtPointer) &cb);
     
+    if(tf->textfield.blinkProcId == 0) {
+        tf->textfield.blinkProcId = XtAppAddTimeOut(
+                XtWidgetToApplicationContext(w),
+                tf->textfield.blinkrate,
+                blinkCB,
+                tf);
+    }
+    
     Region r;
     textfield_expose(w, event, r);
 }
@@ -877,6 +909,12 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     
     XUnsetICFocus(tf->textfield.xic);
+    
+    if(tf->textfield.blinkProcId != 0) {
+        XtRemoveTimeOut(tf->textfield.blinkProcId);
+        tf->textfield.blinkProcId = 0;
+    }
+    tf->textfield.cursorOn = 1;
     
     tf->textfield.hasFocus = 0;
     Region r;

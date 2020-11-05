@@ -50,41 +50,46 @@ typedef struct TextFieldPart {
     XtCallbackList focusCB;
     XtCallbackList activateCB;
     
-    int         hasFocus;
+    int            hasFocus;
     
-    NFont       *font;    
-    XIM         xim;
-    XIC         xic;
-    GC          gc;
-    GC          highlightBackground;
+    NFont          *font;    
+    XIM            xim;
+    XIC            xic;
+    GC             gc;
+    GC             gcInv;
+    GC             highlightBackground;
     
-    XftColor    foregroundColor;
-    XftColor    backgroundColor;
-    XftDraw     *d;
+    XftColor       foregroundColor;
+    XftColor       backgroundColor;
+    XftDraw        *d;
     
-    char        *buffer;
-    size_t      alloc;
-    size_t      length;
-    size_t      pos;
+    char           *buffer;
+    size_t         alloc;
+    size_t         length;
+    size_t         pos;
     
-    int         posCalc;
-    int         posX;
+    int            posCalc;
+    int            posX;
     
-    int         scrollX;
+    int            scrollX;
     
-    int         textarea_xoff;
-    int         textarea_yoff;
+    int            textarea_xoff;
+    int            textarea_yoff;
     
-    int         hasSelection;
-    int         selStart;
-    int         selEnd;
+    int            hasSelection;
+    int            selStart;
+    int            selEnd;
     
-    int         selStartX;
-    int         selEndX;
+    int            selStartX;
+    int            selEndX;
     
-    Time        btn1ClickPrev;
-    Time        btn1ClickPrev2;
-    int         dontAdjustSel;
+    Time           btn1ClickPrev;
+    Time           btn1ClickPrev2;
+    int            dontAdjustSel;
+    
+    int            blinkrate;
+    int            cursorOn;
+    XtIntervalId   blinkProcId;
 } TextFieldPart;
 
 typedef struct TextFieldRec {
