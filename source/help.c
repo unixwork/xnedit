@@ -54,13 +54,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
+
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
-#endif /*VMS*/
+
 
 #include <Xm/Xm.h>
 #include <Xm/XmP.h>         /* These are for applying style info to help text */

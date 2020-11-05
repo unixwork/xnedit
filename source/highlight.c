@@ -50,13 +50,11 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
+
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
-#endif /*VMS*/
+
 #include <inttypes.h>
 
 #include <Xm/Xm.h>

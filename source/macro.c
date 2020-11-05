@@ -63,20 +63,14 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#ifdef VMS
-#include <limits.h>
-#include "../util/VMSparam.h"
-#include <types.h>
-#include <stat.h>
-#include <unixio.h>
-#else
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
 #include <fcntl.h>
-#endif /*VMS*/
+
 #include <inttypes.h>
 
 #include <X11/Intrinsic.h>
@@ -794,11 +788,7 @@ int ReadMacroFile(WindowInfo *window, const char *fileName, int warnNotExist)
         {
             DialogF(DF_ERR, window->shell, 1, "Read Macro",
                     "Error reading macro file %s: %s", "OK", fileName,
-#ifdef VMS
-                    strerror(errno, vaxc$errno));
-#else
                     strerror(errno));
-#endif
         }
         return False;                    
     }
@@ -1057,10 +1047,8 @@ void AbortMacroCommand(WindowInfo *window)
        must have been called from the macro.  When called from a macro, shell
        commands don't put up cancellation controls of their own, but rely
        instead on the macro cancellation mechanism (here) */
-#ifndef VMS
     if (window->shellCmdData != NULL)
     	AbortShellCommand(window);
-#endif
     
     /* Free the continuation */
     FreeRestartData(((macroCmdInfo *)window->macroCmdData)->context);
@@ -2806,15 +2794,10 @@ static int shellCmdMS(WindowInfo *window, DataValue *argList, int nArgs,
        return False;
     }
 	
-#ifdef VMS
-    *errMsg = "Shell commands not supported under VMS";
-    return False;
-#else
     ShellCmdToMacroString(window, cmdString, inputString);
     result->tag = INT_TAG;
     result->val.n = 0;
     return True;
-#endif /*VMS*/
 }
 
 /*

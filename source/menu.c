@@ -68,13 +68,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
-#endif /*VMS*/
 
 #include <X11/X.h>
 #include <Xm/Xm.h>
@@ -327,7 +323,7 @@ static void controlDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void unicodeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
-#ifndef VMS
+
 static void filterDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void shellFilterAP(Widget w, XEvent *event, String *args,
@@ -337,7 +333,7 @@ static void execDialogAP(Widget w, XEvent *event, String *args,
 static void execAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void execLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void shellMenuAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
-#endif
+
 static void macroMenuAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void bgMenuAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void beginningOfSelectionAP(Widget w, XEvent *event, String *args,
@@ -538,8 +534,7 @@ static XtActionsRec Actions[] = {
     {"fill_paragraph", fillAP},
     {"control-code-dialog", controlDialogAP},
     {"control_code_dialog", controlDialogAP},
-    {"unicode_dialog", unicodeDialogAP},
-#ifndef VMS
+    {"unicode_dialog", unicodeDialogAP},   
     {"filter-selection-dialog", filterDialogAP},
     {"filter_selection_dialog", filterDialogAP},
     {"filter-selection", shellFilterAP},
@@ -552,7 +547,6 @@ static XtActionsRec Actions[] = {
     {"execute_command_line", execLineAP},
     {"shell-menu-command", shellMenuAP},
     {"shell_menu_command", shellMenuAP},
-#endif /*VMS*/
     {"macro-menu-command", macroMenuAP},
     {"macro_menu_command", macroMenuAP},
     {"bg_menu_command", bgMenuAP},
@@ -573,9 +567,7 @@ static XtActionsRec Actions[] = {
     {"set_wrap_text", setWrapTextAP},
     {"set_wrap_margin", setWrapMarginAP},
     {"set_highlight_syntax", setHighlightSyntaxAP},
-#ifndef VMS
     {"set_make_backup_copy", setMakeBackupCopyAP},
-#endif
     {"set_incremental_backup", setIncrementalBackupAP},
     {"set_show_matching", setShowMatchingAP},
     {"set_match_syntax_based", setMatchSyntaxBasedAP},
@@ -881,10 +873,8 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     /* Customize Menus sub menu */
     subSubPane = createMenu(subPane, "customizeMenus", "Customize Menus",
     	    'u', NULL, FULL);
-#ifndef VMS
     createMenuItem(subSubPane, "shellMenu", "Shell Menu...", 'S',
     	    shellDefCB, window, FULL);
-#endif
     createMenuItem(subSubPane, "macroMenu", "Macro Menu...", 'M',
     	    macroDefCB, window, FULL);
     createMenuItem(subSubPane, "windowBackgroundMenu",
@@ -1123,11 +1113,11 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->backlightCharsItem = createMenuToggle(menuPane, "backlightChars",
           "Apply Backlighting", 'g', backlightCharsCB, window,
           window->backlightChars, FULL);
-#ifndef VMS
+    
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
     	    "Make Backup Copy (*.bck)", 'e', preserveCB, window,
     	    window->saveOldVersion, SHORT);
-#endif
+    
     window->autoSaveItem = createMenuToggle(menuPane, "incrementalBackup",
     	    "Incremental Backup", 'B', autoSaveCB, window, window->autoSave,
     	    SHORT);
@@ -1156,7 +1146,6 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->lockReasons), FULL);
 #endif
 
-#ifndef VMS
     /*
     ** Create the Shell menu
     */
@@ -1179,7 +1168,6 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     	    XmNsensitive, False, NULL);
     btn = createMenuSeparator(menuPane, "sep1", SHORT);
     XtVaSetValues(btn, XmNuserData, PERMANENT_MENU_ITEM, NULL);
-#endif
 
     /*
     ** Create the Macro menu
@@ -1292,11 +1280,7 @@ static HelpMenu * buildHelpMenu(
     WindowInfo * window /* Main NEdit window information              */
 )
 {
-#ifdef VMS
-    int hideIt = 1;  /* All menu items matching this will be inaccessible */
-#else
     int hideIt = -1; /* This value should make all menu items accessible  */
-#endif
 
     if( menu != NULL )
     {
@@ -2112,14 +2096,12 @@ static void languageDefCB(Widget w, WindowInfo *window, caddr_t callData)
     EditLanguageModes();
 }
 
-#ifndef VMS
 static void shellDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     EditShellMenu(WidgetToWindow(MENU_WIDGET(w)));
 }
-#endif /* VMS */
 
 static void macroDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
@@ -2666,11 +2648,9 @@ static void formFeedCB(Widget w, XtPointer clientData, XtPointer callData)
 
 static void cancelShellCB(Widget w, WindowInfo *window, XtPointer callData)
 {
-#ifndef VMS
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     AbortShellCommand(WidgetToWindow(MENU_WIDGET(w)));
-#endif
 }
 
 static void learnCB(Widget w, WindowInfo *window, caddr_t callData)
@@ -3738,7 +3718,6 @@ static void unicodeDialogAP(Widget w, XEvent *event, String *args,
     XtCallActionProc(w, "insert_string", event, params, 1);
 }
 
-#ifndef VMS
 static void filterDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
@@ -3843,7 +3822,6 @@ static void shellMenuAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     DoNamedShellMenuCmd(WidgetToWindow(w), args[0],
     	    event->xany.send_event == MACRO_EVENT_MARKER);
 }
-#endif
 
 static void macroMenuAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
@@ -4226,10 +4204,8 @@ static void setMakeBackupCopyAP(Widget w, XEvent *event, String *args,
     
     ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->saveOldVersion, "set_make_backup_copy");
 
-#ifndef VMS
     if (IsTopDocument(window))
     	XmToggleButtonSetState(window->saveLastItem, newState, False);
-#endif
     window->saveOldVersion = newState;
 }
 
@@ -4963,11 +4939,7 @@ static int cmpStrPtr(const void *strA, const void *strB)
     return strcmp(*((char**)strA), *((char**)strB));
 }
 
-#ifdef VMS
-    static char neditDBBadFilenameChars[] = "\n\t*?(){}!@#%&' ";
-#else
-    static char neditDBBadFilenameChars[] = "\n";
-#endif
+static char neditDBBadFilenameChars[] = "\n";
 
 /*
 ** Write dynamic database of file names for "Open Previous".  Eventually,
@@ -4996,24 +4968,7 @@ void WriteNEditDB(void)
 
     /* open the file */
     if ((fp = fopen(fullName, "w")) == NULL) {
-#ifdef VMS
-        /* When the version number, ";1" is specified as part of the file
-           name, fopen(fullName, "w"), will only open for writing if the 
-           file does not exist. Using, fopen(fullName, "r+"), opens an
-           existing file for "update" - read/write pointer is placed at the
-           beginning of file. 
-           By calling ftruncate(), we discard the old contents and avoid 
-           trailing garbage in the file if the new contents is shorter. */
-        if ((fp = fopen(fullName, "r+")) == NULL) {
-            return;
-        }
-        if (ftruncate(fileno(fp), 0) != 0) {
-            fclose(fp);
-            return;
-        }
-#else
-        return;
-#endif        
+        return;        
     }
 
     /* write the file header text to the file */
