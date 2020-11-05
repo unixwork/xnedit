@@ -30,6 +30,7 @@
 
 #include "../source/textBuf.h" /* Utf8CharLen */
 #include "../source/textSel.h"
+#include "../source/textDisp.h" /* PixelToColor */
 
 #define TF_DEFAULT_FONT_NAME "Sans:size=10"
 
@@ -322,12 +323,9 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
     
     tfInitXft(text);
     
-    text->textfield.textColor.color.alpha = 0xFFFF;
-    
-    XRenderColor c = { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };
-    text->textfield.selTextColor.color = c;
-    
-    
+    text->textfield.foregroundColor = PixelToColor(widget, text->primitive.foreground);  
+    text->textfield.backgroundColor = PixelToColor(widget, text->core.background_pixel);
+        
     XGCValues gcvals;
     gcvals.foreground = text->primitive.foreground;
     gcvals.background = text->core.background_pixel;
@@ -388,7 +386,7 @@ static void tfRedrawText(TextFieldWidget tf) {
         
         XftDrawRect(
                 tf->textfield.d,
-                &tf->textfield.textColor,
+                &tf->textfield.foregroundColor,
                 selStartX - tf->textfield.scrollX,
                 tf->textfield.textarea_yoff,
                 selEndX - selStartX,
@@ -404,7 +402,7 @@ static void tfRedrawText(TextFieldWidget tf) {
     XftDrawSetClipRectangles(tf->textfield.d, tf->textfield.textarea_xoff, 0, &rect, 1);
     
     XftFont *font = tf->textfield.font->fonts->font;
-    XftColor *color = &tf->textfield.textColor;
+    XftColor *color = &tf->textfield.foregroundColor;
     
     const char *buf = tf->textfield.buffer;
     size_t length = tf->textfield.length;
@@ -419,10 +417,10 @@ static void tfRedrawText(TextFieldWidget tf) {
         charlen = Utf8ToUcs4(buf + i, &c, length - i);
         
         XftFont *cFont = FindFont(tf->textfield.font, c);
-        XftColor *cColor = &tf->textfield.textColor;
+        XftColor *cColor = &tf->textfield.foregroundColor;
         if(tf->textfield.hasSelection) {
             if(i >= selStart && i < selEnd) {
-                cColor = &tf->textfield.selTextColor;
+                cColor = &tf->textfield.backgroundColor;
             }
         }
         
@@ -1044,10 +1042,6 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
 }
 
 static void tfSetSelection(TextFieldWidget tf, int from, int to) {
-    if(from == to) {
-        tf->textfield.hasSelection = 0;
-        return;
-    }
     if(!tf->textfield.hasSelection) {
         XtOwnSelection((Widget)tf, XA_PRIMARY, XtLastTimestampProcessed(XtDisplay((Widget)tf)), convertSelection, loseSelection, NULL);
     }

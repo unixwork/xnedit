@@ -58,8 +58,8 @@ typedef struct TextFieldPart {
     GC          gc;
     GC          highlightBackground;
     
-    XftColor    textColor;
-    XftColor    selTextColor;
+    XftColor    foregroundColor;
+    XftColor    backgroundColor;
     XftDraw     *d;
     
     char        *buffer;
