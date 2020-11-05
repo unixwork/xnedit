@@ -1106,7 +1106,7 @@ int HighlightLengthOfCodeFromPos(WindowInfo *window, int pos, int *checkCode)
           (windowHighlightData *)window->highlightData;
     textBuffer *styleBuf =
           highlightData ? highlightData->styleBuffer : NULL;
-    int hCode = 0;
+    int hCode;
     int oldPos = pos;
     
     if (styleBuf != NULL) {
@@ -1147,7 +1147,7 @@ int StyleLengthOfCodeFromPos(WindowInfo *window, int pos,
           (windowHighlightData *)window->highlightData;
     textBuffer *styleBuf =
           highlightData ? highlightData->styleBuffer : NULL;
-    int hCode = 0;
+    int hCode;
     int oldPos = pos;
     styleTableEntry *entry;
     
@@ -1295,12 +1295,13 @@ static void handleUnparsedRegion(const WindowInfo* window, textBuffer* styleBuf,
     highlightDataRec *pass2Patterns = highlightData->pass2Patterns;
     char *string, *styleString, *stylePtr, c, prevChar;
     const char *stringPtr;
-    int firstPass2Style = (unsigned char)pass2Patterns[1].style;
-    
+      
     /* If there are no pass 2 patterns to process, do nothing (but this
        should never be triggered) */
     if (pass2Patterns == NULL)
     	return;
+    
+    int firstPass2Style = (unsigned char)pass2Patterns[1].style;
     
     /* Find the point at which to begin parsing to ensure that the character at
        pos is parsed correctly (beginSafety), at most one context distance back
