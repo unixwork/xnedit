@@ -670,7 +670,6 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 } else {
                 }
             }
-            bom = 0;
         } while (0);
         fseek(fp, bom, SEEK_SET);
     }
@@ -781,11 +780,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                         strAlloc += 512;
                         size_t outpos = outStr - fileString;
                         fileString = realloc(fileString, strAlloc + 1);
-                        outStr = fileString + outpos;
                         if(!fileString) {
                             err = 1;
                             break;
                         }
+                        outStr = fileString + outpos;
                         outleft = strAlloc - readLen;
                         break;
                     }
@@ -1454,7 +1453,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     char buf[IO_BUFSIZE];
     char *in = fileString;
     size_t inleft = fileLen;
-    while(inleft >= 0) {
+    while(in) {
         char *out = buf;
         size_t outleft = IO_BUFSIZE;
         size_t w = outleft;
@@ -1493,10 +1492,6 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             }
         }
 
-        if (in == NULL) {
-        	break;
-        }
-
         if (inleft == 0) {
         	/* add # of nonreversible conversions */
         	nonreversible += rc;
@@ -1532,7 +1527,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     
     if(setEncAttr) {
         size_t encLen = strlen(window->encoding);
-        char *encStr = window->encoding;
+        char *encStr;
         char *encCopy = NULL;
         if(encLen == 0) {
             encStr = "utf-8";
