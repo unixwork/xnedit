@@ -39,6 +39,8 @@
 
 #define TF_BUF_BLOCK 128
 
+#define TF_TAB_STR "    "
+
 static NFont *defaultFont;
 static Dimension defaultMaxLength = 4;
 
@@ -480,7 +482,7 @@ static void tfRedrawText(TextFieldWidget tf) {
             }
         }
         
-        if(cFont != font || color != cColor) {
+        if(c == '\t' || cFont != font || color != cColor) {
             // write chars from start to i-1 with previous font
             size_t drawLen = i - start;
             if(drawLen > 0) {
@@ -489,6 +491,10 @@ static void tfRedrawText(TextFieldWidget tf) {
             }
             font = cFont;
             color = cColor;
+            if(c == '\t') {
+                xoff += tfDrawString(tf, font, color, xoff, TF_TAB_STR, sizeof(TF_TAB_STR)-1);
+                start++;
+            }
         }
         
         pos++;
@@ -1025,7 +1031,7 @@ static int  tfIndexToX(TextFieldWidget tf, int pos) {
         charlen = Utf8ToUcs4(buf + i, &c, length - i);
         
         XftFont *cFont = FindFont(tf->textfield.font, c);
-        if(cFont != font) {
+        if(c == '\t' || cFont != font) {
             // write chars from start to i-1 with previous font
             size_t drawLen = i - start;
             if(drawLen > 0) {
@@ -1040,6 +1046,17 @@ static int  tfIndexToX(TextFieldWidget tf, int pos) {
                 start = i;
             }
             font = cFont;
+            if(c == '\t') {
+                start++;
+                XftTextExtentsUtf8(
+                        XtDisplay(tf),
+                        font,
+                        (FcChar8*)TF_TAB_STR,
+                        sizeof(TF_TAB_STR)-1,
+                        &extents
+                        );
+                xoff += extents.xOff;
+            }
         }
     }
     int drawLen = i - start;
@@ -1192,12 +1209,22 @@ static int tfXToPos(TextFieldWidget tf, int x) {
         FcChar32 c;
         charlen = Utf8ToUcs4(buf + i, &c, length - i);
         
+        char *str;
+        size_t slen;
+        if(c == '\t') {
+            str = TF_TAB_STR;
+            slen = sizeof(TF_TAB_STR)-1;
+        } else {
+            str = buf+i;
+            slen = charlen;
+        }
+        
         XftFont *font = FindFont(tf->textfield.font, c);
         XftTextExtentsUtf8(
                 XtDisplay(tf),
                 font,
-                (FcChar8*)buf + i,
-                charlen,
+                (FcChar8*)str,
+                slen,
                 &extents
                 );
         xoff += extents.xOff;
