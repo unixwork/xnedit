@@ -32,7 +32,10 @@
 #include "../source/textSel.h"
 #include "../source/textDisp.h" /* PixelToColor */
 
-#define TF_DEFAULT_FONT_NAME "Sans:size=10"
+#define TF_DEFAULT_FONT_NAME "Monospace:size=10"
+
+#define TF_VPADDING 3
+#define TF_HPADDING 2
 
 #define TF_BUF_BLOCK 128
 
@@ -368,8 +371,8 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
     gcvals.background = XtParent(text)->core.background_pixel;
     text->textfield.highlightBackground = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
-    text->textfield.textarea_xoff = text->primitive.shadow_thickness + text->primitive.highlight_thickness + 2;
-    text->textfield.textarea_yoff = text->primitive.shadow_thickness + text->primitive.highlight_thickness + 1;
+    text->textfield.textarea_xoff = text->primitive.shadow_thickness + text->primitive.highlight_thickness + TF_HPADDING;
+    text->textfield.textarea_yoff = text->primitive.shadow_thickness + text->primitive.highlight_thickness + TF_VPADDING;
     
     text->textfield.posX = text->textfield.textarea_xoff;
 }
@@ -398,12 +401,13 @@ static int tfDrawString(TextFieldWidget tf, XftFont *font, XftColor *color, int 
     int pad  = area - (fl->font->ascent + fl->font->descent);
     int hpad = pad/2;
     
+    
     XftDrawStringUtf8(
             tf->textfield.d,
             color,
             font,
             x - tf->textfield.scrollX,
-            tf->core.height - 2*tf->textfield.textarea_yoff - hpad,
+            tf->core.height - tf->textfield.textarea_yoff -fl->font->descent - hpad,
             (FcChar8*)text,
             len);
     
@@ -563,7 +567,7 @@ void textfield_recalc_size(TextFieldWidget w) {
     int height = font->fonts->font->ascent + font->fonts->font->descent;
     int width = w->core.width;
     
-    height += w->primitive.highlight_thickness + w->primitive.shadow_thickness + 8;
+    height += 2*(w->primitive.highlight_thickness + w->primitive.shadow_thickness) + 2*TF_VPADDING;
     
     XtMakeResizeRequest((Widget)w, width, height, NULL, NULL);
 }
@@ -599,7 +603,7 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         
         selStart = 0;
         selEnd = tf->textfield.length;
-        
+        tf->textfield.pos = selEnd;
         tf->textfield.dontAdjustSel = 1;
     } else if(t - tf->textfield.btn1ClickPrev < multiclicktime) {
         // double click
@@ -608,7 +612,8 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         wordbounds(tf, index, &wleft, &wright);
         
         selStart = wleft;
-        selEnd = wright; 
+        selEnd = wright;
+        tf->textfield.pos = wright;
         tf->textfield.dontAdjustSel = 1;
     } else {
         selStart = index;
