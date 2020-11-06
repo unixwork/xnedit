@@ -390,13 +390,20 @@ void textfield_resize(Widget widget) {
 }
 
 
-static int tfDrawString(TextFieldWidget tf, XftFont *font, XftColor *color, int x, const char *text, size_t len) {
+static int tfDrawString(TextFieldWidget tf, XftFont *font, XftColor *color, int x, const char *text, size_t len) { 
+    NFontList *fl = tf->textfield.font->fonts;
+    
+    int yoff = tf->textfield.textarea_yoff;
+    int area = tf->core.height - 2*yoff;
+    int pad  = area - (fl->font->ascent + fl->font->descent);
+    int hpad = pad/2;
+    
     XftDrawStringUtf8(
             tf->textfield.d,
             color,
             font,
             x - tf->textfield.scrollX,
-            tf->core.height - 2*tf->textfield.textarea_yoff,
+            tf->core.height - 2*tf->textfield.textarea_yoff - hpad,
             (FcChar8*)text,
             len);
     
