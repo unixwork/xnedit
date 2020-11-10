@@ -1209,7 +1209,7 @@ static int tfXToPos(TextFieldWidget tf, int x) {
         FcChar32 c;
         charlen = Utf8ToUcs4(buf + i, &c, length - i);
         
-        char *str;
+        const char *str;
         size_t slen;
         if(c == '\t') {
             str = TF_TAB_STR;
@@ -1358,8 +1358,8 @@ static void tfInsertPrimary(TextFieldWidget tf, XEvent *event) {
     void *data[2] = { sel, sel };
     
 #ifdef __APPLE__
-    XtGetSelectionValue(w, XA_PRIMARY, targets[0], getSelectionCB, sel, time);
-    XtGetSelectionValue(w, XA_PRIMARY, targets[1], getSelectionCB, sel, time);
+    XtGetSelectionValue((Widget)tf, XA_PRIMARY, targets[0], getPrimary, sel, time);
+    XtGetSelectionValue((Widget)tf, XA_PRIMARY, targets[1], getPrimary, sel, time);
 #else
     XtGetSelectionValues((Widget)tf, XA_PRIMARY, targets, 2, getPrimary, data, time);
 #endif
