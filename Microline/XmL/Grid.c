@@ -8331,8 +8331,8 @@ static void SelectK(Widget w, XEvent *event, String *s, Cardinal *c) {
 }
 
 void XmLGridSetIgnoreModifyVerify(Widget g, Boolean set) {
-    XmLGridWidget g = (XmLGridWidget)w;
-    g->grid.ignoreModifyVerify = set;
+    XmLGridWidget grid = (XmLGridWidget)g;
+    grid->grid.ignoreModifyVerify = set;
 }
 /* END XNEDIT EXTENSION */
 

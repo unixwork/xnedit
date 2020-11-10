@@ -2623,6 +2623,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNhorizontalSizePolicy, XmCONSTANT); n++;
     
     data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
+    XmLGridSetIgnoreModifyVerify(data.grid, True);
     XtManageChild(data.grid);
     
     XtVaSetValues(
