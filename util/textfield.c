@@ -516,7 +516,7 @@ static void tfDrawHighlight(TextFieldWidget tf) {
             0,
             tf->core.width,
             tf->core.height,
-            tf->primitive.highlight_color);
+            tf->primitive.highlight_thickness);
 }
 
 void textfield_expose(Widget widget, XEvent* event, Region region) {
@@ -528,14 +528,14 @@ void textfield_expose(Widget widget, XEvent* event, Region region) {
     XmeDrawShadows(
             XtDisplay(tf),
             XtWindow(tf),
-            tf->primitive.top_shadow_GC,
             tf->primitive.bottom_shadow_GC,
+            tf->primitive.top_shadow_GC,
             tf->primitive.highlight_thickness,
             tf->primitive.highlight_thickness,
             tf->core.width - (2 * tf->primitive.highlight_thickness),
             tf->core.height - (2 * tf->primitive.highlight_thickness),
             tf->primitive.shadow_thickness,
-            XmSHADOW_ETCHED_IN);
+            XmSHADOW_OUT);
      //*/
     
     tfRedrawText((TextFieldWidget)widget);
