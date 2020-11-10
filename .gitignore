@@ -1,17 +1,21 @@
 *.o
 *.a
+.DS_Store
 Microline/XmL/Makefile.linux
 Microline/XmL/Makefile.linux-static
 Microline/XmL/Makefile.solaris
 Microline/XmL/Makefile.freebsd
+Microline/XmL/Makefile.macosx
 Xlt/Makefile.linux
 Xlt/Makefile.linux-static
 Xlt/Makefile.solaris
 Xlt/Makefile.freebsd
+Xlt/Makefile.macosx
 source/Makefile.linux
 source/Makefile.linux-static
 source/Makefile.solaris
 source/Makefile.freebsd
+source/Makefile.macosx
 source/nc
 source/nedit
 source/xnc
@@ -21,4 +25,5 @@ util/Makefile.linux
 util/Makefile.linux-static
 util/Makefile.solaris
 util/Makefile.freebsd
+util/Makefile.macosx
 util/check_lin_tif
