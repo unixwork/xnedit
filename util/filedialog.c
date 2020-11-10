@@ -1733,14 +1733,6 @@ void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     data->end = True;
     data->status = FILEDIALOG_OK;
 }
-
- void
-ChangeFocus(XmLGridWidget g,
-	    int row,
-	    int col);
- void
-MakeRowVisible(XmLGridWidget g,
-	       int row);
  
 void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     char chars[16];
