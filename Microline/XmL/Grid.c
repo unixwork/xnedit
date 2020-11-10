@@ -8330,6 +8330,10 @@ static void SelectK(Widget w, XEvent *event, String *s, Cardinal *c) {
     XtCallCallbackList((Widget)g, g->grid.keyPressedCallback, (XtPointer)&cbs);
 }
 
+void XmLGridSetIgnoreModifyVerify(Widget g, Boolean set) {
+    XmLGridWidget g = (XmLGridWidget)w;
+    g->grid.ignoreModifyVerify = set;
+}
 /* END XNEDIT EXTENSION */
 
 static void

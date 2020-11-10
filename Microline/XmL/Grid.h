@@ -166,6 +166,10 @@ XmLGridXYToCellTracking(Widget			widget,
 void XmLGridGetSort(Widget w, int *column, unsigned char *sortType);
 void XmLGridSetSort(Widget w, int column, unsigned char sortType);
 
+/* BEGIN XNEDIT EXTENSION */
+void XmLGridSetIgnoreModifyVerify(Widget g, Boolean set);
+/* END XNEDIT EXTENSION */
+
 #ifdef XmL_CPP
 }
 #endif
