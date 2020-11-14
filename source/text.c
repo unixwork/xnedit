@@ -1207,6 +1207,15 @@ static Boolean setValues(TextWidget current, TextWidget request,
     return redraw;
 } 
 
+
+void TextPrintXIMError(void) {
+    static int xim_err = 0;
+    if(!xim_err) {
+        fprintf(stderr, "Cannot get X Input Manager\n");
+    }
+    xim_err = 1;
+}
+
 /*
 ** Widget realize method
 */
@@ -1225,7 +1234,7 @@ static void realize(Widget w, XtValueMask *valueMask,
     TextWidget text = (TextWidget)w;
     text->text.xim = XmImGetXIM(w);
     if(!text->text.xim) {
-        fprintf(stderr, "Cannot get X Input Manager\n");
+        TextPrintXIMError();
     } else {
         Window win = XtWindow(w);
         XIMStyle style = XIMPreeditNothing | XIMStatusNothing;

@@ -189,6 +189,9 @@ static char *fallbackResources[] = {
     "*labelFontList: "          NEDIT_DEFAULT_FONT,
     "*textFontList: "           NEDIT_FIXED_FONT,
 #endif
+#ifdef XNE_TEXTFIELD
+    "*XmTextField.XftFont:      Monospace:size=10",         
+#endif
 
     /*
     "*background: "             NEDIT_DEFAULT_BG,

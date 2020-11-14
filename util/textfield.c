@@ -31,6 +31,7 @@
 #include "../source/textBuf.h" /* Utf8CharLen */
 #include "../source/textSel.h"
 #include "../source/textDisp.h" /* PixelToColor */
+#include "../source/text.h" /* TextPrintXIMError */
 
 #define TF_DEFAULT_FONT_NAME "Monospace:size=10"
 
@@ -352,7 +353,7 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
                 win,
                 NULL);
     } else {
-        fprintf(stderr, "TextField: XmImGetXIM failed\n");
+        TextPrintXIMError(); // text.c
     }
     
     tfInitXft(text);
@@ -692,8 +693,17 @@ static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     KeySym keysym;
     int nchars;
     int status;
+    static XComposeStatus compose = {NULL, 0};
     
-    nchars = Xutf8LookupString(tf->textfield.xic, &event->xkey, chars, 127, &keysym, &status);
+    if(tf->textfield.xic) {
+#ifdef X_HAVE_UTF8_STRING
+        nchars = Xutf8LookupString(tf->textfield.xic, &event->xkey, chars, 127, &keysym, &status); 
+#else
+        nchars = XmbLookupString(tf->textfield.xic, &event->xkey, chars, 127, &keysym, &status);
+#endif
+    } else {
+        nchars = XLookupString(&event->xkey, chars, 127, &keysym, &compose);
+    }
     
     insertText(tf, chars, nchars, event);
 }
@@ -910,7 +920,9 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
      
     tf->textfield.hasFocus = 1;
     
-    XSetICFocus(tf->textfield.xic);
+    if(tf->textfield.xic) {
+        XSetICFocus(tf->textfield.xic);
+    }
     
     XmAnyCallbackStruct cb;
     cb.reason = XmCR_FOCUS;
@@ -932,7 +944,9 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     
-    XUnsetICFocus(tf->textfield.xic);
+    if(tf->textfield.xic) {
+        XUnsetICFocus(tf->textfield.xic);
+    }
     
     if(tf->textfield.blinkProcId != 0) {
         XtRemoveTimeOut(tf->textfield.blinkProcId);
