@@ -385,9 +385,15 @@ void textfield_destroy(Widget widget) {
     if(tf->textfield.font != defaultFont) {
         FontUnref(tf->textfield.font);
     }
-    XFreeGC(XtDisplay(widget), tf->textfield.gc);
-    XFreeGC(XtDisplay(widget), tf->textfield.gcInv);
-    XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
+    if(tf->textfield.gc) {
+        XFreeGC(XtDisplay(widget), tf->textfield.gc);
+    }
+    if(tf->textfield.gcInv) {
+        XFreeGC(XtDisplay(widget), tf->textfield.gcInv);
+    }
+    if(tf->textfield.highlightBackground) {
+        XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
+    }
 }
 
 void textfield_resize(Widget widget) {
