@@ -110,6 +110,9 @@ AR=ar
 #                   all other headers in each .c source file.
 #                   Only useful for developers.
 #
+# XNE_TEXTFIELD     Enable alternative text field widget for search/replace.
+#                   The new widget has improved unicode support.
+#
 # Some compilers need to be told to operate in ansi-standard mode, some have
 # different levels of optimization that you can select (optimization improves
 # syntax highlighting performance.   You will also often need to add locations

@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+version 1.2.1 (2020-11-14)
+--------------------------
+
+ - added alternative textfield widget for the search/replace dialog
+   with better unicode support 
+ - added shortcuts for selecting files in the filedialog detail view
+ - added text zoom functionality to the help window
+ - fixed bom setting not always applied in the save file dialog
+ - fixed line number drawing without Xrender 
+ - fixed file open not working with detail view after changing the directory
+ - some code cleanu
+
 version 1.2.0 (2020-03-08)
 --------------------------
 

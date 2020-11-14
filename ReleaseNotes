@@ -1,4 +1,4 @@
-          Release Notes for XNEdit Version 1.2.0, March 2020
+          Release Notes for XNEdit Version 1.2.1, November 2020
 
 
 This file contains last minute notes to users about the release, which are not
@@ -6,6 +6,21 @@ included in the documentation or README files included with the distribution
 kits.  It also contains change information, for users who are interested in
 what bugs have been fixed, and what features have been added in the current
 version.
+
+New XNEdit 1.2.1 alternative Textfield Widget
+---------------------------------------------
+
+An alternative text field widget with improved unicode support can be used in the Search/Replace dialogs. This solves the folloing problems:
+
+1. With some locales (non-UTF-8), only ASCII input works
+2. Motif's XmTextField does not support fallback fonts with Xft text rendering, which limits the variety of characters that could be displayed
+
+To use the new alternative text field widget, add -DXNE_TEXTFIELD to the CFLAGS variable in the platform specific Makefile.
+
+The alternative widget uses 'XmTextField' as widget class, which means many styling options (X resources) of Motif's XmTextField can be used. The font of the new widget can be changed via the 'XftFont' resource. For example:
+
+*XmTextField.XftFont: Monospace:size=10
+
 
 New XNEdit 1.2 "Insert Unicode" menu entry
 ------------------------------------------
