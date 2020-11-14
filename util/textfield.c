@@ -435,7 +435,7 @@ static void tfDrawCursor(TextFieldWidget tf) {
             tf->core.height-tf->textfield.textarea_yoff);
 }
 
-static void tfRedrawText(TextFieldWidget tf) {
+static void tfRedrawText(TextFieldWidget tf) {  
     tfCalcCursorPos(tf);
     
     int border = tf->primitive.shadow_thickness + tf->primitive.highlight_thickness;
@@ -1452,6 +1452,9 @@ void XNETextFieldSetString(Widget widget, char *value) {
     tf->textfield.pos = 0;
     
     tfClearSelection(tf);
+    if(XtIsRealized(widget)) {
+        tfRedrawText(tf);
+    } 
 }
 
 char* XNETextFieldGetString(Widget widget) {
@@ -1471,5 +1474,8 @@ XmTextPosition XNETextFieldGetLastPosition(Widget widget) {
 void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i) {
     TextFieldWidget tf = (TextFieldWidget)widget;
     tf->textfield.pos = i <= tf->textfield.length ? i : tf->textfield.length;
+    if(XtIsRealized(widget)) {
+        tfRedrawText(tf);
+    }
 } 
 
