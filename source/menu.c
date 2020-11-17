@@ -319,8 +319,6 @@ static void capitalizeAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void lowercaseAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void fillAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
-static void controlDialogAP(Widget w, XEvent *event, String *args,
-	Cardinal *nArgs);
 static void unicodeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 
@@ -532,8 +530,8 @@ static XtActionsRec Actions[] = {
     {"lowercase", lowercaseAP},
     {"fill-paragraph", fillAP},
     {"fill_paragraph", fillAP},
-    {"control-code-dialog", controlDialogAP},
-    {"control_code_dialog", controlDialogAP},
+    {"control-code-dialog", unicodeDialogAP}, /* maybe we can remove this */
+    {"control_code_dialog", unicodeDialogAP}, /* maybe we can remove this */
     {"unicode_dialog", unicodeDialogAP},   
     {"filter-selection-dialog", filterDialogAP},
     {"filter_selection_dialog", filterDialogAP},
@@ -750,8 +748,6 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     createMenuSeparator(menuPane, "sep3", FULL);
     createMenuItem(menuPane, "insertFormFeed", "Insert Form Feed", 'I',
     	    formFeedCB, window, FULL);
-    //createMenuItem(menuPane, "insertCtrlCode", "Insert Ctrl Code...", 'n',
-    //	    doActionCB, "control_code_dialog", FULL);
     createMenuItem(menuPane, "insertUnicode", "Insert Unicode...", 'U',
     	    doActionCB, "unicode_dialog", FULL);
 #ifdef SGI_CUSTOM
@@ -3626,44 +3622,6 @@ static void fillAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (CheckReadOnly(window))
     	return;
     FillSelection(window);
-}
-
-static void controlDialogAP(Widget w, XEvent *event, String *args,
-	Cardinal *nArgs)
-{
-    WindowInfo *window = WidgetToWindow(w);
-    unsigned char charCodeString[2];
-    char charCodeText[DF_MAX_PROMPT_LENGTH], dummy[DF_MAX_PROMPT_LENGTH];
-    char *params[1];
-    int charCode, nRead, response;
-    
-    if (CheckReadOnly(window))
-    	return;
-
-    response = DialogF(DF_PROMPT, window->shell, 2, "Insert Ctrl Code",
-            "ASCII Character Code:", charCodeText, "OK", "Cancel");
-
-    if (response == 2)
-    	return;
-    /* If we don't scan for a trailing string invalid input
-       would be accepted sometimes. */
-    nRead = sscanf(charCodeText, "%i%s", &charCode, dummy);
-    if (nRead != 1 || charCode < 0 || charCode > 255) {
-    	XBell(TheDisplay, 0);
-	return;
-    }
-    charCodeString[0] = (unsigned char)charCode;
-    charCodeString[1] = '\0';
-    params[0] = (char *)charCodeString;
-
-    if (!BufSubstituteNullChars((char *)charCodeString, 1, window->buffer))
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error", "Too much binary data",
-                "OK");
-        return;
-    }
-
-    XtCallActionProc(w, "insert_string", event, params, 1);
 }
 
 static void unicodeDialogAP(Widget w, XEvent *event, String *args,
