@@ -1860,7 +1860,7 @@ int GetPrefRepositionDialogs(void)
 
 void SetPrefAutoScroll(int state)
 {
-    WindowInfo *w = WindowList;
+    WindowInfo *w;
     int margin = state ? PrefData.autoScrollVPadding : 0;
     
     setIntPref(&PrefData.autoScroll, state);
