@@ -1494,7 +1494,7 @@ static int subtract(void)
             while (leftIter) {
                 Boolean insertResult = True;
                 
-                if (leftIter && rightIter) {
+                if (rightIter) {
                     int compareResult = arrayEntryCompare((rbTreeNode *)leftIter, (rbTreeNode *)rightIter);
                     if (compareResult < 0) {
                         insertResult = ArrayInsert(&resultArray, leftIter->key, &leftIter->value);
@@ -1508,7 +1508,7 @@ static int subtract(void)
                         rightIter = arrayIterateNext(rightIter);
                     }
                 }
-                else if (leftIter) {
+                else {
                     insertResult = ArrayInsert(&resultArray, leftIter->key, &leftIter->value);
                     leftIter = arrayIterateNext(leftIter);
                 }
