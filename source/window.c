@@ -357,6 +357,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->boldFont = FontRef(GetPrefBoldFont());
     window->boldItalicFont = FontRef(GetPrefBoldItalicFont());
     window->resizeOnFontChange = True;
+    window->zoom = 0;
     
     window->fontDialog = NULL;
     window->nMarks = 0;
