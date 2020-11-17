@@ -1389,7 +1389,7 @@ static void shiftLeftCB(Widget w, XtPointer clientData, XtPointer callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtCallActionProc(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
-    	    ((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask
+    	    (((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask)
     	    ? "shift_left_by_tab" : "shift_left",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
@@ -1399,7 +1399,7 @@ static void shiftRightCB(Widget w, XtPointer clientData, XtPointer callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtCallActionProc(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
-    	    ((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask
+    	    (((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask)
     	    ? "shift_right_by_tab" : "shift_right",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
@@ -1501,7 +1501,7 @@ static void gotoMatchingCB(Widget w, XtPointer clientData, XtPointer callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtCallActionProc(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
-    	    ((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask
+    	    (((XmAnyCallbackStruct *)callData)->event->xbutton.state & ShiftMask)
     	    ? "select_to_matching" : "goto_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
