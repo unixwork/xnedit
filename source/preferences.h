@@ -115,7 +115,6 @@ void SetPrefHighlightSyntax(Boolean state);
 Boolean GetPrefHighlightSyntax(void);
 void SetPrefBacklightChars(int state);
 int GetPrefBacklightChars(void);
-void SetPrefBacklightCharTypes(char *types);
 char *GetPrefBacklightCharTypes(void);
 void SetPrefRepositionDialogs(int state);
 int GetPrefRepositionDialogs(void);

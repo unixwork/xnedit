@@ -1086,7 +1086,6 @@ static void translatePrefFormats(int convertOld, int fileVer);
 static void setIntPref(int *prefDataField, int newValue);
 static void setStringPref(char *prefDataField, const char *newValue);
 static void sizeOKCB(Widget w, XtPointer clientData, XtPointer callData);
-static void setStringAllocPref(char **pprefDataField, char *newValue);
 static void sizeCancelCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsOKCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsCancelCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -1286,8 +1285,6 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
 */
 static void translatePrefFormats(int convertOld, int fileVer)
 {
-    XFontStruct *font;
-
     /* Parse the strings which represent types which are not decoded by
        the standard resource manager routines */
     if (TempStringPrefs.shellCmds != NULL) {
@@ -1838,11 +1835,6 @@ int GetPrefBacklightChars(void)
     return PrefData.backlightChars;
 }
 
-void SetPrefBacklightCharTypes(char *types)
-{
-    setStringAllocPref(&PrefData.backlightCharTypes, types);
-}
-
 char *GetPrefBacklightCharTypes(void)
 {
     return PrefData.backlightCharTypes;
@@ -2187,36 +2179,6 @@ static void setStringPref(char *prefDataField, const char *newValue)
     if (strcmp(prefDataField, newValue))
 	PrefsHaveChanged = True;
     strcpy(prefDataField, newValue);
-}
-
-static void setStringAllocPref(char **pprefDataField, char *newValue)
-{
-    char *p_newField;
-
-    /* treat empty strings as nulls */
-    if (newValue && *newValue == '\0')
-      newValue = NULL;
-    if (*pprefDataField && **pprefDataField == '\0')
-      *pprefDataField = NULL;         /* assume statically alloc'ed "" */
-
-    /* check changes */
-    if (!*pprefDataField && !newValue)
-      return;
-    else if (!*pprefDataField && newValue)
-      PrefsHaveChanged = True;
-    else if (*pprefDataField && !newValue)
-      PrefsHaveChanged = True;
-    else if (strcmp(*pprefDataField, newValue))
-      PrefsHaveChanged = True;
-
-    /* get rid of old preference */
-    NEditFree(*pprefDataField);
-
-    /* store new preference */
-    if (newValue) {
-      p_newField = NEditStrdup(newValue);
-    }
-    *pprefDataField = newValue;
 }
 
 /*
@@ -4089,7 +4051,7 @@ static void fillFromPrimaryCB(Widget w, XtPointer clientData,
     	XtPointer callData)
 {
     fontDialog *fd = (fontDialog *)clientData;
-    char *primaryName, *errMsg;
+    char *primaryName;
     size_t primaryLen;
     
     char *italic;
@@ -4292,8 +4254,6 @@ static int showFontStatus(fontDialog *fd, Widget fontTextFieldW,
 static void browseFont(Widget parent, Widget fontTextW)
 {
     char *origFontName, *newFontName;
-    Pixel fgPixel, bgPixel;
-    int dummy;
     
     origFontName = XmTextGetString(fontTextW);
 
