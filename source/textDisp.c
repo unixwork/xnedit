@@ -267,6 +267,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->modifyingTabDist = 0;
     textD->pointerHidden = False;
     textD->disableRedisplay = False;
+    textD->fixLeftClipAfterResize = False;
     textD->graphicsExposeQueue = NULL;
 
     /* Attach an event handler to the widget so we can know the visibility
@@ -614,6 +615,10 @@ void TextDResize(textDisp *textD, int width, int height)
     int oldWidth = textD->width;
     int exactHeight = height - height % (textD->ascent + textD->descent);
     
+    if(width > oldWidth) {
+        textD->fixLeftClipAfterResize = True;
+    }
+    
     textD->width = width;
     textD->height = height;
     
@@ -687,6 +692,19 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
 	int height)
 {
     int fontHeight, firstLine, lastLine, line;
+    if(textD->fixLeftClipAfterResize) {
+        // this call was directly after a window resize
+        // the left clip could be in the middle of a glyph, that was previously
+        // not rendered
+        // as a result, only the right half of the glyph would be rendered now
+        // to fix this, decrease the left a bit
+        int changeLeftClip = textD->font->fonts->font->max_advance_width;
+        if(left > changeLeftClip) {
+            left -= changeLeftClip;
+            width += changeLeftClip;
+        }
+        textD->fixLeftClipAfterResize = False;
+    }
     
     /* find the line number range of the display */
     fontHeight = textD->ascent + textD->descent;
