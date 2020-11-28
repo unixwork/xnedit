@@ -420,8 +420,6 @@ static char defaultTranslations[] =
     "<Btn1Down>: grab_focus()\n"
     "Button1 Ctrl<MotionNotify>: extend_adjust(\"rect\")\n"
     "Button1~Ctrl<MotionNotify>: extend_adjust()\n"
-    "<Btn4Down>,<Btn4Up>,<MotionNotify>(1+): extend_adjust()\n"
-    "<Btn5Down>,<Btn5Up>,<MotionNotify>(1+): extend_adjust()\n"
     "<Btn1Up>: extend_end()\n"
     "<Btn2Down>: secondary_or_drag_start()\n"
     "Shift Ctrl Button2<MotionNotify>: secondary_or_drag_adjust(\"rect\", \"copy\", \"overlay\")\n"
@@ -444,6 +442,8 @@ static char defaultTranslations[] =
     "Shift<Btn5Down>,<Btn5Up>: scroll_down(1)\n"
     "Ctrl<Btn4Down>,<Btn4Up>: scroll_up(1, pages)\n"
     "Ctrl<Btn5Down>,<Btn5Up>: scroll_down(1, pages)\n"
+    "<Btn4Down>,<Btn4Up>,<MotionNotify>(1+): extend_adjust()\n"
+    "<Btn5Down>,<Btn5Up>,<MotionNotify>(1+): extend_adjust()\n"
     "<Btn4Down>,<Btn4Up>: scroll_up(5)\n"
     "<Btn5Down>,<Btn5Up>: scroll_down(5)\n";
      /* some of the translations from the Motif text widget were not picked up:
