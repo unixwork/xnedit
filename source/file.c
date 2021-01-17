@@ -641,9 +641,9 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     setEncoding = "UTF-16LE";
                     hasBOM = TRUE;
                     break;
-                } else {
                 }
             }
+            bom = 0;
         } while (0);
         fseek(fp, bom, SEEK_SET);
     }
