@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+version 1.2.2 (2021-01-18)
+--------------------------
+
+ - added possibility to scroll with mouse wheel while selecting text
+ - fixed rendering issue when the window is resized
+ - fixed that Revert to Saved could skip the first two bytes in some cases
+ - minor code cleanup
+
 version 1.2.1 (2020-11-14)
 --------------------------
 
@@ -11,7 +19,7 @@ version 1.2.1 (2020-11-14)
  - fixed bom setting not always applied in the save file dialog
  - fixed line number drawing without Xrender 
  - fixed file open not working with detail view after changing the directory
- - some code cleanu
+ - some code cleanup
 
 version 1.2.0 (2020-03-08)
 --------------------------
