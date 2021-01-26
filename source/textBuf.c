@@ -2751,9 +2751,9 @@ int Utf8CharLen(const unsigned char *u)
 {
     unsigned char u0 = u[0];
     int ulen = 1;
-    if(u0 > 240) {
+    if(u0 >= 240) {
         ulen = 4;
-    } else if(u0 > 224) {
+    } else if(u0 >= 224) {
         ulen = 3;
     } else if(u0 > 192) {
         ulen = 2;
