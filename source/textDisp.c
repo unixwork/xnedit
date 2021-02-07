@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <ctype.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -115,7 +116,7 @@ static void calcLastChar(textDisp *textD);
 static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
-static void drawString(textDisp *textD, int style, int x, int y, int fromX,
+static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
         int toX, FcChar32 *string, int nChars);
 static void clearRect(textDisp *textD, GC gc, int x, int y, 
         int width, int height);
@@ -269,6 +270,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->disableRedisplay = False;
     textD->fixLeftClipAfterResize = False;
     textD->graphicsExposeQueue = NULL;
+    
+    TextDSetupRainbowColors(textD, "");
 
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
@@ -1899,7 +1902,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     NFont *charFL;
     XftFont *styleFont;
     XftFont *charFont;
-         
+    int rbTabDist = TEXT_OF_TEXTD(textD).emulateTabs > 0 ?
+            TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
+    int indentRainbow = 1;
+    
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -1960,6 +1966,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     x = textD->left - textD->horizOffset;
     outIndex = 0;
     
+    int rbEnd = 0;
+    int rbCharIndex = 0;
+    int rbPixelIndex = 0;
+    
     inc = 1;
     for (charIndex = 0; ; charIndex+=inc) { 
         if(charIndex >= lineLen) {
@@ -1970,7 +1980,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             baseChar = lineStr[charIndex];
             char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
-            
+                    
             inc = Utf8ToUcs4(line, &uc, remainingLen);
             if(inc > 1) {
                 charLen = 1;
@@ -2000,8 +2010,26 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             styleFont = FindFont(styleFL, uc);
     	    break;
     	}
+        
+        if(indentRainbow) {
+            if(isspace(baseChar)) {
+                if(baseChar == '\t') {
+                    rbCharIndex += buf->tabDist - rbCharIndex % buf->tabDist;
+                } else {
+                    rbCharIndex++;
+                }
+            } else {
+                rbEnd = charIndex;
+            }
+        }
+        
     	x += charWidth;
     	outIndex += charLen;
+    }
+    
+    rbPixelIndex = rbCharIndex / rbTabDist;
+    if(rbEnd < startIndex) {
+        indentRainbow = 0;
     }
     
     /* Set Xrender clipping to prevent text rendering beyond the line borders.
@@ -2015,6 +2043,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         rect.height = textD->ascent + textD->descent;
         XftDrawSetClipRectangles(textD->d, leftClip, y, &rect, 1);
     }
+    
+    int rbCurrentPixelIndex = indentRainbow ? 0 : -1;
     
     /* Scan character positions from the beginning of the clipping range, and
        draw parts whenever the style changes (also note if the cursor is on
@@ -2044,6 +2074,20 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         } else {
             baseChar = lineStr[charIndex];
             
+            if(indentRainbow) {
+                if(isspace(baseChar)) {
+                    if(baseChar == '\t') {
+                        rbCharIndex += buf->tabDist - rbCharIndex % buf->tabDist;
+                    } else {
+                        rbCharIndex++;
+                    }
+                    rbCurrentPixelIndex = ((rbCharIndex+rbTabDist-1) / rbTabDist)+textD->numRainbowColors-1;
+                } else {
+                    rbCurrentPixelIndex = -1;
+                    indentRainbow = 0;
+                }
+            }
+            
             inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
             if(inc > 1) {
                 charLen = 1;
@@ -2061,12 +2105,13 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         charFL = styleFontList(textD, charStyle);
         charFont = FindFont(charFL, uc);
         
-        if (charStyle != style || charFont != styleFont) {
-            drawString(textD, style, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
+        if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex) {
+            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
             outPtr = outStr;
             startX = x;
             style = charStyle;
             styleFont = charFont;
+            rbPixelIndex = rbCurrentPixelIndex;
     	}
         
         if (charIndex < lineLen) {
@@ -2088,7 +2133,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* Draw the remaining style segment */
     //printf("final draw len: %d\n", outPtr - outStr);;
-    drawString(textD, style, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
+    rbCurrentPixelIndex = -1;
+    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
        this line.  Also check for the cases which are not caught as the
@@ -2128,7 +2174,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** rectangle where text would have drawn from x to toX and from y to
 ** the maximum y extent of the current font(s).
 */
-static void drawString(textDisp *textD, int style, int x, int y, int fromX,
+static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
 	int toX, FcChar32 *string, int nChars)
 {
     GC gc, bgGC;
@@ -2137,7 +2183,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int fromX,
     Pixel bground = textD->bgPixel;
     Pixel fground = textD->fgPixel;
     int underlineStyle = FALSE;
-    
+       
     XftColor color = textD->fgColor;
     
     /* Don't draw if widget isn't realized */
@@ -2145,7 +2191,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int fromX,
     	return;
     
     /* select a GC */
-    if (style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
+    if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
         gc = bgGC = textD->styleGC;
     }
     else if (style & HIGHLIGHT_MASK) {
@@ -2192,6 +2238,7 @@ static void drawString(textDisp *textD, int style, int x, int y, int fromX,
                       getRangesetColor(textD,
                           (style&RANGESET_MASK)>>RANGESET_SHIFT,
                             bground) :
+            rbIndex >= 0 ? textD->indentRainbowColors[rbIndex%textD->numRainbowColors] : 
             styleRec && styleRec->bgColorName ? styleRec->bgColor :
             (style & BACKLIGHT_MASK) && !(style & FILL_MASK) ?
                       textD->bgClassPixel[(style>>BACKLIGHT_SHIFT) & 0xff] :
@@ -4071,6 +4118,25 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
     }
     memcpy(*pp_bgClass, bgClass, 256);
     memcpy(*pp_bgClassPixel, bgClassPixel, class_no * sizeof (Pixel));
+}
+
+/*
+ * Setup indent rainbow colors
+ */
+void TextDSetupRainbowColors(textDisp *textD, const char *rainbowCg) {
+    // TODO: rewrite func: make this configurable
+    textD->indentRainbowColors = NEditCalloc(6, sizeof(Pixel));
+    textD->numRainbowColors = 6;
+    
+    int r, g, b;
+    
+    // some test colors
+    textD->indentRainbowColors[0] = AllocColor(textD->w, "rgb:c7/eb/ff", &r, &g, &b);
+    textD->indentRainbowColors[1] = AllocColor(textD->w, "rgb:d4/ff/e7", &r, &g, &b);
+    textD->indentRainbowColors[2] = AllocColor(textD->w, "rgb:fb/ff/d4", &r, &g, &b);
+    textD->indentRainbowColors[3] = AllocColor(textD->w, "rgb:ff/e7/d4", &r, &g, &b);
+    textD->indentRainbowColors[4] = AllocColor(textD->w, "rgb:ff/e6/ff", &r, &g, &b);
+    textD->indentRainbowColors[5] = AllocColor(textD->w, "rgb:ef/e6/ff", &r, &g, &b);
 }
 
 /* font list functions */

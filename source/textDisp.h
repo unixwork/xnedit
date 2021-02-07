@@ -173,6 +173,9 @@ typedef struct _textDisp {
     XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
+    Pixel *indentRainbowColors;
+    int numRainbowColors;
+    
     Widget calltipW;                    /* The Label widget for the calltip */
     Widget calltipShell;                /* The Shell that holds the calltip */
     calltipStruct calltip;              /* The info for the calltip itself */
@@ -252,6 +255,7 @@ int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart);
 void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 	unsigned char **pp_bgClass, Pixel bgPixelDefault);
+void TextDSetupRainbowColors(textDisp *textD, const char *rainbowCg);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 	int textLeft);
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
