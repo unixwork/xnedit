@@ -2190,6 +2190,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if (XtWindow(textD->w) == 0)
     	return;
     
+    if(nChars == 0) rbIndex = -1;
+    
     /* select a GC */
     if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
         gc = bgGC = textD->styleGC;
