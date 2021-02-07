@@ -2085,6 +2085,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 } else {
                     rbCurrentPixelIndex = -1;
                     indentRainbow = 0;
+                    if(rbCharIndex % rbTabDist > 0) {
+                        // don't highlight partial indention
+                        rbPixelIndex = -2; // set to negative value but not -1
+                    }
                 }
             }
             
