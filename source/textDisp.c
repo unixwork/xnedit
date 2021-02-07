@@ -1966,7 +1966,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     x = textD->left - textD->horizOffset;
     outIndex = 0;
     
-    int rbEnd = 0;
+    int rbEnd = lineLen;
     int rbCharIndex = 0;
     int rbPixelIndex = 0;
     
@@ -2027,10 +2027,15 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	outIndex += charLen;
     }
     
+    if(rbCharIndex > 0) {
+        //printf("ok\n");
+    }
+    
     rbPixelIndex = rbCharIndex / rbTabDist;
     if(rbEnd < startIndex) {
         indentRainbow = 0;
     }
+    
     
     /* Set Xrender clipping to prevent text rendering beyond the line borders.
      * Sometimes with anti aliasing transparent pixels are above the glyph
@@ -2071,6 +2076,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         if(charIndex >= lineLen) {
             baseChar = '\0';   
             charLen = 1;
+            rbCurrentPixelIndex = -1;
         } else {
             baseChar = lineStr[charIndex];
             
@@ -2137,7 +2143,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* Draw the remaining style segment */
     //printf("final draw len: %d\n", outPtr - outStr);;
-    rbCurrentPixelIndex = -1;
     drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
