@@ -104,6 +104,9 @@ typedef struct _textDisp {
     XftDraw *d;
     int top, left, width, height, lineNumLeft, lineNumWidth;
     int cursorPos;
+    int cursorPosCache;
+    int cursorPosCacheLeft;
+    int cursorPosCacheRight;
     int cursorOn;
     int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
@@ -257,6 +260,7 @@ void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
+void TextDCursorLR(textDisp *textD, int *left, int *right);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

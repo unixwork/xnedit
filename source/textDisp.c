@@ -205,6 +205,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->height = height;
     textD->cursorOn = True;
     textD->cursorPos = 0;
+    textD->cursorPosCache = -1;
+    textD->cursorPosCacheLeft = 0;
+    textD->cursorPosCacheRight = 0;
     textD->cursorX = -100;
     textD->cursorY = -100;
     textD->cursorToHint = NO_HINT;
@@ -863,7 +866,10 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     /* draw it at its new position */
     textD->cursorPos = newPos;
     textD->cursorOn = True;
-    textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos + 1);
+    
+    int left, right;
+    TextDCursorLR(textD, &left, &right);
+    textDRedisplayRange(textD, left, right);
 }
 
 void TextDBlankCursor(textDisp *textD)
@@ -873,17 +879,18 @@ void TextDBlankCursor(textDisp *textD)
     
     blankCursorProtrusions(textD);
     textD->cursorOn = False;
-    textDRedisplayRange(
-            textD,
-            BufLeftPos(textD->buffer, textD->cursorPos),
-            BufRightPos(textD->buffer, textD->cursorPos));
+    int left, right;
+    TextDCursorLR(textD, &left, &right);
+    textDRedisplayRange(textD, left, right);
 }
 
 void TextDUnblankCursor(textDisp *textD)
 {
     if (!textD->cursorOn) {
     	textD->cursorOn = True;
-        textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos+1);
+        int left, right;
+        TextDCursorLR(textD, &left, &right);
+        textDRedisplayRange(textD, left, right);
     }
 }
 
@@ -892,7 +899,9 @@ void TextDSetCursorStyle(textDisp *textD, int style)
     textD->cursorStyle = style;
     blankCursorProtrusions(textD);
     if (textD->cursorOn) {
-        textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos + 1);
+        int left, right;
+        TextDCursorLR(textD, &left, &right);
+        textDRedisplayRange(textD, left, right);
     }
 }
 
@@ -1494,6 +1503,19 @@ int TextDMoveDown(textDisp *textD, int absolute)
     return True;
 }
 
+void TextDCursorLR(textDisp *textD, int *left, int *right)
+{
+    if(textD->cursorPos != textD->cursorPosCache) {
+        textBuffer *buf = textD->buffer;
+        int pos = textD->cursorPos;
+        textD->cursorPosCache = pos;
+        textD->cursorPosCacheLeft = BufLeftPos(buf, pos);
+        textD->cursorPosCacheRight = BufRightPos(buf, pos);
+    }
+    *left = textD->cursorPosCacheLeft;
+    *right = textD->cursorPosCacheRight;
+}
+
 /*
 ** Same as BufCountLines, but takes in to account wrapping if wrapping is
 ** turned on.  If the caller knows that startPos is at a line start, it
@@ -1736,7 +1758,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
        beyond the left and right edges of the text. */
     startDispPos = textD->continuousWrap ? wrapModStart : pos;
     if (origCursorPos == startDispPos && textD->cursorPos != startDispPos)
-    	startDispPos = min(startDispPos, origCursorPos-1);
+    	startDispPos = min(startDispPos, origCursorPos-1); // TODO: needs fix
     if (linesInserted == linesDeleted) {
         if (nInserted == 0 && nDeleted == 0)
             endDispPos = pos + nRestyled;
@@ -2958,7 +2980,9 @@ static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
                     textD->top, -xOffset, textD->height);
         }
         /* Restore protruding parts of the cursor */
-        textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos+1);
+        int left, right;
+        TextDCursorLR(textD, &left, &right);
+        textDRedisplayRange(textD, left, right);
     }
     
     /* Refresh line number/calltip display if its up and we've scrolled 
