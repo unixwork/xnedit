@@ -22,6 +22,8 @@
 
 #include "tileviewP.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 
 static void tileview_class_init(void);
 static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *num_args);
@@ -33,7 +35,7 @@ static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgL
 static Boolean tileview_acceptfocus(Widget widget, Time *time);
 
 
-
+static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 
 static XtResource resources[] = {
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.focusCB), XmRCallback, NULL},
@@ -42,11 +44,14 @@ static XtResource resources[] = {
     {XnHtileDrawFunc, XnCtileDrawFunc, XtRFunction, sizeof(TileDrawFunc), XtOffset(TileViewWidget, tileview.drawFunc), XmRPointer, NULL},
     {XnHtileDrawData, XnCtileDrawData, XmRPointer, sizeof(void*), XtOffset(TileViewWidget, tileview.drawData), XmRPointer, NULL},
     {XnHtileData, XnCtileData, XmRPointer, sizeof(void**), XtOffset(TileViewWidget, tileview.data), XmRPointer, NULL},
-    {XnHtileDataLength, XnCtileDataLength, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.length), XmRPointer, NULL}
+    {XnHtileDataLength, XnCtileDataLength, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.length), XmRPointer, NULL},
+    {XnHtileSelection, XnCtileSelection, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.selection), XmRPointer, NULL},
+    {XnHtileWidth, XnCtileWidth, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileWidth), XmRString, "100"},
+    {XnHtileHeight, XnCtileHeight, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileHeight), XmRString, "100"}
 };
 
 static XtActionsRec actionslist[] = {
-  {"NULL",NULL}
+  {"mouse1down",mouse1DownAP}
 };
 
 
@@ -54,7 +59,8 @@ static char defaultTranslations[] = "\
 <FocusIn>:		        focusIn()\n\
 <FocusOut>:                     focusOut()\n\
 <EnterWindow>:		        leave()\n\
-<LeaveWindow>:                  enter()";
+<LeaveWindow>:                  enter()\n\
+<Btn1Down>:                     mouse1down()";
 
 
 
@@ -118,30 +124,154 @@ static void tileview_class_init(void) {
 }
 
 static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *num_args) {
+    TileViewWidget tv = (TileViewWidget)neww;
     
+    tv->tileview.recalcSize = True;
+    tv->tileview.length = 15;
 }
 
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
+     (coreClassRec.core_class.realize)(widget, mask, attributes);
+    
+    
+    TileViewWidget tv = (TileViewWidget)widget;
+    Display *dpy = XtDisplay(widget);
+    
+    XGCValues gcvals;
+    gcvals.foreground = tv->primitive.foreground;
+    gcvals.background = tv->core.background_pixel;
+    tv->tileview.gc = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
 }
 
 static void tileview_destroy(Widget widget) {
-    
+    TileViewWidget tv = (TileViewWidget)widget;
+    XFreeGC(XtDisplay(widget), tv->tileview.gc);
 }
 
 static void tileview_resize(Widget widget) {
     
 }
 
-static void tileview_expose(Widget widget, XEvent* event, Region region) {
+static Dimension calcHeight(TileViewWidget tv, int *cols, int *rows) {
+    long len = tv->tileview.length;
+    int elemPerLine = 0;
+    int lines = 0;
     
+    Dimension tileWidth = tv->tileview.tileWidth;
+    Dimension tileHeight = tv->tileview.tileHeight;
+
+    elemPerLine = tv->core.width / tileWidth;
+    if(elemPerLine == 0) {
+        elemPerLine = 1;
+    }
+
+    lines = (len+elemPerLine-1) / elemPerLine;
+    
+    *cols = elemPerLine;
+    *rows = lines;
+    
+    return lines * tileHeight;
+}
+
+static void tileview_expose(Widget widget, XEvent* event, Region region) {
+    TileViewWidget tv = (TileViewWidget)widget;
+    Display *dpy = XtDisplay(widget);
+    XExposeEvent *e = &event->xexpose;
+    
+    Dimension tileWidth = tv->tileview.tileWidth;
+    Dimension tileHeight = tv->tileview.tileHeight;
+    
+    long len = tv->tileview.length;
+    int cols = 0;
+    int rows = 0;
+    
+    Dimension width = tv->core.width;
+
+    Dimension height = calcHeight(tv, &cols, &rows);
+
+    if(tv->tileview.recalcSize) {
+        if(width < tileWidth) width = tileWidth;
+        if(height < tileHeight) height = tileHeight;
+        
+        XtMakeResizeRequest(widget, width, height, NULL, NULL);
+        tv->tileview.recalcSize = False;
+    }
+    
+    int c = 0;
+    int r = 0;
+    for(long i=0;i<len;i++) {
+        if(c >= cols) {
+            c = 0;
+            r++;
+        }
+        
+        if(i == tv->tileview.selection) {
+            XFillRectangle(dpy, XtWindow(widget), tv->tileview.gc, c*tileWidth + 10, r*tileHeight + 10, tileWidth - 20, tileHeight - 20);
+        } else {
+            XDrawRectangle(dpy, XtWindow(widget), tv->tileview.gc, c*tileWidth + 10, r*tileHeight + 10, tileWidth - 20, tileHeight - 20);
+        } 
+        
+        c++;
+    }
+    
+    //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, 0, 0, widget->core.width, widget->core.height);
+    //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, widget->core.width, 0, 0, widget->core.height);
+
+    tv->tileview.recalcSize = False;
 }
 
 static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgList args, Cardinal *num_args) {
+    Boolean r = False;
+    TileViewWidget o = (TileViewWidget)old;
+    TileViewWidget n = (TileViewWidget)neww;
     
+    if(o->tileview.data != n->tileview.data) {
+        r = True;
+    }
+    if(o->tileview.length != n->tileview.length) {
+        r = True;
+    }
+    if(o->tileview.drawFunc != n->tileview.drawFunc) {
+        r = True;
+    }
+    if(o->tileview.drawData != n->tileview.drawData) {
+        r = True;
+    }
+    
+    n->tileview.recalcSize = True;
+    
+    return r;
 }
 
 static Boolean tileview_acceptfocus(Widget widget, Time *time) {
-    
+    return True;
 }
 
+
+/* ------------------------------ Actions ------------------------------ */
+
+static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TileViewWidget tv = (TileViewWidget)w;
+    int x = event->xbutton.x;
+    int y = event->xbutton.y;
+    
+    int cols, rows;
+    (void)calcHeight(tv, &cols, &rows);
+    
+    int selectedCol = x / tv->tileview.tileWidth;
+    int selectedRow = y / tv->tileview.tileHeight;
+    
+    long sel = selectedRow * cols + selectedCol;
+    
+    tv->tileview.selection = sel > tv->tileview.length ? -1 : sel;   
+    
+    XClearArea(XtDisplay(w), XtWindow(w), 0, 0, 0, 0, TRUE);
+    XFlush(XtDisplay(w));
+}
+
+/* ------------------------------ Public ------------------------------ */
+
+Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal argcount) {
+    return XtCreateWidget(name, tileviewWidgetClass, parent, arglist, argcount);
+}

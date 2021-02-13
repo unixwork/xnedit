@@ -49,6 +49,8 @@
 #include "getfiles.h"
 #include "misc.h"
 
+#include "tileview.h"
+
 #include "../source/preferences.h"
 
 #include "DialogF.h"
@@ -1141,6 +1143,8 @@ static void filedialog_update_iconview(
         int filecount,
         int maxnamelen)
 {
+    return;
+    
     Arg args[16];
     XmString str;
     int n;
@@ -2524,7 +2528,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNspatialIncludeModel, XmAPPEND); n++;
     XtSetArg(args[n], XmNspatialResizeModel, XmGROW_MINOR); n++;
     XtSetArg(args[n], XmNlargeCellWidth, 150); n++;
-    data.container = XmCreateContainer(scrollw, "table", args, n);
+    //data.container = XmCreateContainer(scrollw, "table", args, n);
+    data.container = XnCreateTileView(scrollw, "table", args, n);
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
 		(XtCallbackProc)resize_container, &data);

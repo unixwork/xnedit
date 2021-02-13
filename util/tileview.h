@@ -37,6 +37,13 @@ extern "C" {
 #define XnCtileData           "tileviewdata"
 #define XnHtileDataLength     "tileviewlength"
 #define XnCtileDataLength     "tileviewlength"
+#define XnHtileSelection      "tileviewselection"
+#define XnCtileSelection      "tileviewselection"
+#define XnHtileWidth          "tilewidth"
+#define XnCtileWidth          "tilewidth"
+#define XnHtileHeight         "tileheight"
+#define XnCtileHeight         "tileheight"
+    
     
 /*
  * void TileDrawFunc(Widget tileView,
@@ -45,12 +52,14 @@ extern "C" {
  *                   int height,
  *                   int x,
  *                   int y,
- *                   void *userData);
+ *                   void *userData,
+ *                   Boolean isSelected);
  */
-typedef void(*TileDrawFunc)(Widget, void *, int, int, int, int, void *);
+typedef void(*TileDrawFunc)(Widget, void *, int, int, int, int, void *, Boolean);
     
 extern WidgetClass tileviewWidgetClass;
 
+Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal argcount);
 
 
 #ifdef __cplusplus

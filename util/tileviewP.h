@@ -27,19 +27,20 @@
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
+#include <Xft/Xft.h>
+
 #include "tileview.h"
 
-typedef struct TextFieldClassPart {
+typedef struct TileFieldClassPart {
     int unused;
 } TileViewClassPart;
 
-typedef struct TextFieldClassRec {
+typedef struct TileFieldClassRec {
     CoreClassPart        core_class;
     XmPrimitiveClassPart primitive_class;
-    TextFieldClassPart   tileview_class;
+    TileViewClassPart   tileview_class;
 } TileViewClassRec;
 
-//extern TileViewClassRec nTextFieldClassRec;
 
 typedef struct TileViewPart {
     XtCallbackList focusCB;
@@ -47,17 +48,29 @@ typedef struct TileViewPart {
     XtCallbackList realizeCB;
     
     TileDrawFunc   drawFunc;
-    void           *userData;
+    void           *drawData;
     
     void           **data;
     long           length;
-} TextFieldPart;
+    
+    int            tileWidth;
+    int            tileHeight;
+    
+    long           selection;
+    
+    Boolean        recalcSize;
+    
+    GC             gc;
+    XftDraw        *d;
+} TileViewPart;
 
-typedef struct TextFieldRec {
+typedef struct TileViewRec {
    CorePart        core;
    XmPrimitivePart primitive;
    TileViewPart    tileview;
 } TileViewRec;
+
+typedef struct TileViewRec *TileViewWidget;
 
 #endif /* XNE_TILEVIEWP_H */
 
