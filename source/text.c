@@ -2332,7 +2332,7 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         nChars = XmImMbLookupString(w, &event->xkey, chars, 127, &keysym, &status);
     }
     
-    
+  
     if (nChars == 0 || status == XLookupNone ||
      	   status == XLookupKeySym || status == XBufferOverflow)
     	return;

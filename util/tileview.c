@@ -21,7 +21,6 @@
  */
 
 #include "tileviewP.h"
-#include "tileview.h"
 
 
 static void tileview_class_init(void);
@@ -38,7 +37,12 @@ static Boolean tileview_acceptfocus(Widget widget, Time *time);
 
 static XtResource resources[] = {
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.focusCB), XmRCallback, NULL},
-    {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.activateCB), XmRCallback, NULL}
+    {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.activateCB), XmRCallback, NULL},
+    {XmNrealizeCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.realizeCB), XmRCallback, NULL},
+    {XnHtileDrawFunc, XnCtileDrawFunc, XtRFunction, sizeof(TileDrawFunc), XtOffset(TileViewWidget, tileview.drawFunc), XmRPointer, NULL},
+    {XnHtileDrawData, XnCtileDrawData, XmRPointer, sizeof(void*), XtOffset(TileViewWidget, tileview.drawData), XmRPointer, NULL},
+    {XnHtileData, XnCtileData, XmRPointer, sizeof(void**), XtOffset(TileViewWidget, tileview.data), XmRPointer, NULL},
+    {XnHtileDataLength, XnCtileDataLength, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.length), XmRPointer, NULL}
 };
 
 static XtActionsRec actionslist[] = {

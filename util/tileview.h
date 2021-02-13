@@ -29,6 +29,25 @@
 extern "C" {
 #endif
 
+#define XnHtileDrawFunc       "drawfunc"
+#define XnCtileDrawFunc       "drawfunc"
+#define XnHtileDrawData       "drawdata"
+#define XnCtileDrawData       "drawdata"
+#define XnHtileData           "tileviewdata"
+#define XnCtileData           "tileviewdata"
+#define XnHtileDataLength     "tileviewlength"
+#define XnCtileDataLength     "tileviewlength"
+    
+/*
+ * void TileDrawFunc(Widget tileView,
+ *                   void *tileData,
+ *                   int width,
+ *                   int height,
+ *                   int x,
+ *                   int y,
+ *                   void *userData);
+ */
+typedef void(*TileDrawFunc)(Widget, void *, int, int, int, int, void *);
     
 extern WidgetClass tileviewWidgetClass;
 

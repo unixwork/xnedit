@@ -27,6 +27,8 @@
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
+#include "tileview.h"
+
 typedef struct TextFieldClassPart {
     int unused;
 } TileViewClassPart;
@@ -42,6 +44,13 @@ typedef struct TextFieldClassRec {
 typedef struct TileViewPart {
     XtCallbackList focusCB;
     XtCallbackList activateCB;
+    XtCallbackList realizeCB;
+    
+    TileDrawFunc   drawFunc;
+    void           *userData;
+    
+    void           **data;
+    long           length;
 } TextFieldPart;
 
 typedef struct TextFieldRec {
