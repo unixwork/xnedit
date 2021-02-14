@@ -47,8 +47,8 @@ static XtResource resources[] = {
     {XnHtileData, XnCtileData, XmRPointer, sizeof(void**), XtOffset(TileViewWidget, tileview.data), XmRPointer, NULL},
     {XnHtileDataLength, XnCtileDataLength, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.length), XmRString, "0"},
     {XnHtileSelection, XnCtileSelection, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.selection), XmRString, "-1"},
-    {XnHtileWidth, XnCtileWidth, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileWidth), XmRString, "100"},
-    {XnHtileHeight, XnCtileHeight, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileHeight), XmRString, "100"}
+    {XnHtileWidth, XnCtileWidth, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileWidth), XmRString, "134"},
+    {XnHtileHeight, XnCtileHeight, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileHeight), XmRString, "80"}
 };
 
 static XtActionsRec actionslist[] = {
@@ -128,6 +128,7 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     TileViewWidget tv = (TileViewWidget)neww;
     
     tv->tileview.recalcSize = True;
+    tv->tileview.btn1ClickPrev = 0;
 }
 
 static void tvInitXft(TileViewWidget w) {
@@ -205,6 +206,15 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
     TileViewWidget tv = (TileViewWidget)widget;
     Display *dpy = XtDisplay(widget);
     XExposeEvent *e = &event->xexpose;
+    
+    XClearArea(dpy, XtWindow(widget), e->x, e->y, e->width, e->height, False);
+    
+    XRectangle rect;
+        rect.x = e->x;
+        rect.y = e->y;
+        rect.width = e->width;
+        rect.height = e->height;
+        XftDrawSetClipRectangles(tv->tileview.d, 0, 0, &rect, 1);
     
     Dimension tileWidth = tv->tileview.tileWidth;
     Dimension tileHeight = tv->tileview.tileHeight;
@@ -307,8 +317,16 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     
     XnTileViewCallbackStruct cb;
     cb.selection = sel;
-    cb.selected_item = sel >= 0 ? tv->tileview.data[sel] : NULL;  
-    XtCallCallbacks(w, XmNselectionCallback, &cb);
+    cb.selected_item = sel >= 0 ? tv->tileview.data[sel] : NULL;
+    
+    Time t = event->xbutton.time;
+    int multiclicktime = XtGetMultiClickTime(XtDisplay(w));
+    if(t - tv->tileview.btn1ClickPrev < 2*multiclicktime) {
+        XtCallCallbacks(w, XmNactivateCallback, &cb);
+    } else {
+        XtCallCallbacks(w, XmNselectionCallback, &cb);
+        tv->tileview.btn1ClickPrev = t;
+    }
 }
 
 /* ------------------------------ Public ------------------------------ */
@@ -335,4 +353,29 @@ GC XnTileViewGC(Widget tileView) {
 XftDraw* XnTileViewXftDraw(Widget tileView) {
     TileViewWidget tv = (TileViewWidget)tileView;
     return tv->tileview.d;
+}
+
+/* ------------------------------ Text API ------------------------------ */
+
+XnText* XnCreateText(Display *dp, const char *str, size_t len, int width) {
+    XnText *text = malloc(sizeof(XnText));
+    text->dp = dp;
+    text->font = XftFontOpenName(dp, DefaultScreen(dp), "Sans:size=9");
+    text->str = str;
+    text->len = len;
+    text->width = width;
+    return text;
+}
+
+void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y) {
+    y += text->font->ascent + text->font->descent;
+    
+    XftDrawStringUtf8(d, color, text->font, x, y, (_Xconst FcChar8*)text->str, text->len);
+}
+
+void XnTextDestroy(XnText *text) {
+    if(text->font) {
+        XftFontClose(text->dp, text->font);
+    }
+    free(text);
 }

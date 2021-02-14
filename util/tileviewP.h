@@ -61,6 +61,8 @@ typedef struct TileViewPart {
     
     Boolean        recalcSize;
     
+    Time           btn1ClickPrev;
+    
     GC             gc;
     XftDraw        *d;
 } TileViewPart;

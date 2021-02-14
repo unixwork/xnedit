@@ -414,7 +414,7 @@ static void create_image(Display *dp, Visual *visual, XColor bgColor, int depth,
         uint8_t green = (pixel & 0xFF00) >> 8;
         uint8_t blue = (pixel & 0xFF0000) >> 16;
         // TODO: work with alpha value
-        if(pixel == UINT32_MAX) {
+        if(pixel == UINT32_MAX || pixel >> 24 == 0) {
             red = bgColor.red;
             green = bgColor.green;
             blue = bgColor.blue;
@@ -980,6 +980,11 @@ struct FileElm {
     time_t lastModified;
 };
 
+typedef struct IconViewElm {
+    FileElm *file;
+    XnText *text;
+} IconViewElm;
+
 typedef struct FileDialogData {
     Widget shell;
     
@@ -1018,8 +1023,8 @@ typedef struct FileDialogData {
     int filecount;
     int maxnamelen;
     
-    FileElm **flist;
-    long flist_count;
+    IconViewElm **flist;
+    int flist_count;
     
     char *currentPath;
     char *selectedPath;
@@ -1039,7 +1044,12 @@ static void filedialog_cancel(Widget w, FileDialogData *data, XtPointer d)
 }
 
 static void cleanupIconView(FileDialogData *data) {
-    // TODO
+    for(int i=0;i<data->flist_count;i++) {
+        free(data->flist[i]);
+    }
+    if(data->flist) free(data->flist);
+    data->flist = NULL;
+    data->flist_count = 0;
 }
 
 static void cleanupLists(FileDialogData *data)
@@ -1146,15 +1156,47 @@ void iconview_draw(
         Boolean isSelected)
 {
     Display *dpy = XtDisplay(widget);
+    Window window = XtWindow(widget);
     GC gc = XnTileViewGC(widget);
+    IconViewElm *elm = tileData;
     
     if(isSelected) {
-        XFillRectangle(dpy, XtWindow(widget), gc, x + 10, y + 10, width - 20, height - 20);
-    } else {
-        XDrawRectangle(dpy, XtWindow(widget), gc, x + 10, y + 10, width - 20, height - 20);
+        XDrawRectangle(dpy, window, gc, x + 2, y + 2, width - 4, height - 4);
+        XDrawRectangle(dpy, window, gc, x + 3, y + 3, width - 6, height - 6);
     }
+    
+    int icon_x = ((width - 32) / 2);
+    Pixmap icon = elm->file->isDirectory ? folderIcon32 : fileIcon32;
+    XCopyArea(
+            dpy,
+            icon,
+            window,
+            gc,
+            0,
+            0,
+            32,
+            32,
+            x + icon_x,
+            y + 8);
+    
+    if(!elm->text) {
+        const char *fileName = FileName(elm->file->path);
+        elm->text = XnCreateText(dpy, fileName, strlen(fileName), width - 12);
+    }
+    
+    XftColor color;
+    memset(&color, 0, sizeof(XftColor));
+    color.color.alpha = 0xFFFF;
+    XnTextDraw(elm->text, XnTileViewXftDraw(widget), &color, x+6, y+40);
+    
 }
 
+static IconViewElm* create_iconview_elm(FileElm *f) {
+    IconViewElm *elm = malloc(sizeof(IconViewElm));
+    elm->file = f;
+    elm->text = NULL;
+    return elm;
+}
 
 static void filedialog_update_iconview(
         FileDialogData *data,
@@ -1170,7 +1212,7 @@ static void filedialog_update_iconview(
         filterStr = "*";
     }
     
-    FileElm **flist = calloc(sizeof(FileElm*), dircount+filecount);
+    IconViewElm **flist = calloc(sizeof(IconViewElm*), dircount+filecount);
     
     long num_files = 0;
     FileElm *ls = dirs;
@@ -1185,13 +1227,16 @@ static void filedialog_update_iconview(
                 continue;
             }
             
-            flist[num_files++] = e;
+            flist[num_files++] = create_iconview_elm(e);
         }
         ls = files;
         count = filecount;
     }
     
     XtVaSetValues(data->container, XnHtileData, flist, XnHtileDataLength, num_files, NULL);
+    
+    data->flist = flist;
+    data->flist_count = num_files;
     
     if(filter) {
         XtFree(filter);
@@ -1629,7 +1674,8 @@ static void filedialog_iconview_setselection(
         XnTileViewCallbackStruct *sel)
 {
     if(sel->selected_item) {
-        FileElm *file = sel->selected_item;
+        IconViewElm *elm = sel->selected_item;
+        FileElm *file = elm->file;
         if(data->selectedPath) {
             NEditFree(data->selectedPath);
         }
@@ -2532,7 +2578,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             &data);
     XtAddCallback(
             data.container,
-            XmNdefaultActionCallback,
+            XmNactivateCallback,
             (XtCallbackProc)filedialog_iconview_action,
             &data);
     

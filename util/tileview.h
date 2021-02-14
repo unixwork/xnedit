@@ -59,11 +59,19 @@ extern "C" {
  */
 typedef void(*TileDrawFunc)(Widget, void *, int, int, int, int, void *, Boolean);
 
-typedef struct
-{
+typedef struct {
     void *selected_item;
     int  selection;
 } XnTileViewCallbackStruct;
+
+
+typedef struct {
+    Display *dp;
+    XftFont *font;
+    const char *str;
+    size_t len;
+    int width;
+} XnText;
     
 extern WidgetClass tileviewWidgetClass;
 
@@ -74,6 +82,10 @@ void XnTileViewSetSelection(Widget tileView, int selection);
 
 GC XnTileViewGC(Widget tileView);
 XftDraw* XnTileViewXftDraw(Widget tileView);
+
+XnText* XnCreateText(Display *dp, const char *str, size_t len, int width);
+void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y);
+void XnTextDestroy(XnText *text);
 
 
 #ifdef __cplusplus
