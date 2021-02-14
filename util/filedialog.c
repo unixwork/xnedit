@@ -995,8 +995,8 @@ typedef struct FileDialogData {
     int filecount;
     int maxnamelen;
     
-    WidgetList gadgets;
-    int numGadgets;
+    FileElm **flist;
+    long flist_count;
     
     char *currentPath;
     char *selectedPath;
@@ -1015,39 +1015,14 @@ static void filedialog_cancel(Widget w, FileDialogData *data, XtPointer d)
     data->status = FILEDIALOG_CANCEL;
 }
 
-static int cleanupFileView(FileDialogData *data)
-{
-    if(!data->gadgets) {
-        return 0;
-    }
-    
-    XtUnmanageChildren(data->gadgets, data->numGadgets);
-    for(int i=0;i<data->numGadgets;i++) {
-        XtDestroyWidget(data->gadgets[i]);
-    }
-    
-    int ret = data->numGadgets;
-    NEditFree(data->gadgets);
-    data->gadgets = NULL;
-    data->numGadgets = 0;
-    return ret;
+static void cleanupIconView(FileDialogData *data) {
+    // TODO
 }
 
 static void cleanupLists(FileDialogData *data)
 {
     XmListDeleteAllItems(data->dirlist);
     XmListDeleteAllItems(data->filelist);
-}
-
-static void filedialog_cleanup(FileDialogData *data)
-{
-    cleanupFileView(data);
-    if(data->selectedPath) {
-        NEditFree(data->selectedPath);
-    }
-    if(data->currentPath) {
-        NEditFree(data->currentPath);
-    }
 }
 
 /*
@@ -1135,6 +1110,29 @@ static void init_container_size(FileDialogData *data)
 
 typedef void(*ViewUpdateFunc)(FileDialogData*,FileElm*,FileElm*,int,int,int);
 
+
+
+void iconview_draw(
+        Widget widget,
+        void *tileData,
+        int width,
+        int height,
+        int x,
+        int y,
+        void *userData,
+        Boolean isSelected)
+{
+    Display *dpy = XtDisplay(widget);
+    GC gc = XnTileViewGC(widget);
+    
+    if(isSelected) {
+        XFillRectangle(dpy, XtWindow(widget), gc, x + 10, y + 10, width - 20, height - 20);
+    } else {
+        XDrawRectangle(dpy, XtWindow(widget), gc, x + 10, y + 10, width - 20, height - 20);
+    }
+}
+
+
 static void filedialog_update_iconview(
         FileDialogData *data,
         FileElm *dirs,
@@ -1142,28 +1140,16 @@ static void filedialog_update_iconview(
         int dircount,
         int filecount,
         int maxnamelen)
-{
-    return;
-    
-    Arg args[16];
-    XmString str;
-    int n;
-    WidgetList gadgets = NEditCalloc(dircount+filecount, sizeof(Widget));
-    
-    // TODO: better width calculation
-    // FIXME: for some reason setting XmNlargeCellWidth on Solaris doesn't work
-#ifndef __sun
-    Dimension cellwidth = maxnamelen * 8;
-    XtVaSetValues(data->container, XmNlargeCellWidth, cellwidth, NULL);
-#endif
-    
+{  
     char *filter = XmTextFieldGetString(data->filter);
     char *filterStr = filter;
     if(!filter || strlen(filter) == 0) {
         filterStr = "*";
     }
     
-    int numgadgets = 0;
+    FileElm **flist = calloc(sizeof(FileElm*), dircount+filecount);
+    
+    long num_files = 0;
     FileElm *ls = dirs;
     int count = dircount;
     int pos = 0;
@@ -1176,41 +1162,17 @@ static void filedialog_update_iconview(
                 continue;
             }
             
-            n = 0;
-            str = XmStringCreateLocalized(name);
-            XtSetArg(args[n], XmNuserData, e); n++;
-            XtSetArg(args[n], XmNlabelString, str); n++;
-            XtSetArg(args[n], XmNshadowThickness, 0); n++;
-            XtSetArg(args[n], XmNpositionIndex, pos); n++;
-            XtSetArg(args[n], XmNalignment, XmALIGNMENT_BEGINNING); n++;
-            if(e->isDirectory) {
-                XtSetArg(args[n], XmNlargeIconPixmap, folderIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, folderShape); n++;
-            } else {
-                XtSetArg(args[n], XmNlargeIconPixmap, fileIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, fileShape); n++;
-            }
-            Widget item = XmCreateIconGadget(data->container, "table", args, n);
-            XtManageChild(item);
-            numgadgets++;
-
-            gadgets[pos] = item;
-            XmStringFree(str);
-            pos++;
+            flist[num_files++] = e;
         }
         ls = files;
         count = filecount;
     }
     
+    XtVaSetValues(data->container, XnHtileData, flist, XnHtileDataLength, num_files, NULL);
+    
     if(filter) {
         XtFree(filter);
     }
-    
-    data->gadgets = gadgets;
-    data->numGadgets = numgadgets;
-    
-    //XmContainerRelayout(data->container);   
-    resize_container(XtParent(data->container), data, NULL);
 }
 
 static void filelistwidget_add(Widget w, int showHidden, char *filter, FileElm *ls, int count)
@@ -1532,9 +1494,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     ViewUpdateFunc update_view = NULL;
     switch(data->selectedview) {
         case 0: {
-            if(cleanupFileView(data)) {
-                init_container_size(data);
-            }
+            cleanupIconView(data);
             update_view = filedialog_update_iconview;
             break;
         }
@@ -1968,7 +1928,7 @@ static void unselect_view(FileDialogData *data)
     switch(data->selectedview) {
         case 0: {
             XtUnmanageChild(data->scrollw);
-            cleanupFileView(data);
+            cleanupIconView(data);
             break;
         }
         case 1: {
@@ -2521,20 +2481,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     data.scrollw = scrollw;
     
     n = 0;
-    XtSetArg(args[n], XmNlayoutType,  XmSPATIAL); n++;
-    XtSetArg(args[n], XmNselectionPolicy, XmSINGLE_SELECT); n++;
-    XtSetArg(args[n], XmNentryViewType, XmLARGE_ICON); n++;
-    XtSetArg(args[n], XmNspatialStyle, XmGRID); n++;
-    XtSetArg(args[n], XmNspatialIncludeModel, XmAPPEND); n++;
-    XtSetArg(args[n], XmNspatialResizeModel, XmGROW_MINOR); n++;
-    XtSetArg(args[n], XmNlargeCellWidth, 150); n++;
-    //data.container = XmCreateContainer(scrollw, "table", args, n);
+    XtSetArg(args[n], XnHtileDrawFunc,  iconview_draw); n++;
+    XtSetArg(args[n], XnHtileDrawData,  NULL); n++;
     data.container = XnCreateTileView(scrollw, "table", args, n);
     XtManageChild(data.container);
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
-		(XtCallbackProc)resize_container, &data);
+    		(XtCallbackProc)resize_container, &data);
     XmContainerAddMouseWheelSupport(data.container);
     
+    // TODO
+    /*
     XtAddCallback(
             data.container,
             XmNselectionCallback,
@@ -2545,6 +2501,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XmNdefaultActionCallback,
             (XtCallbackProc)filedialog_action,
             &data);
+    */
     
     // dir/file lists
     n = 0;

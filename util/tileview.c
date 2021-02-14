@@ -44,8 +44,8 @@ static XtResource resources[] = {
     {XnHtileDrawFunc, XnCtileDrawFunc, XtRFunction, sizeof(TileDrawFunc), XtOffset(TileViewWidget, tileview.drawFunc), XmRPointer, NULL},
     {XnHtileDrawData, XnCtileDrawData, XmRPointer, sizeof(void*), XtOffset(TileViewWidget, tileview.drawData), XmRPointer, NULL},
     {XnHtileData, XnCtileData, XmRPointer, sizeof(void**), XtOffset(TileViewWidget, tileview.data), XmRPointer, NULL},
-    {XnHtileDataLength, XnCtileDataLength, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.length), XmRPointer, NULL},
-    {XnHtileSelection, XnCtileSelection, XmRLongBoolean, sizeof(long), XtOffset(TileViewWidget, tileview.selection), XmRPointer, NULL},
+    {XnHtileDataLength, XnCtileDataLength, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.length), XmRString, "0"},
+    {XnHtileSelection, XnCtileSelection, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.selection), XmRString, "-1"},
     {XnHtileWidth, XnCtileWidth, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileWidth), XmRString, "100"},
     {XnHtileHeight, XnCtileHeight, XmRInt, sizeof(int), XtOffset(TileViewWidget, tileview.tileHeight), XmRString, "100"}
 };
@@ -127,7 +127,6 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     TileViewWidget tv = (TileViewWidget)neww;
     
     tv->tileview.recalcSize = True;
-    tv->tileview.length = 15;
 }
 
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
@@ -192,33 +191,38 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
 
     if(tv->tileview.recalcSize) {
         if(width < tileWidth) width = tileWidth;
-        if(height < tileHeight) height = tileHeight;
+        
+        Widget parent = XtParent(widget);
+        if(height < parent->core.height) height = parent->core.height;
         
         XtMakeResizeRequest(widget, width, height, NULL, NULL);
         tv->tileview.recalcSize = False;
     }
     
+    tv->tileview.recalcSize = False;
+    if(!tv->tileview.drawFunc || !tv->tileview.data) {
+        return;
+    }
+    
     int c = 0;
     int r = 0;
-    for(long i=0;i<len;i++) {
+    for(int i=0;i<len;i++) {
         if(c >= cols) {
             c = 0;
             r++;
         }
         
-        if(i == tv->tileview.selection) {
-            XFillRectangle(dpy, XtWindow(widget), tv->tileview.gc, c*tileWidth + 10, r*tileHeight + 10, tileWidth - 20, tileHeight - 20);
-        } else {
-            XDrawRectangle(dpy, XtWindow(widget), tv->tileview.gc, c*tileWidth + 10, r*tileHeight + 10, tileWidth - 20, tileHeight - 20);
-        } 
+        int x = c*tileWidth;
+        int y = r*tileHeight;
+        
+        Boolean isSelected = i == tv->tileview.selection ? True : False;
+        tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
         
         c++;
     }
     
     //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, 0, 0, widget->core.width, widget->core.height);
     //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, widget->core.width, 0, 0, widget->core.height);
-
-    tv->tileview.recalcSize = False;
 }
 
 static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgList args, Cardinal *num_args) {
@@ -256,6 +260,8 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int x = event->xbutton.x;
     int y = event->xbutton.y;
     
+    XmProcessTraversal(w, XmTRAVERSE_CURRENT);
+    
     int cols, rows;
     (void)calcHeight(tv, &cols, &rows);
     
@@ -263,8 +269,10 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int selectedRow = y / tv->tileview.tileHeight;
     
     long sel = selectedRow * cols + selectedCol;
-    
-    tv->tileview.selection = sel > tv->tileview.length ? -1 : sel;   
+    if(sel > tv->tileview.length || selectedCol >= cols) {
+        sel = -1;
+    }
+    tv->tileview.selection = sel;
     
     XClearArea(XtDisplay(w), XtWindow(w), 0, 0, 0, 0, TRUE);
     XFlush(XtDisplay(w));
@@ -274,4 +282,9 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 
 Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal argcount) {
     return XtCreateWidget(name, tileviewWidgetClass, parent, arglist, argcount);
+}
+
+GC XnTileViewGC(Widget tileView) {
+    TileViewWidget tv = (TileViewWidget)tileView;
+    return tv->tileview.gc;
 }

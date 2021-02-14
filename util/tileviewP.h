@@ -51,12 +51,12 @@ typedef struct TileViewPart {
     void           *drawData;
     
     void           **data;
-    long           length;
+    int            length;
     
     int            tileWidth;
     int            tileHeight;
     
-    long           selection;
+    int            selection;
     
     Boolean        recalcSize;
     

@@ -61,6 +61,8 @@ extern WidgetClass tileviewWidgetClass;
 
 Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal argcount);
 
+GC XnTileViewGC(Widget tileView);
+
 
 #ifdef __cplusplus
 }
