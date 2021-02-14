@@ -254,7 +254,10 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
         int y = r*tileHeight;
         
         Boolean isSelected = i == tv->tileview.selection ? True : False;
-        tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
+        
+        if(y+tileHeight >= e->y && y <= e->y + e->height) {
+            tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
+        }
         
         c++;
     }
@@ -321,7 +324,7 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     
     Time t = event->xbutton.time;
     int multiclicktime = XtGetMultiClickTime(XtDisplay(w));
-    if(t - tv->tileview.btn1ClickPrev < 2*multiclicktime) {
+    if(t - tv->tileview.btn1ClickPrev < multiclicktime) {
         XtCallCallbacks(w, XmNactivateCallback, &cb);
     } else {
         XtCallCallbacks(w, XmNselectionCallback, &cb);
