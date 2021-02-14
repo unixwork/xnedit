@@ -395,6 +395,7 @@ void textfield_destroy(Widget widget) {
     if(tf->textfield.highlightBackground) {
         XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
     }
+    XftDrawDestroy(tf->textfield.d);
 }
 
 void textfield_resize(Widget widget) {

@@ -41,6 +41,7 @@ static XtResource resources[] = {
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.focusCB), XmRCallback, NULL},
     {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.activateCB), XmRCallback, NULL},
     {XmNrealizeCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.realizeCB), XmRCallback, NULL},
+    {XmNselectionCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TileViewWidget, tileview.selectionCB), XmRCallback, NULL},
     {XnHtileDrawFunc, XnCtileDrawFunc, XtRFunction, sizeof(TileDrawFunc), XtOffset(TileViewWidget, tileview.drawFunc), XmRPointer, NULL},
     {XnHtileDrawData, XnCtileDrawData, XmRPointer, sizeof(void*), XtOffset(TileViewWidget, tileview.drawData), XmRPointer, NULL},
     {XnHtileData, XnCtileData, XmRPointer, sizeof(void**), XtOffset(TileViewWidget, tileview.data), XmRPointer, NULL},
@@ -129,6 +130,29 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     tv->tileview.recalcSize = True;
 }
 
+static void tvInitXft(TileViewWidget w) {
+    XWindowAttributes attributes;
+    XGetWindowAttributes(XtDisplay(w), XtWindow(w), &attributes); 
+    
+    Screen *screen = w->core.screen;
+    Visual *visual = screen->root_visual;
+    for(int i=0;i<screen->ndepths;i++) {
+        Depth d = screen->depths[i];
+        if(d.depth == w->core.depth) {
+            visual = d.visuals;
+            break;
+        }
+    }
+    
+    Display *dp = XtDisplay(w);
+    w->tileview.d = XftDrawCreate(
+            dp,
+            XtWindow(w),
+            visual,
+            w->core.colormap);
+    
+}
+
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
      (coreClassRec.core_class.realize)(widget, mask, attributes);
     
@@ -141,11 +165,13 @@ static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttribu
     gcvals.background = tv->core.background_pixel;
     tv->tileview.gc = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
+    tvInitXft(tv);    
 }
 
 static void tileview_destroy(Widget widget) {
     TileViewWidget tv = (TileViewWidget)widget;
     XFreeGC(XtDisplay(widget), tv->tileview.gc);
+    XftDrawDestroy(tv->tileview.d);
 }
 
 static void tileview_resize(Widget widget) {
@@ -276,6 +302,11 @@ static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     
     XClearArea(XtDisplay(w), XtWindow(w), 0, 0, 0, 0, TRUE);
     XFlush(XtDisplay(w));
+    
+    XnTileViewCallbackStruct cb;
+    cb.selection = sel;
+    cb.selected_item = sel >= 0 ? tv->tileview.data[sel] : NULL;  
+    XtCallCallbacks(w, XmNselectionCallback, &cb);
 }
 
 /* ------------------------------ Public ------------------------------ */
@@ -284,7 +315,22 @@ Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal arg
     return XtCreateWidget(name, tileviewWidgetClass, parent, arglist, argcount);
 }
 
+int XnTileViewGetSelection(Widget tileView) {
+    TileViewWidget tv = (TileViewWidget)tileView;
+    return tv->tileview.selection;
+}
+
+void XnTileViewSetSelection(Widget tileView, int selection) {
+    TileViewWidget tv = (TileViewWidget)tileView;
+    tv->tileview.selection = selection;
+}
+
 GC XnTileViewGC(Widget tileView) {
     TileViewWidget tv = (TileViewWidget)tileView;
     return tv->tileview.gc;
+}
+
+XftDraw* XnTileViewXftDraw(Widget tileView) {
+    TileViewWidget tv = (TileViewWidget)tileView;
+    return tv->tileview.d;
 }

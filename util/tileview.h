@@ -25,6 +25,8 @@
 #include <X11/Intrinsic.h>
 #include <Xm/PrimitiveP.h>
 
+#include <Xft/Xft.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,12 +58,22 @@ extern "C" {
  *                   Boolean isSelected);
  */
 typedef void(*TileDrawFunc)(Widget, void *, int, int, int, int, void *, Boolean);
+
+typedef struct
+{
+    void *selected_item;
+    int  selection;
+} XnTileViewCallbackStruct;
     
 extern WidgetClass tileviewWidgetClass;
 
 Widget XnCreateTileView(Widget parent, char *name, ArgList arglist, Cardinal argcount);
 
+int XnTileViewGetSelection(Widget tileView);
+void XnTileViewSetSelection(Widget tileView, int selection);
+
 GC XnTileViewGC(Widget tileView);
+XftDraw* XnTileViewXftDraw(Widget tileView);
 
 
 #ifdef __cplusplus

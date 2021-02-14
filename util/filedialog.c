@@ -1601,43 +1601,40 @@ static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
     NEditFree(newPath);
 }
 
-static void filedialog_setselection(
+static void filedialog_iconview_setselection(
         FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
+        XnTileViewCallbackStruct *sel)
 {
-    if(sel->selected_item_count > 0) {
-        FileElm *file = NULL;
-        XtVaGetValues(sel->selected_items[0], XmNuserData, &file, NULL);
-        if(file) {
-            if(data->selectedPath) {
-                NEditFree(data->selectedPath);
-            }
-            data->selectedPath = NEditStrdup(file->path);
-            data->selIsDir = file->isDirectory;
-            
-            if(!file->isDirectory) {
-                if(data->name) {
-                    XmTextFieldSetString(data->name, FileName(file->path));
-                }
+    if(sel->selected_item) {
+        FileElm *file = sel->selected_item;
+        if(data->selectedPath) {
+            NEditFree(data->selectedPath);
+        }
+        data->selectedPath = NEditStrdup(file->path);
+        data->selIsDir = file->isDirectory;
+
+        if(!file->isDirectory) {
+            if(data->name) {
+                XmTextFieldSetString(data->name, FileName(file->path));
             }
         }
     }
 }
 
-static void filedialog_select(
+static void filedialog_iconview_select(
         Widget w,
         FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
+        XnTileViewCallbackStruct *sel)
 {
-    filedialog_setselection(data, sel);
+    filedialog_iconview_setselection(data, sel);
 }
 
-static void filedialog_action(
+static void filedialog_iconview_action(
         Widget w,
         FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
+        XnTileViewCallbackStruct *sel)
 {
-    filedialog_setselection(data, sel);
+    filedialog_iconview_setselection(data, sel);
     
     if(data->selIsDir) {
         filedialog_update_dir(data, data->selectedPath);
@@ -2490,18 +2487,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XmContainerAddMouseWheelSupport(data.container);
     
     // TODO
-    /*
     XtAddCallback(
             data.container,
             XmNselectionCallback,
-            (XtCallbackProc)filedialog_select,
+            (XtCallbackProc)filedialog_iconview_select,
             &data);
     XtAddCallback(
             data.container,
             XmNdefaultActionCallback,
-            (XtCallbackProc)filedialog_action,
+            (XtCallbackProc)filedialog_iconview_action,
             &data);
-    */
     
     // dir/file lists
     n = 0;

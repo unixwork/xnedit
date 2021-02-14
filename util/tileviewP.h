@@ -46,6 +46,7 @@ typedef struct TileViewPart {
     XtCallbackList focusCB;
     XtCallbackList activateCB;
     XtCallbackList realizeCB;
+    XtCallbackList selectionCB;
     
     TileDrawFunc   drawFunc;
     void           *drawData;
