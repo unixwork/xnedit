@@ -35,8 +35,6 @@
 
 #include "icons.h"
 
-#include <X11/xpm.h>
-
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
@@ -70,16 +68,16 @@
 
 static int pixmaps_initialized = 0;
 static int pixmaps_error = 0;
-static Pixmap folderIcon;
-static Pixmap fileIcon;
-static Pixmap folderShape;
-static Pixmap fileShape;
+static Pixmap folderIcon32;
+static Pixmap fileIcon32;
 
+static int iconview_pixmaps_initialized = 0;
 static Pixmap newFolderIcon16;
 static Pixmap newFolderIcon24;
 static Pixmap newFolderIcon32;
 
-static XColor bgColor;
+static XColor buttonBGColor;
+static XColor iconviewBGColor;
 
 static int LastView = -1; // 0: icon   1: list   2: grid
 
@@ -393,7 +391,7 @@ static int get_mask_len(unsigned long mask) {
 /*
  * create an image from data and copy image to the specific pixmap
  */
-static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, const char *data, int wh) {
+static void create_image(Display *dp, Visual *visual, XColor bgColor, int depth, Pixmap pix, const char *data, int wh) {
     // wh is width and height
     size_t imglen = wh*wh*4;
     char *imgdata = malloc(imglen); // will be freed with XDestroyImage
@@ -443,16 +441,7 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
     XFreeGC(dp, gc);
 }
 
-static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
-{
-    // TODO: remove Xpm dependency and use create_image
-    if(XpmCreatePixmapFromData(dp, d, DtdirB_m_pm, &folderIcon, &folderShape, NULL)) {
-        fprintf(stderr, "failed to create folder pixmap\n");
-    }
-    if(XpmCreatePixmapFromData(dp, d, Dtdata_m_pm, &fileIcon, &fileShape, NULL)) {
-        fprintf(stderr, "failed to create file pixmap\n");
-    }
-      
+static Visual* get_visual(Screen *screen, int depth) {
     // get the correct visual for current screen/depth
     Visual *visual = NULL;
     for(int i=0;i<screen->ndepths;i++) {
@@ -467,6 +456,12 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
             }
         }
     }
+    return visual;
+}
+
+static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
+{
+    Visual *visual = get_visual(screen, depth);
     
     if(!visual) {
         // no visual found for using rgb images
@@ -482,7 +477,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
         fprintf(stderr, "failed to create newFolderIcon16 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, visual, depth, newFolderIcon16, newFolder16Data, 16);
+        create_image(dp, visual, buttonBGColor, depth, newFolderIcon16, newFolder16Data, 16);
     }
     
     newFolderIcon24 = XCreatePixmap(dp, d, 24, 24, depth);
@@ -490,7 +485,7 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
         fprintf(stderr, "failed to create newFolderIcon24 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, visual, depth, newFolderIcon24, newFolder24Data, 24);
+        create_image(dp, visual, buttonBGColor, depth, newFolderIcon24, newFolder24Data, 24);
     }
     
     newFolderIcon32 = XCreatePixmap(dp, d, 32, 32, depth);
@@ -498,10 +493,38 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
         fprintf(stderr, "failed to create newFolderIcon32 pixmap\n");
         pixmaps_error = 1;
     } else {
-        create_image(dp, visual, depth, newFolderIcon32, newFolder32Data, 32);
+        create_image(dp, visual, buttonBGColor, depth, newFolderIcon32, newFolder32Data, 32);
     }
     
     pixmaps_initialized = 1;
+}
+
+static void initIconViewPixmaps(Display *dp, Drawable d, Screen *screen, int depth) {
+    iconview_pixmaps_initialized = 1;
+    
+    Visual *visual = get_visual(screen, depth);
+    
+    if(!visual) {
+        // no visual found for using rgb images
+        fprintf(stderr, "can't use images with this visual\n");
+        return;
+    }
+    
+    folderIcon32 = XCreatePixmap(dp, d, 32, 32, depth);
+    if(folderIcon32 == BadValue) {
+        fprintf(stderr, "failed to create folderIcon32 pixmap\n");
+        pixmaps_error = 1;
+    } else {
+        create_image(dp, visual, iconviewBGColor, depth, folderIcon32, Dtdir32, 32);
+    }
+    
+    fileIcon32 = XCreatePixmap(dp, d, 32, 32, depth);
+    if(fileIcon32 == BadValue) {
+        fprintf(stderr, "failed to create folderIcon32 pixmap\n");
+        pixmaps_error = 1;
+    } else {
+        create_image(dp, visual, iconviewBGColor, depth, fileIcon32, Dtdata32, 32);
+    }
 }
 
 
@@ -1645,6 +1668,17 @@ static void filedialog_iconview_action(
     }
 }
 
+static void iconview_realized(Widget w, FileDialogData *data, XtPointer x) {
+    if(!iconview_pixmaps_initialized) {
+        // get rgb value of buttonBg
+        memset(&iconviewBGColor, 0, sizeof(XColor));
+        iconviewBGColor.pixel = w->core.background_pixel;
+        XQueryColor(XtDisplay(w), w->core.colormap, &iconviewBGColor);
+
+        initIconViewPixmaps(XtDisplay(w), XtWindow(w), w->core.screen, w->core.depth);
+    }
+}
+
 char* set_selected_path(FileDialogData *data, XmString item)
 {
     char *name = NULL;
@@ -2146,9 +2180,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtVaGetValues(newFolder, XmNheight, &xh, XmNforeground, &buttonFg, XmNbackground, &buttonBg, NULL);
     
     // get rgb value of buttonBg
-    memset(&bgColor, 0, sizeof(XColor));
-    bgColor.pixel = buttonBg;
-    XQueryColor(XtDisplay(newFolder), newFolder->core.colormap, &bgColor);
+    memset(&buttonBGColor, 0, sizeof(XColor));
+    buttonBGColor.pixel = buttonBg;
+    XQueryColor(XtDisplay(newFolder), newFolder->core.colormap, &buttonBGColor);
     
     // init pixmaps after we got the background color
     if(!pixmaps_initialized) {
@@ -2486,7 +2520,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     		(XtCallbackProc)resize_container, &data);
     XmContainerAddMouseWheelSupport(data.container);
     
-    // TODO
+    XtAddCallback(
+            data.container,
+            XmNrealizeCallback,
+            (XtCallbackProc)iconview_realized,
+            &data);
     XtAddCallback(
             data.container,
             XmNselectionCallback,

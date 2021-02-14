@@ -165,7 +165,9 @@ static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttribu
     gcvals.background = tv->core.background_pixel;
     tv->tileview.gc = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
-    tvInitXft(tv);    
+    tvInitXft(tv);
+    
+    XtCallCallbacks(widget, XmNrealizeCallback, NULL);
 }
 
 static void tileview_destroy(Widget widget) {
