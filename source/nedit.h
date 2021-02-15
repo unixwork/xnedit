@@ -525,6 +525,8 @@ typedef struct _WindowInfo {
     Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
     Boolean	backlightChars;		/* is char backlighting turned on? */
     char	*backlightCharTypes;	/* what backlighting to use */
+    Boolean     indentRainbow;          /* is indentation highlight turned onß*/
+    char        *indentRainbowColors;   /* indent rainbow color lists */
     Boolean	modeMessageDisplayed;	/* special stats line banner for learn
     					   and shell command executing modes */
     char	*modeMessage;		/* stats line banner content for learn

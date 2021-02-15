@@ -189,7 +189,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
         Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
-        Pixel calltipFGPixel, Pixel calltipBGPixel)
+        Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Boolean indentRainbow, char *indentRainbowColors)
 {
     textDisp *textD;
     XGCValues gcValues;
@@ -270,8 +271,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->disableRedisplay = False;
     textD->fixLeftClipAfterResize = False;
     textD->graphicsExposeQueue = NULL;
+    textD->indentRainbow = indentRainbow;
     
-    TextDSetupRainbowColors(textD, "");
+    TextDSetupRainbowColors(textD, indentRainbowColors);
 
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
@@ -1904,7 +1906,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     XftFont *charFont;
     int rbTabDist = TEXT_OF_TEXTD(textD).emulateTabs > 0 ?
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
-    int indentRainbow = 1;
+    Boolean indentRainbow = textD->indentRainbow;
     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)

@@ -173,6 +173,7 @@ typedef struct _textDisp {
     XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
+    Boolean indentRainbow;
     Pixel *indentRainbowColors;
     int numRainbowColors;
     
@@ -204,7 +205,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 	Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
 	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString, 
-        Pixel calltipFGPixel, Pixel calltipBGPixel);
+        Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Boolean indentRainbow, char *indentRainbowColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);

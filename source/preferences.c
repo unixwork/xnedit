@@ -276,6 +276,8 @@ static struct prefData {
     int alwaysCheckRelativeTagsSpecs; /* for every new opened file of session */
     int stickyCaseSenseBtn;     /* whether Case Word Btn is sticky to Regex Btn */
     int prefFileRead;	    	/* detects whether a .nedit existed */
+    int indentRainbow;          /* highlight indentation level */
+    char *indentRainbowColors;  /* indent rainbow colors */
     int backlightChars;		/* whether to apply character "backlighting" */
     char *backlightCharTypes;	/* the backlighting color definitions */
 #ifdef SGI_CUSTOM
@@ -802,6 +804,11 @@ static PrefDescripRec PrefDescrip[] = {
  	&PrefData.matchSyntaxBased, NULL, True},
     {"highlightSyntax", "HighlightSyntax", PREF_BOOLEAN, "True",
     	&PrefData.highlightSyntax, NULL, True},
+    {"indentRainbow", "IndentRainbow", PREF_BOOLEAN, "False",
+      &PrefData.indentRainbow, NULL, True},
+    {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
+      "rgb:c7/eb/ff;rgb:d4/ff/e7;rgb:fb/ff/d4;rgb:ff/e7/d4;rgb:ff/e6/ff;rgb:ef/e6/ff",
+      &PrefData.indentRainbowColors, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -1823,6 +1830,23 @@ void SetPrefHighlightSyntax(Boolean state)
 Boolean GetPrefHighlightSyntax(void)
 {
     return PrefData.highlightSyntax;
+}
+
+void SetPrefIndentRainbow(int state) {
+    setIntPref(&PrefData.indentRainbow, state);
+}
+
+int GetPrefIndentRainbow(void) {
+    return PrefData.indentRainbow;
+}
+
+void SetPrefIndentRainbowColors(const char *colorList) {
+    if(PrefData.indentRainbowColors) NEditFree(PrefData.indentRainbowColors);
+    PrefData.indentRainbowColors = NEditStrdup(colorList);
+}
+
+char *GetPrefIndentRainbowColors(void) {
+    return PrefData.indentRainbowColors;
 }
 
 void SetPrefBacklightChars(int state)

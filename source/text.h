@@ -115,6 +115,11 @@
 #define textCCursorVPadding "CursorVPadding"
 #define textNbacklightCharTypes "backlightCharTypes"
 #define textCBacklightCharTypes "BacklightCharTypes"
+#define textNindentRainbow "indentRainbow"
+#define textCindentRainbow "indentRainbow"
+#define textNindentRainbowColors "indentRainbowColors"
+#define textCindentRainbowColors "indentRainbowColors"
+
 
 
 extern WidgetClass textWidgetClass;

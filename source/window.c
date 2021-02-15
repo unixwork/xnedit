@@ -330,6 +330,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showLineNumbers = GetPrefLineNums();
     window->showInfoBar = False;
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->indentRainbow = GetPrefIndentRainbow();
+    window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -1246,6 +1248,7 @@ void CloseWindow(WindowInfo *window)
 
 	/* remove and deallocate all of the widgets associated with window */
     	NEditFree(window->backlightCharTypes); /* we made a copy earlier on */
+        NEditFree(window->indentRainbowColors);
 	CloseAllPopupsFor(window->shell);
     	XtDestroyWidget(window->shell);
     }
@@ -2511,6 +2514,8 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             XmNshadowType, XmSHADOW_IN, NULL);      
     text = XtVaCreateManagedWidget("text", textWidgetClass, frame,
             textNbacklightCharTypes, window->backlightCharTypes,
+            textNindentRainbow, window->indentRainbow,
+            textNindentRainbowColors, window->indentRainbowColors,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
@@ -3368,6 +3373,18 @@ static void patchedRemoveChild(Widget child)
 }
 #endif /* ROWCOLPATCH */
 
+void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
+{
+    NEditFree(window->indentRainbowColors);
+    window->indentRainbowColors = NEditStrdup(colorList);
+    
+    XtVaSetValues(window->textArea,
+          textNindentRainbowColors, window->indentRainbowColors, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNindentRainbowColors, window->indentRainbowColors, NULL);
+    }
+}
+
 /*
 ** Set the backlight character class string
 */
@@ -3598,6 +3615,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->showMatchingStyle = GetPrefShowMatching();
     window->matchSyntaxBased = GetPrefMatchSyntaxBased();
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->indentRainbow = GetPrefIndentRainbow();
+    window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -4893,6 +4912,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     window->zoom = orgWin->zoom;
 
+    SetIndentRainbowColors(window, orgWin->indentRainbowColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
     /* Clone rangeset info.

@@ -661,6 +661,10 @@ static XtResource resources[] = {
     {textNcalltipBackground, textCcalltipBackground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.calltipBGPixel), XmRString, 
       NEDIT_DEFAULT_CALLTIP_BG},
+    {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
+      XtOffset(TextWidget, text.indentRainbow), XmRString, "False"},
+    {textNindentRainbowColors, textCindentRainbowColors, XmRPointer, sizeof(XmRPointer),
+      XtOffset(TextWidget, text.indentRainbowColors), XmRPointer, NULL},
     {textNbacklightCharTypes,textCBacklightCharTypes,XmRString,sizeof(XmString),
       XtOffset(TextWidget, text.backlightCharTypes), XmRString, NULL},
     {textNrows, textCRows, XmRInt,sizeof(int),
@@ -866,7 +870,8 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->text.lineNumFGPixel,
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel);
+          new->text.calltipBGPixel,
+          new->text.indentRainbow, new->text.indentRainbowColors);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
