@@ -125,6 +125,7 @@ static void wrapMarginCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontCB(Widget w, WindowInfo *window, caddr_t callData);
 static void resetZoomCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData);
+static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingDelimitCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1109,6 +1110,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->backlightCharsItem = createMenuToggle(menuPane, "backlightChars",
           "Apply Backlighting", 'g', backlightCharsCB, window,
           window->backlightChars, FULL);
+    window->indentRainbowItem = createMenuToggle(menuPane, "indentRainbow",
+          "Indent Rainbow", 'R', indentRainbowCB, window,
+          window->indentRainbow, FULL);
     
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
     	    "Make Backup Copy (*.bck)", 'e', preserveCB, window,
@@ -1751,6 +1755,13 @@ static void wrapMarginCB(Widget w, WindowInfo *window, caddr_t callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     WrapMarginDialog(window->shell, window);
+}
+
+static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    int indentRainbow = XmToggleButtonGetState(w);
+    window = WidgetToWindow(MENU_WIDGET(w));
+    SetIndentRainbow(window, indentRainbow);
 }
 
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData)

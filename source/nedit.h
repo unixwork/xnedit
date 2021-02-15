@@ -397,6 +397,7 @@ typedef struct _WindowInfo {
     Widget	matchSyntaxBasedDefItem;
     Widget	highlightOffDefItem;
     Widget	highlightDefItem;
+    Widget	indentRainbowItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
     Widget	searchDlogsDefItem;

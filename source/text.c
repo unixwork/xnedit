@@ -711,7 +711,7 @@ static XtResource resources[] = {
       XtOffset(TextWidget, text.delimiters), XmRString,
       ".,/\\`'!@#%^&*()-=+{}[]\":;<>?"},
     {textNblinkRate, textCBlinkRate, XmRInt, sizeof(int),
-      XtOffset(TextWidget, text.cursorBlinkRate), XmRString, "500000"},
+      XtOffset(TextWidget, text.cursorBlinkRate), XmRString, "500"},
     {textNemulateTabs, textCEmulateTabs, XmRInt, sizeof(int),
       XtOffset(TextWidget, text.emulateTabs), XmRString, "0"},
     {textNfocusCallback, textCFocusCallback, XmRCallback, sizeof(caddr_t),
@@ -1208,6 +1208,17 @@ static Boolean setValues(TextWidget current, TextWidget request,
         TextDSetupBGClasses((Widget)new, new->text.backlightCharTypes,
                 &new->text.textD->bgClassPixel, &new->text.textD->bgClass,
                 new->text.textD->bgPixel);
+        redraw = True;
+    }
+    
+    if (new->text.indentRainbow != current->text.indentRainbow)
+    {
+        TextDSetIndentRainbow(new->text.textD, new->text.indentRainbow);
+        redraw = True;
+    }
+    if (new->text.indentRainbowColors != current->text.indentRainbowColors)
+    {
+        TextDSetIndentRainbowColors(new->text.textD, new->text.indentRainbowColors);
         redraw = True;
     }
     

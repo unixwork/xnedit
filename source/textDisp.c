@@ -273,7 +273,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->graphicsExposeQueue = NULL;
     textD->indentRainbow = indentRainbow;
     
-    TextDSetupRainbowColors(textD, indentRainbowColors);
+    TextDSetIndentRainbowColors(textD, indentRainbowColors);
 
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
@@ -4133,10 +4133,19 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
     memcpy(*pp_bgClassPixel, bgClassPixel, class_no * sizeof (Pixel));
 }
 
+
+
+
+void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
+{
+    textD->indentRainbow = indentRainbow;
+}
+
 /*
  * Setup indent rainbow colors
  */
-void TextDSetupRainbowColors(textDisp *textD, const char *rainbowCg) {
+void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
+{
     // TODO: rewrite func: make this configurable
     textD->indentRainbowColors = NEditCalloc(6, sizeof(Pixel));
     textD->numRainbowColors = 6;

@@ -257,12 +257,13 @@ int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart);
 void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 	unsigned char **pp_bgClass, Pixel bgPixelDefault);
-void TextDSetupRainbowColors(textDisp *textD, const char *rainbowCg);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 	int textLeft);
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
+void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
+void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

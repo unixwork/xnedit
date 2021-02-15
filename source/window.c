@@ -3385,6 +3385,17 @@ void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
     }
 }
 
+void SetIndentRainbow(WindowInfo *window, Boolean state)
+{
+    window->indentRainbow = state;
+    
+    XtVaSetValues(window->textArea,
+          textNindentRainbow, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNindentRainbow, state, NULL);
+    }
+}
+
 /*
 ** Set the backlight character class string
 */
@@ -4333,6 +4344,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
     XtSetSensitive(window->highlightItem, window->languageMode != PLAIN_LANGUAGE_MODE);
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
+    XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
 #ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
 #endif

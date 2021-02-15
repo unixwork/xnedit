@@ -102,6 +102,7 @@ void AllWindowsBusy(const char* message);
 void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
 void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
+void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);
