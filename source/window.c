@@ -4924,6 +4924,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     window->zoom = orgWin->zoom;
 
+    SetIndentRainbow(window, orgWin->indentRainbow);
     SetIndentRainbowColors(window, orgWin->indentRainbowColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
