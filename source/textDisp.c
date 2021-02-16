@@ -272,6 +272,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->fixLeftClipAfterResize = False;
     textD->graphicsExposeQueue = NULL;
     textD->indentRainbow = indentRainbow;
+    textD->indentRainbowColors = NULL;
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
 
@@ -4146,19 +4147,42 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
  */
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
 {
-    // TODO: rewrite func: make this configurable
-    textD->indentRainbowColors = NEditCalloc(6, sizeof(Pixel));
-    textD->numRainbowColors = 6;
+    int count = 1;
+    int len = strlen(colors);
+    for(int i=0;i<len;i++) {
+        if(colors[i] == ';') count++;
+    }
+    
+    if(textD->indentRainbowColors) {
+        NEditFree(textD->indentRainbowColors);
+    }
+    
+    textD->indentRainbowColors = NEditCalloc(count, sizeof(Pixel));
+    textD->numRainbowColors = count;
+    
+    char color[MAX_COLOR_LEN+1];
     
     int r, g, b;
-    
-    // some test colors
-    textD->indentRainbowColors[0] = AllocColor(textD->w, "rgb:c7/eb/ff", &r, &g, &b);
-    textD->indentRainbowColors[1] = AllocColor(textD->w, "rgb:d4/ff/e7", &r, &g, &b);
-    textD->indentRainbowColors[2] = AllocColor(textD->w, "rgb:fb/ff/d4", &r, &g, &b);
-    textD->indentRainbowColors[3] = AllocColor(textD->w, "rgb:ff/e7/d4", &r, &g, &b);
-    textD->indentRainbowColors[4] = AllocColor(textD->w, "rgb:ff/e6/ff", &r, &g, &b);
-    textD->indentRainbowColors[5] = AllocColor(textD->w, "rgb:ef/e6/ff", &r, &g, &b);
+    int color_begin = 0;
+    int color_len = 0;
+    int ci = 0;
+    for(int i=0;i<=len;i++) {
+        int c = colors[i];
+        if(c == ';' || c == '\0') {
+            color_len = i - color_begin;
+            
+            if(color_len <= MAX_COLOR_LEN) {
+                memcpy(color, colors+color_begin, color_len);
+                color[color_len] = '\0';
+                
+                textD->indentRainbowColors[ci++] = AllocColor(textD->w, color, &r, &g, &b);
+            } else {
+                fprintf(stderr, "Color list entry too long: %.*s\n", color_len, colors+color_begin);
+            }
+            
+            color_begin = i+1;
+        }
+    }
 }
 
 /* font list functions */
