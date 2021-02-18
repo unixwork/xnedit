@@ -491,14 +491,30 @@ XnText* XnCreateText(Widget tileView, const char *str, size_t len, int width) {
     return text;
 }
 
+static int text_offset(XnText *text, int start, int length) {
+    int width = 0;
+    int x0 = 0;
+    int str_end = length + start;
+    for(int i=start;i<str_end;i++) {
+        width += text->chinfo[i].width;
+    }
+    if(width < text->width) {
+        x0 = (text->width - width) / 2;
+    }
+    return x0;
+}
+
 void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y) {
     y += text->font->ascent + text->font->descent;
     
     int line1 = text->newlineat;
-    XftDrawString32(d, color, text->font, x, y, text->str, line1);
+    XGlyphInfo ex;
+    int xoff = text_offset(text, 0, line1);
+    XftDrawString32(d, color, text->font, x+xoff, y, text->str, line1);
     int line2 = text->len - line1;
     if(line2 > 0) {
-        XftDrawString32(d, color, text->font, x, y + text->font->ascent + text->font->descent, text->str+line1, line2);
+        xoff = text_offset(text, line1, line2);
+        XftDrawString32(d, color, text->font, x+xoff, y + text->font->ascent + text->font->descent, text->str+line1, line2);
     }
 }
 
