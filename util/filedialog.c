@@ -1181,7 +1181,7 @@ void iconview_draw(
     
     if(!elm->text) {
         const char *fileName = FileName(elm->file->path);
-        elm->text = XnCreateText(dpy, fileName, strlen(fileName), width - 12);
+        elm->text = XnCreateText(widget, fileName, strlen(fileName), width - 12);
     }
     
     XftColor color;

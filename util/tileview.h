@@ -64,13 +64,19 @@ typedef struct {
     int  selection;
 } XnTileViewCallbackStruct;
 
+typedef struct XnTextCh{
+    XftFont *font;
+    int width;
+} XnTextCh;
 
 typedef struct {
     Display *dp;
     XftFont *font;
-    const char *str;
+    XnTextCh *chinfo;
+    FcChar32 *str;
     size_t len;
     int width;
+    int newlineat;
 } XnText;
     
 extern WidgetClass tileviewWidgetClass;
@@ -83,7 +89,7 @@ void XnTileViewSetSelection(Widget tileView, int selection);
 GC XnTileViewGC(Widget tileView);
 XftDraw* XnTileViewXftDraw(Widget tileView);
 
-XnText* XnCreateText(Display *dp, const char *str, size_t len, int width);
+XnText* XnCreateText(Widget tileView, const char *str, size_t len, int width);
 void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y);
 void XnTextDestroy(XnText *text);
 

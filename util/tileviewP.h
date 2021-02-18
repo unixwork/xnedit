@@ -31,6 +31,12 @@
 
 #include "tileview.h"
 
+typedef struct XnFontList XnFontList;
+struct XnFontList {
+    XftFont *font;
+    XnFontList *next;
+};
+
 typedef struct TileFieldClassPart {
     int unused;
 } TileViewClassPart;
@@ -62,6 +68,10 @@ typedef struct TileViewPart {
     Boolean        recalcSize;
     
     Time           btn1ClickPrev;
+    
+    FcPattern      *font;
+    XnFontList     *fontlist_begin;
+    XnFontList     *fontlist_end;
     
     GC             gc;
     XftDraw        *d;

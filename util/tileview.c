@@ -126,9 +126,27 @@ static void tileview_class_init(void) {
 
 static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *num_args) {
     TileViewWidget tv = (TileViewWidget)neww;
+    Display *dp = XtDisplay(neww);
     
     tv->tileview.recalcSize = True;
     tv->tileview.btn1ClickPrev = 0;
+    
+    FcPattern *pattern = FcNameParse((FcChar8*)"Sans:size=9");
+    tv->tileview.font = pattern;
+    
+    FcResult result;
+    pattern = FcPatternDuplicate(pattern);
+    FcPattern *match = XftFontMatch(dp, DefaultScreen(dp), pattern, &result);
+    
+    XftFont *font = XftFontOpenPattern(dp, match);
+    
+    XnFontList *fontlist = malloc(sizeof(XnFontList));
+    XnFontList *fontlist_end = fontlist;
+    fontlist->font = font;
+    fontlist->next = NULL;
+    
+    tv->tileview.fontlist_begin = fontlist;
+    tv->tileview.fontlist_end = fontlist;
 }
 
 static void tvInitXft(TileViewWidget w) {
@@ -360,20 +378,128 @@ XftDraw* XnTileViewXftDraw(Widget tileView) {
 
 /* ------------------------------ Text API ------------------------------ */
 
-XnText* XnCreateText(Display *dp, const char *str, size_t len, int width) {
+
+
+static XftFont* get_font_for_char(TileViewWidget tv, XnFontList **begin, XnFontList **end, FcChar32 c) {
+    Display *dp = XtDisplay(tv);
+    
+    XnFontList *elm = *begin;
+    while(elm) {
+        if(FcCharSetHasChar(elm->font->charset, c)) {
+            return elm->font;
+        }
+        elm = elm->next;
+    }
+    
+    /* charset for char c */
+    FcCharSet *charset = FcCharSetCreate();
+    FcValue value;
+    value.type = FcTypeCharSet;
+    value.u.c = charset;
+    FcCharSetAddChar(charset, c);
+    if(!FcCharSetHasChar(charset, c)) {
+        FcCharSetDestroy(charset);
+        return elm->font;
+    }
+    
+    /* font lookup based on the NFont pattern */ 
+    FcPattern *pattern = FcPatternDuplicate(tv->tileview.font);
+    FcPatternAdd(pattern, FC_CHARSET, value, 0);
+    FcResult result;
+    FcPattern *match = XftFontMatch (
+            dp, DefaultScreen(dp), pattern, &result);
+    if(!match) {
+        FcPatternDestroy(pattern);
+        return elm->font;
+    }
+    
+    XftFont *newFont = XftFontOpenPattern(dp, match);   
+    if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
+        FcPatternDestroy(pattern);
+        FcPatternDestroy(match);
+        if(newFont) {
+            XftFontClose(dp, newFont);
+        }
+    }
+    
+    XnFontList *nextFont = malloc(sizeof(XnFontList));
+    nextFont->font = newFont;
+    nextFont->next = NULL;
+    (*end)->next = nextFont;
+    
+    FcCharSetDestroy(charset);
+    
+    return newFont;
+}
+
+XnText* XnCreateText(Widget tileView, const char *str, size_t len, int width) {
+    Display *dp = XtDisplay(tileView);
+    TileViewWidget tv = (TileViewWidget)tileView;
+    
     XnText *text = malloc(sizeof(XnText));
     text->dp = dp;
     text->font = XftFontOpenName(dp, DefaultScreen(dp), "Sans:size=9");
-    text->str = str;
-    text->len = len;
+    text->chinfo = calloc(len, sizeof(XnTextCh));
+    text->str = calloc(len, sizeof(FcChar32));
     text->width = width;
+    
+    int br_i = 0;
+    int linebreak_at = 0;
+    
+    int xoff = 0;
+    
+    int l = len;
+    int charlen = 1;
+    int ci = 0;
+    for(int i=0;i<len;i+=charlen) {
+        FcChar32 c32;
+        charlen = FcUtf8ToUcs4((FcChar8*)str+i, &c32, l);
+        l -= charlen;
+        
+        XftFont *font = get_font_for_char(tv, &tv->tileview.fontlist_begin, &tv->tileview.fontlist_end, c32);
+        XGlyphInfo ex;
+        XftTextExtents32(dp, font, &c32, 1, &ex); 
+        
+        XnTextCh ch;
+        ch.font = font;
+        ch.width = ex.xOff;
+        
+        xoff += ex.xOff;
+        if(xoff > width) {
+            if(br_i > 0) {
+                linebreak_at = br_i;
+            } else {
+                linebreak_at = ci-1;
+            }
+            
+            xoff = INT_MIN;
+        }
+        
+        char c = str[i];
+        if((c < 65 && c > 90) || (c < 97 && c > 122)) {
+            br_i = ci;
+        }
+        
+        text->chinfo[ci] = ch;
+        text->str[ci] = c32;
+        ci++;
+    }
+    text->len = ci;
+    
+    text->newlineat = linebreak_at > 0 ? linebreak_at : ci;
+    
     return text;
 }
 
 void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y) {
     y += text->font->ascent + text->font->descent;
     
-    XftDrawStringUtf8(d, color, text->font, x, y, (_Xconst FcChar8*)text->str, text->len);
+    int line1 = text->newlineat;
+    XftDrawString32(d, color, text->font, x, y, text->str, line1);
+    int line2 = text->len - line1;
+    if(line2 > 0) {
+        XftDrawString32(d, color, text->font, x, y + text->font->ascent + text->font->descent, text->str+line1, line2);
+    }
 }
 
 void XnTextDestroy(XnText *text) {
