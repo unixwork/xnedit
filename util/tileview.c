@@ -274,6 +274,12 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
         Boolean isSelected = i == tv->tileview.selection ? True : False;
         
         if(y+tileHeight >= e->y && y <= e->y + e->height) {
+            XRectangle rect;
+            rect.x = e->x;
+            rect.y = e->y;
+            rect.width = e->x + e->width > x+tileWidth ? x+tileWidth : e->x + e->width;
+            rect.height = e->height;
+            XftDrawSetClipRectangles(tv->tileview.d, 0, 0, &rect, 1);
             tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
         }
         

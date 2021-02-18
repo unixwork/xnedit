@@ -1187,13 +1187,6 @@ void iconview_draw(
     XftColor color;
     memset(&color, 0, sizeof(XftColor));
     color.color.alpha = 0xFFFF;
-    
-    XRectangle rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.width = width-12;
-    rect.height = height;
-    XftDrawSetClipRectangles(XnTileViewXftDraw(widget), x+6, y, &rect, 1);
     XnTextDraw(elm->text, XnTileViewXftDraw(widget), &color, x+6, y+40);
     
 }
