@@ -510,17 +510,42 @@ static int text_offset(XnText *text, int start, int length) {
     return x0;
 }
 
+static void text_draw(XnText *text, XftDraw *d, XftColor *color, int start, int length, int x, int y) {
+    XftFont *current = text->chinfo[start].font;
+    
+    int str_start = start;
+    int xoff_start = x;
+    int xoff = x;
+    
+    int str_end = length + start;
+    int i;
+    for(i=start;i<str_end;i++) {
+        XftFont *f = text->chinfo[i].font;
+        if(f != current) {
+            
+            XftDrawString32(d, color, current, xoff_start, y, text->str+str_start, i-str_start);
+            str_start = i;
+            xoff_start = xoff;
+        }
+        xoff += text->chinfo[i].width;
+        current = f;
+    }
+    if(i-str_start > 0) {
+        XftDrawString32(d, color, current, xoff_start, y, text->str+str_start, i-str_start);
+    }
+}
+
 void XnTextDraw(XnText *text, XftDraw *d, XftColor *color, int x, int y) {
     y += text->font->ascent + text->font->descent;
     
     int line1 = text->newlineat;
     XGlyphInfo ex;
     int xoff = text_offset(text, 0, line1);
-    XftDrawString32(d, color, text->font, x+xoff, y, text->str, line1);
+    text_draw(text, d, color, 0, line1, x+xoff, y);
     int line2 = text->len - line1;
     if(line2 > 0) {
         xoff = text_offset(text, line1, line2);
-        XftDrawString32(d, color, text->font, x+xoff, y + text->font->ascent + text->font->descent, text->str+line1, line2);
+        text_draw(text, d, color, line1, line2, x+xoff, y + text->font->ascent + text->font->descent);
     }
 }
 
