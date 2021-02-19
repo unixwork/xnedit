@@ -225,14 +225,14 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
     Display *dpy = XtDisplay(widget);
     XExposeEvent *e = &event->xexpose;
     
-    XClearArea(dpy, XtWindow(widget), e->x, e->y, e->width, e->height, False);
-    
     XRectangle rect;
-        rect.x = e->x;
-        rect.y = e->y;
-        rect.width = e->width;
-        rect.height = e->height;
-        XftDrawSetClipRectangles(tv->tileview.d, 0, 0, &rect, 1);
+    rect.x = 0;
+    rect.y = 0;
+    rect.width = e->width;
+    rect.height = e->height;
+    XftDrawSetClipRectangles(tv->tileview.d, e->x, e->y, &rect, 1);
+    
+    XClearArea(dpy, XtWindow(widget), e->x, e->y, e->width, e->height, False);
     
     Dimension tileWidth = tv->tileview.tileWidth;
     Dimension tileHeight = tv->tileview.tileHeight;
@@ -274,12 +274,12 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
         Boolean isSelected = i == tv->tileview.selection ? True : False;
         
         if(y+tileHeight >= e->y && y <= e->y + e->height) {
-            XRectangle rect;
-            rect.x = e->x;
-            rect.y = e->y;
-            rect.width = e->x + e->width > x+tileWidth ? x+tileWidth : e->x + e->width;
-            rect.height = e->height;
-            XftDrawSetClipRectangles(tv->tileview.d, 0, 0, &rect, 1);
+            rect.x = 0;
+            rect.y = 0;
+            rect.width = e->x + e->width > x+tileWidth ? x+tileWidth - e->x - 6 : e->width;
+            rect.height = e->y + e->height > y+tileHeight ? y+tileHeight - e->y : e->height; 
+            
+            XftDrawSetClipRectangles(tv->tileview.d, e->x, e->y, &rect, 1);
             tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
         }
         
