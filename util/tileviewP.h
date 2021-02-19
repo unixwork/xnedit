@@ -57,6 +57,15 @@ typedef struct TileViewPart {
     XtCallbackList realizeCB;
     XtCallbackList selectionCB;
     
+    Widget         vscrollbar;
+    int            vscrollbarWidth;
+    
+    int            scroll_pos;
+    int            scroll_mul;
+    
+    int            cols;
+    int            rows;
+    
     TileDrawFunc   drawFunc;
     void           *drawData;
     

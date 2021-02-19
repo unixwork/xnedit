@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Olaf Wintermann
+ * Copyright 2021 Olaf Wintermann
  *
  * Permission is hereby granted, free of charge, to any person obtaining a 
  * copy of this software and associated documentation files (the "Software"), 
@@ -2554,14 +2554,15 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmSTATIC); n++;
     //XtSetArg(args[n], XmNwidth, 580); n++;
     //XtSetArg(args[n], XmNheight, 400); n++;
-    Widget scrollw = XmCreateScrolledWindow(form, "scroll_win", args, n);
-    data.scrollw = scrollw;
+    //Widget scrollw = XmCreateScrolledWindow(form, "scroll_win", args, n);
+    //data.scrollw = scrollw;
     
-    n = 0;
+    //n = 0;
     XtSetArg(args[n], XnHtileDrawFunc,  iconview_draw); n++;
     XtSetArg(args[n], XnHtileDrawData,  NULL); n++;
-    data.container = XnCreateTileView(scrollw, "table", args, n);
+    data.container = XnCreateTileView(form, "table", args, n);
     XtManageChild(data.container);
+    data.scrollw = data.container;
     XtAddCallback(XtParent(data.container), XmNresizeCallback,
     		(XtCallbackProc)resize_container, &data);
     XmContainerAddMouseWheelSupport(data.container);
@@ -2700,7 +2701,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     Widget focus = NULL;
     switch(data.selectedview) {
-        case 0: XtManageChild(scrollw); focus = data.container; break;
+        case 0: XtManageChild(data.scrollw); focus = data.container; break;
         case 1: XtManageChild(data.listform); XtManageChild(data.filelistcontainer); focus = data.filelist; break;
         case 2: XtManageChild(data.listform); XtManageChild(data.gridcontainer); focus = data.grid; break;
     }

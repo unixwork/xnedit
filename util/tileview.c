@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <Xm/XmAll.h>
+
 static void tileview_class_init(void);
 static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *num_args);
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes);
@@ -35,6 +37,7 @@ static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgL
 static Boolean tileview_acceptfocus(Widget widget, Time *time);
 static XtGeometryResult tileview_geometrymanager(Widget widget, XtWidgetGeometry *request, XtWidgetGeometry *reply);
 
+static void vscrollbar_valuechanged(Widget w, TileViewWidget tv, XmScrollBarCallbackStruct *cb);
 
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 
@@ -139,12 +142,43 @@ static void tileview_class_init(void) {
     
 }
 
+static void adjust_vscrollbar_pos(TileViewWidget tv) {
+    XtUnmanageChild(tv->tileview.vscrollbar);
+    XtVaSetValues(
+            tv->tileview.vscrollbar,
+            XmNx, tv->core.width - tv->tileview.vscrollbarWidth,
+            XmNy, 0,
+            XmNheight, tv->core.height,
+            NULL);
+    
+    XtManageChild(tv->tileview.vscrollbar);
+}
+
+static void adjust_vscrollbar(TileViewWidget tv, int cols, int rows, int height) {
+    int value = 0;
+    
+    int wh = tv->core.height;
+    
+    if(height < wh) height = wh;
+    
+    XtVaSetValues(tv->tileview.vscrollbar,
+            XmNmaximum, height,
+            //XmNvalue, value,
+            XmNsliderSize, wh,
+            NULL);
+}
+
 static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *num_args) {
     TileViewWidget tv = (TileViewWidget)neww;
     Display *dp = XtDisplay(neww);
     
     tv->tileview.recalcSize = True;
     tv->tileview.btn1ClickPrev = 0;
+    
+    tv->tileview.cols = 0;
+    tv->tileview.rows = 0;
+    tv->tileview.scroll_pos = 0;
+    tv->tileview.scroll_mul = 1;
     
     FcPattern *pattern = FcNameParse((FcChar8*)"Sans:size=9");
     tv->tileview.font = pattern;
@@ -162,6 +196,13 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     
     tv->tileview.fontlist_begin = fontlist;
     tv->tileview.fontlist_end = fontlist;
+    
+    Arg a[16];
+    int n = 0;
+    
+    tv->tileview.vscrollbar = XmCreateScrollBar(neww, "tileview_vscrollbar", a, n);
+    tv->tileview.vscrollbarWidth = tv->tileview.vscrollbar->core.width; 
+    XtAddCallback(tv->tileview.vscrollbar, XmNdragCallback, (XtCallbackProc)vscrollbar_valuechanged, tv);
 }
 
 static void tvInitXft(TileViewWidget w) {
@@ -187,6 +228,27 @@ static void tvInitXft(TileViewWidget w) {
     
 }
 
+static int calcHeight(TileViewWidget tv, int *cols, int *rows) {
+    long len = tv->tileview.length;
+    int elemPerLine = 0;
+    int lines = 0;
+    
+    Dimension tileWidth = tv->tileview.tileWidth;
+    Dimension tileHeight = tv->tileview.tileHeight;
+
+    elemPerLine = (tv->core.width - tv->tileview.vscrollbarWidth) / tileWidth;
+    if(elemPerLine == 0) {
+        elemPerLine = 1;
+    }
+
+    lines = (len+elemPerLine-1) / elemPerLine;
+    
+    *cols = elemPerLine;
+    *rows = lines;
+    
+    return lines * tileHeight;
+}
+
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
     //(coreClassRec.core_class.realize)(widget, mask, attributes);
     (xmManagerClassRec.core_class.realize)(widget, mask, attributes);
@@ -203,6 +265,11 @@ static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttribu
     tvInitXft(tv);
     
     XtCallCallbacks(widget, XmNrealizeCallback, NULL);
+    
+    adjust_vscrollbar_pos(tv);
+    int cols, rows;
+    int height = calcHeight(tv, &cols, &rows);
+    adjust_vscrollbar(tv, cols, rows, height);
 }
 
 static void tileview_destroy(Widget widget) {
@@ -212,34 +279,26 @@ static void tileview_destroy(Widget widget) {
 }
 
 static void tileview_resize(Widget widget) {
+    TileViewWidget tv = (TileViewWidget)widget;
+    int cols, rows;
     
-}
-
-static Dimension calcHeight(TileViewWidget tv, int *cols, int *rows) {
-    long len = tv->tileview.length;
-    int elemPerLine = 0;
-    int lines = 0;
-    
-    Dimension tileWidth = tv->tileview.tileWidth;
-    Dimension tileHeight = tv->tileview.tileHeight;
-
-    elemPerLine = tv->core.width / tileWidth;
-    if(elemPerLine == 0) {
-        elemPerLine = 1;
+    int height = calcHeight(tv, &cols, &rows);
+    if(cols != tv->tileview.cols || rows != tv->tileview.rows) {
+        XClearArea(XtDisplay(widget), XtWindow(widget), 0, 0, 0, 0, TRUE);
     }
-
-    lines = (len+elemPerLine-1) / elemPerLine;
     
-    *cols = elemPerLine;
-    *rows = lines;
-    
-    return lines * tileHeight;
+    adjust_vscrollbar_pos((TileViewWidget)widget);
+    adjust_vscrollbar((TileViewWidget)widget, cols, rows, height);
 }
+
+
 
 static void tileview_expose(Widget widget, XEvent* event, Region region) {
     TileViewWidget tv = (TileViewWidget)widget;
     Display *dpy = XtDisplay(widget);
     XExposeEvent *e = &event->xexpose;
+
+    XClearArea(dpy, XtWindow(widget), e->x, e->y, e->width, e->height, False);
     
     XRectangle rect;
     rect.x = 0;
@@ -248,8 +307,6 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
     rect.height = e->height;
     XftDrawSetClipRectangles(tv->tileview.d, e->x, e->y, &rect, 1);
     
-    XClearArea(dpy, XtWindow(widget), e->x, e->y, e->width, e->height, False);
-    
     Dimension tileWidth = tv->tileview.tileWidth;
     Dimension tileHeight = tv->tileview.tileHeight;
     
@@ -257,19 +314,9 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
     int cols = 0;
     int rows = 0;
     
-    Dimension width = tv->core.width;
+    Dimension width = tv->core.width - tv->tileview.vscrollbarWidth;;
 
     Dimension height = calcHeight(tv, &cols, &rows);
-
-    if(tv->tileview.recalcSize) {
-        if(width < tileWidth) width = tileWidth;
-        
-        Widget parent = XtParent(widget);
-        if(height < parent->core.height) height = parent->core.height;
-        
-        XtMakeResizeRequest(widget, width, height, NULL, NULL);
-        tv->tileview.recalcSize = False;
-    }
     
     tv->tileview.recalcSize = False;
     if(!tv->tileview.drawFunc || !tv->tileview.data) {
@@ -289,18 +336,22 @@ static void tileview_expose(Widget widget, XEvent* event, Region region) {
         
         Boolean isSelected = i == tv->tileview.selection ? True : False;
         
-        if(y+tileHeight >= e->y && y <= e->y + e->height) {
+        int yt = y - tv->tileview.scroll_pos * tv->tileview.scroll_mul;
+        if(yt+tileHeight >= e->y && yt <= e->y + e->height) {
             rect.x = 0;
             rect.y = 0;
             rect.width = e->x + e->width > x+tileWidth ? x+tileWidth - e->x - 6 : e->width;
-            rect.height = e->y + e->height > y+tileHeight ? y+tileHeight - e->y : e->height; 
+            rect.height = e->y + e->height > yt+tileHeight ? yt+tileHeight - e->y : e->height; 
             
             XftDrawSetClipRectangles(tv->tileview.d, e->x, e->y, &rect, 1);
-            tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, y, tv->tileview.drawData, isSelected);
+            tv->tileview.drawFunc(widget, tv->tileview.data[i], tileWidth, tileHeight, x, yt, tv->tileview.drawData, isSelected);
         }
         
         c++;
     }
+    
+    //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, 0, 0, cols*tileWidth, rows*tileHeight);
+    //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, cols*tileWidth, 0, 0, rows*tileHeight);
     
     //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, 0, 0, widget->core.width, widget->core.height);
     //XDrawLine(dpy, XtWindow(widget), tv->tileview.gc, widget->core.width, 0, 0, widget->core.height);
@@ -313,6 +364,9 @@ static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgL
     
     if(o->tileview.data != n->tileview.data) {
         r = True;
+        int cols, rows;
+        int height = calcHeight((TileViewWidget)neww, &cols, &rows);
+        adjust_vscrollbar((TileViewWidget)neww, cols, rows, height);
     }
     if(o->tileview.length != n->tileview.length) {
         r = True;
@@ -334,10 +388,16 @@ static Boolean tileview_acceptfocus(Widget widget, Time *time) {
 }
 
 static XtGeometryResult tileview_geometrymanager(Widget widget, XtWidgetGeometry *request, XtWidgetGeometry *reply) {
-    
+    return XtGeometryYes;
 }
 
 /* ------------------------------ Actions ------------------------------ */
+
+static void vscrollbar_valuechanged(Widget w, TileViewWidget tv, XmScrollBarCallbackStruct *cb) {
+    tv->tileview.scroll_pos = cb->value;
+    tv->tileview.scroll_mul = 1;
+    XClearArea(XtDisplay(tv), XtWindow(tv), 0, 0, 0, 0, TRUE);
+}
 
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TileViewWidget tv = (TileViewWidget)w;
