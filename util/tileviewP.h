@@ -25,6 +25,7 @@
 
 #include <Xm/XmP.h>
 #include <Xm/PrimitiveP.h>
+#include <Xm/ManagerP.h>
 #include <X11/CoreP.h>
 
 #include <Xft/Xft.h>
@@ -42,8 +43,10 @@ typedef struct TileFieldClassPart {
 } TileViewClassPart;
 
 typedef struct TileFieldClassRec {
-    CoreClassPart        core_class;
-    XmPrimitiveClassPart primitive_class;
+    CoreClassPart       core_class;
+    CompositeClassPart  composite_class;
+    ConstraintClassPart constraint_class;
+    XmManagerClassPart  manager_class;
     TileViewClassPart   tileview_class;
 } TileViewClassRec;
 
@@ -79,7 +82,9 @@ typedef struct TileViewPart {
 
 typedef struct TileViewRec {
    CorePart        core;
-   XmPrimitivePart primitive;
+   CompositePart   composite;
+   ConstraintPart  constraint;
+   XmManagerPart   manager;
    TileViewPart    tileview;
 } TileViewRec;
 

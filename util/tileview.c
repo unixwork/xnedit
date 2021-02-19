@@ -33,6 +33,7 @@ static void tileview_resize(Widget widget);
 static void tileview_expose(Widget widget, XEvent* event, Region region);
 static Boolean tileview_set_values(Widget old, Widget request, Widget neww, ArgList args, Cardinal *num_args);
 static Boolean tileview_acceptfocus(Widget widget, Time *time);
+static XtGeometryResult tileview_geometrymanager(Widget widget, XtWidgetGeometry *request, XtWidgetGeometry *reply);
 
 
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
@@ -63,12 +64,12 @@ static char defaultTranslations[] = "\
 <LeaveWindow>:                  enter()\n\
 <Btn1Down>:                     mouse1down()";
 
-
+static XtResource constraints[] = {};
 
 TileViewClassRec tileviewWidgetClassRec = {
     // Core Class
     {
-        (WidgetClass)&xmPrimitiveClassRec,
+        (WidgetClass)&xmManagerClassRec,
         "TileView",                      // class_name
         sizeof(TileViewRec),             // widget_size
         tileview_class_init,             // class_initialize
@@ -101,19 +102,33 @@ TileViewClassRec tileviewWidgetClassRec = {
         NULL,                            // display_accelerator
         NULL,                            // extension
     },
-    // XmPrimitive
+    // Composite Class
     {
-        (XtWidgetProc)_XtInherit,        // border_highlight
-        (XtWidgetProc)_XtInherit,        // border_unhighlight
-        NULL,                            // translations
-        NULL,                            // arm_and_activate
-        NULL,                            // syn_resources
-        0,                               // num_syn_resources
-        NULL                             // extension
+        XtInheritGeometryManager, /* geometry_manager */
+        XtInheritChangeManaged,  /* change_managed */   
+        XtInheritInsertChild,  /* insert_child */ 
+        XtInheritDeleteChild,  /* delete_child */  
+        NULL,                 /* extension */    
     },
-    // TextField
+    // Constraint Class
     {
-        0
+        constraints,    /* resources */  
+        XtNumber(constraints),  /* num_resources */    
+        0,  /* constraint_size */  
+        NULL,  /* initialize */  
+        NULL,  /* destroy */
+        NULL,  /* set_values */   
+        NULL,  /* extension */    
+    },
+    // XmManager Class
+    {
+        XtInheritTranslations, // translations
+        NULL, // syn_resources
+        0,    // num_syn_resources
+        NULL, // syn_constraint_resources
+        0,    // num_syn_constraint_resources
+        XmInheritParentProcess, // parent_process
+        NULL  // extension
     }
 };
 
@@ -173,14 +188,15 @@ static void tvInitXft(TileViewWidget w) {
 }
 
 static void tileview_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
-     (coreClassRec.core_class.realize)(widget, mask, attributes);
+    //(coreClassRec.core_class.realize)(widget, mask, attributes);
+    (xmManagerClassRec.core_class.realize)(widget, mask, attributes);
     
     
     TileViewWidget tv = (TileViewWidget)widget;
     Display *dpy = XtDisplay(widget);
     
     XGCValues gcvals;
-    gcvals.foreground = tv->primitive.foreground;
+    gcvals.foreground = tv->manager.foreground;
     gcvals.background = tv->core.background_pixel;
     tv->tileview.gc = XCreateGC(dpy, XtWindow(widget), (GCForeground|GCBackground), &gcvals);
     
@@ -317,6 +333,9 @@ static Boolean tileview_acceptfocus(Widget widget, Time *time) {
     return True;
 }
 
+static XtGeometryResult tileview_geometrymanager(Widget widget, XtWidgetGeometry *request, XtWidgetGeometry *reply) {
+    
+}
 
 /* ------------------------------ Actions ------------------------------ */
 
