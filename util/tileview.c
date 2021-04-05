@@ -190,7 +190,6 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     XftFont *font = XftFontOpenPattern(dp, match);
     
     XnFontList *fontlist = malloc(sizeof(XnFontList));
-    XnFontList *fontlist_end = fontlist;
     fontlist->font = font;
     fontlist->next = NULL;
     
@@ -203,6 +202,7 @@ static void tileview_init(Widget request, Widget neww, ArgList args, Cardinal *n
     tv->tileview.vscrollbar = XmCreateScrollBar(neww, "tileview_vscrollbar", a, n);
     tv->tileview.vscrollbarWidth = tv->tileview.vscrollbar->core.width; 
     XtAddCallback(tv->tileview.vscrollbar, XmNdragCallback, (XtCallbackProc)vscrollbar_valuechanged, tv);
+    XtAddCallback(tv->tileview.vscrollbar, XmNvalueChangedCallback, (XtCallbackProc)vscrollbar_valuechanged, tv);
 }
 
 static void tvInitXft(TileViewWidget w) {
@@ -402,7 +402,7 @@ static void vscrollbar_valuechanged(Widget w, TileViewWidget tv, XmScrollBarCall
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TileViewWidget tv = (TileViewWidget)w;
     int x = event->xbutton.x;
-    int y = event->xbutton.y;
+    int y = event->xbutton.y + tv->tileview.scroll_pos*tv->tileview.scroll_mul;
     
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
     
