@@ -427,8 +427,8 @@ static int selectionSpansMultipleLines(WindowInfo *window)
 	    
     /* Estimate the number of characters on a line */
     textD = ((TextWidget)window->textArea)->text.textD;
-    if (textD->fontStruct->max_bounds.width > 0)
-	lineWidth = textD->width / textD->fontStruct->max_bounds.width;
+    if (textD->font->fonts->font->max_advance_width > 0)
+	lineWidth = textD->width / textD->font->fonts->font->max_advance_width;
     else
 	lineWidth = 1;
     if (lineWidth < 1) lineWidth = 1; /* Just in case */
