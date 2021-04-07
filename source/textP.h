@@ -59,7 +59,7 @@ extern TextClassRec nTextClassRec;
 typedef struct _TextPart {
     /* resources */
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
-    Pixel cursorFGPixel, lineNumFGPixel, calltipFGPixel, calltipBGPixel;
+    Pixel cursorFGPixel, lineNumFGPixel, lineNumBGPixel, calltipFGPixel, calltipBGPixel;
     NFont *font2;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;

@@ -853,7 +853,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(HILITE_FG_COLOR),
               GetPrefColorName(HILITE_BG_COLOR),
               GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(CURSOR_FG_COLOR));
+              GetPrefColorName(LINENO_BG_COLOR), 
+              GetPrefColorName(CURSOR_FG_COLOR),
+              GetPrefColorName(CURSOR_LINE_BG_COLOR));
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -1389,8 +1391,8 @@ void SplitPane(WindowInfo *window)
                 NULL);
     TextDSetColors( newTextD, textD->fgPixel, textD->bgPixel, 
             textD->selectFGPixel, textD->selectBGPixel, textD->highlightFGPixel,
-            textD->highlightBGPixel, textD->lineNumFGPixel, 
-            textD->cursorFGPixel );
+            textD->highlightBGPixel, textD->lineNumFGPixel, textD->lineNumBGPixel,
+            textD->cursorFGPixel, textD->lineHighlightBGPixel);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2147,9 +2149,10 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     UpdateMinPaneHeights(window);
 }
 
-void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
+void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *cursorFg)
+        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
+        const char *cursorFg, const char *lineHiBg)
 {
     int i, dummy;
     Pixel   textFgPix   = AllocColor( window->textArea, textFg, 
@@ -2166,7 +2169,11 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                     &dummy, &dummy, &dummy),
             lineNoFgPix = AllocColor( window->textArea, lineNoFg, 
                     &dummy, &dummy, &dummy),
+            lineNoBgPix = AllocColor( window->textArea, lineNoBg, 
+                    &dummy, &dummy, &dummy),
             cursorFgPix = AllocColor( window->textArea, cursorFg, 
+                    &dummy, &dummy, &dummy),
+            lineHiBgPix = AllocColor( window->textArea, lineHiBg, 
                     &dummy, &dummy, &dummy);
     textDisp *textD;
 
@@ -2177,7 +2184,8 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
     TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-            hiliteFgPix, hiliteBgPix, lineNoFgPix, cursorFgPix );
+            hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
+            cursorFgPix, lineHiBgPix );
     /* Update any additional panes */
     for (i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i],
@@ -2186,7 +2194,8 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
         TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-                hiliteFgPix, hiliteBgPix, lineNoFgPix, cursorFgPix );
+                hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
+                cursorFgPix, lineHiBgPix);
     }
     
     /* Redo any syntax highlighting */
@@ -3725,7 +3734,9 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(HILITE_FG_COLOR),
               GetPrefColorName(HILITE_BG_COLOR),
               GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(CURSOR_FG_COLOR));
+              GetPrefColorName(LINENO_BG_COLOR),
+              GetPrefColorName(CURSOR_FG_COLOR),
+              GetPrefColorName(CURSOR_LINE_BG_COLOR));
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -4840,7 +4851,8 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
             TextDSetColors(newTextD, textD->fgPixel, textD->bgPixel, 
                     textD->selectFGPixel, textD->selectBGPixel,
                     textD->highlightFGPixel,textD->highlightBGPixel,
-                    textD->lineNumFGPixel, textD->cursorFGPixel);
+                    textD->lineNumFGPixel, textD->lineNumBGPixel,
+                    textD->cursorFGPixel, textD->lineHighlightBGPixel);
 	}
         
 	/* Set the minimum pane height in the new pane */

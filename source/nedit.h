@@ -54,9 +54,11 @@
 #define NEDIT_DEFAULT_HI_FG     "white" /* These are colors for flashing */
 #define NEDIT_DEFAULT_HI_BG     "red"   /*   matching parens. */
 #define NEDIT_DEFAULT_LINENO_FG "black"
+#define NEDIT_DEFAULT_LINENO_BG "rgb:c5/c5/c5"
 #define NEDIT_DEFAULT_CURSOR_FG "black"
 #define NEDIT_DEFAULT_HELP_FG   "black"
 #define NEDIT_DEFAULT_HELP_BG   "rgb:cc/cc/cc"
+#define NEDIT_DEFAULT_CURSOR_LINE_BG "rgb:ee/ee/ee"
 
 
 /* Tuning parameters */
@@ -196,7 +198,9 @@ enum colorTypes {
     HILITE_FG_COLOR,
     HILITE_BG_COLOR,
     LINENO_FG_COLOR,
+    LINENO_BG_COLOR,
     CURSOR_FG_COLOR,
+    CURSOR_LINE_BG_COLOR,
     NUM_COLORS
 };
 

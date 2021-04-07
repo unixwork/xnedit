@@ -165,6 +165,8 @@ typedef struct _textDisp {
     Pixel highlightFGPixel,             /* Highlight colors are used when */
           highlightBGPixel;             /*    flashing matching parens    */
     Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
+    Pixel lineNumBGPixel;               /* Background color for line numbers */
+    Pixel lineHighlightBGPixel;         /* BG for highlighted cursor line */
     Pixel cursorFGPixel;
     Pixel *bgClassPixel;		/* table of colors for each BG class */
     XftColor fgColor;                   /* Foreground text color */
@@ -199,13 +201,13 @@ typedef struct _textDisp {
 } textDisp;
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
-	Position left, Position top, Position width, Position height,
-	Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-	NFont *font, Pixel bgPixel, Pixel fgPixel,
-	Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
-	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
-        int continuousWrap, int wrapMargin, XmString bgClassString, 
-        Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Position left, Position top, Position width, Position height,
+        Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
+        NFont *font, Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
+        Pixel selectBGPixel, Pixel highlightFGPixel, Pixel highlightBGPixel,
+        Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
+        int continuousWrap, int wrapMargin, XmString bgClassString,
+        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
         Boolean indentRainbow, char *indentRainbowColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
@@ -215,7 +217,7 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
 void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
         Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
-        Pixel lineNoFgP, Pixel cursorFgP);
+        Pixel lineNoFgP, Pixel lineNoBgP, Pixel cursorFgP, Pixel lineHiBgP);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);

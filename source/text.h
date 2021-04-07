@@ -59,6 +59,8 @@
 #define textCCursorForeground "CursorForeground"
 #define textNlineNumForeground "lineNumForeground"
 #define textCLineNumForeground "LineNumForeground"
+#define textNlineNumBackground "lineNumForeground"
+#define textCLineNumBackground "LineNumBackground"
 #define textNcalltipForeground "calltipForeground"
 #define textCcalltipForeground "CalltipForeground"
 #define textNcalltipBackground "calltipBackground"

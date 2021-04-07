@@ -652,6 +652,9 @@ static XtResource resources[] = {
     {textNlineNumForeground, textCLineNumForeground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.lineNumFGPixel), XmRString, 
       NEDIT_DEFAULT_LINENO_FG},
+    {textNlineNumBackground, textCLineNumBackground, XmRPixel,sizeof(Pixel),
+      XtOffset(TextWidget, text.lineNumBGPixel), XmRString, 
+      NEDIT_DEFAULT_LINENO_BG},
     {textNcursorForeground, textCCursorForeground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.cursorFGPixel), XmRString, 
       NEDIT_DEFAULT_CURSOR_FG},
@@ -867,10 +870,10 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
 	    new->text.highlightBGPixel, new->text.cursorFGPixel,
-	    new->text.lineNumFGPixel,
+	    new->text.lineNumFGPixel, 0, // TODO: replace 0
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel,
+          new->text.calltipBGPixel, 0, // TODO: replace 0
           new->text.indentRainbow, new->text.indentRainbowColors);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of

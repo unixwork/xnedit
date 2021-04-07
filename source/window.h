@@ -52,7 +52,8 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
 	const char *boldName, const char *boldItalicName);
 void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *cursorFg);
+        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
+        const char *cursorFg, const char *lineHiBg);
 void SetOverstrike(WindowInfo *window, int overstrike);
 void SetAutoWrap(WindowInfo *window, WrapStyle state);
 void SetAutoScroll(WindowInfo *window, int margin);

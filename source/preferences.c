@@ -232,8 +232,12 @@ typedef struct {
     Widget hiliteBgErrW;
     Widget lineNoFgW;
     Widget lineNoFgErrW;
+    Widget lineNoBgW;
+    Widget lineNoBgErrW;
     Widget cursorFgW;
     Widget cursorFgErrW;
+    Widget cursorLineBgW;
+    Widget cursorLineBgErrW;
     WindowInfo *window;
 } colorDialog;
 
@@ -969,9 +973,15 @@ static PrefDescripRec PrefDescrip[] = {
     {"lineNoFgColor", "LineNoFgColor", PREF_STRING, NEDIT_DEFAULT_LINENO_FG,
         PrefData.colorNames[LINENO_FG_COLOR],
         (void *)sizeof(PrefData.colorNames[LINENO_FG_COLOR]), True},
+    {"lineNoBgColor", "LineNoBgColor", PREF_STRING, NEDIT_DEFAULT_LINENO_BG,
+        PrefData.colorNames[LINENO_BG_COLOR],
+        (void *)sizeof(PrefData.colorNames[LINENO_BG_COLOR]), True},
     {"cursorFgColor", "CursorFgColor", PREF_STRING, NEDIT_DEFAULT_CURSOR_FG,
         PrefData.colorNames[CURSOR_FG_COLOR],
         (void *)sizeof(PrefData.colorNames[CURSOR_FG_COLOR]), True},
+    {"cursorLineBgColor", "CursorLineBgColor", PREF_STRING, NEDIT_DEFAULT_CURSOR_LINE_BG,
+        PrefData.colorNames[CURSOR_LINE_BG_COLOR],
+        (void *)sizeof(PrefData.colorNames[CURSOR_LINE_BG_COLOR]), True},
     {"tooltipBgColor", "TooltipBgColor", PREF_STRING, "LemonChiffon1",
         PrefData.tooltipBgColor,
         (void *)sizeof(PrefData.tooltipBgColor), False},
@@ -6066,7 +6076,7 @@ static void updateColors(colorDialog *cd)
     for (window = WindowList; window != NULL; window = window->next)
     {
         SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
-                hiliteBg, lineNoFg, cursorFg);
+                hiliteBg, lineNoFg, textBg, cursorFg, hiliteBg); // TODO: line no bg, line hi
     }
 
     SetPrefColorName(TEXT_FG_COLOR  , textFg  );
