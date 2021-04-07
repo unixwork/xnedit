@@ -157,6 +157,7 @@ typedef struct _textDisp {
     GC selectBGGC, highlightBGGC;	/* GCs for erasing text */
     GC cursorFGGC;			/* GC for drawing the cursor */
     GC lineNumGC;   	    	    	/* GC for drawing line numbers */
+    GC lineHighlightBGGC;               /* GC for highlighted cursor line */
     GC styleGC;     	    	    	/* GC with color and font unspecified
     	    	    	    	    	   for drawing colored/styled text */
     Pixel fgPixel, bgPixel;		/* Foreground/Background colors */

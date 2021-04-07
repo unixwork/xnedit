@@ -61,6 +61,8 @@
 #define textCLineNumForeground "LineNumForeground"
 #define textNlineNumBackground "lineNumForeground"
 #define textCLineNumBackground "LineNumBackground"
+#define textNlineHighlightBackground "lineHighlightBackground"
+#define textClineHighlightBackground "LineHighlightBackground"
 #define textNcalltipForeground "calltipForeground"
 #define textCcalltipForeground "CalltipForeground"
 #define textNcalltipBackground "calltipBackground"
