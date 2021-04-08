@@ -900,9 +900,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
         int oldLine, newLine;
         posToVisibleLineNum(textD, oldLineStart, &oldLine);
         posToVisibleLineNum(textD, newLineStart, &newLine);
-        resetClipRectangles(textD);
         redisplayLine(textD, oldLine, 0, INT_MAX, 0, INT_MAX);
-        resetClipRectangles(textD);
         redisplayLine(textD, newLine, 0, INT_MAX, 0, INT_MAX);
     }
 }
@@ -1930,6 +1928,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
+    int endOfLine = 0;
+    int cursorLine = False;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 outStr[MAX_DISP_LINE_LEN];
     FcChar32 *outPtr;
@@ -1968,6 +1968,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     } else {
 	lineLen = visLineLength(textD, visLineNum);
 	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+        endOfLine = BufEndOfLine(buf, lineStartPos);
     }
      
     /* Space beyond the end of the line is still counted in units of characters
@@ -2089,6 +2090,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     int rbCurrentPixelIndex = indentRainbow ? 0 : -1;
     
+    /* check if the line contains the cursor
+     */
+    if(textD->highlightCursorLine && lineStr && lineStartPos <= cursorPos && cursorPos <= endOfLine) {
+        cursorLine = True;
+    }
+    
     /* Scan character positions from the beginning of the clipping range, and
        draw parts whenever the style changes (also note if the cursor is on
        this line, and where it should be drawn to take advantage of the x
@@ -2154,7 +2161,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         charFont = FindFont(charFL, uc);
         
         if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex) {
-            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, hasCursor);
+            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine);
             outPtr = outStr;
             startX = x;
             style = charStyle;
@@ -2181,7 +2188,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* Draw the remaining style segment */
     //printf("final draw len: %d\n", outPtr - outStr);;
-    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, hasCursor);
+    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
        this line.  Also check for the cases which are not caught as the
