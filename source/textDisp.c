@@ -363,6 +363,7 @@ void TextDFree(textDisp *textD)
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->selectBGGC);
     releaseGC(textD->w, textD->highlightBGGC);
+    releaseGC(textD->w, textD->lineHighlightBGGC);
     releaseGC(textD->w, textD->styleGC);
     releaseGC(textD->w, textD->lineNumGC);
     NEditFree(textD->lineStarts);
@@ -452,6 +453,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     releaseGC(textD->w, textD->selectBGGC);
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->highlightBGGC);
+    releaseGC(textD->w, textD->lineHighlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
     allocateFixedFontGCs(textD, NULL, textBgP, textFgP, selectFgP,
             selectBgP, hiliteFgP, hiliteBgP, lineNoFgP, lineNoBgP, lineHiBgP);
@@ -527,6 +529,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
        affected GCs (they are shared with other widgets, and if the primary
        font changes, must be re-allocated to change it). Unfortunately,
        this requres recovering all of the colors from the existing GCs */
+    // TODO: why update the GCs??
     
     FontUnref(textD->font);
     textD->font = FontRef(font); 
@@ -541,15 +544,19 @@ void TextDSetFont(textDisp *textD, NFont *font)
     highlightFGPixel = values.foreground;
     highlightBGPixel = values.background;
     XGetGCValues(display, textD->lineNumGC, GCForeground, &values);
-    lineNumFGPixel = values.foreground;
+    lineNumFGPixel = textD->lineNumFGPixel;
+    lineNumBGPixel = values.foreground;
+    XGetGCValues(display, textD->lineHighlightBGGC, GCForeground, &values);
+    lineHighlightBGPixel = values.foreground;
     releaseGC(textD->w, textD->gc);
     releaseGC(textD->w, textD->selectGC);
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->selectBGGC);
     releaseGC(textD->w, textD->highlightBGGC);
     releaseGC(textD->w, textD->lineNumGC);
+    releaseGC(textD->w, textD->lineHighlightBGGC);
     allocateFixedFontGCs(textD, NULL, bgPixel, fgPixel, selectFGPixel,
-            selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel); // TODO
+            selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel);
     
     if(textD->disableRedisplay) {
         return;
@@ -2235,6 +2242,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     /* select a GC */
     if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
         gc = bgGC = textD->styleGC;
+        //printf("style gc\n");
     }
     else if (style & HIGHLIGHT_MASK) {
         gc = textD->highlightGC;
@@ -2294,6 +2302,9 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         gcValues.foreground = gcValues.background = bground;
         XChangeGC(XtDisplay(textD->w), gc,
                 GCForeground | GCBackground, &gcValues);
+        if(bground == textD->bgPixel && highlightLine && textD->highlightCursorLine) {
+            bgGC = textD->lineHighlightBGGC;
+        }
     }
     
     /* Always draw blank area, because Xft AA text rendering needs a clean
@@ -3391,7 +3402,6 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
             GCBackground, lineHighlightBGPixel, bgPixel, 0, 
             GCClipMask, GCArcMode);
     textD->lineNumColor = PixelToColor(textD->w, lineNumFGPixel);
-    // TODO: lineHighlightBGPixel
 }
 
 /*
