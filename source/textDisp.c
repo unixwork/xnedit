@@ -140,7 +140,7 @@ static void hScrollCB(Widget w, XtPointer clientData, XtPointer callData);
 static void vScrollCB(Widget w, XtPointer clientData, XtPointer callData);
 static void visibilityEH(Widget w, XtPointer data, XEvent *event,
         Boolean *continueDispatch);
-static void redrawLineNumbers(textDisp *textD, int clearAll);
+static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll);
 static void updateVScrollBarRange(textDisp *textD);
 static int updateHScrollBarRange(textDisp *textD);
 static int max(int i1, int i2);
@@ -462,7 +462,7 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     /* Redisplay */
     TextDRedisplayRect(textD, textD->left, textD->top, textD->width,
                        textD->height);
-    redrawLineNumbers(textD, True);
+    redrawLineNumbers(textD, textD->top, textD->height, True);
 }
 
 /*
@@ -572,7 +572,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
             textD->height);
     
     /* Clean up line number area in case spacing has changed */
-    redrawLineNumbers(textD, True);
+    redrawLineNumbers(textD, textD->top, textD->height, True);
 }
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
@@ -688,7 +688,7 @@ void TextDResize(textDisp *textD, int width, int height)
     
     /* Refresh the line number display to draw more line numbers, or
        erase extras */
-    redrawLineNumbers(textD, True);
+    redrawLineNumbers(textD, textD->top, textD->height, True);
     
     /* Redraw the calltip */
     TextDRedrawCalltip(textD, 0);
@@ -700,7 +700,7 @@ void TextDResize(textDisp *textD, int width, int height)
 */
 void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
 	int height)
-{
+{    
     int fontHeight, firstLine, lastLine, line;
     if(textD->fixLeftClipAfterResize) {
         // this call was directly after a window resize
@@ -730,8 +730,9 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     	redisplayLine(textD, line, left, left+width, 0, INT_MAX);
     
     /* draw the line numbers if exposed area includes them */
-    if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth)
-	redrawLineNumbers(textD, True);
+    if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth) {
+        redrawLineNumbers(textD, top, height, True);
+    }
 }
 
 /*
@@ -1762,12 +1763,12 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
            have changed. If only one line is altered, line numbers cannot
            be affected (the insertion or removal of a line break always 
            results in at least two lines being redrawn). */
-	if (linesInserted > 1) redrawLineNumbers(textD, True);
+	if (linesInserted > 1) redrawLineNumbers(textD, textD->top, textD->height, True);
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
     	if (origCursorPos >= pos)
     	    blankCursorProtrusions(textD);
-	redrawLineNumbers(textD, True);
+	redrawLineNumbers(textD, textD->top, textD->height, True);
     }
     
     /* If there is a style buffer, check if the modification caused additional
@@ -3029,7 +3030,7 @@ static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
     /* Refresh line number/calltip display if its up and we've scrolled 
         vertically */
     if (lineDelta != 0) {
-        redrawLineNumbers(textD, True);
+        redrawLineNumbers(textD, textD->top, textD->height, True);
         TextDRedrawCalltip(textD, 0);
     }
 
@@ -3128,7 +3129,7 @@ void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 ** stray marks outside of the character cell area, which might have been
 ** left from before a resize or font change.
 */
-static void redrawLineNumbers(textDisp *textD, int clearAll)
+static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll)
 {
     int y, line, visLine, nCols, lineStart;
     char lineNumString[12];
@@ -3149,24 +3150,24 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
     clipRect.y = textD->top;
     clipRect.width = textD->lineNumWidth;
     clipRect.height = textD->height;
-    XSetClipRectangles(display, textD->lineNumGC, 0, 0,
-    	    &clipRect, 1, Unsorted);
+    //XSetClipRectangles(display, textD->lineNumGC, 0, 0,
+    //	    &clipRect, 1, Unsorted);
     if(textD->d) {
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
     }
     
     /* Erase the previous contents of the line number area, if requested */
     if (clearAll) {
-        XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
-                textD->top, textD->lineNumWidth, textD->height, False);
+        //XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
+        //        textD->top, textD->lineNumWidth, textD->height, False);
         XFillRectangle(
                 XtDisplay(textD->w),
                 XtWindow(textD->w),
                 textD->lineNumGC,
-                textD->lineNumLeft,
-                textD->top,
-                textD->lineNumWidth,
-                textD->height);
+                0,
+                0,
+                textD->lineNumLeft + textD->lineNumWidth,
+                2*top + height);
     }    
     
     /* Draw the line numbers, aligned to the text */
@@ -3188,9 +3189,11 @@ static void redrawLineNumbers(textDisp *textD, int clearAll)
                     strlen(lineNumString));
             line++;
         } else {
+            /*
             XClearArea(XtDisplay(textD->w), XtWindow(textD->w),
                     textD->lineNumLeft, y, textD->lineNumWidth,
                     textD->ascent + textD->descent, False);
+            */
             if (visLine == 0)
                 line++;
         }
