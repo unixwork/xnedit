@@ -196,6 +196,7 @@ typedef struct _textDisp {
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
     Boolean disableRedisplay;
+    Boolean highlightCursorLine;
     Boolean fixLeftClipAfterResize;     /* after resize, left clip could be
                                            in the middle of a glyph */
     graphicExposeTranslationEntry *graphicsExposeQueue;

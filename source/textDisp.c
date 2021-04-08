@@ -117,7 +117,7 @@ static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
-        int toX, FcChar32 *string, int nChars);
+        int toX, FcChar32 *string, int nChars, Boolean highlightLine);
 static void clearRect(textDisp *textD, GC gc, int x, int y, 
         int width, int height);
 static void drawCursor(textDisp *textD, int x, int y);
@@ -200,6 +200,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     XftFont *xftFont = FontDefault(font);
     
     textD = (textDisp *)NEditMalloc(sizeof(textDisp));
+    textD->highlightCursorLine = True;
     textD->w = widget;
     textD->d = NULL;
     textD->top = top;
@@ -859,12 +860,24 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 */
 void TextDSetInsertPosition(textDisp *textD, int newPos)
 {
+    int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
+    Boolean hiline = False;
+    if(textD->highlightCursorLine) {
+        oldLineStart = BufStartOfLine(textD->buffer, textD->cursorPos);
+        newLineStart = BufStartOfLine(textD->buffer, newPos);
+        if(oldLineStart != newLineStart) {
+            hiline = True;
+            oldLineEnd = BufEndOfLine(textD->buffer, textD->cursorPos);
+            newLineEnd = BufEndOfLine(textD->buffer, newPos);
+        }
+    }
+    
     /* make sure new position is ok, do nothing if it hasn't changed */
     if (newPos == textD->cursorPos)
     	return;
     if (newPos < 0) newPos = 0;
     if (newPos > textD->buffer->length) newPos = textD->buffer->length;
- 
+    
     /* cursor movement cancels vertical cursor motion column */
     textD->cursorPreferredCol = -1;
    
@@ -875,6 +888,16 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     textD->cursorPos = newPos;
     textD->cursorOn = True;
     textDRedisplayRange(textD, textD->cursorPos-1, textD->cursorPos + 1);
+    
+    if(hiline) {
+        int oldLine, newLine;
+        posToVisibleLineNum(textD, oldLineStart, &oldLine);
+        posToVisibleLineNum(textD, newLineStart, &newLine);
+        resetClipRectangles(textD);
+        redisplayLine(textD, oldLine, 0, INT_MAX, 0, INT_MAX);
+        resetClipRectangles(textD);
+        redisplayLine(textD, newLine, 0, INT_MAX, 0, INT_MAX);
+    }
 }
 
 void TextDBlankCursor(textDisp *textD)
@@ -2124,7 +2147,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         charFont = FindFont(charFL, uc);
         
         if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex) {
-            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
+            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, hasCursor);
             outPtr = outStr;
             startX = x;
             style = charStyle;
@@ -2151,7 +2174,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* Draw the remaining style segment */
     //printf("final draw len: %d\n", outPtr - outStr);;
-    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr);
+    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, hasCursor);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
        this line.  Also check for the cases which are not caught as the
@@ -2192,7 +2215,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** the maximum y extent of the current font(s).
 */
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
-	int toX, FcChar32 *string, int nChars)
+	int toX, FcChar32 *string, int nChars, Boolean highlightLine)
 {
     GC gc, bgGC;
     XGCValues gcValues;
@@ -2222,6 +2245,9 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         gc = textD->selectGC;
         bgGC = textD->selectBGGC;
         color = textD->selectFGColor;
+    }
+    else if (highlightLine && textD->highlightCursorLine) {
+        gc = bgGC = textD->lineHighlightBGGC;
     }
     else {
         gc = bgGC = textD->gc;
