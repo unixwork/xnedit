@@ -114,6 +114,7 @@ int GetPrefMatchSyntaxBased(void);
 void SetPrefHighlightSyntax(Boolean state);
 Boolean GetPrefHighlightSyntax(void);
 void SetPrefIndentRainbow(int state);
+int GetPrefHighlightCursorLine(void);
 int GetPrefIndentRainbow(void);
 void SetPrefIndentRainbowColors(const char *colorList);
 char *GetPrefIndentRainbowColors(void);

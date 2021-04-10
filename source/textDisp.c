@@ -191,7 +191,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
         Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, char *indentRainbowColors)
+        Boolean indentRainbow, char *indentRainbowColors,
+        Boolean highlightCursorLine)
 {
     textDisp *textD;
     XGCValues gcValues;
@@ -200,7 +201,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     XftFont *xftFont = FontDefault(font);
     
     textD = (textDisp *)NEditMalloc(sizeof(textDisp));
-    textD->highlightCursorLine = True;
     textD->w = widget;
     textD->d = NULL;
     textD->top = top;
@@ -278,6 +278,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->graphicsExposeQueue = NULL;
     textD->indentRainbow = indentRainbow;
     textD->indentRainbowColors = NULL;
+    textD->highlightCursorLine = highlightCursorLine;
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
 
@@ -4199,7 +4200,10 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
 }
 
 
-
+void TextDSetHighlightCursorLine(textDisp *textD, Boolean state)
+{
+    textD->highlightCursorLine = state;
+}
 
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
 {

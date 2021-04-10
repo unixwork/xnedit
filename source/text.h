@@ -123,7 +123,8 @@
 #define textCindentRainbow "indentRainbow"
 #define textNindentRainbowColors "indentRainbowColors"
 #define textCindentRainbowColors "indentRainbowColors"
-
+#define textNhighlightCursorLine "highlightCursorLine"
+#define textChighlightCursorLine "highlightCursorLine"
 
 
 extern WidgetClass textWidgetClass;

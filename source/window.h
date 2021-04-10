@@ -102,6 +102,7 @@ void RefreshWindowStates(WindowInfo *window);
 void AllWindowsBusy(const char* message);
 void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
+void SetHighlightCursorLine(WindowInfo *window, Boolean state);
 void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);

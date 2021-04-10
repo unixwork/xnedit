@@ -280,6 +280,7 @@ static struct prefData {
     int alwaysCheckRelativeTagsSpecs; /* for every new opened file of session */
     int stickyCaseSenseBtn;     /* whether Case Word Btn is sticky to Regex Btn */
     int prefFileRead;	    	/* detects whether a .nedit existed */
+    int highlightCursorLine;    /* highlight line of cursor */
     int indentRainbow;          /* highlight indentation level */
     char *indentRainbowColors;  /* indent rainbow colors */
     int backlightChars;		/* whether to apply character "backlighting" */
@@ -808,6 +809,8 @@ static PrefDescripRec PrefDescrip[] = {
  	&PrefData.matchSyntaxBased, NULL, True},
     {"highlightSyntax", "HighlightSyntax", PREF_BOOLEAN, "True",
     	&PrefData.highlightSyntax, NULL, True},
+    {"highlightCursorLine", "HighlightCursorLine", PREF_BOOLEAN, "False",
+      &PrefData.highlightCursorLine, NULL, True},
     {"indentRainbow", "IndentRainbow", PREF_BOOLEAN, "False",
       &PrefData.indentRainbow, NULL, True},
     {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
@@ -1842,20 +1845,34 @@ Boolean GetPrefHighlightSyntax(void)
     return PrefData.highlightSyntax;
 }
 
-void SetPrefIndentRainbow(int state) {
+void SetPrefHighlightCursorLine(int state)
+{
+    setIntPref(&PrefData.highlightCursorLine, state);
+}
+
+int GetPrefHighlightCursorLine(void)
+{
+    return PrefData.highlightCursorLine;
+}
+
+void SetPrefIndentRainbow(int state)
+{
     setIntPref(&PrefData.indentRainbow, state);
 }
 
-int GetPrefIndentRainbow(void) {
+int GetPrefIndentRainbow(void)
+{
     return PrefData.indentRainbow;
 }
 
-void SetPrefIndentRainbowColors(const char *colorList) {
+void SetPrefIndentRainbowColors(const char *colorList)
+{
     if(PrefData.indentRainbowColors) NEditFree(PrefData.indentRainbowColors);
     PrefData.indentRainbowColors = NEditStrdup(colorList);
 }
 
-char *GetPrefIndentRainbowColors(void) {
+char *GetPrefIndentRainbowColors(void)
+{
     return PrefData.indentRainbowColors;
 }
 

@@ -129,6 +129,8 @@ typedef struct _TextPart {
     int dragNLines; 	    	    	/* # of newlines in text being drag'd */
     XmString backlightCharTypes;	/* background class string to parse */
     
+    Boolean highlightCursorLine;        /* highlight currently selected line */
+    
     Boolean indentRainbow;              /* indent rainbow enabled? */
     char *indentRainbowColors;          /* rainbow color list */
     

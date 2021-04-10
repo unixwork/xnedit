@@ -330,6 +330,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showLineNumbers = GetPrefLineNums();
     window->showInfoBar = False;
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
@@ -2523,6 +2524,7 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             XmNshadowType, XmSHADOW_IN, NULL);      
     text = XtVaCreateManagedWidget("text", textWidgetClass, frame,
             textNbacklightCharTypes, window->backlightCharTypes,
+            textNhighlightCursorLine, window->highlightCursorLine,
             textNindentRainbow, window->indentRainbow,
             textNindentRainbowColors, window->indentRainbowColors,
             textNrows, rows, textNcolumns, cols,
@@ -3381,6 +3383,17 @@ static void patchedRemoveChild(Widget child)
                 delete_child) (child);
 }
 #endif /* ROWCOLPATCH */
+
+void SetHighlightCursorLine(WindowInfo *window, Boolean state)
+{
+    window->highlightCursorLine = state;
+    
+    XtVaSetValues(window->textArea,
+          textNhighlightCursorLine, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNhighlightCursorLine, state, NULL);
+    }
+}
 
 void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
 {
@@ -4935,7 +4948,8 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     XtCallActionProc(window->textArea, "set_fonts", NULL, params, 4);
     
     window->zoom = orgWin->zoom;
-
+    
+    SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
     SetIndentRainbowColors(window, orgWin->indentRainbowColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);

@@ -667,6 +667,8 @@ static XtResource resources[] = {
     {textNlineHighlightBackground, textClineHighlightBackground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.lineHighlightBGPixel), XmRString, 
       NEDIT_DEFAULT_CURSOR_LINE_BG},
+    {textNhighlightCursorLine, textChighlightCursorLine, XmRPointer, sizeof(XmRPointer),
+      XtOffset(TextWidget, text.highlightCursorLine), XmRPointer, NULL},
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.indentRainbow), XmRString, "False"},
     {textNindentRainbowColors, textCindentRainbowColors, XmRPointer, sizeof(XmRPointer),
@@ -877,7 +879,8 @@ static void initialize(TextWidget request, TextWidget new)
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
           new->text.calltipBGPixel, 0, // TODO: replace 0
-          new->text.indentRainbow, new->text.indentRainbowColors);
+          new->text.indentRainbow, new->text.indentRainbowColors,
+          new->text.highlightCursorLine);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
@@ -1214,6 +1217,12 @@ static Boolean setValues(TextWidget current, TextWidget request,
         TextDSetupBGClasses((Widget)new, new->text.backlightCharTypes,
                 &new->text.textD->bgClassPixel, &new->text.textD->bgClass,
                 new->text.textD->bgPixel);
+        redraw = True;
+    }
+    
+    if (new->text.highlightCursorLine != current->text.highlightCursorLine)
+    {
+        TextDSetHighlightCursorLine(new->text.textD, new->text.highlightCursorLine);
         redraw = True;
     }
     

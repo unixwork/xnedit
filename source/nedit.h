@@ -401,6 +401,7 @@ typedef struct _WindowInfo {
     Widget	matchSyntaxBasedDefItem;
     Widget	highlightOffDefItem;
     Widget	highlightDefItem;
+    Widget      highlightCursorLineItem;
     Widget	indentRainbowItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
@@ -529,6 +530,7 @@ typedef struct _WindowInfo {
     Boolean     showInfoBar;            /* is the infobar shown */
     Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
     Boolean	backlightChars;		/* is char backlighting turned on? */
+    Boolean     highlightCursorLine;    /* is cursor line highlighting on? */
     char	*backlightCharTypes;	/* what backlighting to use */
     Boolean     indentRainbow;          /* is indentation highlight turned onß*/
     char        *indentRainbowColors;   /* indent rainbow color lists */
