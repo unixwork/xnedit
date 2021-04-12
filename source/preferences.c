@@ -1167,7 +1167,11 @@ static void hiliteBgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
 static void lineNoFgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
+static void lineNoBgModifiedCB(Widget w, XtPointer clientData,
+        XtPointer callData);
 static void cursorFgModifiedCB(Widget w, XtPointer clientData,
+        XtPointer callData);
+static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
 
 static int matchLanguageMode(WindowInfo *window);
@@ -6028,6 +6032,13 @@ static void lineNoFgModifiedCB(Widget w, XtPointer clientData,
     showColorStatus(cd, cd->lineNoFgW, cd->lineNoFgErrW);
 }
 
+static void lineNoBgModifiedCB(Widget w, XtPointer clientData,
+        XtPointer callData)
+{
+    colorDialog *cd = (colorDialog *)clientData;
+    showColorStatus(cd, cd->lineNoBgW, cd->lineNoBgErrW);
+}
+
 static void cursorFgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData)
 {
@@ -6035,6 +6046,12 @@ static void cursorFgModifiedCB(Widget w, XtPointer clientData,
     showColorStatus(cd, cd->cursorFgW, cd->cursorFgErrW);
 }
 
+static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
+        XtPointer callData)
+{
+    colorDialog *cd = (colorDialog *)clientData;
+    showColorStatus(cd, cd->cursorLineBgW, cd->cursorLineBgErrW);
+}
 
 /* 
  * Helper functions for validating colors
@@ -6088,12 +6105,14 @@ static void updateColors(colorDialog *cd)
             *hiliteFg = XmTextGetString(cd->hiliteFgW),
             *hiliteBg = XmTextGetString(cd->hiliteBgW),
             *lineNoFg = XmTextGetString(cd->lineNoFgW),
-            *cursorFg = XmTextGetString(cd->cursorFgW);
+            *lineNoBg = XmTextGetString(cd->lineNoBgW),
+            *cursorFg = XmTextGetString(cd->cursorFgW),
+            *cursorLineBg = XmTextGetString(cd->cursorLineBgW);
 
     for (window = WindowList; window != NULL; window = window->next)
     {
         SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
-                hiliteBg, lineNoFg, textBg, cursorFg, hiliteBg); // TODO: line no bg, line hi
+                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
     }
 
     SetPrefColorName(TEXT_FG_COLOR  , textFg  );
@@ -6103,7 +6122,9 @@ static void updateColors(colorDialog *cd)
     SetPrefColorName(HILITE_FG_COLOR, hiliteFg);
     SetPrefColorName(HILITE_BG_COLOR, hiliteBg);
     SetPrefColorName(LINENO_FG_COLOR, lineNoFg);
+    SetPrefColorName(LINENO_BG_COLOR, lineNoBg);
     SetPrefColorName(CURSOR_FG_COLOR, cursorFg);
+    SetPrefColorName(CURSOR_LINE_BG_COLOR, cursorLineBg);
 
     NEditFree(textFg);
     NEditFree(textBg);
@@ -6112,7 +6133,9 @@ static void updateColors(colorDialog *cd)
     NEditFree(hiliteFg);
     NEditFree(hiliteBg);
     NEditFree(lineNoFg);
+    NEditFree(lineNoBg);
     NEditFree(cursorFg);
+    NEditFree(cursorLineBg);
 }
 
 
@@ -6292,9 +6315,12 @@ void ChooseColors(WindowInfo *window)
     tmpW = addColorGroup( form, "hiliteFg", 'M', "Matching (..) Foreground",
             &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, 
             hiliteFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "lineNoFg", 'L', "Line Numbers",
+    tmpW = addColorGroup( form, "lineNoFg", 'L', "Line Numbers Foreground",
             &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, 
             lineNoFgModifiedCB, cd );
+    tmpW = addColorGroup( form, "lineNoBg", 'N', "Line Numbers Background",
+            &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, 
+            lineNoBgModifiedCB, cd );
 
     /* The right column (backgrounds) */
     tmpW = addColorGroup( form, "textBg", 'T', "Text Area Background",
@@ -6309,6 +6335,9 @@ void ChooseColors(WindowInfo *window)
     tmpW = addColorGroup( form, "cursorFg", 'C', "Cursor Color",
             &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, 
             cursorFgModifiedCB, cd );
+    tmpW = addColorGroup( form, "cursorLineBg", 'U', "Cursor Line Background",
+            &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, 
+            cursorLineBgModifiedCB, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, form,
@@ -6389,7 +6418,9 @@ void ChooseColors(WindowInfo *window)
     XmTextSetString(cd->hiliteFgW, GetPrefColorName(HILITE_FG_COLOR));
     XmTextSetString(cd->hiliteBgW, GetPrefColorName(HILITE_BG_COLOR));
     XmTextSetString(cd->lineNoFgW, GetPrefColorName(LINENO_FG_COLOR));
+    XmTextSetString(cd->lineNoBgW, GetPrefColorName(LINENO_BG_COLOR));
     XmTextSetString(cd->cursorFgW, GetPrefColorName(CURSOR_FG_COLOR));
+    XmTextSetString(cd->cursorLineBgW, GetPrefColorName(CURSOR_LINE_BG_COLOR));
     
     /* Handle mnemonic selection of buttons and focus to dialog */
     AddDialogMnemonicHandler(form, FALSE);
