@@ -118,6 +118,8 @@ typedef struct _textDisp {
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
     int cursorPreferredCol;		/* Column for vert. cursor movement */
+    int xic_x;                          /* input method x */
+    int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */
     int nBufferLines;			/* # of newlines in the buffer */
     textBuffer *buffer;     	    	/* Contains text to be displayed */

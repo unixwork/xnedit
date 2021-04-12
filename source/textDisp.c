@@ -213,6 +213,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->cursorToHint = NO_HINT;
     textD->cursorStyle = NORMAL_CURSOR;
     textD->cursorPreferredCol = -1;
+    textD->xic_x = 0;
+    textD->xic_y = 0;
     textD->buffer = buffer;
     textD->firstChar = 0;
     textD->lastChar = 0;
@@ -1921,7 +1923,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     NFont *charFL;
     XftFont *styleFont;
     XftFont *charFont;
-         
+    
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -2134,6 +2136,26 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             drawCursor(textD, x - 1, y);
         }
     }
+    
+    // set the position where the input method might pop up
+    if(hasCursor) {
+        // xic position should the the cursor
+        if(cursorX != textD->xic_x || y != textD->xic_y) {
+            TextWidget textwidget = (TextWidget)textD->w;
+            if(textwidget->text.xic) {
+                // set x to the left edge of the cursor
+                XPoint ipos;
+                ipos.x = cursorX - (FontDefault(textD->font)->max_advance_width / 3);
+                ipos.y = y;
+                XVaNestedList xicvals;
+                xicvals = XVaCreateNestedList(0, XNSpotLocation, &ipos, NULL);
+                XSetICValues(textwidget->text.xic, XNPreeditAttributes, xicvals, NULL);
+                XFree(xicvals);
+                textD->xic_x = cursorX;
+                textD->xic_y = y;
+            } 
+        }
+    } 
     
     /* If the y position of the cursor has changed, redraw the calltip */
     if (hasCursor && (y_orig != textD->cursorY || y_orig != y))
