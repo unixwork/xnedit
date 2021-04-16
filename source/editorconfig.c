@@ -72,6 +72,7 @@ EditorConfig EditorConfigGet(const char *path, const char *name) {
         if(ecfile) {
             root = ECGetConfig(ecfile, filepath, &editorconfig);
             ECDestroy(ecfile);
+            editorconfig.found = 1;
         } else if(errno != ENOENT) {
             fprintf(stderr, "Cannot open editorconfig file '%s': %s", ecfilename, strerror(errno));
         }

@@ -228,6 +228,12 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     
     // look for .editorconfig
     EditorConfig ec = EditorConfigGet(path, name);
+    if(ec.charset && !encoding) {
+        encoding = ec.charset;
+        if(ec.bom != EC_BOM_UNSET) {
+            window->bom = True;
+        }
+    }
     
     /* Open the file */
     if (!doOpen(window, name, path, encoding, flags)) {
@@ -265,6 +271,36 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     if(GetPrefAlwaysCheckRelTagsSpecs())
       	AddRelTagsFile(GetPrefTagFile(), path, TAG);
     AddToPrevOpenMenu(fullname);
+    
+    if(ec.found) {
+        // apply editorconfig
+        char *params[1];
+        char numStr[25];
+        
+        // indent style / tab width
+        if(ec.indent_style == EC_TAB) {
+            
+        } else if(ec.indent_style == EC_SPACE) {
+            
+        }
+        
+        // newline
+        switch(ec.end_of_line) {
+            default: break;
+            case EC_LF: {
+                window->fileFormat = UNIX_FILE_FORMAT;
+                break;
+            }
+            case EC_CR: {
+                window->fileFormat = MAC_FILE_FORMAT;
+                break;
+            }
+            case EC_CRLF: {
+                window->fileFormat = DOS_FILE_FORMAT;
+                break;
+            }
+        }
+    }
 
     return window;
 }
