@@ -182,6 +182,7 @@ static void appendLFCB(Widget w, WindowInfo* window, caddr_t callData);
 static void sortOpenPrevDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void reposDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1022,6 +1023,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->autoScrollDefItem = createMenuToggle(subPane, "autoScroll",
     	    "Auto Scroll Near Window Top/Bottom", 0, autoScrollDefCB, window,
     	    GetPrefAutoScroll(), FULL);
+    window->editorConfigDefItem = createMenuToggle(subPane, "editorConfig",
+    	    "Load Settings from .editorconfig", 0, editorConfigDefCB, window,
+    	    GetPrefEditorConfig(), FULL);
     subSubPane = createMenu(subPane, "warnings", "Warnings", 'r', NULL, FULL);
     window->modWarnDefItem = createMenuToggle(subSubPane,
 	    "filesModifiedExternally", "Files Modified Externally", 'F',
@@ -2247,6 +2251,19 @@ static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData)
     for (win=WindowList; win!=NULL; win=win->next) {
     	if (IsTopDocument(win))
     	    XmToggleButtonSetState(win->autoScrollDefItem, state, False);
+    }
+}
+
+static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+    
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefEditorConfig(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+    	    XmToggleButtonSetState(win->editorConfigDefItem, state, False);
     }
 }
 

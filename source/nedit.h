@@ -415,6 +415,7 @@ typedef struct _WindowInfo {
     Widget	smartTagsDefItem;
     Widget	reposDlogsDefItem;
     Widget      autoScrollDefItem;
+    Widget      editorConfigDefItem;
     Widget	openInTabDefItem;
     Widget	tabBarDefItem;
     Widget	tabBarHideDefItem;

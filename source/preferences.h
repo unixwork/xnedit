@@ -125,6 +125,8 @@ void SetPrefRepositionDialogs(int state);
 int GetPrefRepositionDialogs(void);
 void SetPrefAutoScroll(int state);
 int GetPrefAutoScroll(void);
+void SetPrefEditorConfig(int state);
+int GetPrefEditorConfig(void);
 int GetVerticalAutoScroll(void);
 void SetPrefAppendLF(int state);
 int GetPrefAppendLF(void);

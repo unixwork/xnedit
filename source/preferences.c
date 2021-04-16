@@ -1928,6 +1928,16 @@ int GetVerticalAutoScroll(void)
     return PrefData.autoScroll ? PrefData.autoScrollVPadding : 0;
 }
 
+void SetPrefEditorConfig(int state)
+{
+    setIntPref(&PrefData.editorConfig, state);
+}
+
+int GetPrefEditorConfig(void)
+{
+    return PrefData.editorConfig;
+}
+
 void SetPrefAppendLF(int state)
 {
     setIntPref(&PrefData.appendLF, state);
