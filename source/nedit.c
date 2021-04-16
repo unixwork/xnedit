@@ -38,6 +38,7 @@
 /* #include "textBuf.h" */
 #include "file.h"
 #include "preferences.h"
+#include "editorconfig.h"
 #include "regularExp.h"
 #include "selection.h"
 #include "tags.h"
@@ -647,6 +648,9 @@ int main(int argc, char **argv)
     /* Read the nedit dynamic database of files for the Open Previous
        command (and eventually other information as well) */
     ReadNEditDB();
+    
+    /* Initialize EditorConfig */
+    EditorConfigInit();
     
     /* Process -import command line argument before others which might
        open windows (loading preferences doesn't update menu settings,

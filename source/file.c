@@ -40,6 +40,7 @@
 #include "tags.h"
 #include "server.h"
 #include "interpret.h"
+#include "editorconfig.h"
 #include "../util/misc.h"
 #include "../util/DialogF.h"
 #include "../util/fileUtils.h"
@@ -224,6 +225,9 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
             RaiseDocumentWindow(window);
         }
     }
+    
+    // look for .editorconfig
+    EditorConfig ec = EditorConfigGet(path);
     
     /* Open the file */
     if (!doOpen(window, name, path, encoding, flags)) {

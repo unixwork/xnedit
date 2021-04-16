@@ -1,0 +1,344 @@
+/*
+ * Copyright 2021 Olaf Wintermann
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a 
+ * copy of this software and associated documentation files (the "Software"), 
+ * to deal in the Software without restriction, including without limitation 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+
+#include "editorconfig.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+#include "../util/filedialog.h" /* ParentPath, ConcatPath */
+#include "../util/ec_glob.h"
+
+#define EC_BUFSIZE 4096
+
+#define ISCOMMENT(c) (c == ';' || c == '#' ? 1 : 0)
+
+
+
+void EditorConfigInit(void) {
+    
+}
+
+
+
+
+
+EditorConfig EditorConfigGet(const char *path) {
+    EditorConfig ec;
+    memset(&ec, 0, sizeof(EditorConfig));
+    
+    size_t pathlen = strlen(path);
+    if(pathlen == 0 || path[0] != '/') {
+        // absolute path required
+        return ec;
+    }
+    
+    EditorConfig editorconfig;
+    memset(&editorconfig, 0, sizeof(EditorConfig));
+    
+    char *parent = strdup(path);
+    int root = 0;
+    while(parent) {
+        char *ecfilename = ConcatPath(parent, ".editorconfig");
+        printf("try %s\n", ecfilename);
+        ECFile *ecfile = ECLoadContent(ecfilename);
+        if(ecfile) {
+            printf("found\n");
+            if(ECGetConfig(ecfile, &editorconfig)) {
+                fprintf(stderr, "Failed to load editorconfig from %s\n", ecfilename);
+            } 
+        } else if(errno != ENOENT) {
+            fprintf(stderr, "Cannot open editorconfig file '%s': %s", ecfilename, strerror(errno));
+        } else {
+            printf("not found\n");
+        }
+        
+        free(ecfilename);
+        if(root || strlen(parent) == 1) {
+            free(parent);
+            parent = NULL;
+        } else {
+            char *newparent = ParentPath(parent);
+            free(parent);
+            parent = newparent;
+        }
+    }
+    
+    return editorconfig;
+}
+
+ECFile* ECLoadContent(const char *path) {
+    int fd = open(path, O_RDONLY);
+    if(fd < 0) {
+        return NULL;
+    }
+    
+    struct stat s;
+    if(fstat(fd, &s)) {
+        close(fd);
+        return NULL;
+    }
+    
+    size_t alloc = s.st_size;
+    char *content = malloc(alloc+1);
+    if(!content) {
+        close(fd);
+        return NULL;
+    }
+    content[alloc] = 0;
+    
+    size_t len = 0;
+    
+    char buf[EC_BUFSIZE];
+    ssize_t r;
+    while((r = read(fd, buf, EC_BUFSIZE)) > 0) {
+        if(alloc-len == 0) {
+            alloc += 1024;
+            char *newcontent = realloc(content, alloc);
+            if(!newcontent) {
+                close(fd);
+                free(content);
+                return NULL;
+            }
+            content = newcontent;
+        }
+        memcpy(content+len, buf, r);
+        len += r;
+    }
+    
+    close(fd);
+    
+    ECFile *ecf = malloc(sizeof(ECFile));
+    if(!ecf) {
+        free(content);
+        return NULL;
+    }
+    memset(ecf, 0, sizeof(ECFile));
+    
+    ecf->parent = ParentPath((char*)path);
+    ecf->content = content;
+    ecf->length = len;
+    
+    return ecf;
+}
+
+static char* ec_strdup(char *str, int len) {
+    char *newstr = malloc(len+1);
+    newstr[len] = 0;
+    memcpy(newstr, str, len);
+    return newstr;
+}
+
+static ECSection* create_section(char *name, int len) {
+    ECSection *sec = malloc(sizeof(ECSection));
+    memset(sec, 0, sizeof(ECSection));
+    
+    if(name) {
+        sec->name = ec_strdup(name, len);
+    }
+    
+    return sec;
+} 
+
+
+static ECSection* parse_section_name(ECFile *ec, ECSection *last, char *line, int len) {
+    int name_begin = 0;
+    int name_end = 0;
+    int comment = 0;
+    for(int i=0;i<len;i++) {
+        if(!comment) {
+            char c = line[i];
+            if(c == '[') {
+                if(name_begin > 0) {
+                    return NULL; // name_begin already set => error
+                }
+                name_begin = i+1;
+            } else if(c == ']') {
+                name_end = i;
+            } else if(ISCOMMENT(c)) {
+                comment = 1;
+            }
+        }
+    }
+    
+    if(name_begin == 0 || name_end <= name_begin) {
+        return NULL;
+    }
+    
+    int name_len = name_end - name_begin;
+    char *name = line+name_begin;
+    printf("section [%.*s]\n", name_len, name);
+    
+    ECSection *new_sec = create_section(name, name_len);
+    if(ec->sections) {
+        last->next = new_sec;
+    } else {
+        ec->sections = new_sec;
+    }
+    
+    return new_sec;
+}
+
+static void string_trim(char **str, int *len) {
+    char *s = *str;
+    int l = *len;
+    while(l > 0 && isspace(*s)) {
+        s++;
+        l--;
+    }
+    
+    if(l > 0) {
+        int k = l-1;
+        while(isspace(s[k])) {
+            k--;
+            l--;
+        }
+    }
+    
+    *str = s;
+    *len = l;
+}
+
+static int parse_key_value(ECFile *ec, ECSection *sec, char *line, int len) {
+    int end = len;
+    int comment = 0;
+    int separator = 0;
+    for(int i=0;i<len;i++) {
+        if(!comment) {
+            char c = line[i];
+            if(ISCOMMENT(c)) {
+                end = len;
+                comment = 1;
+            } else if(c == '=') {
+                if(separator > 0) {
+                    return 1; // separator already exists => error
+                }
+                separator = i;
+            }
+        }
+    }
+    
+    if(separator == 0) {
+        return 0;
+    }
+    
+    char *name = line;
+    char *value = line + separator + 1;
+    int name_len = separator;
+    int value_len = end - separator - 1;
+    
+    string_trim(&name, &name_len);
+    string_trim(&value, &value_len);
+    
+    ECKeyValue *kv = malloc(sizeof(ECKeyValue));
+    kv->name = ec_strdup(name, name_len);
+    kv->value = ec_strdup(value, value_len);
+    
+    kv->next = sec->values;
+    sec->values = kv;
+    
+    printf(" keyval [%.*s] = [%.*s]\n", name_len, name, value_len, value);
+    
+    return 0;
+}
+
+int ECParse(ECFile *ec) {
+    ECSection *current_section = create_section(NULL, 0);
+    ec->preamble = current_section;
+    
+    int line_begin = 0;
+    
+    // line types:
+    // 0: blank
+    // 1: comment
+    // 2: section name
+    // 3: key/value
+    int line_type = 0;
+    int comment = 0;
+    
+    for(int i=0;i<ec->length;i++) {
+        char c = ec->content[i];
+        if(c == '\n') {
+            int line_len = i - line_begin;
+            char *line = ec->content + line_begin;
+            //printf("ln %d {%.*s}\n", line_type, line_len, line);
+            switch(line_type) {
+                case 0: {
+                    printf("  blank\n");
+                    break;
+                }
+                case 1: {
+                    printf("comment [%.*s]\n", line_len, line);
+                    break;
+                }
+                case 2: {
+                    current_section = parse_section_name(ec, current_section, line, line_len);
+                    if(!current_section) {
+                        return 1;
+                    }
+                    break;
+                }
+                case 3: {
+                    if(parse_key_value(ec, current_section, line, line_len)) {
+                        return 1;
+                    }
+                    break;
+                }
+            }
+            
+            
+            line_begin = i+1;
+            line_type = 0;
+            comment = 0;
+        } else if(!comment) {
+            if(!isspace(c)) {
+                if(line_type == 0) {
+                    // first non-whitespace char in this line
+                    if(c == '#') {
+                        line_type = 1;
+                        comment = 1;
+                    } else if(c == '[') {
+                        line_type = 2;
+                    } else {
+                        line_type = 3;
+                    }
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+int ECGetConfig(ECFile *ecf, EditorConfig *config) {
+    
+    
+    
+    return 0;
+}
