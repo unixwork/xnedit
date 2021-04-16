@@ -447,8 +447,28 @@ int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
     return root;
 }
 
-void ECDestroy(ECFile *ecf) {
-    // TODO
+static void destroy_section(ECSection *sec) {
+    if(!sec) return;
+    if(sec->name) free(sec->name);
     
+    ECKeyValue *v = sec->values;
+    while(v) {
+        if(v->name) free(v->name);
+        if(v->value) free(v->value);
+        v = v->next;
+    }
+}
+
+void ECDestroy(ECFile *ecf) {
+    destroy_section(ecf->preamble);
+    ECSection *sec = ecf->sections;
+    while(sec) {
+        ECSection *next = sec->next;
+        destroy_section(sec);
+        sec = next;
+    }
+    free(ecf->parent);
+    free(ecf->content);
+    free(ecf);
 }
 
