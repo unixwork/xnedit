@@ -4215,6 +4215,8 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
  */
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
 {
+    if(!colors) return;
+    
     int count = 1;
     int len = strlen(colors);
     for(int i=0;i<len;i++) {
