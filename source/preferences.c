@@ -337,6 +337,7 @@ static struct prefData {
     int windowDarkTheme;
     int fsbView;
     int fsbShowHidden;
+    int editorConfig;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1043,7 +1044,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"fsbView", "FsbView", PREF_INT, "1",
             &PrefData.fsbView, NULL, True},
     {"fsbShowHidden", "FsbShowHidden", PREF_BOOLEAN, "False",
-            &PrefData.fsbShowHidden, NULL, True}
+            &PrefData.fsbShowHidden, NULL, True},
+    {"editorConfig", "EditorConfig", PREF_BOOLEAN, "True",
+            &PrefData.editorConfig, NULL, True}
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2102,6 +2105,16 @@ int GetPrefMaxPrevOpenFiles(void)
 int GetPrefTypingHidesPointer(void)
 {
     return(PrefData.typingHidesPointer);
+}
+
+int GetEditorConfig(void)
+{
+    return PrefData.editorConfig;
+}
+
+void SetEditorConfig(int state)
+{
+    PrefData.editorConfig = state;
 }
 
 #ifdef SGI_CUSTOM

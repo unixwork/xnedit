@@ -165,6 +165,8 @@ int GetPrefStdOpenDialog(void);
 char *GetPrefDelimiters(void);
 int GetPrefMaxPrevOpenFiles(void);
 int GetPrefTypingHidesPointer(void);
+int GetEditorConfig(void);
+void SetEditorConfig(int state);
 #ifdef SGI_CUSTOM
 void SetPrefShortMenus(int state);
 int GetPrefShortMenus(void);

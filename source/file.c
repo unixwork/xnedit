@@ -291,7 +291,12 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     }
     
     // look for .editorconfig
-    EditorConfig ec = EditorConfigGet(path, name);
+    EditorConfig ec;
+    if(GetEditorConfig()) {
+        ec = EditorConfigGet(path, name);
+    } else {
+        memset(&ec, 0, sizeof(EditorConfig));
+    }
     if(ec.charset && !encoding) {
         encoding = ec.charset;
         if(ec.bom != EC_BOM_UNSET) {
