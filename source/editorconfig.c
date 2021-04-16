@@ -49,7 +49,7 @@ void EditorConfigInit(void) {
 
 
 
-EditorConfig EditorConfigGet(const char *path) {
+EditorConfig EditorConfigGet(const char *path, const char *name) {
     EditorConfig ec;
     memset(&ec, 0, sizeof(EditorConfig));
     
@@ -59,6 +59,8 @@ EditorConfig EditorConfigGet(const char *path) {
         return ec;
     }
     
+    char *filepath = ConcatPath(path, name);
+    
     EditorConfig editorconfig;
     memset(&editorconfig, 0, sizeof(EditorConfig));
     
@@ -66,17 +68,12 @@ EditorConfig EditorConfigGet(const char *path) {
     int root = 0;
     while(parent) {
         char *ecfilename = ConcatPath(parent, ".editorconfig");
-        printf("try %s\n", ecfilename);
         ECFile *ecfile = ECLoadContent(ecfilename);
         if(ecfile) {
-            printf("found\n");
-            if(ECGetConfig(ecfile, &editorconfig)) {
-                fprintf(stderr, "Failed to load editorconfig from %s\n", ecfilename);
-            } 
+            root = ECGetConfig(ecfile, filepath, &editorconfig);
+            ECDestroy(ecfile);
         } else if(errno != ENOENT) {
             fprintf(stderr, "Cannot open editorconfig file '%s': %s", ecfilename, strerror(errno));
-        } else {
-            printf("not found\n");
         }
         
         free(ecfilename);
@@ -89,6 +86,8 @@ EditorConfig EditorConfigGet(const char *path) {
             parent = newparent;
         }
     }
+    
+    free(filepath);
     
     return editorconfig;
 }
@@ -193,7 +192,6 @@ static ECSection* parse_section_name(ECFile *ec, ECSection *last, char *line, in
     
     int name_len = name_end - name_begin;
     char *name = line+name_begin;
-    printf("section [%.*s]\n", name_len, name);
     
     ECSection *new_sec = create_section(name, name_len);
     if(ec->sections) {
@@ -263,8 +261,6 @@ static int parse_key_value(ECFile *ec, ECSection *sec, char *line, int len) {
     kv->next = sec->values;
     sec->values = kv;
     
-    printf(" keyval [%.*s] = [%.*s]\n", name_len, name, value_len, value);
-    
     return 0;
 }
 
@@ -290,11 +286,11 @@ int ECParse(ECFile *ec) {
             //printf("ln %d {%.*s}\n", line_type, line_len, line);
             switch(line_type) {
                 case 0: {
-                    printf("  blank\n");
+                    // blank
                     break;
                 }
                 case 1: {
-                    printf("comment [%.*s]\n", line_len, line);
+                    // comment
                     break;
                 }
                 case 2: {
@@ -336,9 +332,123 @@ int ECParse(ECFile *ec) {
     return 0;
 }
 
-int ECGetConfig(ECFile *ecf, EditorConfig *config) {
+static int ec_getbool(char *v) {
+    if(v && (v[0] == 't' || v[0] == 'T')) {
+        return 1;
+    }
+    return 0;
+}
+
+static int ec_getint(char *str, int *value) {
+    char *end;
+    errno = 0;
+    long val = strtol(str, &end, 0);
+     if(errno == 0) {
+        *value = val;
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int ec_isroot(ECFile *ecf) {
+    if(ecf->preamble) {
+        ECKeyValue *v = ecf->preamble->values;
+        while(v) {
+            if(!strcmp(v->name, "root")) {
+                return ec_getbool(v->value);
+            }
+            v = v->next;
+        }
+    }
+    return 0;
+}
+
+static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
+    ECKeyValue *v = sec->values;
+    while(v) {
+        if(config->indent_style == EC_INDENT_STYLE_UNSET && !strcmp(v->name, "indent_style")) {
+            if(!strcmp(v->value, "space")) {
+                config->indent_style = EC_SPACE;
+            } else if(!strcmp(v->value, "tab")) {
+                config->indent_style = EC_TAB;
+            }
+        } else if(config->indent_size == 0 && !strcmp(v->name, "indent_size")) {
+            int val = 0;
+            if(ec_getint(v->value, &val)) {
+                config->indent_size = val;
+            }
+        } else if(config->tab_width == 0 && !strcmp(v->name, "tab_width")) {
+            int val = 0;
+            if(ec_getint(v->value, &val)) {
+                config->tab_width = val;
+            }
+        } else if(config->end_of_line == EC_EOL_UNSET && !strcmp(v->name, "end_of_line")) {
+            if(!strcmp(v->value, "lf")) {
+                config->end_of_line = EC_LF;
+            } else if(!strcmp(v->value, "cr")) {
+                config->end_of_line = EC_CR;
+            } else if(!strcmp(v->value, "crlf")) {
+                config->end_of_line = EC_CRLF;
+            }
+        } else if(!config->charset && !strcmp(v->name, "charset")) {
+            if(!strcmp(v->value, "utf-8-bom")) {
+                config->charset = strdup("utf-8");
+                config->bom = EC_BOM;
+            } else {
+                config->charset = strdup(v->value);
+                size_t vlen = strlen(v->value);
+                if(vlen >= 6 && (!memcmp(v->value, "utf-16", 6) || !memcmp(v->value, "utf-32", 6))) {
+                    config->bom = EC_BOM;
+                }
+            }
+        }
+        
+        v = v->next;
+    }
     
-    
+    // check if every field is set, if yes we could stop loading editorconfig files
+    if(     config->indent_style != EC_INDENT_STYLE_UNSET &&
+            config->indent_size != 0 &&
+            config->tab_width != 0 &&
+            config->end_of_line != EC_EOL_UNSET &&
+            config->charset)
+    {
+        return 1;
+    }
     
     return 0;
 }
+
+int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
+    size_t parentlen = strlen(ecf->parent);
+    const char *relpath = filepath + parentlen;
+    
+    if(ECParse(ecf)) {
+        char *f = ConcatPath(ecf->parent, ".editorconfig");
+        fprintf(stderr, "Cannot parse editorconfig file %s\n", f);
+        free(f);
+        return 0;
+    }
+    
+    int root = ec_isroot(ecf);
+    
+    ECSection *sec = ecf->sections;
+    while(sec) {
+        if(sec->name && ec_glob(sec->name, relpath)) {
+            if(sec_loadvalues(sec, config)) {
+                // every possible setting already set
+                return 1;
+            }
+        }
+        sec = sec->next;
+    }
+    
+    return root;
+}
+
+void ECDestroy(ECFile *ecf) {
+    // TODO
+    
+}
+

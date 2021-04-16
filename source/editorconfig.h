@@ -77,12 +77,14 @@ typedef struct {
 
 void EditorConfigInit(void);
 
-EditorConfig EditorConfigGet(const char *path);
+EditorConfig EditorConfigGet(const char *path, const char *name);
 
 ECFile* ECLoadContent(const char *path);
 int ECParse(ECFile *ec);
 
-int ECGetConfig(ECFile *ecf, EditorConfig *config);
+int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config);
+
+void ECDestroy(ECFile *ecf);
 
 
 #ifdef __cplusplus

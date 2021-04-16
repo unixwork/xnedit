@@ -227,7 +227,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     }
     
     // look for .editorconfig
-    EditorConfig ec = EditorConfigGet(path);
+    EditorConfig ec = EditorConfigGet(path, name);
     
     /* Open the file */
     if (!doOpen(window, name, path, encoding, flags)) {
