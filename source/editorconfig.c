@@ -40,15 +40,6 @@
 #define ISCOMMENT(c) (c == ';' || c == '#' ? 1 : 0)
 
 
-
-void EditorConfigInit(void) {
-    
-}
-
-
-
-
-
 EditorConfig EditorConfigGet(const char *path, const char *name) {
     EditorConfig ec;
     memset(&ec, 0, sizeof(EditorConfig));

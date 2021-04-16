@@ -75,8 +75,6 @@ typedef struct {
     ECSection *sections;
 } ECFile;
 
-void EditorConfigInit(void);
-
 EditorConfig EditorConfigGet(const char *path, const char *name);
 
 ECFile* ECLoadContent(const char *path);
