@@ -427,7 +427,7 @@ int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
     
     ECSection *sec = ecf->sections;
     while(sec) {
-        if(sec->name && ec_glob(sec->name, relpath)) {
+        if(sec->name && !ec_glob(sec->name, relpath)) {
             if(sec_loadvalues(sec, config)) {
                 // every possible setting already set
                 return 1;
