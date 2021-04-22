@@ -405,6 +405,8 @@ typedef struct _WindowInfo {
     Widget	indentRainbowItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
+    Widget      highlightCursorLineDefItem;
+    Widget      indentRainbowDefItem;
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;

@@ -162,6 +162,8 @@ static void matchSyntaxBasedDefCB(Widget w, WindowInfo *window, caddr_t callData
 static void highlightOffDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void colorDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void smartTagsDefCB(Widget parent, XtPointer client_data, XtPointer call_data);
@@ -955,6 +957,14 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
           "backlightChars", "Apply Backlighting", 'g', backlightCharsDefCB,
           window, GetPrefBacklightChars(), FULL);
 
+    /* Cursor Line Highlighting and Indent Rainbow */
+    window->highlightCursorLineDefItem = createMenuToggle(subPane,
+          "highlightCursorLine", "Highlight Cursor Line", 'e', highlightCursorLineDefCB,
+          window, GetPrefHighlightCursorLine(), FULL);
+    window->indentRainbowDefItem = createMenuToggle(subPane,
+          "indentRainbow", "Indent Rainbow", 'R', indentRainbowDefCB,
+          window, GetPrefIndentRainbow(), FULL);
+    
     /* tabbed editing sub menu */
     subSubPane = createMenu(subPane, "tabbedEditMenu", "Tabbed Editing", 0,
     	    &cascade, SHORT);
@@ -1113,7 +1123,7 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
           window->backlightChars, FULL);
     window->highlightCursorLineItem = createMenuToggle(menuPane, "highlightCursorLine",
           "Highlight Cursor Line", 'C', highlightCursorLineCB, window,
-          window->indentRainbow, FULL);
+          window->highlightCursorLine, FULL);
     window->indentRainbowItem = createMenuToggle(menuPane, "indentRainbow",
           "Indent Rainbow", 'R', indentRainbowCB, window,
           window->indentRainbow, FULL);
@@ -2055,6 +2065,32 @@ static void backlightCharsDefCB(Widget w, WindowInfo *window, caddr_t callData)
     for (win=WindowList; win!=NULL; win=win->next) {
     	if (IsTopDocument(win))
 	    XmToggleButtonSetState(win->backlightCharsDefItem, state, False);
+    }
+}
+
+static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefHighlightCursorLine(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+	    XmToggleButtonSetState(win->highlightCursorLineDefItem, state, False);
+    }
+}
+
+static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefIndentRainbow(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+	    XmToggleButtonSetState(win->indentRainbowDefItem, state, False);
     }
 }
 
