@@ -82,6 +82,7 @@
 #include <Xm/CascadeBG.h>
 #include <Xm/Frame.h>
 #include <Xm/Text.h>
+#include <Xm/Separator.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -240,6 +241,14 @@ typedef struct {
     Widget cursorLineBgErrW;
     WindowInfo *window;
 } colorDialog;
+
+/* IndentColor dialog information */
+typedef struct {
+    Widget shell;
+    Widget textarea;
+    Widget msg;
+    WindowInfo *window;
+} indentColorDialog;
 
 /* Repository for simple preferences settings */
 static struct prefData {
@@ -1174,6 +1183,8 @@ static void cursorFgModifiedCB(Widget w, XtPointer clientData,
 static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
 
+static void updateRainbowColors(indentColorDialog *cd);
+
 static int matchLanguageMode(WindowInfo *window);
 static int loadLanguageModesString(char *inString, int fileVer);
 static char *writeLanguageModesString(void);
@@ -1873,6 +1884,7 @@ void SetPrefIndentRainbowColors(const char *colorList)
 {
     if(PrefData.indentRainbowColors) NEditFree(PrefData.indentRainbowColors);
     PrefData.indentRainbowColors = NEditStrdup(colorList);
+    PrefsHaveChanged = True;
 }
 
 char *GetPrefIndentRainbowColors(void)
@@ -6272,7 +6284,7 @@ void ChooseColors(WindowInfo *window)
     
     /* Create a structure for keeping track of dialog state */
     cd = NEditNew(colorDialog);
-    window->colorDialog = (void*)cd;
+    window->colorDialog = cd;
     
     /* Create a form widget in a dialog shell */
     ac = 0;
@@ -6426,6 +6438,307 @@ void ChooseColors(WindowInfo *window)
     AddDialogMnemonicHandler(form, FALSE);
     
     /* put up dialog */
+    ManageDialogCenteredOnPointer(form);
+}
+
+static int verifyColorStr(indentColorDialog *cd, const char *colorStr)
+{
+    if(strlen(colorStr) == 0) {
+        return 1;
+    }
+    
+    Colormap cMap;
+    XColor colorDef;
+    Status status;
+    Display *display = XtDisplay(cd->shell);
+    XtVaGetValues(cd->shell, XtNcolormap, &cMap, NULL);
+    status = XParseColor(display, cMap, colorStr, &colorDef);
+    
+    if(status == 0) {
+        int msglen = strlen(colorStr) + 24;
+        char *msg = malloc(msglen);
+        snprintf(msg, msglen, "Invalid color: %s\n", colorStr);
+        XmString s = XmStringCreateLocalized(msg);
+        XtVaSetValues(cd->msg, XmNlabelString, s, NULL);
+        XmStringFree(s);
+        DialogF(DF_ERR, cd->shell, 1, "Invalid Colors",
+                "All colors must be valid to proceed.", "OK");
+        
+        free(msg);
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+static int verifyColors(indentColorDialog *cd)
+{
+    int ret = 0;
+    
+    char *colors = XmTextGetString(cd->textarea);
+    size_t len = strlen(colors);
+    int s = 0;
+    for(int i=0;i<=len;i++) {
+        char c = colors[i];
+        if(c == '\n' || c == '\0') {
+            colors[i] = '\0';
+            char *color = colors + s;
+            if(!verifyColorStr(cd, color)) {
+                ret = 1;
+                break;
+            }
+            s = i+1;
+        }
+    }
+    
+    if(!ret) {
+        XmString s = XmStringCreateSimple("");
+        XtVaSetValues(cd->msg, XmNlabelString, s, NULL);
+        XmStringFree(s);
+    }
+    
+    XtFree(colors);
+    
+    return ret;
+}
+
+static void updateRainbowColors(indentColorDialog *cd)
+{
+    char *colors = XmTextGetString(cd->textarea);
+    size_t len = strlen(colors);
+    while(len > 0) {
+        if(colors[len-1] == '\n') {
+            colors[len-1] = 0;
+            len--;
+        } else {
+            break;
+        }
+    }
+    
+    for(int i=0;i<len;i++) {
+        if(colors[i] == '\n') {
+            colors[i] = ';';
+        }
+    }
+    
+    WindowInfo *window;
+    for (window = WindowList; window != NULL; window = window->next)
+    {
+        SetIndentRainbowColors(window, colors);
+    }
+    
+    SetPrefIndentRainbowColors(colors);
+    
+    XtFree(colors);
+}
+
+
+static void indentColorOkCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    indentColorDialog *cd = (indentColorDialog *)clientData;
+    
+    if(verifyColors(cd)) {
+        return;
+    }
+    
+    
+    updateRainbowColors(cd);
+    XtDestroyWidget(cd->shell);
+}
+
+static void indentColorApplyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    indentColorDialog *cd = (indentColorDialog *)clientData;
+    
+    if(verifyColors(cd)) {
+        return;
+    }
+    
+    updateRainbowColors(cd);
+}
+
+static void indentColorCloseCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    indentColorDialog *cd = (indentColorDialog *)clientData;
+    /* pop down and destroy the dialog */
+    XtDestroyWidget(cd->shell);
+}
+
+static void indentColorDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    indentColorDialog *cd = (indentColorDialog *)clientData;
+    cd->window->indentColorDialog = NULL;
+    free(cd);
+}
+
+static void indentRainbowDialogLoadColors(indentColorDialog *cd)
+{
+    char *colorList = cd->window->indentRainbowColors;
+    size_t len = colorList ? strlen(colorList) : 0;
+    
+    char *colors = malloc(len + 1);
+    colors[0] = 0;
+    
+    int b = 0;
+    for(int i=0;i<=len;i++) {
+        int c = colorList[i];
+        if(c == ';' || c == '\0') {
+            memcpy(colors+b, colorList+b, i-b);
+            colors[i] = '\n';
+            b = i+1;
+        }
+    }
+    colors[len] = 0;
+    
+    XmTextSetString(cd->textarea, colors);
+    free(colors);
+    
+}
+
+void ChooseIndentRainbowColors(WindowInfo *window)
+{
+    indentColorDialog *cd;
+    int n;
+    Arg args[20];
+    XmString str;
+    Widget form;
+    
+    // if the dialog is already displayed, just pop it to the top and return 
+    if (window->indentColorDialog != NULL) {
+      RaiseDialogWindow(window->indentColorDialog);
+      return;
+    }
+    
+    // Create a structure for keeping track of dialog state 
+    cd = NEditNew(indentColorDialog);
+    window->indentColorDialog = cd;
+    
+    // create dialog
+    n = 0;
+    XtSetArg(args[n], XmNautoUnmanage, False); n++;
+    XtSetArg(args[n], XmNresizePolicy, XmRESIZE_NONE); n++;
+    form = CreateFormDialog(window->shell, "choose colors", args, n);
+    XtVaSetValues(form, XmNshadowThickness, 0, NULL);
+    
+    cd->window = window;
+    cd->shell = XtParent(form);
+    
+    XtVaSetValues(cd->shell, XmNtitle, "Indent Rainbow Colors", NULL);
+    AddMotifCloseCallback(cd->shell, indentColorCloseCB, cd);
+    XtAddCallback(form, XmNdestroyCallback, indentColorDestroyCB, cd);
+    
+    n = 0;
+    str = XmStringCreateLocalized(
+            "One color per Line.\n\n"
+            "Colors can be entered as names (e.g. red, blue) or "
+            "as RGB triples\nin the format #RRGGBB, where each digit "
+            "is in the range 0-f.");
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNalignment, XmALIGNMENT_CENTER); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNtopOffset, 5); n++;
+    Widget infoLabel = XmCreateLabel(form, "infoLbl", args, n);
+    XtManageChild(infoLabel);
+    XmStringFree(str);
+    
+    // bottom buttons
+    /* The OK, Apply, and Cancel buttons */
+    Widget okBtn = XtVaCreateManagedWidget("ok",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, str=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 10,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 30,
+            XmNbottomOffset, 5,
+            NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, indentColorOkCB, cd);
+    XmStringFree(str);
+
+    Widget applyBtn = XtVaCreateManagedWidget(
+            "apply", xmPushButtonWidgetClass, form,
+            XmNlabelString, str=XmStringCreateSimple("Apply"),
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, MARGIN_SPACING,
+            XmNmnemonic, 'A',
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 40,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 60,
+            XmNbottomOffset, 5,
+            NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, indentColorApplyCB, cd);
+    XmStringFree(str);
+    
+    Widget closeBtn = XtVaCreateManagedWidget("close",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, str=XmStringCreateSimple("Close"),
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 70,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 90,
+            XmNbottomOffset, 5,
+            NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, indentColorCloseCB, cd);
+    XmStringFree(str);
+    
+    
+    n = 0;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, okBtn); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
+    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
+    Widget sep = XmCreateSeparator(form, "separator", args, n);
+    XtManageChild(sep);
+    
+    n = 0;
+    str = XmStringCreateLocalized("");
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, sep); n++;
+    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
+    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
+    cd->msg = XmCreateLabel(form, "msgLabel", args, n);
+    XtManageChild(cd->msg);
+    
+    
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, infoLabel); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, cd->msg); n++;
+    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
+    XtSetArg(args[n], XmNeditMode, XmMULTI_LINE_EDIT); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
+    cd->textarea = XmCreateScrolledText(form, "rainbowColorsText", args, n);
+    XtManageChild(cd->textarea);
+    
+    
+    indentRainbowDialogLoadColors(cd);
+    
+    // Handle mnemonic selection of buttons and focus to dialog
+    AddDialogMnemonicHandler(form, FALSE);
+    
+    // put up dialog 
+    Dimension w, h;
+    XtMakeResizeRequest(form, 500, 400, &w, &h);
     ManageDialogCenteredOnPointer(form);
 }
 

@@ -174,6 +174,7 @@ void SelectShellDialog(Widget parent, WindowInfo* forWindow);
 void EditLanguageModes(void);
 void ChooseFonts(WindowInfo *window, int forWindow);
 void ChooseColors(WindowInfo *window);
+void ChooseIndentRainbowColors(WindowInfo *window);
 char *LanguageModeName(int mode);
 char *GetWindowDelimiters(const WindowInfo *window);
 int ReadNumericField(char **inPtr, int *value);
