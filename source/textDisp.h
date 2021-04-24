@@ -104,6 +104,9 @@ typedef struct _textDisp {
     XftDraw *d;
     int top, left, width, height, lineNumLeft, lineNumWidth;
     int cursorPos;
+    int cursorPosCache;
+    int cursorPosCacheLeft;
+    int cursorPosCacheRight;
     int cursorOn;
     int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
@@ -115,6 +118,8 @@ typedef struct _textDisp {
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
     int cursorPreferredCol;		/* Column for vert. cursor movement */
+    int xic_x;                          /* input method x */
+    int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */
     int nBufferLines;			/* # of newlines in the buffer */
     textBuffer *buffer;     	    	/* Contains text to be displayed */
@@ -270,6 +275,7 @@ int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
 void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
+void TextDCursorLR(textDisp *textD, int *left, int *right);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);
