@@ -40,6 +40,7 @@
 #include "tags.h"
 #include "server.h"
 #include "interpret.h"
+#include "editorconfig.h"
 #include "../util/misc.h"
 #include "../util/DialogF.h"
 #include "../util/fileUtils.h"
@@ -156,6 +157,70 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
     return window;
 }
 
+static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
+    // apply editorconfig
+    char *params[1];
+    char numStr[25];
+
+    if(ec.indent_size > 0 && ec.tab_width == 0) {
+        ec.tab_width = ec.indent_size;
+    }
+
+    // indent style / tab width
+    int indent_size_set = 0;
+    if(ec.indent_style == EC_TAB) {
+        params[0] = numStr;
+        snprintf(numStr, 24, "%d", 1);
+        XtCallActionProc(window->textArea, "set_use_tabs", NULL, params, 1);
+    } else if(ec.indent_style == EC_SPACE) {
+        int emTabDist = ec.indent_size;
+        if(emTabDist == 0) {
+            XtVaGetValues(window->textArea, textNemulateTabs, &emTabDist, NULL);
+            if(emTabDist == 0) {
+                emTabDist = BufGetTabDistance(window->buffer);
+            }
+        }
+
+        params[0] = numStr;
+        snprintf(numStr, 24, "%d", 0);
+        XtCallActionProc(window->textArea, "set_use_tabs", NULL, params, 1);
+
+        params[0] = numStr;
+        snprintf(numStr, 24, "%d", emTabDist);
+        XtCallActionProc(window->textArea, "set_em_tab_dist", NULL, params, 1);
+        indent_size_set = 1;
+    }
+
+    if(ec.tab_width > 0) {
+        params[0] = numStr;
+        snprintf(numStr, 24, "%d", ec.tab_width);
+        XtCallActionProc(window->textArea, "set_tab_dist", NULL, params, 1);
+    }
+    
+    if(ec.indent_size > 0 && !indent_size_set) {
+        params[0] = numStr;
+        snprintf(numStr, 24, "%d", ec.indent_size);
+        XtCallActionProc(window->textArea, "set_em_tab_dist", NULL, params, 1);
+    }
+
+    // newline
+    switch(ec.end_of_line) {
+        default: break;
+        case EC_LF: {
+            window->fileFormat = UNIX_FILE_FORMAT;
+            break;
+        }
+        case EC_CR: {
+            window->fileFormat = MAC_FILE_FORMAT;
+            break;
+        }
+        case EC_CRLF: {
+            window->fileFormat = DOS_FILE_FORMAT;
+            break;
+        }
+    }
+}
+
 /*
 ** Open an existing file specified by name and path.  Use the window inWindow
 ** unless inWindow is NULL or points to a window which is already in use
@@ -225,12 +290,29 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         }
     }
     
+    // look for .editorconfig
+    EditorConfig ec;
+    if(GetEditorConfig()) {
+        ec = EditorConfigGet(path, name);
+    } else {
+        memset(&ec, 0, sizeof(EditorConfig));
+    }
+    if(ec.charset && !encoding) {
+        encoding = ec.charset;
+        if(ec.bom != EC_BOM_UNSET) {
+            window->bom = True;
+        }
+    }
+    
     /* Open the file */
     if (!doOpen(window, name, path, encoding, flags)) {
 	/* The user may have destroyed the window instead of closing the 
 	   warning dialog; don't close it twice */
 	safeClose(window);
 	
+        if(ec.charset) {
+            free(ec.charset);
+        }
     	return NULL;
     }
     forceShowLineNumbers(window);
@@ -261,7 +343,15 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     if(GetPrefAlwaysCheckRelTagsSpecs())
       	AddRelTagsFile(GetPrefTagFile(), path, TAG);
     AddToPrevOpenMenu(fullname);
-
+    
+    if(ec.found) {
+        ApplyEditorConfig(window, ec);
+    }
+    
+    if(ec.charset) {
+        free(ec.charset);
+    }
+    
     return window;
 }
 

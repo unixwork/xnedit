@@ -26,7 +26,7 @@ CFLAGS=-O -std=gnu99 -I/usr/X11R6/include -I/usr/include/X11 -DUSE_DIRENT -DUSE_
 
 ARFLAGS=-urs
 
-LIBS=-L/usr/X11R6/lib -lXm -lXt -lX11 -lXrender -lXpm -lm $(shell pkg-config --libs xft fontconfig)
+LIBS=-L/usr/X11R6/lib -lpcre -lXm -lXt -lX11 -lXrender -lXpm -lm $(shell pkg-config --libs xft fontconfig)
 
 include Makefile.common
 

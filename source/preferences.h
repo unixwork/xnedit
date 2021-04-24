@@ -126,6 +126,8 @@ void SetPrefRepositionDialogs(int state);
 int GetPrefRepositionDialogs(void);
 void SetPrefAutoScroll(int state);
 int GetPrefAutoScroll(void);
+void SetPrefEditorConfig(int state);
+int GetPrefEditorConfig(void);
 int GetVerticalAutoScroll(void);
 void SetPrefAppendLF(int state);
 int GetPrefAppendLF(void);
@@ -166,6 +168,8 @@ int GetPrefStdOpenDialog(void);
 char *GetPrefDelimiters(void);
 int GetPrefMaxPrevOpenFiles(void);
 int GetPrefTypingHidesPointer(void);
+int GetEditorConfig(void);
+void SetEditorConfig(int state);
 #ifdef SGI_CUSTOM
 void SetPrefShortMenus(int state);
 int GetPrefShortMenus(void);

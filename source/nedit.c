@@ -38,6 +38,7 @@
 /* #include "textBuf.h" */
 #include "file.h"
 #include "preferences.h"
+#include "editorconfig.h"
 #include "regularExp.h"
 #include "selection.h"
 #include "tags.h"
