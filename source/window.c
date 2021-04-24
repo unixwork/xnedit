@@ -330,6 +330,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showLineNumbers = GetPrefLineNums();
     window->showInfoBar = False;
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->highlightCursorLine = GetPrefHighlightCursorLine();
+    window->indentRainbow = GetPrefIndentRainbow();
+    window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -352,6 +355,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
+    window->indentColorDialog = NULL;
     window->font = FontRef(GetPrefFont());
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());
@@ -851,7 +855,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(HILITE_FG_COLOR),
               GetPrefColorName(HILITE_BG_COLOR),
               GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(CURSOR_FG_COLOR));
+              GetPrefColorName(LINENO_BG_COLOR), 
+              GetPrefColorName(CURSOR_FG_COLOR),
+              GetPrefColorName(CURSOR_LINE_BG_COLOR));
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -1246,6 +1252,7 @@ void CloseWindow(WindowInfo *window)
 
 	/* remove and deallocate all of the widgets associated with window */
     	NEditFree(window->backlightCharTypes); /* we made a copy earlier on */
+        NEditFree(window->indentRainbowColors);
 	CloseAllPopupsFor(window->shell);
     	XtDestroyWidget(window->shell);
     }
@@ -1386,8 +1393,8 @@ void SplitPane(WindowInfo *window)
                 NULL);
     TextDSetColors( newTextD, textD->fgPixel, textD->bgPixel, 
             textD->selectFGPixel, textD->selectBGPixel, textD->highlightFGPixel,
-            textD->highlightBGPixel, textD->lineNumFGPixel, 
-            textD->cursorFGPixel );
+            textD->highlightBGPixel, textD->lineNumFGPixel, textD->lineNumBGPixel,
+            textD->cursorFGPixel, textD->lineHighlightBGPixel);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2144,9 +2151,10 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     UpdateMinPaneHeights(window);
 }
 
-void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
+void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *cursorFg)
+        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
+        const char *cursorFg, const char *lineHiBg)
 {
     int i, dummy;
     Pixel   textFgPix   = AllocColor( window->textArea, textFg, 
@@ -2163,7 +2171,11 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                     &dummy, &dummy, &dummy),
             lineNoFgPix = AllocColor( window->textArea, lineNoFg, 
                     &dummy, &dummy, &dummy),
+            lineNoBgPix = AllocColor( window->textArea, lineNoBg, 
+                    &dummy, &dummy, &dummy),
             cursorFgPix = AllocColor( window->textArea, cursorFg, 
+                    &dummy, &dummy, &dummy),
+            lineHiBgPix = AllocColor( window->textArea, lineHiBg, 
                     &dummy, &dummy, &dummy);
     textDisp *textD;
 
@@ -2174,7 +2186,8 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
     TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-            hiliteFgPix, hiliteBgPix, lineNoFgPix, cursorFgPix );
+            hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
+            cursorFgPix, lineHiBgPix );
     /* Update any additional panes */
     for (i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i],
@@ -2183,7 +2196,8 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
         TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-                hiliteFgPix, hiliteBgPix, lineNoFgPix, cursorFgPix );
+                hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
+                cursorFgPix, lineHiBgPix);
     }
     
     /* Redo any syntax highlighting */
@@ -2511,6 +2525,9 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             XmNshadowType, XmSHADOW_IN, NULL);      
     text = XtVaCreateManagedWidget("text", textWidgetClass, frame,
             textNbacklightCharTypes, window->backlightCharTypes,
+            textNhighlightCursorLine, window->highlightCursorLine,
+            textNindentRainbow, window->indentRainbow,
+            textNindentRainbowColors, window->indentRainbowColors,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
@@ -3368,6 +3385,40 @@ static void patchedRemoveChild(Widget child)
 }
 #endif /* ROWCOLPATCH */
 
+void SetHighlightCursorLine(WindowInfo *window, Boolean state)
+{
+    window->highlightCursorLine = state;
+    
+    XtVaSetValues(window->textArea,
+          textNhighlightCursorLine, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNhighlightCursorLine, state, NULL);
+    }
+}
+
+void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
+{
+    NEditFree(window->indentRainbowColors);
+    window->indentRainbowColors = NEditStrdup(colorList);
+    
+    XtVaSetValues(window->textArea,
+          textNindentRainbowColors, window->indentRainbowColors, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNindentRainbowColors, window->indentRainbowColors, NULL);
+    }
+}
+
+void SetIndentRainbow(WindowInfo *window, Boolean state)
+{
+    window->indentRainbow = state;
+    
+    XtVaSetValues(window->textArea,
+          textNindentRainbow, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNindentRainbow, state, NULL);
+    }
+}
+
 /*
 ** Set the backlight character class string
 */
@@ -3598,6 +3649,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->showMatchingStyle = GetPrefShowMatching();
     window->matchSyntaxBased = GetPrefMatchSyntaxBased();
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->indentRainbow = GetPrefIndentRainbow();
+    window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -3619,6 +3672,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
+    window->indentColorDialog = NULL;
     window->font = FontRef(GetPrefFont());
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());
@@ -3695,7 +3749,9 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(HILITE_FG_COLOR),
               GetPrefColorName(HILITE_BG_COLOR),
               GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(CURSOR_FG_COLOR));
+              GetPrefColorName(LINENO_BG_COLOR),
+              GetPrefColorName(CURSOR_FG_COLOR),
+              GetPrefColorName(CURSOR_LINE_BG_COLOR));
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -4314,6 +4370,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
     XtSetSensitive(window->highlightItem, window->languageMode != PLAIN_LANGUAGE_MODE);
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
+    XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
 #ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
 #endif
@@ -4809,7 +4866,8 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
             TextDSetColors(newTextD, textD->fgPixel, textD->bgPixel, 
                     textD->selectFGPixel, textD->selectBGPixel,
                     textD->highlightFGPixel,textD->highlightBGPixel,
-                    textD->lineNumFGPixel, textD->cursorFGPixel);
+                    textD->lineNumFGPixel, textD->lineNumBGPixel,
+                    textD->cursorFGPixel, textD->lineHighlightBGPixel);
 	}
         
 	/* Set the minimum pane height in the new pane */
@@ -4892,7 +4950,10 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     XtCallActionProc(window->textArea, "set_fonts", NULL, params, 4);
     
     window->zoom = orgWin->zoom;
-
+    
+    SetHighlightCursorLine(window, orgWin->highlightCursorLine);
+    SetIndentRainbow(window, orgWin->indentRainbow);
+    SetIndentRainbowColors(window, orgWin->indentRainbowColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
     /* Clone rangeset info.

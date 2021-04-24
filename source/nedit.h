@@ -54,9 +54,11 @@
 #define NEDIT_DEFAULT_HI_FG     "white" /* These are colors for flashing */
 #define NEDIT_DEFAULT_HI_BG     "red"   /*   matching parens. */
 #define NEDIT_DEFAULT_LINENO_FG "black"
+#define NEDIT_DEFAULT_LINENO_BG "rgb:f2/f2/f2"
 #define NEDIT_DEFAULT_CURSOR_FG "black"
 #define NEDIT_DEFAULT_HELP_FG   "black"
 #define NEDIT_DEFAULT_HELP_BG   "rgb:cc/cc/cc"
+#define NEDIT_DEFAULT_CURSOR_LINE_BG "rgb:ee/ee/ee"
 
 
 /* Tuning parameters */
@@ -196,7 +198,9 @@ enum colorTypes {
     HILITE_FG_COLOR,
     HILITE_BG_COLOR,
     LINENO_FG_COLOR,
+    LINENO_BG_COLOR,
     CURSOR_FG_COLOR,
+    CURSOR_LINE_BG_COLOR,
     NUM_COLORS
 };
 
@@ -332,7 +336,8 @@ typedef struct _WindowInfo {
     Widget	replaceMultiFileList;
     Widget	replaceMultiFilePathBtn;
     Widget	fontDialog;		/* NULL, unless font dialog is up */
-    Widget	colorDialog;		/* NULL, unless color dialog is up */
+    void        *colorDialog;		/* NULL, unless color dialog is up, type colorDialog* */
+    void        *indentColorDialog;      /* NULL, unless dialog is up, type indentColorDialog  */
     Widget	readOnlyItem;		/* menu bar settable widgets... */
     Widget	autoSaveItem;
     Widget	saveLastItem;
@@ -397,8 +402,12 @@ typedef struct _WindowInfo {
     Widget	matchSyntaxBasedDefItem;
     Widget	highlightOffDefItem;
     Widget	highlightDefItem;
+    Widget      highlightCursorLineItem;
+    Widget	indentRainbowItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
+    Widget      highlightCursorLineDefItem;
+    Widget      indentRainbowDefItem;
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;
@@ -524,7 +533,10 @@ typedef struct _WindowInfo {
     Boolean     showInfoBar;            /* is the infobar shown */
     Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
     Boolean	backlightChars;		/* is char backlighting turned on? */
+    Boolean     highlightCursorLine;    /* is cursor line highlighting on? */
     char	*backlightCharTypes;	/* what backlighting to use */
+    Boolean     indentRainbow;          /* is indentation highlight turned onß*/
+    char        *indentRainbowColors;   /* indent rainbow color lists */
     Boolean	modeMessageDisplayed;	/* special stats line banner for learn
     					   and shell command executing modes */
     char	*modeMessage;		/* stats line banner content for learn

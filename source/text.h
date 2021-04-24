@@ -59,6 +59,10 @@
 #define textCCursorForeground "CursorForeground"
 #define textNlineNumForeground "lineNumForeground"
 #define textCLineNumForeground "LineNumForeground"
+#define textNlineNumBackground "lineNumForeground"
+#define textCLineNumBackground "LineNumBackground"
+#define textNlineHighlightBackground "lineHighlightBackground"
+#define textClineHighlightBackground "LineHighlightBackground"
 #define textNcalltipForeground "calltipForeground"
 #define textCcalltipForeground "CalltipForeground"
 #define textNcalltipBackground "calltipBackground"
@@ -115,6 +119,12 @@
 #define textCCursorVPadding "CursorVPadding"
 #define textNbacklightCharTypes "backlightCharTypes"
 #define textCBacklightCharTypes "BacklightCharTypes"
+#define textNindentRainbow "indentRainbow"
+#define textCindentRainbow "indentRainbow"
+#define textNindentRainbowColors "indentRainbowColors"
+#define textCindentRainbowColors "indentRainbowColors"
+#define textNhighlightCursorLine "highlightCursorLine"
+#define textChighlightCursorLine "highlightCursorLine"
 
 
 extern WidgetClass textWidgetClass;

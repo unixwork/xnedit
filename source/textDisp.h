@@ -162,6 +162,7 @@ typedef struct _textDisp {
     GC selectBGGC, highlightBGGC;	/* GCs for erasing text */
     GC cursorFGGC;			/* GC for drawing the cursor */
     GC lineNumGC;   	    	    	/* GC for drawing line numbers */
+    GC lineHighlightBGGC;               /* GC for highlighted cursor line */
     GC styleGC;     	    	    	/* GC with color and font unspecified
     	    	    	    	    	   for drawing colored/styled text */
     Pixel fgPixel, bgPixel;		/* Foreground/Background colors */
@@ -170,6 +171,8 @@ typedef struct _textDisp {
     Pixel highlightFGPixel,             /* Highlight colors are used when */
           highlightBGPixel;             /*    flashing matching parens    */
     Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
+    Pixel lineNumBGPixel;               /* Background color for line numbers */
+    Pixel lineHighlightBGPixel;         /* BG for highlighted cursor line */
     Pixel cursorFGPixel;
     Pixel *bgClassPixel;		/* table of colors for each BG class */
     XftColor fgColor;                   /* Foreground text color */
@@ -177,6 +180,10 @@ typedef struct _textDisp {
     XftColor highlightFGColor;          /* Foreground highlighted text color */
     XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
+    
+    Boolean indentRainbow;
+    Pixel *indentRainbowColors;
+    int numRainbowColors;
     
     Widget calltipW;                    /* The Label widget for the calltip */
     Widget calltipShell;                /* The Shell that holds the calltip */
@@ -194,19 +201,22 @@ typedef struct _textDisp {
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
     Boolean disableRedisplay;
+    Boolean highlightCursorLine;
     Boolean fixLeftClipAfterResize;     /* after resize, left clip could be
                                            in the middle of a glyph */
     graphicExposeTranslationEntry *graphicsExposeQueue;
 } textDisp;
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
-	Position left, Position top, Position width, Position height,
-	Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-	NFont *font, Pixel bgPixel, Pixel fgPixel,
-	Pixel selectFGPixel, Pixel selectBGPixel, Pixel highlightFGPixel,
-	Pixel highlightBGPixel, Pixel cursorFGPixel, Pixel lineNumFGPixel,
-        int continuousWrap, int wrapMargin, XmString bgClassString, 
-        Pixel calltipFGPixel, Pixel calltipBGPixel);
+        Position left, Position top, Position width, Position height,
+        Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
+        NFont *font, Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
+        Pixel selectBGPixel, Pixel highlightFGPixel, Pixel highlightBGPixel,
+        Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
+        int continuousWrap, int wrapMargin, XmString bgClassString,
+        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
+        Boolean indentRainbow, char *indentRainbowColors,
+        Boolean highlightCursorLine);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
@@ -215,7 +225,7 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
 void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
         Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
-        Pixel lineNoFgP, Pixel cursorFgP);
+        Pixel lineNoFgP, Pixel lineNoBgP, Pixel cursorFgP, Pixel lineHiBgP);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
@@ -262,6 +272,9 @@ void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
+void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
+void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
+void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);

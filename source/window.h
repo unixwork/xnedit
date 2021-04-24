@@ -52,7 +52,8 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
 	const char *boldName, const char *boldItalicName);
 void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *cursorFg);
+        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
+        const char *cursorFg, const char *lineHiBg);
 void SetOverstrike(WindowInfo *window, int overstrike);
 void SetAutoWrap(WindowInfo *window, WrapStyle state);
 void SetAutoScroll(WindowInfo *window, int margin);
@@ -101,6 +102,9 @@ void RefreshWindowStates(WindowInfo *window);
 void AllWindowsBusy(const char* message);
 void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
+void SetHighlightCursorLine(WindowInfo *window, Boolean state);
+void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
+void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);

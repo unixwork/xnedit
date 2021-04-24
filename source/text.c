@@ -652,6 +652,9 @@ static XtResource resources[] = {
     {textNlineNumForeground, textCLineNumForeground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.lineNumFGPixel), XmRString, 
       NEDIT_DEFAULT_LINENO_FG},
+    {textNlineNumBackground, textCLineNumBackground, XmRPixel,sizeof(Pixel),
+      XtOffset(TextWidget, text.lineNumBGPixel), XmRString, 
+      NEDIT_DEFAULT_LINENO_BG},
     {textNcursorForeground, textCCursorForeground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.cursorFGPixel), XmRString, 
       NEDIT_DEFAULT_CURSOR_FG},
@@ -661,6 +664,15 @@ static XtResource resources[] = {
     {textNcalltipBackground, textCcalltipBackground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.calltipBGPixel), XmRString, 
       NEDIT_DEFAULT_CALLTIP_BG},
+    {textNlineHighlightBackground, textClineHighlightBackground, XmRPixel,sizeof(Pixel),
+      XtOffset(TextWidget, text.lineHighlightBGPixel), XmRString, 
+      NEDIT_DEFAULT_CURSOR_LINE_BG},
+    {textNhighlightCursorLine, textChighlightCursorLine, XmRBoolean, sizeof(Boolean),
+      XtOffset(TextWidget, text.highlightCursorLine), XmRString, "False"},
+    {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
+      XtOffset(TextWidget, text.indentRainbow), XmRString, "False"},
+    {textNindentRainbowColors, textCindentRainbowColors, XmRPointer, sizeof(XmRPointer),
+      XtOffset(TextWidget, text.indentRainbowColors), XmRPointer, NULL},
     {textNbacklightCharTypes,textCBacklightCharTypes,XmRString,sizeof(XmString),
       XtOffset(TextWidget, text.backlightCharTypes), XmRString, NULL},
     {textNrows, textCRows, XmRInt,sizeof(int),
@@ -863,10 +875,12 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
 	    new->text.highlightBGPixel, new->text.cursorFGPixel,
-	    new->text.lineNumFGPixel,
+	    new->text.lineNumFGPixel, 0, // TODO: replace 0
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel);
+          new->text.calltipBGPixel, 0, // TODO: replace 0
+          new->text.indentRainbow, new->text.indentRainbowColors,
+          new->text.highlightCursorLine);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
@@ -875,6 +889,10 @@ static void initialize(TextWidget request, TextWidget new)
     delimiters = (char*)NEditMalloc(strlen(new->text.delimiters) + 4);
     sprintf(delimiters, "%s%s", " \t\n", new->text.delimiters);
     new->text.delimiters = delimiters;
+    
+    if(new->text.indentRainbowColors) {
+        new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
+    }
 
     /* Start with the cursor blanked (widgets don't have focus on creation,
        the initial FocusIn event will unblank it and get blinking started) */
@@ -1203,6 +1221,27 @@ static Boolean setValues(TextWidget current, TextWidget request,
         TextDSetupBGClasses((Widget)new, new->text.backlightCharTypes,
                 &new->text.textD->bgClassPixel, &new->text.textD->bgClass,
                 new->text.textD->bgPixel);
+        redraw = True;
+    }
+    
+    if (new->text.highlightCursorLine != current->text.highlightCursorLine)
+    {
+        TextDSetHighlightCursorLine(new->text.textD, new->text.highlightCursorLine);
+        redraw = True;
+    }
+    
+    if (new->text.indentRainbow != current->text.indentRainbow)
+    {
+        TextDSetIndentRainbow(new->text.textD, new->text.indentRainbow);
+        redraw = True;
+    }
+    if (new->text.indentRainbowColors != current->text.indentRainbowColors)
+    {
+        if(current->text.indentRainbowColors) {
+            NEditFree(current->text.indentRainbowColors);
+        }
+        TextDSetIndentRainbowColors(new->text.textD, new->text.indentRainbowColors);
+        new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
         redraw = True;
     }
     

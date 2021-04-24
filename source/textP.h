@@ -59,7 +59,7 @@ extern TextClassRec nTextClassRec;
 typedef struct _TextPart {
     /* resources */
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
-    Pixel cursorFGPixel, lineNumFGPixel, calltipFGPixel, calltipBGPixel;
+    Pixel cursorFGPixel, lineNumFGPixel, lineNumBGPixel, calltipFGPixel, calltipBGPixel, lineHighlightBGPixel;
     NFont *font2;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;
@@ -128,6 +128,11 @@ typedef struct _TextPart {
     int dragSourceDeleted;  	    	/* # of chars. deleted "" */
     int dragNLines; 	    	    	/* # of newlines in text being drag'd */
     XmString backlightCharTypes;	/* background class string to parse */
+    
+    Boolean highlightCursorLine;        /* highlight currently selected line */
+    
+    Boolean indentRainbow;              /* indent rainbow enabled? */
+    char *indentRainbowColors;          /* rainbow color list */
     
     XIM xim;
     XIC xic;
