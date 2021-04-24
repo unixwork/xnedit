@@ -823,7 +823,7 @@ static PrefDescripRec PrefDescrip[] = {
     {"indentRainbow", "IndentRainbow", PREF_BOOLEAN, "False",
       &PrefData.indentRainbow, NULL, True},
     {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
-      "#f5faff;#deffe8;#f5f0fc;#fffedb;#fcf0fb;#fff4e6",
+      "#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff",
       &PrefData.indentRainbowColors, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
