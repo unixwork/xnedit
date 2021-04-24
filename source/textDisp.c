@@ -2316,7 +2316,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         gcValues.foreground = gcValues.background = bground;
         XChangeGC(XtDisplay(textD->w), gc,
                 GCForeground | GCBackground, &gcValues);
-        if(bground == textD->bgPixel && highlightLine && textD->highlightCursorLine) {
+        if((bground == textD->bgPixel || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
             bgGC = textD->lineHighlightBGGC;
         }
     }
