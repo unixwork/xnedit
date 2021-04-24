@@ -2089,7 +2089,11 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         XftDrawSetClipRectangles(textD->d, leftClip, y, &rect, 1);
     }
     
-    int rbCurrentPixelIndex = indentRainbow ? 0 : -1;
+    int rbCurrentPixelIndex = 0;
+    if(!indentRainbow) {
+        rbCurrentPixelIndex = -1;
+        rbPixelIndex = -1;
+    }
     
     /* check if the line contains the cursor
      */
@@ -2232,6 +2236,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
 	int toX, FcChar32 *string, int nChars, Boolean highlightLine)
 {
+    if(toX < fromX) return;
+    
     GC gc, bgGC;
     XGCValues gcValues;
     NFont *fontList = textD->font;
