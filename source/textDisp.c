@@ -906,11 +906,18 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     textDRedisplayRange(textD, left, right);
     
     if(hiline) {
-        int oldLine, newLine;
+        int oldLine, newLine, oldLine2, newLine2;
         posToVisibleLineNum(textD, oldLineStart, &oldLine);
+        posToVisibleLineNum(textD, oldLineEnd, &oldLine2);
         posToVisibleLineNum(textD, newLineStart, &newLine);
-        redisplayLine(textD, oldLine, 0, INT_MAX, 0, INT_MAX);
-        redisplayLine(textD, newLine, 0, INT_MAX, 0, INT_MAX);
+        posToVisibleLineNum(textD, newLineEnd, &newLine2);
+        
+        for(int i=oldLine;i<=oldLine2;i++) {
+            redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
+        }
+        for(int i=newLine;i<=newLine2;i++) {
+            redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
+        }
     }
 }
 
@@ -1953,6 +1960,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
+    int startOfLine = INT_MAX;
     int endOfLine = 0;
     int cursorLine = False;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
@@ -1995,6 +2003,9 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 	lineLen = visLineLength(textD, visLineNum);
 	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
         endOfLine = BufEndOfLine(buf, lineStartPos);
+        if(textD->highlightCursorLine) {
+            startOfLine = BufStartOfLine(buf, lineStartPos);
+        }
     }
      
     /* Space beyond the end of the line is still counted in units of characters
@@ -2122,7 +2133,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* check if the line contains the cursor
      */
-    if(textD->highlightCursorLine && lineStr && lineStartPos <= cursorPos && cursorPos <= endOfLine) {
+    if(textD->highlightCursorLine && startOfLine <= cursorPos && cursorPos <= endOfLine) {
         cursorLine = True;
     }
     
