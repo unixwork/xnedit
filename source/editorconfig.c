@@ -146,12 +146,39 @@ static char* ec_strdup(char *str, int len) {
     return newstr;
 }
 
+static char* ec_strnchr(char *str, int len, char c) {
+    for(int i=0;i<len;i++) {
+        if(str[i] == c) {
+            return str+i;
+        }
+    }
+    return NULL;
+}
+
 static ECSection* create_section(char *name, int len) {
     ECSection *sec = malloc(sizeof(ECSection));
     memset(sec, 0, sizeof(ECSection));
     
-    if(name) {
-        sec->name = ec_strdup(name, len);
+    if(name && len > 0) {
+        char *s = ec_strnchr(name, len, '/');
+        if(!s) {
+            // add **/
+            int newlen = len+3;
+            sec->name = malloc(newlen+1);
+            memcpy(sec->name, "**/", 3);
+            memcpy(sec->name+3, name, len);
+            sec->name[newlen] = 0;
+        } else if(name[0] == '/') {
+            sec->name = ec_strdup(name, len);
+        } else {
+            // add **/
+            int newlen = len+1;
+            sec->name = malloc(newlen+1);
+            sec->name[0] = '/';
+            memcpy(sec->name+1, name, len);
+            sec->name[newlen] = 0;
+        }
+        
     }
     
     return sec;
@@ -359,23 +386,23 @@ static int ec_isroot(ECFile *ecf) {
 static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
     ECKeyValue *v = sec->values;
     while(v) {
-        if(config->indent_style == EC_INDENT_STYLE_UNSET && !strcmp(v->name, "indent_style")) {
+        if(!strcmp(v->name, "indent_style")) {
             if(!strcmp(v->value, "space")) {
                 config->indent_style = EC_SPACE;
             } else if(!strcmp(v->value, "tab")) {
                 config->indent_style = EC_TAB;
             }
-        } else if(config->indent_size == 0 && !strcmp(v->name, "indent_size")) {
+        } else if(!strcmp(v->name, "indent_size")) {
             int val = 0;
             if(ec_getint(v->value, &val)) {
                 config->indent_size = val;
             }
-        } else if(config->tab_width == 0 && !strcmp(v->name, "tab_width")) {
+        } else if(!strcmp(v->name, "tab_width")) {
             int val = 0;
             if(ec_getint(v->value, &val)) {
                 config->tab_width = val;
             }
-        } else if(config->end_of_line == EC_EOL_UNSET && !strcmp(v->name, "end_of_line")) {
+        } else if(EC_EOL_UNSET && !strcmp(v->name, "end_of_line")) {
             if(!strcmp(v->value, "lf")) {
                 config->end_of_line = EC_LF;
             } else if(!strcmp(v->value, "cr")) {
@@ -383,7 +410,11 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
             } else if(!strcmp(v->value, "crlf")) {
                 config->end_of_line = EC_CRLF;
             }
-        } else if(!config->charset && !strcmp(v->name, "charset")) {
+        } else if(!strcmp(v->name, "charset")) {
+            if(config->charset) {
+                free(config->charset);
+            }
+            
             if(!strcmp(v->value, "utf-8-bom")) {
                 config->charset = strdup("utf-8");
                 config->bom = EC_BOM;
@@ -414,7 +445,10 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
 
 int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
     size_t parentlen = strlen(ecf->parent);
-    const char *relpath = filepath + parentlen;
+    const char *relpath = filepath + parentlen - 1;
+    
+    EditorConfig local_ec;
+    memset(&local_ec, 0, sizeof(EditorConfig));
     
     if(ECParse(ecf)) {
         char *f = ConcatPath(ecf->parent, ".editorconfig");
@@ -428,12 +462,33 @@ int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
     ECSection *sec = ecf->sections;
     while(sec) {
         if(sec->name && !ec_glob(sec->name, relpath)) {
-            if(sec_loadvalues(sec, config)) {
+            if(sec_loadvalues(sec, &local_ec)) {
                 // every possible setting already set
-                return 1;
+                // we can skip the parent config
+                root = 1;
             }
         }
         sec = sec->next;
+    }
+    
+    // merge settings
+    if(config->indent_style == EC_INDENT_STYLE_UNSET) {
+        config->indent_style = local_ec.indent_style;
+    }
+    if(config->indent_size == 0) {
+        config->indent_size = local_ec.indent_size;
+    }
+    if(config->tab_width == 0) {
+        config->tab_width = local_ec.tab_width;
+    }
+    if(config->end_of_line == EC_EOL_UNSET) {
+        config->end_of_line = local_ec.end_of_line;
+    }
+    if(!config->charset) {
+        config->charset = local_ec.charset;
+    }
+    if(config->bom == EC_BOM_UNSET) {
+        config->bom = local_ec.bom;
     }
     
     return root;
