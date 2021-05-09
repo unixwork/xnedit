@@ -1551,7 +1551,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
                 "%d non-convertible characters skipped\n"
     			"%d non-reversible characters encountered\n"
     			"%d unknown errors occurred\n"
-    			"Save anyway?", "NO", "YES",
+    			"Save anyway?", "YES", "NO",
                 skipped, nonreversible, unerr);
     }
     
@@ -1565,7 +1565,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
                 "%s not saved:\n%s", "OK", window->filename, errorString());
     }
 
-    if (ferror(fp) || eresp == 1) {
+    if (ferror(fp) || eresp == 2) {
         fclose(fp);
         remove(fullname);
         NEditFree(fileString);
