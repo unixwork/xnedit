@@ -262,6 +262,17 @@ static char defaultTranslations[] =
     /* Home */
     "~Shift ~Ctrl Alt<Key>osfBeginLine: last_document()\n"
 
+    /* Keypad */
+    ":<Key>KP_7: self_insert()\n"
+    ":<Key>KP_8: self_insert()\n"
+    ":<Key>KP_9: self_insert()\n"
+    ":<Key>KP_4: self_insert()\n"
+    ":<Key>KP_6: self_insert()\n"
+    ":<Key>KP_1: self_insert()\n"
+    ":<Key>KP_2: self_insert()\n"
+    ":<Key>KP_3: self_insert()\n"
+    ":<Key>KP_0: self_insert()\n"
+
     /* Backspace */
     "Ctrl<KeyPress>osfBackSpace: delete_previous_word()\n"
     "<KeyPress>osfBackSpace: delete_previous_character()\n"
@@ -288,17 +299,6 @@ static char defaultTranslations[] =
     "<KeyPress>osfCopy: copy_clipboard()\n"
     "<KeyPress>osfPaste: paste_clipboard()\n"
     "<KeyPress>osfPrimaryPaste: copy_primary()\n"
-
-    /* Keypad */
-    ":<Key>KP_7: self_insert()\n"
-    ":<Key>KP_8: self_insert()\n"
-    ":<Key>KP_9: self_insert()\n"
-    ":<Key>KP_4: self_insert()\n"
-    ":<Key>KP_6: self_insert()\n"
-    ":<Key>KP_1: self_insert()\n"
-    ":<Key>KP_2: self_insert()\n"
-    ":<Key>KP_3: self_insert()\n"
-    ":<Key>KP_0: self_insert()\n"
 
     /* BeginLine */
     "Alt Shift Ctrl<KeyPress>osfBeginLine: beginning_of_file(\"extend\", \"rect\")\n"
