@@ -289,6 +289,16 @@ static char defaultTranslations[] =
     "<KeyPress>osfPaste: paste_clipboard()\n"
     "<KeyPress>osfPrimaryPaste: copy_primary()\n"
 
+    /* Keypad */
+    ":<Key>KP_7: self_insert()\n"
+    ":<Key>KP_8: self_insert()\n"
+    ":<Key>KP_9: self_insert()\n"
+    ":<Key>KP_4: self_insert()\n"
+    ":<Key>KP_6: self_insert()\n"
+    ":<Key>KP_1: self_insert()\n"
+    ":<Key>KP_2: self_insert()\n"
+    ":<Key>KP_3: self_insert()\n"
+
     /* BeginLine */
     "Alt Shift Ctrl<KeyPress>osfBeginLine: beginning_of_file(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfBeginLine: beginning_of_file(\"extend\" \"rect\")\n"

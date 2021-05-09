@@ -161,6 +161,14 @@ s ~m ~a <Key>Tab:               PrimitivePrevTabGroup()\n\
 <Btn2Up>:                       insertPrimary()\n\
 Ctrl<KeyPress>v:                paste-clipboard()\n\
 Button1<MotionNotify>:          adjustselection()\n\
+:<Key>KP_7:                     insert()\n\
+:<Key>KP_8:                     insert()\n\
+:<Key>KP_9:                     insert()\n\
+:<Key>KP_4:                     insert()\n\
+:<Key>KP_6:                     insert()\n\
+:<Key>KP_1:                     insert()\n\
+:<Key>KP_2:                     insert()\n\
+:<Key>KP_3:                     insert()\n\
 <KeyPress>Return:               PrimitiveParentActivate() action()\n\
 <Key>osfActivate:               PrimitiveParentActivate() action()\n\
 <Key>osfCancel:                 PrimitiveParentCancel()\n\
