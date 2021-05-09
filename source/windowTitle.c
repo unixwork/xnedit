@@ -96,6 +96,7 @@ static struct {
     Widget      nameW;
     Widget      mdirW;
     Widget      ndirW;
+    Widget      encW;
     
     Widget      oDirW;
     Widget      oCcViewTagW;
@@ -117,7 +118,7 @@ static struct {
     int 	suppressFormatUpdate;
 } etDialog = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
               NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-              NULL,NULL,"","","","",0,0,0,0,0};
+              NULL,NULL,NULL,"","","","",0,0,0,0,0};
 
 
 
@@ -277,6 +278,7 @@ char *FormatWindowTitle(const char* filename,
     int userNamePresent = False;
     int serverNamePresent = False;
     int clearCasePresent = False;
+    int encodingPresent = False;
     int fileStatusPresent = False;
     int dirNamePresent = False;
     int noOfComponents = -1;
@@ -324,7 +326,8 @@ char *FormatWindowTitle(const char* filename,
                        titlePtr = safeStrCpy(titlePtr, titleEnd, path);
                     }
                     break;
-                case 'e':
+                case 'e': /* file encoding */
+                    encodingPresent = True;
                     enc_len = encoding ? strlen(encoding) : 0;
                     enc = encoding;
                     if(enc_len == 0) {
@@ -440,9 +443,8 @@ char *FormatWindowTitle(const char* filename,
         XmToggleButtonSetState(etDialog.fileW,   fileNamePresent,   False);
         XmToggleButtonSetState(etDialog.statusW, fileStatusPresent, False);
         XmToggleButtonSetState(etDialog.serverW, serverNamePresent, False);
-#ifndef VMS
         XmToggleButtonSetState(etDialog.ccW,     clearCasePresent,  False);
-#endif /* VMS */
+        XmToggleButtonSetState(etDialog.encW,    encodingPresent,   False);
         XmToggleButtonSetState(etDialog.dirW,    dirNamePresent,    False);
         XmToggleButtonSetState(etDialog.hostW,   hostNamePresent,   False);
         XmToggleButtonSetState(etDialog.nameW,   userNamePresent,   False);
@@ -845,6 +847,14 @@ static void toggleUserCB(Widget w, XtPointer clientData, XtPointer callData)
 	removeFromFormat("%u");
 }
 
+static void toggleEncodingCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    if (XmToggleButtonGetState(etDialog.encW))
+	appendToFormat(" %e");
+    else
+	removeFromFormat("%e");
+}
+
 static void toggleDirectoryCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.dirW))
@@ -1102,19 +1112,26 @@ static void createEditTitleDialog(Widget parent)
 	    XmNtopWidget, etDialog.statusW,
     	    XmNlabelString, s1=XmStringCreateSimple("ClearCase view tag (%c) "),
     	    XmNmnemonic, 'C', NULL);
-#ifdef VMS
-    XtSetSensitive(etDialog.ccW, False);
-#else
     XtAddCallback(etDialog.ccW, XmNvalueChangedCallback, toggleClearCaseCB, NULL);
-#endif /* VMS */
     XmStringFree(s1);
 
-    etDialog.dirW = XtVaCreateManagedWidget("directory", 
+    etDialog.encW = XtVaCreateManagedWidget("encoding", 
     	    xmToggleButtonWidgetClass, selectBox,
 	    XmNleftAttachment, XmATTACH_POSITION,
 	    XmNleftPosition, RADIO_INDENT,
 	    XmNtopAttachment, XmATTACH_WIDGET,
 	    XmNtopWidget, etDialog.ccW,
+    	    XmNlabelString, s1=XmStringCreateSimple("Encoding (%e)"),
+    	    XmNmnemonic, 'E', NULL);
+    XtAddCallback(etDialog.encW, XmNvalueChangedCallback, toggleEncodingCB, NULL);
+    XmStringFree(s1);
+    
+    etDialog.dirW = XtVaCreateManagedWidget("directory", 
+    	    xmToggleButtonWidgetClass, selectBox,
+	    XmNleftAttachment, XmATTACH_POSITION,
+	    XmNleftPosition, RADIO_INDENT,
+	    XmNtopAttachment, XmATTACH_WIDGET,
+	    XmNtopWidget, etDialog.encW,
     	    XmNlabelString, s1=XmStringCreateSimple("Directory (%d),"),
     	    XmNmnemonic, 'D', NULL);
     XtAddCallback(etDialog.dirW, XmNvalueChangedCallback, toggleDirectoryCB, NULL);
@@ -1127,7 +1144,7 @@ static void createEditTitleDialog(Widget parent)
 	    XmNleftAttachment, XmATTACH_WIDGET,
 	    XmNleftWidget, etDialog.dirW,
 	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.ccW,
+	    XmNtopWidget, etDialog.encW,
     	    XmNlabelString, s1=XmStringCreateSimple("max. components: "),
     	    XmNmnemonic, 'x', NULL);
     XmStringFree(s1);
@@ -1139,7 +1156,7 @@ static void createEditTitleDialog(Widget parent)
 	    XmNleftAttachment, XmATTACH_WIDGET,
 	    XmNleftWidget, etDialog.mdirW,
 	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.ccW,
+	    XmNtopWidget, etDialog.encW,
     	    NULL);
     XtAddCallback(etDialog.ndirW, XmNvalueChangedCallback, enterMaxDirCB, NULL);
     RemapDeleteKey(etDialog.ndirW);
