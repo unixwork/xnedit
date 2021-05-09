@@ -247,6 +247,7 @@ static void compressWindowTitle(char *title)
 **  %h    : host name
 **  %S    : file status
 **  %u    : user name
+**  %e    : file encoding
 **
 **  if the ClearCase view tag and server name are identical, only the first one
 **  specified in the formatting string will be displayed. 
@@ -255,6 +256,7 @@ char *FormatWindowTitle(const char* filename,
                         const char* path,
                         const char* clearCaseViewTag,
                         const char* serverName,
+                        const char* encoding,
                         int isServer,
                         int filenameSet,
                         int lockReasons,
@@ -279,6 +281,8 @@ char *FormatWindowTitle(const char* filename,
     int dirNamePresent = False;
     int noOfComponents = -1;
     int shortStatus = False;
+    size_t enc_len = 0;
+    const char *enc = NULL;
     
     *titlePtr = '\0';  /* always start with an empty string */
 
@@ -320,7 +324,15 @@ char *FormatWindowTitle(const char* filename,
                        titlePtr = safeStrCpy(titlePtr, titleEnd, path);
                     }
                     break;
-                    
+                case 'e':
+                    enc_len = encoding ? strlen(encoding) : 0;
+                    enc = encoding;
+                    if(enc_len == 0) {
+                        enc = GetPrefDefaultCharset();
+                    }
+                    titlePtr = safeStrCpy(titlePtr, titleEnd, enc);
+                    break;
+                    break;
                 case '0': /* directory with limited no. of components */
                 case '1':
                 case '2':
@@ -548,13 +560,10 @@ static void formatChangedCB(Widget w, XtPointer clientData, XtPointer callData)
                   etDialog.filenameSet == True ?
                                    etDialog.path :
                                    "/a/very/long/path/used/as/example/",
-#ifdef VMS
-		  NULL,
-#else
                   XmToggleButtonGetState(etDialog.oCcViewTagW) ?
                                    etDialog.viewTag : NULL,
-#endif /* VMS */
                   serverName,
+                  NULL,
                   etDialog.isServer,
                   filenameSet,
                   etDialog.lockReasons,

@@ -2330,12 +2330,9 @@ void UpdateWindowTitle(const WindowInfo *window)
 
     title = FormatWindowTitle(window->filename,
                                     window->path,
-#ifdef VMS
-                                    NULL,
-#else
                                     GetClearCaseViewTag(),
-#endif /* VMS */
                                     GetPrefServerName(),
+                                    window->encoding,
                                     IsServer,
                                     window->filenameSet,
                                     window->lockReasons,
