@@ -298,6 +298,7 @@ static char defaultTranslations[] =
     ":<Key>KP_1: self_insert()\n"
     ":<Key>KP_2: self_insert()\n"
     ":<Key>KP_3: self_insert()\n"
+    ":<Key>KP_0: self_insert()\n"
 
     /* BeginLine */
     "Alt Shift Ctrl<KeyPress>osfBeginLine: beginning_of_file(\"extend\", \"rect\")\n"
