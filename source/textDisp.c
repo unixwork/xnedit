@@ -1823,7 +1823,9 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
            have changed. If only one line is altered, line numbers cannot
            be affected (the insertion or removal of a line break always 
            results in at least two lines being redrawn). */
-	if (linesInserted > 1) redrawLineNumbers(textD, textD->top, textD->height, True);
+        // for some reason, a simple insert of one character always results
+        // in linesInserted > 2
+	if (linesInserted > 2) redrawLineNumbers(textD, textD->top, textD->height, True);
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
     	if (origCursorPos >= pos)
@@ -3295,7 +3297,7 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
                     textD->lineNumLeft,
                     y + textD->ascent,
                     (FcChar8*)lineNumString,
-                    strlen(lineNumString));
+                    strlen(lineNumString));           
             line++;
         } else {
             /*
@@ -3594,9 +3596,10 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     ** line, using information from the existing line starts array
     */
     if (pos >= textD->firstChar && pos <= textD->lastChar) {
-    	for (i=nVisLines-1; i>0; i--)
-    	    if (lineStarts[i] != -1 && pos >= lineStarts[i])
+    	for (i=nVisLines-1; i>0; i--) { 
+            if (lineStarts[i] != -1 && pos >= lineStarts[i])
     		break;
+        }   
     	if (i > 0) {
     	    countFrom = lineStarts[i-1];
     	    visLineNum = i-1;
