@@ -162,7 +162,7 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 #define TYPE_INT_STR_SIZE(xType) ((sizeof(xType) * 3) + 2)
 
 /* maximum encoding string length */
-#define MAX_ENCODING_LENGTH 128
+#define MAX_ENCODING_LENGTH 64
 
 /* Record on undo list */
 typedef struct _UndoInfo {

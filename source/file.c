@@ -58,7 +58,6 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <iconv.h>
-#include <langinfo.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -682,7 +681,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
     } else {
         /* file has no extended attributes, use locale charset */
-        encoding = nl_langinfo(CODESET);
+        encoding = GetPrefDefaultCharset();
         checkEncoding = 1;
     }
     

@@ -226,6 +226,7 @@ int GetFsbView(void);
 Boolean GetFsbShowHidden(void);
 Boolean GetPrefForceOSConversion(void);
 void SetPrefFocusOnRaise(Boolean);
+const char* GetPrefDefaultCharset(void);
 
 char* ChangeFontSize(const char *name, int newsize);
 

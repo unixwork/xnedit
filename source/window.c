@@ -301,7 +301,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->filename, name);
     
     window->encoding[0] = '\0';
-    char *default_encoding = nl_langinfo(CODESET);
+    const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
         if(strlen(default_encoding) < MAX_ENCODING_LENGTH) {
@@ -3625,7 +3625,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->filename, name);
     
     window->encoding[0] = '\0';
-    char *default_encoding = nl_langinfo(CODESET);
+    const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
         if(strlen(default_encoding) < MAX_ENCODING_LENGTH) {

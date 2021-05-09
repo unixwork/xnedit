@@ -62,6 +62,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <langinfo.h>
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
@@ -347,6 +348,7 @@ static struct prefData {
     int fsbView;
     int fsbShowHidden;
     int editorConfig;
+    char defaultCharset[MAX_ENCODING_LENGTH];
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1055,7 +1057,10 @@ static PrefDescripRec PrefDescrip[] = {
     {"fsbShowHidden", "FsbShowHidden", PREF_BOOLEAN, "False",
             &PrefData.fsbShowHidden, NULL, True},
     {"editorConfig", "EditorConfig", PREF_BOOLEAN, "True",
-            &PrefData.editorConfig, NULL, True}
+            &PrefData.editorConfig, NULL, True},
+    {"defaultCharset", "DefaultCharset", PREF_STRING, "locale",
+        PrefData.defaultCharset,
+        (void *)sizeof(PrefData.defaultCharset), True},
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2215,6 +2220,17 @@ int GetPrefOverrideVirtKeyBindings(void)
 int GetPrefTruncSubstitution(void)
 {
     return PrefData.truncSubstitution;
+}
+
+const char* GetPrefDefaultCharset(void)
+{
+    if(!strcmp(PrefData.defaultCharset, "locale")) {
+        char *l = nl_langinfo(CODESET);
+        if(!l) l = "UTF-8";
+        return l;
+    }
+    
+    return PrefData.defaultCharset;
 }
 
 /*
