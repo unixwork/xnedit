@@ -2,7 +2,7 @@
 *                                                                              *
 * help_topic.h --  Nirvana Editor help display                                 *
 *                                                                              *
-                 Generated on Jan 18, 2021 (Do NOT edit!)
+                 Generated on May 14, 2021 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2021 Mark Edel                                            *
@@ -86,7 +86,7 @@ enum HelpTopic {
     HELP_RECOVERY,
     HELP_VERSION,
     HELP_DISTRIBUTION,
-    HELP_MAILING_LIST,
+    HELP_SUPPORT,
     HELP_DEFECTS,
     HELP_TABS_DIALOG,
     HELP_CUSTOM_TITLE_DIALOG,
