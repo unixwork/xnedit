@@ -308,6 +308,11 @@ static struct prefData {
     NFont *italicFont;
     NFont *boldItalicFont;
     
+    char *iconSize;
+    int closeIconSize;
+    int isrcFindIconSize;
+    int isrcClearIconSize;
+    
     int zoomStep;
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
@@ -1061,6 +1066,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"defaultCharset", "DefaultCharset", PREF_STRING, "locale",
         PrefData.defaultCharset,
         (void *)sizeof(PrefData.defaultCharset), True},
+    {"iconSize", "IconSize", PREF_ALLOC_STRING,
+      "small",
+      &PrefData.iconSize, NULL, True} 
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -1240,6 +1248,7 @@ static int stringReplace(char **inString, const char *expr,
 static int replaceMacroIfUnchanged(const char* oldText, const char* newStart, 
                                     const char* newEnd);
 static const char* getDefaultShell(void);
+static void parseIconSize(char *iconSize);
 
 
 #ifdef SGI_CUSTOM
@@ -1369,6 +1378,9 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	LoadSmartIndentCommonString(TempStringPrefs.smartIndentCommon);
 	NEditFree(TempStringPrefs.smartIndentCommon);
 	TempStringPrefs.smartIndentCommon = NULL;
+    }
+    if (PrefData.iconSize) {
+        parseIconSize(PrefData.iconSize);
     }
     
     PrefData.font = FontFromName(TheDisplay, PrefData.fontString);
@@ -2232,6 +2244,22 @@ const char* GetPrefDefaultCharset(void)
     
     return PrefData.defaultCharset;
 }
+
+int GetPrefCloseIconSize(void)
+{
+    return PrefData.closeIconSize;
+}
+
+int GetPrefISrcFindIconSize(void)
+{
+    return PrefData.isrcClearIconSize;
+}
+
+int GetPrefISrcClearIconSize(void)
+{
+    return PrefData.isrcClearIconSize;
+}
+
 
 /*
 ** If preferences don't get saved, ask the user on exit whether to save
@@ -6826,4 +6854,66 @@ char* ChangeFontSize(const char *name, int newsize)
         sizestr);
     
     return newFontName;
+}
+
+static int parseSize(const char *sz) {
+    int r = 0;
+    
+    size_t len = strlen(sz);
+    if(len == 1) {
+        switch(sz[0]) {
+            default: break;
+            case 's': return 0;
+            case 'm': return 1;
+            case 'l': return 2;
+        }
+    } else {
+        if(!strcmp(sz, "small")) {
+            r = 0;
+        } else if(!strcmp(sz, "medium")) {
+            r = 1;
+        } else if(!strcmp(sz, "large")) {
+            r = 2;
+        }
+    }
+    
+    return r;
+}
+
+static void parseIconSize(char *iconSize)
+{
+    PrefData.closeIconSize = 0;
+    PrefData.isrcFindIconSize = 0;
+    PrefData.isrcClearIconSize = 0;
+    
+    int close = -1;
+    int find = -1;
+    int clear = -1;
+    
+    char *sizeStr = strtok(iconSize, ",");
+    while(sizeStr) {
+        char *c = strchr(sizeStr, '=');
+        if(!c) {
+            int size = parseSize(sizeStr);
+            if(close < 0) close = size;
+            if(find < 0) find = size;
+            if(clear < 0) clear = size;
+        } else {
+            int size = parseSize(c+1);
+            *c = 0;
+            if(!strcmp(sizeStr, "close")) {
+                close = size;
+            } else if(!strcmp(sizeStr, "isrcFind")) {
+                find = size;
+            } else if(!strcmp(sizeStr, "isrcClear")) {
+                clear = size;
+            }
+        }
+        
+        sizeStr = strtok(NULL, ",");
+    }
+    
+    if(close >= 0) PrefData.closeIconSize = close;
+    if(find >= 0) PrefData.isrcFindIconSize = find;
+    if(clear >= 0) PrefData.isrcClearIconSize = clear;
 }

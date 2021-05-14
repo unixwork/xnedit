@@ -228,6 +228,10 @@ Boolean GetPrefForceOSConversion(void);
 void SetPrefFocusOnRaise(Boolean);
 const char* GetPrefDefaultCharset(void);
 
+int GetPrefCloseIconSize(void);
+int GetPrefISrcFindIconSize(void);
+int GetPrefISrcClearIconSize(void);
+
 char* ChangeFontSize(const char *name, int newsize);
 
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */
