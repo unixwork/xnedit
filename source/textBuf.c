@@ -2514,10 +2514,12 @@ static int countLines(const char *string)
 static int textWidth(const char *text, int tabDist, char nullSubsChar)
 {
     int width = 0, maxWidth = 0;
+    int charWidth = 1;
     const char *c;
     
-    for (c=text; *c!='\0'; c++) {
-    	if (*c == '\n') {
+    for (c=text; *c!='\0'; c+=charWidth) {
+    	charWidth = Utf8CharLen((unsigned char*)c);
+        if (*c == '\n') {
     	    if (width > maxWidth)
     	    	maxWidth = width;
     	    width = 0;
