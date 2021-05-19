@@ -54,7 +54,7 @@
 #define NEDIT_DEFAULT_HI_FG     "white" /* These are colors for flashing */
 #define NEDIT_DEFAULT_HI_BG     "red"   /*   matching parens. */
 #define NEDIT_DEFAULT_LINENO_FG "black"
-#define NEDIT_DEFAULT_LINENO_BG "rgb:f2/f2/f2"
+#define NEDIT_DEFAULT_LINENO_BG "#eff0f1"
 #define NEDIT_DEFAULT_CURSOR_FG "black"
 #define NEDIT_DEFAULT_HELP_FG   "black"
 #define NEDIT_DEFAULT_HELP_BG   "rgb:cc/cc/cc"
