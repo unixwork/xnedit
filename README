@@ -28,6 +28,7 @@ sources are:
  - Xrender and Xft
  - Fontconfig
  - Motif 2.0 or above 
+ - libpcre
  
 Optionally one may use:
  
