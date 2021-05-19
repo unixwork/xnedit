@@ -30,6 +30,9 @@ static Atom XdndAware;
 static Atom XdndSelection;
 static Atom XdndStatus;
 static Atom XdndActionCopy;
+static Atom XdndFinished;
+
+static Window src;
 
 static Atom selType;
 
@@ -55,6 +58,20 @@ static void getSelectionValue(Widget w, XtPointer clientData, Atom *selType,
             dropCallback(w, value, dropData);
         }
         XtFree(value);
+        
+        // XdndFinished
+        if(src != 0) {
+            XEvent msg;
+            memset(&msg, 0, sizeof(XEvent));
+            msg.xany.type = ClientMessage;
+            msg.xany.display = XtDisplay(w);
+            msg.xclient.window = src;
+            msg.xclient.message_type = XdndFinished;
+            msg.xclient.format = 32;
+            msg.xclient.data.l[0] = XtWindow(w);
+            XSendEvent(XtDisplay(w), msg.xclient.window, 0, 0, &msg);
+            src = 0;
+        }
     }
 }
 
@@ -66,11 +83,13 @@ static void xdnd_enter(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 static void xdnd_position(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     //printf("xdnd_position\n");
     
+    src = event->xclient.data.l[0];
+    
     XEvent msg;
     memset(&msg, 0, sizeof(XEvent));
     msg.xany.type = ClientMessage;
     msg.xany.display = XtDisplay(w);
-    msg.xclient.window = event->xclient.data.l[0];
+    msg.xclient.window = src;
     msg.xclient.message_type = XdndStatus;
     msg.xclient.format = 32;
     msg.xclient.data.l[0] = XtWindow(w);
@@ -111,6 +130,7 @@ void XdndInit(
     XdndSelection = XInternAtom(dpy, "XdndSelection", False);
     XdndStatus = XInternAtom(dpy, "XdndStatus", False);
     XdndActionCopy = XInternAtom(dpy, "XdndActionCopy", False);
+    XdndFinished = XInternAtom(dpy, "XdndFinished", False);
     selType = XInternAtom(dpy, "text/uri-list", False);
     
     XtAppAddActions(
