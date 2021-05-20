@@ -25,7 +25,7 @@ small
 medium
 large
 
-It is also possible to specify the size for individual buttons (close, srcFind, isrcClear):
+It is also possible to specify the size for individual buttons (close, isrcFind, isrcClear):
 
 nedit.iconSize: close=medium,isrcFind=large,isrcClear=large
 

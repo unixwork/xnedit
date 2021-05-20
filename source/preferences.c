@@ -6882,6 +6882,8 @@ static int parseSize(const char *sz) {
 
 static void parseIconSize(char *iconSize)
 {
+    char *iconSizeStr = strdup(iconSize);
+    
     PrefData.closeIconSize = 0;
     PrefData.isrcFindIconSize = 0;
     PrefData.isrcClearIconSize = 0;
@@ -6890,7 +6892,7 @@ static void parseIconSize(char *iconSize)
     int find = -1;
     int clear = -1;
     
-    char *sizeStr = strtok(iconSize, ",");
+    char *sizeStr = strtok(iconSizeStr, ",");
     while(sizeStr) {
         char *c = strchr(sizeStr, '=');
         if(!c) {
@@ -6916,4 +6918,6 @@ static void parseIconSize(char *iconSize)
     if(close >= 0) PrefData.closeIconSize = close;
     if(find >= 0) PrefData.isrcFindIconSize = find;
     if(clear >= 0) PrefData.isrcClearIconSize = clear;
+    
+    free(iconSizeStr);
 }
