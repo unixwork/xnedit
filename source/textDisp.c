@@ -452,7 +452,9 @@ void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
     textD->highlightFGPixel = hiliteFgP;
     textD->highlightBGPixel = hiliteBgP;
     textD->lineNumFGPixel = lineNoFgP;
+    textD->lineNumBGPixel = lineNoBgP;
     textD->cursorFGPixel = cursorFgP;
+    textD->lineHighlightBGPixel = lineHiBgP;
 
     releaseGC(textD->w, textD->gc);
     releaseGC(textD->w, textD->selectGC);
@@ -3247,7 +3249,6 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     int lineHeight = textD->ascent + textD->descent;
     int charWidth = FontDefault(textD->font)->max_advance_width;
     XRectangle clipRect;
-    Display *display = XtDisplay(textD->w);
     
     /* Don't draw if lineNumWidth == 0 (line numbers are hidden), or widget is
        not yet realized */
@@ -3279,7 +3280,7 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
                 0,
                 textD->lineNumLeft + textD->lineNumWidth,
                 2*top + height);
-    }    
+    }
     
     /* Draw the line numbers, aligned to the text */
     nCols = min(11, textD->lineNumWidth / charWidth);
