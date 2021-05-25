@@ -905,7 +905,7 @@ void PathBarSetPath(PathBar *bar, char *path)
     int begin = i;
     for(;i<=len;i++) {
         char c = path[i];
-        if((c == '/' || c == '\0') && i > begin+1) {
+        if((c == '/' || c == '\0') && i > begin) {
             char *segStr = NEditMalloc(i - begin + 1);
             memcpy(segStr, path+begin, i-begin);
             segStr[i-begin] = '\0';
