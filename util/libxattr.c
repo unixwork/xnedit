@@ -454,7 +454,7 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
 
 int xattr_set(const char *path, const char *name, const void *value, size_t len) {
     int ret = extattr_set_file(path, EXTATTR_NAMESPACE_USER, name, value, len);
-    return ret;
+    return ret > 0 ? 0 : -1;
 }
 
 int xattr_remove(const char *path, const char *name) {
