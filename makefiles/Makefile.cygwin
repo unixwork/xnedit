@@ -1,0 +1,14 @@
+# $Id: Makefile.cygwin,v 1.00 2021/05/25 19:00:00 efa Exp $
+# tested on Cygwin64 3.2.0(0.340/5/3) 2021-03-29
+# dependencies: libiconv-devel, libXpm-devel, libXrender-devel, libXft-devel, libfontconfig-devel, libXm-devel, libpcre-devel
+
+CC=cc
+AR=ar
+
+CFLAGS=-O -std=gnu99 -I/usr/X11R6/include -I/usr/include/X11 -DUSE_DIRENT -DUSE_LPR_PRINT_CMD $(shell pkg-config --cflags xft fontconfig)
+
+ARFLAGS=-urs
+
+LIBS=-L/usr/X11R6/lib -liconv -lpcre -lXm -lXt -lX11 -lXrender -lXpm -lm $(shell pkg-config --libs xft fontconfig)
+
+include Makefile.common
