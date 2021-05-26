@@ -1809,7 +1809,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
        beyond the left and right edges of the text. */
     startDispPos = textD->continuousWrap ? wrapModStart : pos;
     if (origCursorPos == startDispPos && textD->cursorPos != startDispPos)
-    	startDispPos = min(startDispPos, origCursorPos-1); // TODO: needs fix
+    	startDispPos = min(startDispPos, BufLeftPos(buf, origCursorPos));
     if (linesInserted == linesDeleted) {
         if (nInserted == 0 && nDeleted == 0)
             endDispPos = pos + nRestyled;
