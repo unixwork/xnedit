@@ -51,6 +51,7 @@ typedef struct FontSelector {
     XftFont *italic;
     XftDraw *draw;
     
+    int selected_item;
     int end;
     int cancel;
 } FontSelector;
@@ -231,7 +232,10 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     
     FcObjectSet *os = FcObjectSetCreate();
     FcObjectSetAdd(os, FC_FAMILY);
+    FcObjectSetAdd(os, FC_STYLE);
     FcObjectSetAdd(os, FC_FULLNAME);
+    FcObjectSetAdd(os, FC_SCALABLE);
+    FcObjectSetAdd(os, FC_SPACING);
     sel->list = FcFontList(NULL, sel->filter, os);
     FcObjectSetDestroy(os);
     
@@ -243,12 +247,16 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     
     items = NEditCalloc(sel->list->nfont, sizeof(XmString));
     for(int i=0;i<nfonts;i++) {
+        FcBool scalable = 0;
+        FcPatternGetBool(sel->list->fonts[i], FC_SCALABLE, 0, &scalable);
+        int spacing = 0;
+        FcPatternGetInteger(sel->list->fonts[i], FC_SPACING, 0, &spacing);
+        
         name = NULL;
         FcPatternGetString(sel->list->fonts[i], FC_FULLNAME, 0, &name);
-        if(name) {
-            items[nfound] = XmStringCreateSimple((char*)name);
-            nfound++;
-        }
+        if(!name) name = (FcChar8*)"-";
+        items[nfound] = XmStringCreateSimple((char*)name);
+        nfound++;
     }
     
     XtVaSetValues(sel->fontlist, XmNitems, items, XmNitemCount, nfound, NULL);
@@ -300,28 +308,16 @@ static void CreateSizeList(Widget w)
 static char* GetFontString(FontSelector *sel)
 {
     XmStringTable table = NULL;
-    XmString item = NULL;
     int count = 0;
-    int i;
+    int i = sel->selected_item - 1;
     char *font = NULL;
+    char *style = NULL;
     char *size = NULL;
-    size_t fontLen, sizeLen, outLen;
+    size_t fontLen, styleLen, sizeLen, outLen;
     char *out;
     
-    XtVaGetValues(
-            sel->fontlist,
-            XmNselectedItems,
-            &table,
-            XmNselectedItemCount,
-            &count,
-            NULL);
-    if(count > 0) {
-        XmStringGetLtoR(table[0], XmFONTLIST_DEFAULT_TAG, &font);
-    }
-    
-    if(!font) {
-        return NULL;
-    }
+    FcPatternGetString(sel->list->fonts[i], FC_FAMILY, 0, (FcChar8**)&font);
+    FcPatternGetString(sel->list->fonts[i], FC_STYLE, 0, (FcChar8**)&style);
     
     XtVaGetValues(
             sel->size,
@@ -334,16 +330,27 @@ static char* GetFontString(FontSelector *sel)
         XmStringGetLtoR(table[0], XmFONTLIST_DEFAULT_TAG, &size);
     }
     
+    if(style && !strcmp(style, "Regular")) {
+        style = NULL;
+    }
+     
     fontLen = font ? strlen(font) : 0;
+    styleLen = style ? strlen(style) : 0;
     sizeLen = size ? strlen(size) : 0;
     
-    if(size) {
+    if(style && size) {
+        outLen = fontLen + styleLen + sizeLen + 16;
+        out = XtMalloc(outLen);
+        snprintf(out, outLen, "%s:style=%s:size=%s", font, style, size);
+        XmTextSetString(sel->name, out);
+        XtFree(size);
+        return out;
+    } else if(size) {
         outLen = fontLen + sizeLen + 16;
         out = XtMalloc(outLen);
         snprintf(out, outLen, "%s:size=%s", font, size);
         XmTextSetString(sel->name, out);
         XtFree(size);
-        XtFree(font);
         return out;
     } else {
         return font;
@@ -361,8 +368,9 @@ static void UpdateFontName(FontSelector *sel)
     }
 }
 
-static void fontlist_callback(Widget w, FontSelector *sel, XtPointer data)
+static void fontlist_callback(Widget w, FontSelector *sel, XmListCallbackStruct *cb)
 {
+    sel->selected_item = cb->item_position;
     UpdateFontName(sel);
 }
 
