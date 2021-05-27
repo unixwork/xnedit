@@ -55,7 +55,6 @@
     static char* hiddenFileNames[N_FILE_TYPES] = {".nedit", ".neditmacro", ".neditdb;1"};
     static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history;1"};
 #else
-    static char* hiddenFileNames[N_FILE_TYPES] = {".nedit", ".neditmacro", ".neditdb"};
     static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history"};
 #endif
 
@@ -70,7 +69,7 @@ const char* GetCurrentDir(void)
     static char curdir[MAXPATHLEN];
 
     if (!getcwd(curdir, (size_t) MAXPATHLEN)) {
-        perror("nedit: getcwd() fails");
+        perror("xnedit: getcwd() fails");
         strcpy(curdir, ".");
     }
     return (curdir);
@@ -97,7 +96,7 @@ const char* GetHomeDir(void)
           ptr= passwdEntry->pw_dir;
        } else {
           /* This is really serious, so just exit. */
-          perror("nedit: getpwuid() failed ");
+          perror("xnedit: getpwuid() failed ");
           exit(EXIT_FAILURE);
        }
     }
@@ -139,7 +138,7 @@ const char
        /* This is really serious, but sometimes username service
           is misconfigured through no fault of the user.  Be nice
           and let the user start nc anyway. */
-       perror("nedit: getpwuid() failed - reverting to $USER");
+       perror("xnedit: getpwuid() failed - reverting to $USER");
        return getenv("USER");
     }
     else {
@@ -190,7 +189,7 @@ const char
         int rc = uname(&nameStruct);
         if (rc<0) {
             /* Shouldn't ever happen, so we better exit() here */
-           perror("nedit: uname() failed ");
+           perror("xnedit: uname() failed ");
            exit(EXIT_FAILURE);
         }
         strcpy(hostname, nameStruct.nodename);
@@ -252,54 +251,32 @@ const char* GetRCFileName(int type)
         char* nedit_home;
         int i;
 
-        if ((nedit_home = getenv("NEDIT_HOME")) == NULL)
+        if ((nedit_home = getenv("XNEDIT_HOME")) == NULL)
         {
-            /*  No NEDIT_HOME */
-#ifdef VMS
-            /* This is a default VMS setup */
+            /* ${HOME}/.nedit does not exist as a regular file. */
+            /* FIXME: Devices, sockets and fifos are ignored for now. */
+            char defaultNEditHome[MAXPATHLEN + 1];
+            buildFilePath(defaultNEditHome, GetHomeDir(), DEFAULT_NEDIT_HOME);
+            if (!isDir(defaultNEditHome))
+            {
+                /* Create DEFAULT_NEDIT_HOME */
+                if (mkdir(defaultNEditHome, 0777) != 0)
+                {
+                    perror("xnedit: Error while creating rc file directory"
+                            " $HOME/" DEFAULT_NEDIT_HOME "\n"
+                            " (Make sure all parent directories exist.)");
+                    return NULL;
+                }
+            }
+
+            /* All set for DEFAULT_NEDIT_HOME, let's copy the names */
             for (i = 0; i < N_FILE_TYPES; i++)
             {
-                buildFilePath(rcFiles[i], "SYS$LOGIN", hiddenFileNames[i]);
+                buildFilePath(rcFiles[i], defaultNEditHome, plainFileNames[i]);
             }
-#else /* #ifdef VMS */
-            /* Let's try if ~/.nedit is a regular file or not. */
-            char legacyFile[MAXPATHLEN + 1];
-            buildFilePath(legacyFile, GetHomeDir(), hiddenFileNames[NEDIT_RC]);
-            if (isRegFile(legacyFile))
-            {
-                /* This is a legacy setup with rc files in $HOME */
-                for (i = 0; i < N_FILE_TYPES; i++)
-                {
-                    buildFilePath(rcFiles[i], GetHomeDir(), hiddenFileNames[i]);
-                }
-            } else
-            {
-                /* ${HOME}/.nedit does not exist as a regular file. */
-                /* FIXME: Devices, sockets and fifos are ignored for now. */
-                char defaultNEditHome[MAXPATHLEN + 1];
-                buildFilePath(defaultNEditHome, GetHomeDir(), DEFAULT_NEDIT_HOME);
-                if (!isDir(defaultNEditHome))
-                {
-                    /* Create DEFAULT_NEDIT_HOME */
-                    if (mkdir(defaultNEditHome, 0777) != 0)
-                    {
-                        perror("nedit: Error while creating rc file directory"
-                                " $HOME/" DEFAULT_NEDIT_HOME "\n"
-                                " (Make sure all parent directories exist.)");
-                        return NULL;
-                    }
-                }
-
-                /* All set for DEFAULT_NEDIT_HOME, let's copy the names */
-                for (i = 0; i < N_FILE_TYPES; i++)
-                {
-                    buildFilePath(rcFiles[i], defaultNEditHome, plainFileNames[i]);
-                }
-            }
-#endif /* #ifdef VMS */
         } else
         {
-            /*  $NEDIT_HOME is set. */
+            /*  $XNEDIT_HOME is set. */
 #ifndef VMS
             /* FIXME: Is this required? Does VMS know stat(), mkdir()? */
             if (!isDir(nedit_home))
@@ -307,8 +284,8 @@ const char* GetRCFileName(int type)
                 /* Create $NEDIT_HOME */
                 if (mkdir(nedit_home, 0777) != 0)
                 {
-                    perror("nedit: Error while creating rc file directory $NEDIT_HOME\n"
-                            "nedit: (Make sure all parent directories exist.)");
+                    perror("xnedit: Error while creating rc file directory $XNEDIT_HOME\n"
+                            "xnedit: (Make sure all parent directories exist.)");
                     return NULL;
                 }
             }
@@ -344,7 +321,7 @@ static void buildFilePath(char* fullPath, const char* dir, const char* file)
     if ((MAXPATHLEN) < strlen(dir) + strlen(file) + 2)
     {
         /*  We have no way to build the path. */
-        fprintf(stderr, "nedit: rc file path too long for %s.\n", file);
+        fprintf(stderr, "xnedit: rc file path too long for %s.\n", file);
         exit(EXIT_FAILURE);
     }
 
@@ -403,11 +380,11 @@ void Push(Stack* stack, const void* value)
 
     /*  Throw away invalid parameters.  */
     if (NULL == value) {
-        fprintf(stderr, "nedit: Internal error: NULL was pushed.\n");
+        fprintf(stderr, "xnedit: Internal error: NULL was pushed.\n");
         return;
     }
     if (NULL == stack) {
-        fprintf(stderr, "nedit: Internal error: push() called with NULL stack.\n");
+        fprintf(stderr, "xnedit: Internal error: push() called with NULL stack.\n");
         return;
     }
 
@@ -438,7 +415,7 @@ void* Pop(Stack* stack)
 
     /*  Throw away invalid parameter.  */
     if (NULL == stack) {
-        fprintf(stderr, "nedit: Internal error: pop() called with NULL stack.\n");
+        fprintf(stderr, "xnedit: Internal error: pop() called with NULL stack.\n");
         return NULL;
     }
 
