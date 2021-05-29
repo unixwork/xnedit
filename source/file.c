@@ -58,6 +58,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <iconv.h>
+#include <locale.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -78,6 +79,188 @@
 #endif
 
 #include <inttypes.h>
+
+typedef struct Locale {
+    char *locale;
+    char *encoding;
+} Locale;
+
+static Locale locales[] = {
+    {"aa_DJ", "ISO8859-1"},
+    {"af_ZA", "ISO8859-1"},
+    {"an_ES", "ISO8859-15"},
+    {"ar_AE", "ISO8859-6"},
+    {"ar_BH", "ISO8859-6"},
+    {"ar_DZ", "ISO8859-6"},
+    {"ar_EG", "ISO8859-6"},
+    {"ar_IQ", "ISO8859-6"},
+    {"ar_JO", "ISO8859-6"},
+    {"ar_KW", "ISO8859-6"},
+    {"ar_LB", "ISO8859-6"},
+    {"ar_LY", "ISO8859-6"},
+    {"ar_MA", "ISO8859-6"},
+    {"ar_OM", "ISO8859-6"},
+    {"ar_QA", "ISO8859-6"},
+    {"ar_SA", "ISO8859-6"},
+    {"ar_SD", "ISO8859-6"},
+    {"ar_SY", "ISO8859-6"},
+    {"ar_TN", "ISO8859-6"},
+    {"ar_YE", "ISO8859-6"},
+    {"ast_ES", "ISO8859-15"},
+    {"be_BY", "CP1251"},
+    {"bg_BG", "CP1251"},
+    {"br_FR", "ISO8859-15"},
+    {"br_FR@euro", "ISO8859-15"},
+    {"bs_BA", "ISO8859-2"},
+    {"ca_AD", "ISO8859-15"},
+    {"ca_ES", "ISO8859-15"},
+    {"ca_ES@euro", "ISO8859-15"},
+    {"ca_FR", "ISO8859-15"},
+    {"ca_IT", "ISO8859-15"},
+    {"cs_CZ", "ISO8859-2"},
+    {"cy_GB", "ISO8859-14"},
+    {"da_DK", "ISO8859-1"},
+    {"de_AT", "ISO8859-15"},
+    {"de_AT@euro", "ISO8859-15"},
+    {"de_BE", "ISO8859-15"},
+    {"de_BE@euro", "ISO8859-15"},
+    {"de_CH", "ISO8859-1"},
+    {"de_DE", "ISO8859-15"},
+    {"de_DE@euro", "ISO8859-15"},
+    {"de_LU", "ISO8859-15"},
+    {"de_LU@euro", "ISO8859-15"},
+    {"el_GR", "ISO8859-7"},
+    {"el_CY", "ISO8859-7"},
+    {"en_AU", "ISO8859-1"},
+    {"en_BW", "ISO8859-1"},
+    {"en_CA", "ISO8859-1"},
+    {"en_DK", "ISO8859-1"},
+    {"en_GB", "ISO8859-1"},
+    {"en_HK", "ISO8859-1"},
+    {"en_IE", "ISO8859-15"},
+    {"en_IE@euro", "ISO8859-15"},
+    {"en_NZ", "ISO8859-1"},
+    {"en_PH", "ISO8859-1"},
+    {"en_SG", "ISO8859-1"},
+    {"en_US", "ISO8859-1"},
+    {"en_ZA", "ISO8859-1"},
+    {"en_ZW", "ISO8859-1"},
+    {"es_AR", "ISO8859-1"},
+    {"es_BO", "ISO8859-1"},
+    {"es_CL", "ISO8859-1"},
+    {"es_CO", "ISO8859-1"},
+    {"es_CR", "ISO8859-1"},
+    {"es_DO", "ISO8859-1"},
+    {"es_EC", "ISO8859-1"},
+    {"es_ES", "ISO8859-15"},
+    {"es_ES@euro", "ISO8859-15"},
+    {"es_GT", "ISO8859-1"},
+    {"es_HN", "ISO8859-1"},
+    {"es_MX", "ISO8859-1"},
+    {"es_NI", "ISO8859-1"},
+    {"es_PA", "ISO8859-1"},
+    {"es_PE", "ISO8859-1"},
+    {"es_PR", "ISO8859-1"},
+    {"es_PY", "ISO8859-1"},
+    {"es_SV", "ISO8859-1"},
+    {"es_US", "ISO8859-1"},
+    {"es_UY", "ISO8859-1"},
+    {"es_VE", "ISO8859-1"},
+    {"et_EE", "ISO8859-15"},
+    {"et_EE.ISO8859-15", "ISO8859-15"},
+    {"eu_ES", "ISO8859-15"},
+    {"eu_ES@euro", "ISO8859-15"},
+    {"fi_FI", "ISO8859-15"},
+    {"fi_FI@euro", "ISO8859-15"},
+    {"fo_FO", "ISO8859-1"},
+    {"fr_BE", "ISO8859-15"},
+    {"fr_BE@euro", "ISO8859-15"},
+    {"fr_CA", "ISO8859-15"},
+    {"fr_CH", "ISO8859-1"},
+    {"fr_FR", "ISO8859-15"},
+    {"fr_FR@euro", "ISO8859-15"},
+    {"fr_LU", "ISO8859-15"},
+    {"fr_LU@euro", "ISO8859-15"},
+    {"ga_IE", "ISO8859-15"},
+    {"ga_IE@euro", "ISO8859-15"},
+    {"gd_GB", "ISO8859-15"},
+    {"gl_ES", "ISO8859-15"},
+    {"gl_ES@euro", "ISO8859-15"},
+    {"gv_GB", "ISO8859-1"},
+    {"he_IL", "ISO8859-8"},
+    {"hr_HR", "ISO8859-2"},
+    {"hsb_DE", "ISO8859-2"},
+    {"hu_HU", "ISO8859-2"},
+    {"hy_AM.ARMSCII-8", "ARMSCII-8"},
+    {"id_ID", "ISO8859-1"},
+    {"is_IS", "ISO8859-1"},
+    {"it_CH", "ISO8859-1"},
+    {"it_IT", "ISO8859-15"},
+    {"it_IT@euro", "ISO8859-15"},
+    {"iw_IL", "ISO8859-8"},
+    {"ja_JP.EUC-JP", "EUC-JP"},
+    {"ka_GE", "GEORGIAN-PS"},
+    {"kk_KZ", "PT154"},
+    {"kl_GL", "ISO8859-1"},
+    {"ko_KR.EUC-KR", "EUC-KR"},
+    {"ku_TR", "ISO8859-9"},
+    {"kw_GB", "ISO8859-1"},
+    {"lg_UG", "ISO8859-10"},
+    {"lt_LT", "ISO8859-13"},
+    {"lv_LV", "ISO8859-13"},
+    {"mg_MG", "ISO8859-15"},
+    {"mi_NZ", "ISO8859-13"},
+    {"mk_MK", "ISO8859-5"},
+    {"ms_MY", "ISO8859-1"},
+    {"mt_MT", "ISO8859-3"},
+    {"nb_NO", "ISO8859-1"},
+    {"nl_BE", "ISO8859-15"},
+    {"nl_BE@euro", "ISO8859-15"},
+    {"nl_NL", "ISO8859-15"},
+    {"nl_NL@euro", "ISO8859-15"},
+    {"nn_NO", "ISO8859-1"},
+    {"oc_FR", "ISO8859-1"},
+    {"om_KE", "ISO8859-1"},
+    {"pl_PL", "ISO8859-2"},
+    {"pt_BR", "ISO8859-1"},
+    {"pt_PT", "ISO8859-15"},
+    {"pt_PT@euro", "ISO8859-15"},
+    {"ro_RO", "ISO8859-2"},
+    {"ru_RU.KOI8-R", "KOI8-R"},
+    {"ru_RU", "ISO8859-5"},
+    {"ru_UA", "KOI8-U"},
+    {"sk_SK", "ISO8859-2"},
+    {"sl_SI", "ISO8859-2"},
+    {"so_DJ", "ISO8859-1"},
+    {"so_KE", "ISO8859-1"},
+    {"so_SO", "ISO8859-1"},
+    {"sq_AL", "ISO8859-1"},
+    {"st_ZA", "ISO8859-1"},
+    {"sv_FI", "ISO8859-15"},
+    {"sv_FI@euro", "ISO8859-15"},
+    {"sv_SE", "ISO8859-1"},
+    {"tg_TJ", "KOI8-T"},
+    {"th_TH", "TIS-620"},
+    {"tl_PH", "ISO8859-1"},
+    {"tr_CY", "ISO8859-9"},
+    {"tr_TR", "ISO8859-9"},
+    {"uk_UA", "KOI8-U"},
+    {"uz_UZ", "ISO8859-1"},
+    {"wa_BE", "ISO8859-15"},
+    {"wa_BE@euro", "ISO8859-15"},
+    {"xh_ZA", "ISO8859-1"},
+    {"yi_US", "CP1255"},
+    {"zh_CN.GB18030", "GB18030"},
+    {"zh_CN.GBK", "GBK"},
+    {"zh_CN", "GB2312"},
+    {"zh_HK", "BIG5-HKSCS"},
+    {"zh_SG.GBK", "GBK"},
+    {"zh_SG", "GB2312"},
+    {"zh_TW.EUC-TW", "EUC-TW"},
+    {"zh_TW", "BIG5"},
+    {"zu_ZA", "ISO8859-1"},
+    {NULL, NULL}
+};
 
 /* Maximum frequency in miliseconds of checking for external modifications.
    The periodic check is only performed on buffer modification, and the check
@@ -2664,6 +2847,24 @@ static int min(int i1, int i2)
     return i1 <= i2 ? i1 : i2;
 }
 
+static char * GetDefaultEncoding(void) {
+    char *lc = setlocale (LC_ALL, "");
+    char *d = strchr(lc, '.');
+    if(d) {
+        *d = 0;
+    }
+    
+    int i = 0;
+    while(locales[i].locale) {
+        if(!strcmp(locales[i].locale, lc)) {
+            return locales[i].encoding;
+        }
+        i++;
+    }
+    
+    return "ISO8859-1";
+}
+
 const char * DetectEncoding(const char *buf, size_t len, const char *def) {
     int utf8Err = 0; // number of utf8 encoding errors
     int utf8Mb = 0;  // number of multibyte characters 
@@ -2673,30 +2874,37 @@ const char * DetectEncoding(const char *buf, size_t len, const char *def) {
     for(size_t i=0;i<len;i++) {
         unsigned char c = u[i];
         if(charLen == 0) {
-            if(c > 240) {
+            if(c >= 240) {
                 charLen = 3;
-            } else if(c > 224) {
+            } else if(c >= 224) {
                 charLen = 2;
             } else if(c > 192) {
                 charLen = 1;
             }
-            if(charLen > 0) {
-                utf8Mb++;
-            }
         } else {
-            int x = c & 192;
             if((c & 192) == 128) {
-                charLen--;
+                if(--charLen == 0) {
+                    utf8Mb++;
+                }
             } else {
                 utf8Err++;
                 charLen = 0;
-                break;
             }
         }
     }  
     
-    if(utf8Err == 0 || utf8Err < utf8Mb) {
+    if(utf8Err == 0 || utf8Mb - utf8Err > 2) {
         return "UTF-8";
     }
+    
+    char defbuf[4];
+    memset(defbuf, 0, 4);
+    if(def && strlen(def) > 3) {
+        memcpy(defbuf, def, 3);
+    }
+    if(!strcasecmp(defbuf, "utf")) {
+        return GetDefaultEncoding();
+    }
+    
     return def;
 }
