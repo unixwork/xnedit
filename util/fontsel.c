@@ -202,21 +202,46 @@ static int compare_font(const void *d1, const void *d2) {
     
     FcChar8 *name1 = NULL;
     FcChar8 *name2 = NULL;
-    
     FcPatternGetString(f1, FC_FULLNAME, 0, &name1);
     FcPatternGetString(f2, FC_FULLNAME, 0, &name2);
     
+    FcChar8 *family1 = NULL;
+    FcChar8 *family2 = NULL;
+    FcPatternGetString(f1, FC_FAMILY, 0, &family1);
+    FcPatternGetString(f2, FC_FAMILY, 0, &family2);
+    
     if(name1 && name2) {
         return strcmp((char*)name1, (char*)name2);
+    } else if(family1 && family2) {
+        return strcmp((char*)family1, (char*)family2);
     } else {
         return 0;
     }
+}
+
+static char* CreateFontName(FcChar8 *family, FcChar8 *style) {
+    size_t flen = family ? strlen(family) : 0;
+    size_t slen = style ? strlen(style) : 0;
+    
+    size_t len = flen + slen + 4;
+    char *name = NEditMalloc(len);
+    
+    if(!family) {
+        snprintf(name, len, "-");
+    } else if(style) {
+        snprintf(name, len, "%s %s", (char*)family, (char*)style);
+    } else {
+        snprintf(name, len, "%s", (char*)family);
+    }
+    return name;
 }
 
 static void UpdateFontList(FontSelector *sel, char *pattern)
 {
     XmStringTable items;
     FcChar8 *name;
+    FcChar8 *family;
+    FcChar8 *style;
     int nfonts, nfound;
     
     if(sel->filter) {
@@ -254,8 +279,22 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
         
         name = NULL;
         FcPatternGetString(sel->list->fonts[i], FC_FULLNAME, 0, &name);
-        if(!name) name = (FcChar8*)"-";
-        items[nfound] = XmStringCreateSimple((char*)name);
+        
+        family = NULL;
+        FcPatternGetString(sel->list->fonts[i], FC_FAMILY, 0, &family);
+        
+        style = NULL;
+        FcPatternGetString(sel->list->fonts[i], FC_STYLE, 0, &style);
+        
+        if(name) {
+            items[nfound] = XmStringCreateSimple((char*)name);
+        } else {
+            name = CreateFontName(family, style);
+            printf("font: %s\n", name);
+            items[nfound] = XmStringCreateSimple((char*)name);
+            NEditFree(name);
+        }
+        
         nfound++;
     }
     
@@ -275,9 +314,18 @@ static void MatchFont(const char *name, XmString *retName, XmString *retSize)
     FcPattern* font = FcFontMatch(NULL, pat, &result);
     if(font) {
         FcChar8* nameStr = NULL;
+        FcChar8* familyStr = NULL;
         double fontSize = 0;
         if (FcPatternGetString(font, FC_FULLNAME, 0, &nameStr) == FcResultMatch) {
             *retName = XmStringCreateSimple((char*)nameStr);
+        } else if (FcPatternGetString(font, FC_FAMILY, 0, &familyStr) == FcResultMatch) {
+            FcChar8 *styleStr = NULL;
+            FcPatternGetString(font, FC_STYLE, 0, &styleStr);
+            if(styleStr) {
+                char *fontName = CreateFontName(familyStr, styleStr);
+                *retName = XmStringCreateSimple(fontName);
+                NEditFree(fontName);
+            }
         }
         if(FcPatternGetDouble(font, FC_SIZE, 0, &fontSize) == FcResultMatch) {
             char buf[8];
@@ -315,6 +363,8 @@ static char* GetFontString(FontSelector *sel)
     char *size = NULL;
     size_t fontLen, styleLen, sizeLen, outLen;
     char *out;
+    
+    if(i < 0) return NULL;
     
     FcPatternGetString(sel->list->fonts[i], FC_FAMILY, 0, (FcChar8**)&font);
     FcPatternGetString(sel->list->fonts[i], FC_STYLE, 0, (FcChar8**)&style);
@@ -595,6 +645,12 @@ char *FontSel(Widget parent, const char *curFont)
     if(fontSelection) {
         XmListSelectItem(sel->fontlist, fontSelection, 0);
         XmStringFree(fontSelection);
+        int *pos;
+        int selcount = 0;
+        if(XmListGetSelectedPos(sel->fontlist, &pos, &selcount)) {
+            sel->selected_item = pos[0];
+            XtFree((void*)pos);
+        }
     }
     if(sizeSelection) {
         XmListSelectItem(sel->size, sizeSelection, 0);
