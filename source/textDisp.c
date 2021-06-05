@@ -1728,7 +1728,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     int oldFirstChar = textD->firstChar;
     int scrolled, origCursorPos = textD->cursorPos;
     int wrapModStart, wrapModEnd;
- 
+    
     /* buffer modification cancels vertical cursor motion column */
     if (nInserted != 0 || nDeleted != 0)
     	textD->cursorPreferredCol = -1;
@@ -1808,8 +1808,14 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
        old cursor gets erased, and erase the bits of the cursor which extend
        beyond the left and right edges of the text. */
     startDispPos = textD->continuousWrap ? wrapModStart : pos;
-    if (origCursorPos == startDispPos && textD->cursorPos != startDispPos)
-    	startDispPos = min(startDispPos, BufLeftPos(buf, origCursorPos));
+    int cpos = origCursorPos;
+    if (textD->highlightCursorLine) {
+        cpos = BufStartOfLine(buf, origCursorPos);
+    }
+    if (origCursorPos == startDispPos && textD->cursorPos != startDispPos) {
+        startDispPos = min(startDispPos, BufLeftPos(buf, cpos));
+    }
+    	
     if (linesInserted == linesDeleted) {
         if (nInserted == 0 && nDeleted == 0)
             endDispPos = pos + nRestyled;
