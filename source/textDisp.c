@@ -909,14 +909,24 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     
     if(hiline) {
         int oldLine, newLine, oldLine2, newLine2;
-        posToVisibleLineNum(textD, oldLineStart, &oldLine);
-        posToVisibleLineNum(textD, oldLineEnd, &oldLine2);
+        
         posToVisibleLineNum(textD, newLineStart, &newLine);
         posToVisibleLineNum(textD, newLineEnd, &newLine2);
         
-        for(int i=oldLine;i<=oldLine2;i++) {
-            redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
+        int redisplayOld = 1;
+        if(oldLineEnd < textD->lineStarts[0] || oldLineStart > textD->lineStarts[textD->nVisibleLines-1]) {
+            redisplayOld = 0;         
+        } else {
+            posToVisibleLineNum(textD, oldLineStart, &oldLine);
+            posToVisibleLineNum(textD, oldLineEnd, &oldLine2);
         }
+        
+        if(redisplayOld) {
+            for(int i=oldLine;i<=oldLine2;i++) {
+                redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
+            }
+        }
+        
         for(int i=newLine;i<=newLine2;i++) {
             redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
         }
