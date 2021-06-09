@@ -913,8 +913,22 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
         posToVisibleLineNum(textD, newLineStart, &newLine);
         posToVisibleLineNum(textD, newLineEnd, &newLine2);
         
+        if(newLine == -1 && newLine2 >= 0) {
+            newLine = 0;
+        }
+        if(newLine2 == -1 && newLine >= 0) {
+            newLine2 = textD->nVisibleLines-1;
+        }
+        
         posToVisibleLineNum(textD, oldLineStart, &oldLine);
         posToVisibleLineNum(textD, oldLineEnd, &oldLine2);
+        
+        if(oldLine == -1 && oldLine2 >= 0) {
+            oldLine = 0;
+        }
+        if(oldLine2 == -1 && oldLine >= 0) {
+            oldLine2 = textD->nVisibleLines-1;
+        }
         
         for(int i=oldLine;i<=oldLine2;i++) {
             redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
