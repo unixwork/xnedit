@@ -3749,6 +3749,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->showMatchingStyle = GetPrefShowMatching();
     window->matchSyntaxBased = GetPrefMatchSyntaxBased();
     window->highlightSyntax = GetPrefHighlightSyntax();
+    window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->backlightCharTypes = NULL;
@@ -4470,6 +4471,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XtSetSensitive(window->resetZoomItem, window->zoom == 0 ? False : True);
     XtSetSensitive(window->highlightItem, window->languageMode != PLAIN_LANGUAGE_MODE);
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
+    XmToggleButtonSetState(window->highlightCursorLineItem, window->highlightCursorLine, False);
     XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
 #ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
