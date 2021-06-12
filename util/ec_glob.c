@@ -36,6 +36,31 @@
 
 #include "ec_glob.h"
 
+
+#if defined(__sun) && _POSIX_VERSION < 200809L
+
+#define strnlen ec_strnlen
+#define strndup ec_strndup
+
+static size_t strnlen(const char *str, size_t maxlen) {
+    for(size_t i=0;i<=maxlen;i++) {
+        if(str[i] == '\0') return i;
+    }
+    return maxlen;
+}
+
+static char* strndup(const char *str, size_t maxlen) {
+    size_t len = strnlen(str, maxlen);
+    char *newstr = malloc(len+1);
+    if(!newstr) return NULL;
+    
+    memcpy(newstr, str, len);
+    newstr[len] = 0;
+    return newstr;
+}
+
+#endif
+
 /* Special characters */
 const char ec_special_chars[] = "?[]\\*-{},";
 
