@@ -220,8 +220,8 @@ static int compare_font(const void *d1, const void *d2) {
 }
 
 static char* CreateFontName(FcChar8 *family, FcChar8 *style) {
-    size_t flen = family ? strlen(family) : 0;
-    size_t slen = style ? strlen(style) : 0;
+    size_t flen = family ? strlen((char*)family) : 0;
+    size_t slen = style ? strlen((char*)style) : 0;
     
     size_t len = flen + slen + 4;
     char *name = NEditMalloc(len);
