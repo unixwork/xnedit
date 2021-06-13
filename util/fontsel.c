@@ -289,7 +289,7 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
         if(name) {
             items[nfound] = XmStringCreateSimple((char*)name);
         } else {
-            name = CreateFontName(family, style);
+            name = (FcChar8*)CreateFontName(family, style);
             printf("font: %s\n", name);
             items[nfound] = XmStringCreateSimple((char*)name);
             NEditFree(name);
