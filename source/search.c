@@ -509,15 +509,17 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
 	   	/* The user always wants window scope as default. */
 		RadioButtonChangeState(window->replaceScopeWinToggle, 
                                        True, True);
+                window->replaceScope = REPL_SCOPE_WIN;
 		break;
 	}
     }
     else {
        /* No selection -> always choose "In Window" as default. */
 	RadioButtonChangeState(window->replaceScopeWinToggle, True, True);
+        window->replaceScope = REPL_SCOPE_WIN;
     }
 #endif
-
+    
     UpdateReplaceActionButtons(window);
     
     /* Start the search history mechanism at the current history item */
