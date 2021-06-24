@@ -4278,11 +4278,6 @@ int SaveFilesDialog(WindowInfo *window)
     
     // checkbox form
     n = 0;
-    Widget cbForm = XmCreateForm(scrollW, "cbform", args, n);
-    XtManageChild(cbForm);
-    
-    Widget b1 = XmCreatePushButton(cbForm, "button", args, 0);
-    XtManageChild(b1);
     
     XtVaSetValues(
             buttons,
