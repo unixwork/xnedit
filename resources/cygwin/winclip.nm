@@ -1,0 +1,15 @@
+# Create to macro menu entries (Preferences -> Default Settings -> Customize Menus -> Macro Menu)
+# with shortcuts
+
+#1: put selection in clipboard
+shell_command("setclip", get_selection())
+
+
+# You won't need the next one, if the X server you run provides an
+# integration between the X clipboard and the Windows clipboard.
+# Notice that you may still need #1 even in this case.
+
+#2: get from windows clipboard  (NOTICE: remove_cr is provided in cygspecial.nm)
+clip = remove_cr(shell_command("getclip", ""))
+insert_string(substring(clip, 0, length(clip) - 1))
+

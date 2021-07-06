@@ -1,0 +1,68 @@
+# Create a file named autoload.nm in your (NEDIT_)HOME directory, cf. the NEdit
+# help, and load this file with the load_macro_file() function.
+
+
+# Some COMPATIBILITY issues
+
+#for compatibility with Windows paths
+define path2win {
+  path = $1
+  start = search_string(path,"/cygdrive/c",0)
+  path = "c:" substring(path,$search_end, length(path))
+  t= replace_in_string(path,"/","\\\\")
+  if (t!="") {
+     path = t
+     }
+
+  return(path)
+}
+
+# for filtering out   when interacting with Windows applications
+# takes a string and deletes all   in it
+define remove_cr {
+if (search_string($1, "\r", 0) != -1) {
+    return(replace_in_string($1,"\r",""))
+    }
+    else {
+      return($1)
+      }
+
+}
+
+# To workaround a Cygwin BUG with filtering
+# Cygwin refuses to read the standard streams reliably through the Xt 
+# callbacks in shell.c
+# This function pipes the output of a filter in a temporary file and reads
+# it back into the buffer (this is quick and dirty, just as Vim does it)
+define filtering_on_cygwin {
+path = getenv("HOME") #"/nedata/"
+if ($n_args != 2) {
+    dialog("Wrong number of parameters! Canceling.")
+    return ""
+    }
+command = $1
+input = $2
+file_in = path "tmp_in"
+file_out = path "tmp_out"
+write_file(input, file_in)
+shell_command(command " < " file_in " > " file_out, "")
+#dialog($shell_cmd_status)
+if ($shell_cmd_status == 0) {
+    output = remove_cr(read_file(file_out))
+    if ($read_status == 1) {
+        #clean up
+        write_file("", file_in)
+        write_file("", file_out)
+        return(output)
+        }
+    }
+dialog("Something failed")   
+}
+
+define lesstif_bug {
+if ($wrap_text == "continuous") {
+    # in 5.5 renamed to split_pane() !!!
+    split_pane()
+    close_pane()  
+    }
+}
