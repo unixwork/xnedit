@@ -1,14 +1,14 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021 Valerio Messina v0.02.0 2021/07/18 GNU GPL v2+
+# xnedit_pkg: Copyright 2021 Valerio Messina v0.03.0 2021/07/23 GNU GPL v2+
 # this script create a Win package for XNEdit with all the dependancies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2
 # Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
 # Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
 bin="$HOME/c/xnedit/source"
-pkg="/cygdrive/d/installer/xnedit"
+pkg="/cygdrive/c/installer/xnedit"
 dbg=1 # set to 1 to have debug prints and not stripped files
 
-echo "xnedit_pkg v0.02.0 2021/07/18 create a Win package for XNEdit"
+echo "xnedit_pkg v0.03.0 2021/07/23 create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
 for extCmd in bash cat ctags dos2unix grep sed strip test uname which ; do
