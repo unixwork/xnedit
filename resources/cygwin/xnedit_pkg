@@ -5,7 +5,7 @@
 # Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
 # Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
 bin="$HOME/c/xnedit/source"
-pkg="/cygdrive/c/installer/xnedit"
+pkg="/cygdrive/d/installer/xnedit"
 dbg=1 # set to 1 to have debug prints and not stripped files
 
 echo "xnedit_pkg v0.02.0 2021/07/18 create a Win package for XNEdit"
@@ -198,5 +198,20 @@ echo ":End"                                 >> $pkg/xnedit.bat
 unix2dos -q $pkg/xnedit.bat
 #icacls $pkgWin\\xnedit.bat /remove:d everyone /grant:r everyone:RX /q #> /dev/null
 icacls $pkgWin\\xnedit.bat /reset /q > /dev/null # fix Cygwin file permissions
+
+# create the Windows shortcut in $pkgWin
+cd "$bin/../resources/cygwin"
+echo "Set oWS = WScript.CreateObject(\"WScript.Shell\")"  >  link.vbs
+echo "sLinkFile = \"$pkgWin\XNEnit.lnk\""                 >> link.vbs
+echo "Set oLink = oWS.CreateShortcut(sLinkFile)"          >> link.vbs
+echo "    oLink.TargetPath = \"$pkgWin\xnedit.bat\""      >> link.vbs
+echo " '  oLink.Arguments = \"\""                         >> link.vbs
+echo " '  oLink.Description = \"XNEdit\""                 >> link.vbs
+echo " '  oLink.HotKey = \"CTRL+ALT+SHIFT+N\""            >> link.vbs
+echo "    oLink.IconLocation = \"$pkgWin\xnedit.ico, 0\"" >> link.vbs
+echo " '  oLink.WindowStyle = \"1\""                      >> link.vbs
+echo "    oLink.WorkingDirectory = \"$pkgWin\""           >> link.vbs
+echo "oLink.Save"                                         >> link.vbs
+/cygdrive/c/Windows/System32/wscript.exe link.vbs
 
 echo Done
