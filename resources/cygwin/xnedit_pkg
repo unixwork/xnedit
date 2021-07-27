@@ -1,14 +1,14 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021 Valerio Messina v0.03.0 2021/07/23 GNU GPL v2+
+# xnedit_pkg: Copyright 2021 Valerio Messina v0.03.0 2021/07/27 GNU GPL v2+
 # this script create a Win package for XNEdit with all the dependancies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2
 # Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
 # Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
 bin="$HOME/c/xnedit/source"
 pkg="/cygdrive/c/installer/xnedit"
-dbg=1 # set to 1 to have debug prints and not stripped files
+dbg=0 # set to 1 to have debug prints and not stripped files
 
-echo "xnedit_pkg v0.03.0 2021/07/23 create a Win package for XNEdit"
+echo "xnedit_pkg v0.03.0 2021/07/27 create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
 for extCmd in bash cat ctags dos2unix grep sed strip test uname which ; do
@@ -168,11 +168,13 @@ echo 'CreateObject("Wscript.Shell").Run "" & WScript.Arguments(0) & "", 0, False
 # create the run batch and script file:
 cp $scriptPath/xnc.sh $pkg # run script
 echo "@ECHO OFF"                            >  $pkg/xnedit.bat
-echo "echo Starting 'xnedit.bat' ..."       >> $pkg/xnedit.bat
-echo "cd"                                   >> $pkg/xnedit.bat
+if (test "$dbg" = "1") then
+   echo "echo Starting 'xnedit.bat' ..."       >> $pkg/xnedit.bat
+   echo "echo Batch param:%1"                  >> $pkg/xnedit.bat
+   echo "echo Batch param:%2"                  >> $pkg/xnedit.bat
+   echo "cd"                                   >> $pkg/xnedit.bat
+fi
 #echo "cd > cwd.txt"                         >> $pkg/xnedit.bat
-echo "echo Batch param:%1"                  >> $pkg/xnedit.bat
-echo "echo Batch param:%2"                  >> $pkg/xnedit.bat
 #echo "set HOME=."                           >> $pkg/xnedit.bat
 # Windows on double click run from /cygdrive/c/WINDOWS/system32"
 echo "cd /d $pkgWin"                        >> $pkg/xnedit.bat
@@ -190,7 +192,6 @@ echo ":NoParam"                             >> $pkg/xnedit.bat
 if (test "$dbg" != "1") then
    echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh"' >> $pkg/xnedit.bat
 else
-   #echo "$pkgWin\usr\bin\bash.exe $pkg/xnc.sh" >> $pkg/xnedit.bat
    echo "cygroot\bin\bash.exe xnc.sh"              >> $pkg/xnedit.bat
 fi
 echo ":End"                                 >> $pkg/xnedit.bat
