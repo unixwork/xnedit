@@ -1,15 +1,31 @@
 #!/bin/bash
 # xnedit_pkg: Copyright 2021 Valerio Messina GNU GPL v2+
-# this script create a Win package for XNEdit with all the dependancies
-# Note: must be run in Cygwin, does not work in MinGw/MSYS2
+# xnedit_pkg is part of XNEdit multi-purpose text editor:
+# https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
+# XNEdit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# XNEdit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
+
+# xnedit_pkg: create a Win package for XNEdit with all the dependancies
+# Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
 # Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
 # Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
 bin="$HOME/c/xnedit/source"
-pkg="/cygdrive/c/installer/xnedit"
+pkg="/cygdrive/d/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-echo "xnedit_pkg v0.04.0 2021/08/03 create a Win package for XNEdit"
+ver="v0.04.0 2021/08/04"
+echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
 for extCmd in bash cat ctags cygstart dirname dos2unix grep realpath sed sleep strip test uname which ; do
@@ -25,8 +41,9 @@ if (test "$flag" = 1) then
    exit
 fi
 
+# check the running env
 if (test "" != "$MSYSTEM") then
-   echo "ERROR: You are in MinGw/MSYS2"
+   echo "ERROR: You are in MinGw/MSYS2/Unix"
    exit
 fi
 os=`uname -o`
@@ -45,7 +62,7 @@ fi
 relPath=`dirname $0`
 scriptPath=`realpath $relPath`
 # check the distribution package has all needed files
-for file in xnc.sh cygspecial.nm winclip.nm xnedit.ico ; do
+for file in cygspecial.nm winclip.nm xnc.sh xnedit.ico xnedit.nsi ; do
    if (! test -e $scriptPath/$file) then
       echo "ERROR: Cannot find: $scriptPath/$file"
       exit
@@ -77,8 +94,8 @@ prog=`grep -F "$PROGRAMFILES" "$scriptPath/tmp.sh"`
 if (test "" = "$prog") then # not protected path
    mkdir -p "$pkg/cygroot/bin"
 else # protected path
-   echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" >> "$scriptPath/tmp.sh"
-   cygstart --action=runas bash "$scriptPath/tmp.sh"
+   echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" > "$scriptPath/tmp.sh"
+   cygstart --action=runas /bin/bash "$scriptPath/tmp.sh"
    sleep 1
    rm "$scriptPath/tmp.sh"
 fi
@@ -179,36 +196,34 @@ cp -a /usr/share/x11/locale "$pkg/cygroot/usr/share/x11"
 echo 'CreateObject("Wscript.Shell").Run "" & WScript.Arguments(0) & "", 0, False' > "$pkg/hide.vbs"
 
 # create the run batch and script file:
-cp $scriptPath/xnc.sh "$pkg" # run script
-echo "@ECHO OFF"                            >  "$pkg/xnedit.bat"
+echo "@ECHO OFF"                          >  "$pkg/xnedit.bat"
 if (test "$dbg" = "1") then
-   echo "echo Starting 'xnedit.bat' ..."       >> "$pkg/xnedit.bat"
-   echo "echo Batch param:%1"                  >> "$pkg/xnedit.bat"
-   echo "echo Batch param:%2"                  >> "$pkg/xnedit.bat"
-   echo "cd"                                   >> "$pkg/xnedit.bat"
+   echo "echo Starting 'xnedit.bat' ..."  >> "$pkg/xnedit.bat"
+   echo "echo Batch par1:%1"              >> "$pkg/xnedit.bat"
+   echo "echo Batch par2:%2"              >> "$pkg/xnedit.bat"
+   echo "cd"                              >> "$pkg/xnedit.bat"
 fi
-# Windows on double click run from /cygdrive/c/WINDOWS/system32"
-echo "cd /d $pkgWin"                        >> "$pkg/xnedit.bat"
-echo "IF '%1'=='' GOTO NoParam"             >> "$pkg/xnedit.bat"
-echo ":Loop"                                >> "$pkg/xnedit.bat"
-echo "IF '%1'=='' GOTO End"                 >> "$pkg/xnedit.bat"
+echo "IF '%1'=='' GOTO NoParam"           >> "$pkg/xnedit.bat"
+echo ":Loop"                              >> "$pkg/xnedit.bat"
+echo "IF '%1'=='' GOTO End"               >> "$pkg/xnedit.bat"
 if (test "$dbg" != "1") then
    echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh %1"' >> "$pkg/xnedit.bat"
 else
-   echo "cygroot\bin\bash.exe xnc.sh %1"           >> "$pkg/xnedit.bat"
+   echo "cygroot\bin\bash.exe xnc.sh %1"  >> "$pkg/xnedit.bat"
 fi
-echo "SHIFT"                                >> "$pkg/xnedit.bat"
-echo "GOTO Loop"                            >> "$pkg/xnedit.bat"
-echo ":NoParam"                             >> "$pkg/xnedit.bat"
+echo "SHIFT"                              >> "$pkg/xnedit.bat"
+echo "GOTO Loop"                          >> "$pkg/xnedit.bat"
+echo ":NoParam"                           >> "$pkg/xnedit.bat"
 if (test "$dbg" != "1") then
    echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh"' >> "$pkg/xnedit.bat"
 else
-   echo "cygroot\bin\bash.exe xnc.sh"              >> "$pkg/xnedit.bat"
+   echo "cygroot\bin\bash.exe xnc.sh"     >> "$pkg/xnedit.bat"
 fi
-echo ":End"                                 >> "$pkg/xnedit.bat"
-#echo "pause"                                >> "$pkg/xnedit.bat"
+echo ":End"                               >> "$pkg/xnedit.bat"
+#echo "pause"                              >> "$pkg/xnedit.bat"
 unix2dos -q "$pkg/xnedit.bat"
 icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
+cp $scriptPath/xnc.sh "$pkg" # run script
 
 # create the Windows shortcut in $pkgWin
 cd "$scriptPath"
@@ -226,6 +241,6 @@ echo "oLink.Save"                                         >> link.vbs
 wscript.exe link.vbs
 
 # copy NSIS install script
-#cp xnedit.nsi "$pkg"
+cp xnedit.nsi "$pkg"
 
 echo Done
