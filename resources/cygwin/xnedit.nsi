@@ -22,10 +22,9 @@
 ; has uninstall support and (optionally) installs start menu shortcuts.
 ; Limitations: work only installing to $ProgramFiles\xnedit
 ;              so change: pkg="$PROGRAMFILES/xnedit" in 'xnedit_pkg'
-;              NSIS see 'Program Files (x86)' instead of 'Program Files'
 ; ToDo: let's choose at least the destination drive letter
 ;       unistaller should let choose to keep custom settings in ~\.xnedit\
-; V.0.01.00 2021/08/04
+; V.0.01.00 2021/08/05
 
 ;--------------------------------
 ; Compiler Compression options
@@ -39,7 +38,7 @@ Name "XNEdit multi-purpose text editor"
 OutFile "XNEdit1.3.2win_setup.exe"
 
 ; The default installation directory
-InstallDir $PROGRAMFILES\Xnedit
+InstallDir $PROGRAMFILES64\xnedit
 
 ; Registry key to check for directory (so if you install again, it will
 ; overwrite the old one automatically)
@@ -71,8 +70,10 @@ Section "Xnedit (required)"
   File xnc.sh
   File xnedit.bat
   File xnedit.ico
-  ; File GNU-GPL.txt
-  ; File read.me
+  File LICENSE
+  File README
+  File ReleaseNotes
+  File CHANGELOG
 
   ; Subdirectories
   File /r ".xnedit"
@@ -116,14 +117,16 @@ Section "Uninstall"
   Delete "$INSTDIR\xnc.sh"
   Delete "$INSTDIR\xnedit.bat"
   Delete "$INSTDIR\xnedit.ico"
-  ; Delete "$INSTDIR\GNU-GPL.txt"
-  ; Delete "$INSTDIR\read.me"
+  Delete "$INSTDIR\LICENSE"
+  Delete "$INSTDIR\README"
+  Delete "$INSTDIR\ReleaseNotes"
+  Delete "$INSTDIR\CHANGELOG"
 
   ; Remove user custom settings
-  Delete "$INSTDIR\.xnedit\autoload.nm"   ; keep user configurations
-  Delete "$INSTDIR\.xnedit\cygspecial.nm" ; keep user configurations
-  Delete "$INSTDIR\.xnedit\nedit.rc"      ; keep user configurations
-  Delete "$INSTDIR\.xnedit\nedit.history" ; keep user configurations
+  Delete "$INSTDIR\.xnedit\autoload.nm"   ; comment to keep user configurations
+  Delete "$INSTDIR\.xnedit\cygspecial.nm" ; comment to keep user configurations
+  Delete "$INSTDIR\.xnedit\nedit.rc"      ; comment to keep user configurations
+  Delete "$INSTDIR\.xnedit\nedit.history" ; comment to keep user configurations
 
   ; Remove uninstaller
   Delete "$INSTDIR\uninstall.exe"
