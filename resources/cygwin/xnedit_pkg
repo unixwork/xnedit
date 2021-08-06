@@ -20,11 +20,11 @@
 # Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
 # Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
 bin="$HOME/c/xnedit/source"
-pkg="/cygdrive/d/installer/xnedit"
+pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/04"
+ver="v0.04.0 2021/08/05"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -43,12 +43,12 @@ fi
 
 # check the running env
 if (test "" != "$MSYSTEM") then
-   echo "ERROR: You are in MinGw/MSYS2/Unix"
+   echo "ERROR: You are on MinGw/MSYS2/Unix"
    exit
 fi
 os=`uname -o`
 if (test "$os" != "Cygwin") then
-   echo "ERROR: You are not in Cygwin"
+   echo "ERROR: You are not on Cygwin"
    exit
 fi
 os=`uname`
@@ -60,19 +60,19 @@ if (test "$os" = "CYGWIN_NT-10.0-WOW") then
 fi
 
 relPath=`dirname $0`
-scriptPath=`realpath $relPath`
+scriptPath=`realpath "$relPath"`
 # check the distribution package has all needed files
 for file in cygspecial.nm winclip.nm xnc.sh xnedit.ico xnedit.nsi ; do
-   if (! test -e $scriptPath/$file) then
+   if (! test -e "$scriptPath/$file") then
       echo "ERROR: Cannot find: $scriptPath/$file"
       exit
    fi
 done
-if (! test -e $bin) then
+if (! test -e "$bin") then
    echo "ERROR: Cannot find source directory: $bin"
    exit
 fi
-root=/usr # where to pick dependencies
+root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
@@ -84,7 +84,7 @@ echo "Package created in  : $pkg"
 echo "Package created in  : $pkgWin"
 echo "Debug is (1=active) : $dbg"
 echo "Packaging 'XNEdit' for Win$bit ..."
-cd $bin
+cd "$bin"
 
 rm -rf "$pkg" 2> /dev/null # remove prev installation
 
@@ -94,6 +94,7 @@ prog=`grep -F "$PROGRAMFILES" "$scriptPath/tmp.sh"`
 if (test "" = "$prog") then # not protected path
    mkdir -p "$pkg/cygroot/bin"
 else # protected path
+   # cygstart --action=runas do not work when args has spaces, so ...
    echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" > "$scriptPath/tmp.sh"
    cygstart --action=runas /bin/bash "$scriptPath/tmp.sh"
    sleep 1
@@ -116,20 +117,20 @@ fi
 
 # direct dependencies of xnedit and xnc
 for file in cygX11-6.dll cygwin1.dll cygxcb-1.dll cygXau-6.dll cygXdmcp-6.dll cygXft-2.dll cygfontconfig-1.dll cygexpat-1.dll cygfreetype-6.dll cygbrotlidec-1.dll cygbrotlicommon-1.dll cygbz2-1.dll cygpng16-16.dll cygz.dll cygintl-8.dll cygiconv-2.dll cyguuid-1.dll cygXrender-1.dll cygXm-4.dll cygjpeg-8.dll cygXext-6.dll cygXmu-6.dll cygXt-6.dll cygICE-6.dll cygSM-6.dll cygXpm-4.dll cygpcre-1.dll ; do
-   cp $root/bin/$file "$pkg/cygroot/bin"
+   cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$file" = "cygwin1.dll") then continue ; fi
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
    fi
 done
 if (test "$bit" = "64") then
-   cp $root/bin/cyggcc_s-seh-1.dll "$pkg/cygroot/bin"
+   cp "$root/bin/cyggcc_s-seh-1.dll" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/cyggcc_s-seh-1.dll"
    fi
 fi
 if (test "$bit" = "32") then
-   cp $root/bin/cyggcc_s-1.dll "$pkg/cygroot/bin"
+   cp "$root/bin/cyggcc_s-1.dll" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/cyggcc_s-1.dll"
    fi
@@ -137,15 +138,15 @@ fi
 
 # XNEdit config
 mkdir -p "$pkg/.xnedit"
-cp $HOME/.xnedit/nedit.rc "$pkg/.xnedit"
+cp "$HOME/.xnedit/nedit.rc" "$pkg/.xnedit"
 echo '#load_macro_file(getenv("ProgramFiles") "/.xnedit/cygspecial.nm")' > "$pkg/.xnedit/autoload.nm"
 echo 'load_macro_file(getenv("XNEditDir") "/.xnedit/cygspecial.nm")' > "$pkg/.xnedit/autoload.nm"
-cp $scriptPath/cygspecial.nm "$pkg/.xnedit"
-cp $scriptPath/xnedit.ico "$pkg"
+cp "$scriptPath/cygspecial.nm" "$pkg/.xnedit"
+cp "$scriptPath/xnedit.ico" "$pkg"
 
 # other needed files
 for file in ctags.exe test.exe sleep.exe echo.exe date.exe ls.exe wc.exe unexpand.exe tr.exe sort.exe nl.exe expand.exe cat.exe grep.exe diff.exe cygpath.exe gawk.exe cygsigsegv-2.dll; do
-   cp -P $root/bin/$file "$pkg/cygroot/bin"
+   cp -P "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
    fi
@@ -154,7 +155,7 @@ mv "$pkg/cygroot/bin/gawk.exe" "$pkg/cygroot/bin/awk.exe" # NSIS can't process l
 
 # files needed to run 'bash.exe xnc.sh'
 for file in bash.exe sed.exe dos2unix.exe cygreadline7.dll cygncursesw-10.dll ; do
-   cp $root/bin/$file "$pkg/cygroot/bin"
+   cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
    fi
@@ -163,7 +164,7 @@ mkdir -p "$pkg/cygroot/tmp" # avoid "bash.exe: warning: could not find /tmp, ple
 
 # files needed to run Shell menu commands:
 for file in cygmpfr-6.dll cyggmp-10.dll; do
-   cp $root/bin/$file "$pkg/cygroot/bin"
+   cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
    fi
@@ -196,34 +197,39 @@ cp -a /usr/share/x11/locale "$pkg/cygroot/usr/share/x11"
 echo 'CreateObject("Wscript.Shell").Run "" & WScript.Arguments(0) & "", 0, False' > "$pkg/hide.vbs"
 
 # create the run batch and script file:
-echo "@ECHO OFF"                          >  "$pkg/xnedit.bat"
+echo "@ECHO OFF"                         >  "$pkg/xnedit.bat"
+echo "rem This Batch file start XNEdit"  >> "$pkg/xnedit.bat"
 if (test "$dbg" = "1") then
-   echo "echo Starting 'xnedit.bat' ..."  >> "$pkg/xnedit.bat"
-   echo "echo Batch par1:%1"              >> "$pkg/xnedit.bat"
-   echo "echo Batch par2:%2"              >> "$pkg/xnedit.bat"
-   echo "cd"                              >> "$pkg/xnedit.bat"
+   echo "echo Starting 'xnedit.bat' ..." >> "$pkg/xnedit.bat"
+   echo "echo Batch par1:%1"             >> "$pkg/xnedit.bat"
+   echo "echo Batch par2:%2"             >> "$pkg/xnedit.bat"
+   echo "cd"                             >> "$pkg/xnedit.bat"
 fi
-echo "IF '%1'=='' GOTO NoParam"           >> "$pkg/xnedit.bat"
-echo ":Loop"                              >> "$pkg/xnedit.bat"
-echo "IF '%1'=='' GOTO End"               >> "$pkg/xnedit.bat"
+echo "IF '%1'=='' GOTO NoParam"          >> "$pkg/xnedit.bat"
+echo ":Loop"                             >> "$pkg/xnedit.bat"
+echo "IF '%1'=='' GOTO End"              >> "$pkg/xnedit.bat"
 if (test "$dbg" != "1") then
-   echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh %1"' >> "$pkg/xnedit.bat"
+   echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh "%1""' >> "$pkg/xnedit.bat"
 else
-   echo "cygroot\bin\bash.exe xnc.sh %1"  >> "$pkg/xnedit.bat"
+   echo "cygroot\bin\bash.exe xnc.sh %1" >> "$pkg/xnedit.bat"
 fi
-echo "SHIFT"                              >> "$pkg/xnedit.bat"
-echo "GOTO Loop"                          >> "$pkg/xnedit.bat"
-echo ":NoParam"                           >> "$pkg/xnedit.bat"
+echo "SHIFT"                             >> "$pkg/xnedit.bat"
+echo "GOTO Loop"                         >> "$pkg/xnedit.bat"
+echo ":NoParam"                          >> "$pkg/xnedit.bat"
 if (test "$dbg" != "1") then
    echo 'C:\Windows\System32\wscript.exe "hide.vbs" "cygroot\bin\bash.exe xnc.sh"' >> "$pkg/xnedit.bat"
 else
-   echo "cygroot\bin\bash.exe xnc.sh"     >> "$pkg/xnedit.bat"
+   echo "cygroot\bin\bash.exe xnc.sh"    >> "$pkg/xnedit.bat"
 fi
-echo ":End"                               >> "$pkg/xnedit.bat"
-#echo "pause"                              >> "$pkg/xnedit.bat"
+echo ":End"                              >> "$pkg/xnedit.bat"
+#echo "pause"                            >> "$pkg/xnedit.bat"
 unix2dos -q "$pkg/xnedit.bat"
 icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
-cp $scriptPath/xnc.sh "$pkg" # run script
+cp "$scriptPath/xnc.sh" "$pkg" # run script
+
+# copy text files
+cd "$scriptPath/../.."
+cp LICENSE README ReleaseNotes CHANGELOG "$pkg"
 
 # create the Windows shortcut in $pkgWin
 cd "$scriptPath"

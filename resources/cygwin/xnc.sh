@@ -17,12 +17,12 @@
 
 # xnc.sh: create the environment to run XNEdit out of Cygwin
 # Note: to start XNedit run 'xnedit.bat' instead of this
-ver="v0.02.0 2021/08/04"
+ver="v0.02.0 2021/08/05"
 echo "Starting 'xnc.sh' ..."
-echo "Bash par1:$1"
+echo "Bash par1:$1" # xnc.sh receive max one arg
 
 export XNEditDir=`pwd`
-echo cwd:$XNEditDir
+echo "cwd:$XNEditDir"
 echo "PATH=$PATH"
 # to find the cygwin1.dll, shell commands, X libraries
 export PATH="$XNEditDir/cygroot/bin:$PATH"
@@ -85,18 +85,19 @@ export LC_ALL=C
 #/cygdrive/c/cygwin/bin/waimea &
 #/usr/bin/startxwin &
 
-# handling calls with multiple files, files and path names with empty spaces and
-# upper-case - lower-case difference
-if [ "$1" != "" ]
-then
+# handling calls with multiple files, files and path names with
+# empty spaces and upper-case - lower-case difference
+if [ "$1" != "" ] ; then
   filename="$*" # all args
   # since under Windows there is no difference between small and capital
   # letters, but XNEdit sees a difference internally, the file name and
   # path get translated to all lower-case
-  filename=`cygpath -u "$filename" | tr A-Z a-z`
+  echo "filename:$filename"
+  filename=`cygpath -u "$filename" | tr 'A-Z' 'a-z'`
+  echo "filename:$filename"
   echo "Run XNEdit with a parameter ..."
-  xnedit "$filename" &
+  xnedit.exe "$filename" &
 else
   echo "Run XNEdit without parameters ..."
-  xnedit &
+  xnedit.exe &
 fi
