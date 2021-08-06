@@ -13,6 +13,8 @@ PREFIX=/usr
 # then builds the xnedit and xnc executables in the source/ directory.
 #
 
+OS=$(shell uname -o)
+
 all:
 	@echo "Please specify target:"
 	@echo "(For example, type \"make linux\" for a Linux system.)"
@@ -57,6 +59,7 @@ realclean: clean
 #
 INSTALL_FILES=source/xnedit source/xnc
 install: $(INSTALL_FILES)
+ifneq ($(OS),Cygwin)
 	mkdir -p $(PREFIX)/bin
 	mkdir -p $(PREFIX)/share/icons
 	mkdir -p $(PREFIX)/share/applications
@@ -66,6 +69,10 @@ install: $(INSTALL_FILES)
 	cp source/xnc $(PREFIX)/bin/xnc
 	cp resources/desktop/xnedit.png $(PREFIX)/share/icons/xnedit.png
 	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(PREFIX)/share/applications/xnedit.desktop
+else # On Cygwin, can customize 'bin' and 'pkg' than run 'xnedit_pkg'
+	@read -p "Cygwin: You can customize installation path in 'pkg'. ENTER to continue"
+	@cd resources/cygwin; xnedit_pkg
+endif
 
 #
 # The following is for creating binary packages of NEdit.
