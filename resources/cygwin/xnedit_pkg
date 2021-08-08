@@ -17,14 +17,16 @@
 
 # xnedit_pkg: create a Win package for XNEdit with all the dependancies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
-# Note: put binaries path in 'bin', eg. "~/Documents/c/xnedit/source"
-# Note: put destination path in 'pkg', eg. "/cygdrive/c/installer/xnedit"
-bin="$HOME/c/xnedit/source"
+# Note: if need a different installation path than $PROGRAMFILES change 'pkg'
+#       eg. "/cygdrive/c/installer/xnedit"
+# Note: default assume jut built binaries path in "../../source", to change
+# you can force the path filling 'bin', eg. bin="$HOME/c/xnedit/source"
+bin=""
 pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/05"
+ver="v0.04.0 2021/08/06"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -68,8 +70,12 @@ for file in cygspecial.nm winclip.nm xnc.sh xnedit.ico xnedit.nsi ; do
       exit
    fi
 done
+src="$scriptPath/../.." # git root
+if (test "" = "$bin") then
+   bin="$src/source" # where binary goes with make
+fi
 if (! test -e "$bin") then
-   echo "ERROR: Cannot find source directory: $bin"
+   echo "ERROR: Cannot find source/bin directory: $bin"
    exit
 fi
 root="/usr" # where to pick dependencies
@@ -77,12 +83,12 @@ pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
 
-echo "XNEdit package files: $scriptPath"
-echo "XNEdit binaries     : $bin"
-echo "Dependencies from   : $root"
-echo "Package created in  : $pkg"
-echo "Package created in  : $pkgWin"
-echo "Debug is (1=active) : $dbg"
+echo "XNEdit script files: $scriptPath"
+echo "XNEdit binaries    : $bin"
+echo "Dependencies from  : $root"
+echo "Package created in : $pkg"
+echo "Package created in : $pkgWin"
+echo "Debug is (1=active): $dbg"
 echo "Packaging 'XNEdit' for Win$bit ..."
 cd "$bin"
 
@@ -228,7 +234,7 @@ icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
 cp "$scriptPath/xnc.sh" "$pkg" # run script
 
 # copy text files
-cd "$scriptPath/../.."
+cd "$src"
 cp LICENSE README ReleaseNotes CHANGELOG "$pkg"
 
 # create the Windows shortcut in $pkgWin
