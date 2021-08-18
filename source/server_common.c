@@ -38,6 +38,7 @@
 #include "nedit.h"
 #include "server_common.h"
 #include "../util/utils.h"
+#include "../util/nedit_malloc.h"
 
 /*
  * Create the server property atoms for the server with serverName.
@@ -64,12 +65,14 @@ void CreateServerPropertyAtoms(const char *serverName,
     size_t hostNameLen = strlen(hostName);
     
     size_t propNameMaxLen = 32 + serverNameLen + userNameLen + hostNameLen;
-    char *propName = malloc(propNameMaxLen);
+    char *propName = NEditMalloc(propNameMaxLen);
 
     snprintf(propName, propNameMaxLen, "XNEDIT_SERVER_EXISTS_%s_%s_%s", hostName, userName, serverName);
     *serverExistsAtomReturn = XInternAtom(TheDisplay, propName, False);
     snprintf(propName, propNameMaxLen, "XNEDIT_SERVER_REQUEST_%s_%s_%s", hostName, userName, serverName);
     *serverRequestAtomReturn = XInternAtom(TheDisplay, propName, False);
+    
+    NEditFree(propName);
 }
 
 /*
@@ -92,13 +95,24 @@ void CreateServerPropertyAtoms(const char *serverName,
 Atom CreateServerFileOpenAtom(const char *serverName, 
 	                      const char *path)
 {
-    char propName[10+1+MAXNODENAMELEN+1+MAXUSERNAMELEN+1+MAXSERVERNAMELEN+1+MAXPATHLEN+1+7];
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
+    
+    size_t serverNameLen = strlen(serverName);
+    size_t userNameLen = strlen(userName);
+    size_t hostNameLen = strlen(hostName);
+    size_t pathLen = strlen(path);
+    
+    size_t propNameMaxLen = 32 + serverNameLen + userNameLen + hostNameLen + pathLen;
+    char *propName = NEditMalloc(propNameMaxLen);
+    
     Atom        atom;
 
-    sprintf(propName, "XNEDIT_FILE_%s_%s_%s_%s_WF_OPEN", hostName, userName, serverName, path);
+    snprintf(propName, propNameMaxLen, "XNEDIT_FILE_%s_%s_%s_%s_WF_OPEN", hostName, userName, serverName, path);
     atom = XInternAtom(TheDisplay, propName, False);
+    
+    NEditFree(propName);
+    
     return(atom);
 }
 
@@ -106,13 +120,21 @@ Atom CreateServerFileClosedAtom(const char *serverName,
 	                        const char *path,
                                 Bool only_if_exist)
 {
-    char propName[10+1+MAXNODENAMELEN+1+MAXUSERNAMELEN+1+MAXSERVERNAMELEN+1+MAXPATHLEN+1+9];
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
     Atom        atom;
+    
+    size_t serverNameLen = strlen(serverName);
+    size_t userNameLen = strlen(userName);
+    size_t hostNameLen = strlen(hostName);
+    size_t pathLen = strlen(path);
+    
+    size_t propNameMaxLen = 32 + serverNameLen + userNameLen + hostNameLen + pathLen;
+    char *propName = NEditMalloc(propNameMaxLen);
 
-    sprintf(propName, "XNEDIT_FILE_%s_%s_%s_%s_WF_CLOSED", hostName, userName, serverName, path);
+    snprintf(propName, propNameMaxLen, "XNEDIT_FILE_%s_%s_%s_%s_WF_CLOSED", hostName, userName, serverName, path);
     atom = XInternAtom(TheDisplay, propName, only_if_exist);
+    NEditFree(propName);
     return(atom);
 }
 
@@ -122,10 +144,17 @@ Atom CreateServerFileClosedAtom(const char *serverName,
  */
 void DeleteServerFileAtoms(const char* serverName, Window rootWindow)
 {
-    char propNamePrefix[10+1+MAXNODENAMELEN+1+MAXUSERNAMELEN+1+MAXSERVERNAMELEN+1];
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
-    int length = sprintf(propNamePrefix, "XNEDIT_FILE_%s_%s_%s_", hostName, userName, serverName);
+    
+    size_t serverNameLen = strlen(serverName);
+    size_t userNameLen = strlen(userName);
+    size_t hostNameLen = strlen(hostName);
+    
+    size_t propNamePrefixMaxLen = 32 + serverNameLen + userNameLen + hostNameLen;
+    char *propNamePrefix = NEditMalloc(propNamePrefixMaxLen);
+    
+    int length = snprintf(propNamePrefix, propNamePrefixMaxLen, "XNEDIT_FILE_%s_%s_%s_", hostName, userName, serverName);
 
     int nProperties;
     Atom* atoms = XListProperties(TheDisplay, rootWindow, &nProperties);
@@ -141,4 +170,6 @@ void DeleteServerFileAtoms(const char* serverName, Window rootWindow)
         }
         XFree((char*)atoms);
     }
+    
+    NEditFree(propNamePrefix);
 }    
