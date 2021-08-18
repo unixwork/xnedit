@@ -240,7 +240,7 @@ cp LICENSE README ReleaseNotes CHANGELOG "$pkg"
 # create the Windows shortcut in $pkgWin
 cd "$scriptPath"
 echo "Set oWS = WScript.CreateObject(\"WScript.Shell\")"  >  link.vbs
-echo "sLinkFile = \"$pkgWin\XNEnit.lnk\""                 >> link.vbs
+echo "sLinkFile = \"$pkgWin\XNEdit.lnk\""                 >> link.vbs
 echo "Set oLink = oWS.CreateShortcut(sLinkFile)"          >> link.vbs
 echo "    oLink.TargetPath = \"$pkgWin\xnedit.bat\""      >> link.vbs
 echo " '  oLink.Arguments = \"\""                         >> link.vbs
