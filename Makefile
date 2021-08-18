@@ -59,7 +59,6 @@ realclean: clean
 #
 INSTALL_FILES=source/xnedit source/xnc
 install: $(INSTALL_FILES)
-ifneq ($(OS),Cygwin)
 	mkdir -p $(PREFIX)/bin
 	mkdir -p $(PREFIX)/share/icons
 	mkdir -p $(PREFIX)/share/applications
@@ -69,10 +68,12 @@ ifneq ($(OS),Cygwin)
 	cp source/xnc $(PREFIX)/bin/xnc
 	cp resources/desktop/xnedit.png $(PREFIX)/share/icons/xnedit.png
 	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(PREFIX)/share/applications/xnedit.desktop
-else # On Cygwin, can customize 'bin' and 'pkg' than run 'xnedit_pkg'
+
+
+# On Cygwin, you can customize 'bin' and 'pkg' than run 'xnedit_pkg'
+cygwin-install: $(INSTALL_FILES)
 	@read -p "Cygwin: You can customize installation path in 'pkg'. ENTER to continue"
 	@cd resources/cygwin; xnedit_pkg
-endif
 
 #
 # The following is for creating binary packages of NEdit.
