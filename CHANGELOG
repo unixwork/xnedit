@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+version 1.3.3 (2021-08-18)
+--------------------------
+ 
+ - fixed potential buffer overflow in server/client mode
+ - fixed half-visible button in "Save Files" dialog
+ - fixed search history recall in alternate "Replace All" dialog
+ - added cygwin support
+
 version 1.3.2 (2021-06-13)
 --------------------------
  

@@ -73,7 +73,7 @@ install: $(INSTALL_FILES)
 # On Cygwin, you can customize 'bin' and 'pkg' than run 'xnedit_pkg'
 cygwin-install: $(INSTALL_FILES)
 	@read -p "Cygwin: You can customize installation path in 'pkg'. ENTER to continue"
-	@cd resources/cygwin; xnedit_pkg
+	@cd resources/cygwin; ./xnedit_pkg
 
 #
 # The following is for creating binary packages of NEdit.
