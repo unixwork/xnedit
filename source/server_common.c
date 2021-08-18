@@ -56,13 +56,19 @@ void CreateServerPropertyAtoms(const char *serverName,
 			       Atom *serverExistsAtomReturn, 
 			       Atom *serverRequestAtomReturn)
 {
-    char propName[20+1+MAXNODENAMELEN+1+MAXUSERNAMELEN+1+MAXSERVERNAMELEN];
     const char *userName = GetUserName();
     const char *hostName = GetNameOfHost();
+    
+    size_t serverNameLen = strlen(serverName);
+    size_t userNameLen = strlen(userName);
+    size_t hostNameLen = strlen(hostName);
+    
+    size_t propNameMaxLen = 32 + serverNameLen + userNameLen + hostNameLen;
+    char *propName = malloc(propNameMaxLen);
 
-    sprintf(propName, "XNEDIT_SERVER_EXISTS_%s_%s_%s", hostName, userName, serverName);
+    snprintf(propName, propNameMaxLen, "XNEDIT_SERVER_EXISTS_%s_%s_%s", hostName, userName, serverName);
     *serverExistsAtomReturn = XInternAtom(TheDisplay, propName, False);
-    sprintf(propName, "XNEDIT_SERVER_REQUEST_%s_%s_%s", hostName, userName, serverName);
+    snprintf(propName, propNameMaxLen, "XNEDIT_SERVER_REQUEST_%s_%s_%s", hostName, userName, serverName);
     *serverRequestAtomReturn = XInternAtom(TheDisplay, propName, False);
 }
 
