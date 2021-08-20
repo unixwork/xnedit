@@ -82,7 +82,7 @@ root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
-xnVer=`grep NEditVersion ../../source/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | sed 's/\\\n/ /' | awk '{print $1}'`
+xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | sed 's/\\\n/ /' | awk '{print $1}'`
 
 echo "XNEdit script files: $scriptPath"
 echo "XNEdit binaries    : $bin"
