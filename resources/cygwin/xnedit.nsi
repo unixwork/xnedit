@@ -14,7 +14,7 @@
 ; You should have received a copy of the GNU General Public License
 ; along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-; xnedit.nsi: setup.exe installer generator for Win systems
+; xnedit.nsi: setup.exe installer generator for Win64 systems
 ; This configuration file is used by NSIS to generate a Win setup package
 ; It will install XNEdit into a fixed directory %ProgramFiles%\xnedit
 ; International version
@@ -24,7 +24,7 @@
 ;              so change: pkg="$PROGRAMFILES/xnedit" in 'xnedit_pkg'
 ; ToDo: let's choose at least the destination drive letter
 ;       unistaller should let choose to keep custom settings in ~\.xnedit\
-; V.0.01.00 2021/08/05
+; V.0.01.00 2021/08/20
 
 ;--------------------------------
 ; Compiler Compression options
@@ -35,7 +35,7 @@ SetCompressor /SOLID lzma
 Name "XNEdit multi-purpose text editor"
 
 ; The file to write
-OutFile "XNEdit1.3.2win_setup.exe"
+OutFile "XNEditM.m.dwin64_setup.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES64\xnedit
