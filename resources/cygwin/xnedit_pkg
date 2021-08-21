@@ -26,11 +26,11 @@ pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/06"
+ver="v0.04.0 2021/08/20"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
-for extCmd in bash cat ctags cygstart dirname dos2unix grep realpath sed sleep strip test uname which ; do
+for extCmd in awk bash cat ctags cygstart dirname dos2unix grep realpath sed sleep strip test uname which ; do
    #echo $extCmd
    exist=`which $extCmd 2> /dev/null`
    if (test "" = "$exist") then
@@ -70,7 +70,7 @@ for file in cygspecial.nm winclip.nm xnc.sh xnedit.ico xnedit.nsi ; do
       exit
    fi
 done
-src="$scriptPath/../.." # git root
+src=`realpath "$scriptPath/../.."` # git root
 if (test "" = "$bin") then
    bin="$src/source" # where binary goes with make
 fi
@@ -82,6 +82,7 @@ root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
+xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | sed 's/\\\n/ /' | awk '{print $1}'`
 
 echo "XNEdit script files: $scriptPath"
 echo "XNEdit binaries    : $bin"
@@ -89,7 +90,7 @@ echo "Dependencies from  : $root"
 echo "Package created in : $pkg"
 echo "Package created in : $pkgWin"
 echo "Debug is (1=active): $dbg"
-echo "Packaging 'XNEdit' for Win$bit ..."
+echo "Packaging 'XNEdit' v$xnVer for Win$bit ..."
 cd "$bin"
 
 rm -rf "$pkg" 2> /dev/null # remove prev installation
@@ -103,7 +104,7 @@ else # protected path
    # cygstart --action=runas do not work when args has spaces, so ...
    echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" > "$scriptPath/tmp.sh"
    cygstart --action=runas /bin/bash "$scriptPath/tmp.sh"
-   sleep 1
+   sleep 2
    rm "$scriptPath/tmp.sh"
 fi
 if (! test -e "$pkg/cygroot/bin") then
@@ -253,6 +254,6 @@ echo "oLink.Save"                                         >> link.vbs
 wscript.exe link.vbs
 
 # copy NSIS install script
-cp xnedit.nsi "$pkg"
+cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'$xnVer'/' > "$pkg/xnedit.nsi"
 
 echo Done
