@@ -1259,7 +1259,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     return redraw;
 } 
 
-
+/*
 void TextPrintXIMError(void) {
     static int xim_err = 0;
     if(!xim_err) {
@@ -1267,6 +1267,7 @@ void TextPrintXIMError(void) {
     }
     xim_err = 1;
 }
+*/
 
 /*
 ** Widget realize method
@@ -1285,9 +1286,7 @@ static void realize(Widget w, XtValueMask *valueMask,
     /* create X input context */
     TextWidget text = (TextWidget)w;
     text->text.xim = XmImGetXIM(w);
-    if(!text->text.xim) {
-        TextPrintXIMError();
-    } else {
+    if(text->text.xim) {
         Window win = XtWindow(w);
         XIMStyle style = XIMPreeditNothing | XIMStatusNothing;
         text->text.xic = XCreateIC(

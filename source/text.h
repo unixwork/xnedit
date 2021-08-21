@@ -183,7 +183,7 @@ XtActionsRec *TextGetActions(int *nActions);
 void ShowHidePointer(TextWidget w, Boolean hidePointer);
 void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked);
 
-void TextPrintXIMError(void);
+/* void TextPrintXIMError(void); */
 
 #ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
 #define HandleAllPendingGraphicsExposeNoExposeEvents HandlePendingExpNoExpEvents

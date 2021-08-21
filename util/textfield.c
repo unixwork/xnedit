@@ -361,8 +361,6 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
                 XNFocusWindow,
                 win,
                 NULL);
-    } else {
-        TextPrintXIMError(); // text.c
     }
     
     tfInitXft(text);
