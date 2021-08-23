@@ -14,17 +14,17 @@
 ; You should have received a copy of the GNU General Public License
 ; along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-; xnedit.nsi: setup.exe installer generator for Win64 systems
+; xnedit.nsi: setup.exe installer generator for Win32/64 systems
 ; This configuration file is used by NSIS to generate a Win setup package
-; It will install XNEdit into a fixed directory %ProgramFiles%\xnedit
-; International version
+; It will install XNEdit into a fixed directory:
+; %ProgramFiles%\xnedit      when OS and XNEdit has the same bit size
+; %ProgramFiles(x86)%\xnedit on 64 bit OS when XNEdit is compiled @32 bit
 ; It is based on example2.nsi, so it remember the installation directory,
 ; has uninstall support and (optionally) installs start menu shortcuts.
-; Limitations: work only installing to $ProgramFiles\xnedit
-;              so change: pkg="$PROGRAMFILES/xnedit" in 'xnedit_pkg'
+; International unicode version
 ; ToDo: let's choose at least the destination drive letter
 ;       unistaller should let choose to keep custom settings in ~\.xnedit\
-; V.0.01.00 2021/08/20
+; V.0.01.00 2021/08/23
 
 ;--------------------------------
 ; Compiler Compression options
@@ -35,7 +35,8 @@ SetCompressor /SOLID lzma
 Name "XNEdit multi-purpose text editor"
 
 ; The file to write
-OutFile "XNEditM.m.dwin64_setup.exe"
+Unicode True
+OutFile "XNEditM.m.dwinXX_setup.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES64\xnedit
@@ -131,14 +132,14 @@ Section "Uninstall"
   ; Remove uninstaller
   Delete "$INSTDIR\uninstall.exe"
 
+  ; Remove shortcuts in start Menu, if any
+  Delete "$SMPROGRAMS\XNEdit\*.*"
+
   ; Remove directories used
   RMDir /r "$INSTDIR\cygroot"
   RMDir "$INSTDIR\.xnedit"
   RMDir "$INSTDIR"
   RMDir "$SMPROGRAMS\Xnedit"
-
-  ; Remove shortcuts in start Menu, if any
-  Delete "$SMPROGRAMS\XNEdit\*.*"
 
   ; Remove shortcut in SendTo context menu
   Delete "$SENDTO\XNEdit.lnk"

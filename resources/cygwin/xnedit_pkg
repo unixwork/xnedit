@@ -15,22 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-# xnedit_pkg: create a Win package for XNEdit with all the dependancies
+# xnedit_pkg: create a Win portable package for XNEdit with all dependancies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
 # Note: if need a different installation path than $PROGRAMFILES change 'pkg'
 #       eg. "/cygdrive/c/installer/xnedit"
-# Note: default assume jut built binaries path in "../../source", to change
+# Note: default assume jut built binaries path is "../../source", to change
 # you can force the path filling 'bin', eg. bin="$HOME/c/xnedit/source"
 bin=""
 pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/20"
+ver="v0.04.0 2021/08/23"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
-for extCmd in awk bash cat ctags cygstart dirname dos2unix grep realpath sed sleep strip test uname which ; do
+for extCmd in awk bash basename cat ctags cygstart dirname dos2unix grep mktemp realpath sed sleep strip test uname which ; do
    #echo $extCmd
    exist=`which $extCmd 2> /dev/null`
    if (test "" = "$exist") then
@@ -96,16 +96,19 @@ cd "$bin"
 rm -rf "$pkg" 2> /dev/null # remove prev installation
 
 # create destination directory
-echo "$pkgWin" > "$scriptPath/tmp.sh"
-prog=`grep -F "$PROGRAMFILES" "$scriptPath/tmp.sh"`
+tempname=$(basename `mktemp -u`)
+echo "$pkgWin" > "$scriptPath/$tempname.sh"
+prog=`grep -F "$PROGRAMFILES" "$scriptPath/$tempname.sh"`
 if (test "" = "$prog") then # not protected path
    mkdir -p "$pkg/cygroot/bin"
 else # protected path
    # cygstart --action=runas do not work when args has spaces, so ...
-   echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" > "$scriptPath/tmp.sh"
-   cygstart --action=runas /bin/bash "$scriptPath/tmp.sh"
+   echo "/usr/bin/mkdir -p \"$pkg/cygroot/bin\"" > "$scriptPath/$tempname.sh"
+   cygstart --action=runas /bin/bash "$scriptPath/$tempname.sh"
    sleep 2
-   rm "$scriptPath/tmp.sh"
+fi
+if (test "$dbg" != "1") then
+   rm "$scriptPath/$tempname.sh"
 fi
 if (! test -e "$pkg/cygroot/bin") then
    echo "ERROR: Cannot create destination directory: $pkg"
@@ -149,6 +152,7 @@ cp "$HOME/.xnedit/nedit.rc" "$pkg/.xnedit"
 echo '#load_macro_file(getenv("ProgramFiles") "/.xnedit/cygspecial.nm")' > "$pkg/.xnedit/autoload.nm"
 echo 'load_macro_file(getenv("XNEditDir") "/.xnedit/cygspecial.nm")' > "$pkg/.xnedit/autoload.nm"
 cp "$scriptPath/cygspecial.nm" "$pkg/.xnedit"
+# Note: as now do not copy winclip.nm
 cp "$scriptPath/xnedit.ico" "$pkg"
 
 # other needed files
@@ -180,9 +184,9 @@ done
 # create the fonts directory and fonts.conf file
 mkdir -p "$pkg/cygroot/usr/share/fonts/dejavu"
 cp /usr/share/fonts/dejavu/DejaVuSansMono*.ttf "$pkg/cygroot/usr/share/fonts/dejavu"
-cat /etc/fonts/fonts.conf | grep -vF "</fontconfig>" > "$pkg/temp.conf"
-cat "$pkg/temp.conf" | sed 's#<dir>~/\.fonts</dir>#<dir>~/fonts</dir><dir>'"$pkg"'/fonts</dir>#' > "$pkg/fonts.conf"
-rm "$pkg/temp.conf"
+cat /etc/fonts/fonts.conf | grep -vF "</fontconfig>" > "$pkg/$tempname.conf"
+cat "$pkg/$tempname.conf" | sed 's#<dir>~/\.fonts</dir>#<dir>~/fonts</dir><dir>'"$pkg"'/fonts</dir>#' > "$pkg/fonts.conf"
+rm "$pkg/$tempname.conf"
 echo "<!--"                                                              >> "$pkg/fonts.conf"
 echo "  Accept  'monospace' alias, replacing it with 'DejaVu Sans Mono'" >> "$pkg/fonts.conf"
 echo "-->"                                                               >> "$pkg/fonts.conf"
@@ -196,12 +200,13 @@ echo "		</edit>"                                                     >> "$pkg/fo
 echo "	</match>"                                                       >> "$pkg/fonts.conf"
 echo "</fontconfig>"                                                     >> "$pkg/fonts.conf"
 
-# XNEdit need to input non ASCII characters (avoid "Cannot get X Input Manager")
+# XNEdit need to input non ASCII characters
 mkdir -p "$pkg/cygroot/usr/share/x11/locale"
 cp -a /usr/share/x11/locale "$pkg/cygroot/usr/share/x11"
 
 # used to hide the Windows console
 echo 'CreateObject("Wscript.Shell").Run "" & WScript.Arguments(0) & "", 0, False' > "$pkg/hide.vbs"
+unix2dos -q "$pkg/hide.vbs"
 
 # create the run batch and script file:
 echo "@ECHO OFF"                         >  "$pkg/xnedit.bat"
@@ -251,9 +256,20 @@ echo "    oLink.IconLocation = \"$pkgWin\xnedit.ico, 0\"" >> link.vbs
 echo " '  oLink.WindowStyle = \"1\""                      >> link.vbs
 echo "    oLink.WorkingDirectory = \"$pkgWin\""           >> link.vbs
 echo "oLink.Save"                                         >> link.vbs
+unix2dos -q link.vbs
 wscript.exe link.vbs
+if (test "$dbg" != "1") then
+   rm link.vbs
+fi
 
 # copy NSIS install script
-cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'$xnVer'/' > "$pkg/xnedit.nsi"
+cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'$xnVer'/' > $tempname.nsi
+cat $tempname.nsi | sed 's/winXX_setup/win'$bit'_setup/' > "$pkg/xnedit.nsi"
+rm $tempname.nsi
+if (test "$bit" = "32") then
+   cat "$pkg/xnedit.nsi" | sed 's/PROGRAMFILES64/PROGRAMFILES/' > $tempname.nsi
+   mv $tempname.nsi "$pkg/xnedit.nsi"
+fi
+unix2dos -q "$pkg/xnedit.nsi"
 
 echo Done
