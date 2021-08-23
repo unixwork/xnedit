@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-# xnedit_pkg: create a Win portable package for XNEdit with all dependancies
+# xnedit_pkg: create a Win portable package for XNEdit with all dependencies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
 # Note: if need a different installation path than $PROGRAMFILES change 'pkg'
 #       eg. "/cygdrive/c/installer/xnedit"
