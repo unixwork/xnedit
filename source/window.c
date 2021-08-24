@@ -49,6 +49,7 @@
 #include "highlight.h"
 #include "smartIndent.h"
 #include "userCmds.h"
+#include "session.h"
 #include "nedit.bm"
 #include "n.bm"
 #include "windowTitle.h"
@@ -4089,6 +4090,12 @@ void savefiles_cancel(Widget w, SaveFilesData *data, XtPointer d)
     data->end = 1;
 }
 
+void savefiles_save_session(Widget w, SaveFilesData *data, XtPointer d)
+{
+    data->status = 3;
+    data->end = 1;
+}
+
 #define WIDGET_SPACING 5
 #define WINDOW_SPACING 8
 
@@ -4117,7 +4124,19 @@ int SaveFilesDialog(WindowInfo *window)
     XtSetArg(args[0], XmNshadowThickness, 0); n++;
     Widget form = XmCreateForm(dialog, "form", args, n);
     
-    
+    int session = 1; // TODO: config
+    int b1r, b2l, b2r, bcl;
+    if(session) {
+        b1r = 25;
+        b2l = 25;
+        b2r = 50;
+        bcl = 75;
+    } else {
+        b1r = 33;
+        b2l = 33;
+        b2r = 66;
+        bcl = 66;
+    }
     
     // bottom buttons form
     n = 0;
@@ -4135,7 +4154,7 @@ int SaveFilesDialog(WindowInfo *window)
     XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_POSITION); n++;
-    XtSetArg(args[n], XmNrightPosition, 33); n++;
+    XtSetArg(args[n], XmNrightPosition, b1r); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
@@ -4148,12 +4167,12 @@ int SaveFilesDialog(WindowInfo *window)
     n = 0;
     str = XmStringCreateLocalized("Don't Save");
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_POSITION); n++;
-    XtSetArg(args[n], XmNleftPosition, 33); n++;
+    XtSetArg(args[n], XmNleftPosition, b2l); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_POSITION); n++;
-    XtSetArg(args[n], XmNrightPosition, 66); n++;
+    XtSetArg(args[n], XmNrightPosition, b2r); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
@@ -4162,10 +4181,30 @@ int SaveFilesDialog(WindowInfo *window)
     XtManageChild(btnDontSave);
     XmStringFree(str);
     
+    Widget btnSaveSession = NULL;
+    if(session) {
+        n = 0;
+        str = XmStringCreateLocalized("Save Session");
+        XtSetArg(args[n], XmNleftAttachment, XmATTACH_POSITION); n++;
+        XtSetArg(args[n], XmNleftPosition, 50); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_POSITION); n++;
+        XtSetArg(args[n], XmNrightPosition, 75); n++;
+        XtSetArg(args[n], XmNlabelString, str); n++;
+        XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
+        btnSaveSession = XmCreatePushButton(buttons, "button", args, n);
+        XtManageChild(btnSaveSession);
+        XmStringFree(str);
+    }
+    
     n = 0;
     str = XmStringCreateLocalized("Cancel");
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_POSITION); n++;
-    XtSetArg(args[n], XmNleftPosition, 66); n++;
+    XtSetArg(args[n], XmNleftPosition, bcl); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
@@ -4303,6 +4342,13 @@ int SaveFilesDialog(WindowInfo *window)
             XmNactivateCallback,
             (XtCallbackProc)savefiles_cancel,
             &data);
+    if(btnSaveSession) {
+        XtAddCallback(
+                btnSaveSession,
+                XmNactivateCallback,
+                (XtCallbackProc)savefiles_save_session,
+                &data);
+    }
     
     // show dialog
     if(dsize > 0) {
@@ -4323,7 +4369,21 @@ int SaveFilesDialog(WindowInfo *window)
     // data.status == 0 --> save selected files
     int save = data.status == 0 ?
         YES_SBC_DIALOG_RESPONSE : NO_SBC_DIALOG_RESPONSE;
+    if(data.status == 3) {
+        // save session
+        XNESession *session = CreateSession(window);
+        
+        // close all non-top documents belong to this window
+	for (WindowInfo *win = WindowList; win;) {
+    		if (win->shell == winShell) {
+	    	    SessionAddDocument(session, win);
+		}
+	    	win = win->next;
+	    }
+    }
+    
     if(data.status != 2) {
+        // close files (with or without save)
         for(int i=0;i<dsize;i++) {
             Boolean set = True;
             WindowInfo *win = NULL;
@@ -4367,7 +4427,7 @@ int CloseAllDocumentInWindow(WindowInfo *window)
         // open dialog for selecting files, that should be saved
         if(SaveFilesDialog(window)) {
             return False;
-        } 
+        }
 #else
     	/* close all _modified_ documents belong to this window */
 	for (win = WindowList; win; ) {

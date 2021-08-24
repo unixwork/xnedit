@@ -51,12 +51,8 @@
 #endif
 
 #define DEFAULT_NEDIT_HOME ".xnedit"
-#ifdef VMS
-    static char* hiddenFileNames[N_FILE_TYPES] = {".nedit", ".neditmacro", ".neditdb;1"};
-    static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history;1"};
-#else
-    static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history"};
-#endif
+
+static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history", "sessions"};
 
 static void buildFilePath(char* fullPath, const char* dir, const char* file);
 static Boolean isDir(const char* file);

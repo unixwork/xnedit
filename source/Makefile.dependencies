@@ -84,3 +84,4 @@ windowTitle.o: windowTitle.c windowTitle.h nedit.h textBuf.h \
   ../util/DialogF.h ../util/utils.h ../util/fileUtils.h \
   ../util/clearcase.h
 editorconfig.o: editorconfig.c editorconfig.h
+session.o: session.c session.h
