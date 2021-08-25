@@ -33,7 +33,7 @@
 
 #define XNE_SESSION_FILE_LEN 16
 
-XNESession* CreateSession(WindowInfo *window) {
+XNESessionWriter* CreateSession(WindowInfo *window) {
     const char *sessionDir = GetRCFileName(SESSION_DIR);
     size_t sdirlen = strlen(sessionDir);
     
@@ -70,7 +70,7 @@ XNESession* CreateSession(WindowInfo *window) {
     
     printf("session: %s\n", sessionFilePath);
     
-    XNESession *session = NEditMalloc(sizeof(XNESession));
+    XNESessionWriter *session = NEditMalloc(sizeof(XNESessionWriter));
     session->file = sessionFile;
     
     
@@ -78,7 +78,27 @@ XNESession* CreateSession(WindowInfo *window) {
 }
 
 #define SN_BUFLEN 512
-int SessionAddDocument(XNESession *session, WindowInfo *doc) {
+int SessionAddDocument(XNESessionWriter *session, WindowInfo *doc) {
+    /*
+     * Format:
+     * 
+     * Header { File }
+     * 
+     * Header: currently not specified
+     * 
+     * File:
+     *   Name: <file name>
+     *   [Path: <file path>]
+     *   [Length: content length]
+     *   [content]
+     * 
+     * Each file entry is separated by a line break
+     * 
+     * Path is only saved, if the file was already saved in xnedit
+     * Length/Content is saved, when the file is in the modified state
+     * 
+     * 
+     */
     char buf[SN_BUFLEN];
     int len = 0;
     
@@ -104,3 +124,161 @@ int SessionAddDocument(XNESession *session, WindowInfo *doc) {
     
     return 0;
 }
+
+
+int CloseSession(XNESessionWriter *session) {
+    int ret = close(session->file);
+    
+    // free data
+    NEditFree(session);
+    
+    return ret;
+}
+
+
+
+static int parse_line(char *line, size_t len, size_t *contentlength, XNESessionEntry **cur, XNESessionEntry **last) {
+    if(len == 0) {
+        return 0;
+    }
+    
+    char *name = line;
+    size_t name_end = 0;
+    size_t value_start = 0;
+    for(size_t i=0;i<len;i++) {
+        if(line[i] == ':') {
+            line[i] = 0; // terminate name
+            name_end = i;
+            value_start = i+1;
+            break;
+        }
+    }
+    
+    if(name_end == 0) {
+        return 1;
+    }
+    
+    char *value = line + value_start;
+    size_t value_len = len - value_start;
+    
+    while(value[0] == ' ') {
+        value++;
+        value_len--;
+    }
+    
+    if(!strcmp(name, "Name")) {
+        XNESessionEntry *new_entry = NEditMalloc(sizeof(XNESessionEntry));
+        new_entry->name = value;
+        new_entry->path = NULL;
+        new_entry->next = NULL;
+        new_entry->length = 0;
+        new_entry->content = NULL;
+        if(*last) {
+            (*last)->next = new_entry;
+        }
+        *last = new_entry;
+        *cur = new_entry;
+    } else if(!strcmp(name, "Path")) {
+        (*cur)->path = value;
+    } else if(!strcmp(name, "Length")) {
+        char *end;
+        errno = 0;
+        errno = 0;
+        long long val = strtoll(value, &end, 0);
+        if(errno != 0) {
+             return 1;
+        }
+        *contentlength = val;
+    }
+    
+    
+    return 0;
+}
+
+static char readErrorMsg[256];
+
+XNESession ReadSessionFile(const char *path) {
+    XNESession session;
+    session.buffer = NULL;
+    session.entries = NULL;
+    session.error = NULL;
+    
+    // open file and stat
+    int fd = open(path, O_RDONLY);
+    if(fd < 0) {
+        session.error = strerror(errno);
+        return session;
+    }
+    
+    struct stat s;
+    if(fstat(fd, &s)) {
+        session.error = strerror(errno);
+        return session;
+    }
+    
+    // create buffer
+    // the buffer contains the whole session file content
+    // entry content will point directly to the buffer
+    session.buffer = NEditMalloc(s.st_size + 1);
+    session.buffer[s.st_size] = 0;
+    
+    // read file
+    ssize_t r = read(fd, session.buffer, s.st_size);
+    close(fd);
+    if(r < s.st_size) {
+        close(fd);
+        session.error = "Could not read whole file"; // should not happen
+        return session;
+    }
+    
+    XNESessionEntry *current = NULL;
+    XNESessionEntry *last = NULL;
+    
+    size_t line_start = 0;
+    size_t line_end = 0;
+    size_t linenumber = 1;
+    for(size_t i=0;i<=s.st_size;i++) {
+        char c = session.buffer[i];
+        if(c == '\n' || i == s.st_size) {
+            // line end found (or eof)
+            line_end = i;
+            // make the line a null-terminated string
+            // which makes the live easier later
+            session.buffer[i] = 0;
+            size_t line_len = line_end - line_start;
+            char *line = session.buffer + line_start;
+            line_start = i+1; // next line index
+            
+            // parse the line
+            // this will set the entry pointers current and last
+            size_t contentlength = 0;
+            if(parse_line(line, line_len, &contentlength, &current, &last)) {
+                snprintf(readErrorMsg, 256, "Cannot parse session file: Syntax error on line %zu", linenumber);
+                session.error = readErrorMsg;
+                return session;
+            } else if(current && !session.entries) {
+                session.entries = current;
+            }
+            
+            if(contentlength > 0) {
+                if(contentlength > s.st_size - i) {
+                    snprintf(readErrorMsg, 256, "Invalid content length on line %zu", linenumber);
+                    return session;
+                }
+                
+                current->length = contentlength;
+                current->content = session.buffer + line_start;
+                current->content[contentlength] = 0;
+                
+                // skip content
+                i += contentlength + 2;
+                line_start = i;
+            }
+            
+            linenumber++;
+        }
+    }
+    
+    return session;
+}
+

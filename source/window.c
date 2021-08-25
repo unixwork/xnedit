@@ -4371,15 +4371,17 @@ int SaveFilesDialog(WindowInfo *window)
         YES_SBC_DIALOG_RESPONSE : NO_SBC_DIALOG_RESPONSE;
     if(data.status == 3) {
         // save session
-        XNESession *session = CreateSession(window);
+        XNESessionWriter *session = CreateSession(window);
         
-        // close all non-top documents belong to this window
 	for (WindowInfo *win = WindowList; win;) {
-    		if (win->shell == winShell) {
-	    	    SessionAddDocument(session, win);
-		}
-	    	win = win->next;
-	    }
+            if (win->shell == winShell) {
+                SessionAddDocument(session, win);
+            }
+            win = win->next;
+        }
+        
+        XNESession sn = ReadSessionFile("/export/home/olaf/.xnedit/sessions/last");
+        printf("error: %s\n", sn.error);
     }
     
     if(data.status != 2) {

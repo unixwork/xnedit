@@ -28,26 +28,59 @@
 
 #include "nedit.h"
 
+typedef struct XNESessionWriter XNESessionWriter;
 typedef struct XNESession XNESession;
 
+typedef struct XNESessionEntry XNESessionEntry;
+
+
+struct XNESessionWriter {
+    int file;
+};
+
+
+struct XNESessionEntry {
+    char *name;
+    char *path;
+    size_t length;
+    char *content;
+    
+    XNESessionEntry *next;
+};
 
 struct XNESession {
-    char *name;
+    XNESessionEntry *entries;
     
-    int file;
+    char *error;
+    
+    char *buffer;
 };
 
 /*
  * Create a new session file
  */
-XNESession* CreateSession(WindowInfo *window);
+XNESessionWriter* CreateSession(WindowInfo *window);
 
 /*
  * Add a document to a session file
  * This will store the document path (if available), document settings
  * and the content (if not saved) to the session
  */
-int SessionAddDocument(XNESession *session, WindowInfo *doc);
+int SessionAddDocument(XNESessionWriter *session, WindowInfo *doc);
+
+/*
+ * Close the session file and free all data
+ */
+int CloseSession(XNESessionWriter *session);
+
+/*
+ * Open a session file and parse all entries
+
+ * Returns XNESessionEntry list
+ */
+XNESession ReadSessionFile(const char *path);
+
+
 
 #endif /* XNE_SESSION_H */
 
