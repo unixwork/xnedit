@@ -403,6 +403,17 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
     }
 }
 
+WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
+        const char *path, const char *encoding, int flags, char *geometry,
+        int iconic, const char *languageMode, int tabbed, int bgOpen)
+{
+    return EditExistingFileExt(
+            inWindow, name, path,
+            encoding, flags, geometry, iconic,
+            languageMode, tabbed, bgOpen,
+            NULL);
+}
+
 /*
 ** Open an existing file specified by name and path.  Use the window inWindow
 ** unless inWindow is NULL or points to a window which is already in use
@@ -422,9 +433,10 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
 ** the syntax highlighting deferred, in order to speed up the file-
 ** opening operation when multiple files are being opened in succession. 
 */
-WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
+WindowInfo *EditExistingFileExt(WindowInfo *inWindow, const char *name,
         const char *path, const char *encoding, int flags, char *geometry,
-        int iconic, const char *languageMode, int tabbed, int bgOpen)
+        int iconic, const char *languageMode, int tabbed, int bgOpen,
+        const char *content)
 {
     WindowInfo *window;
     char fullname[MAXPATHLEN];
@@ -440,6 +452,13 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     	}	    
 	return window;
     }
+    
+    int filenameSet = True;
+    if(!path) {
+        filenameSet = False;
+        path = GetCurrentDir();
+    }
+    
     
     /* If an existing window isn't specified; or the window is already
        in use (not Untitled or Untitled and modified), or is currently
@@ -472,31 +491,40 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         }
     }
     
-    // look for .editorconfig
     EditorConfig ec;
-    if(GetEditorConfig()) {
-        ec = EditorConfigGet(path, name);
-    } else {
-        memset(&ec, 0, sizeof(EditorConfig));
-    }
-    if(ec.charset && !encoding) {
-        encoding = ec.charset;
-        if(ec.bom != EC_BOM_UNSET) {
-            window->bom = True;
+    memset(&ec, 0, sizeof(EditorConfig));
+    if(!content) {
+        if(GetEditorConfig()) {
+            ec = EditorConfigGet(path, name);
         }
+        if(ec.charset && !encoding) {
+            encoding = ec.charset;
+            if(ec.bom != EC_BOM_UNSET) {
+                window->bom = True;
+            }
+        }
+        
+        /* Open the file */
+        if (!doOpen(window, name, path, encoding, flags)) {
+            /* The user may have destroyed the window instead of closing the 
+               warning dialog; don't close it twice */
+            safeClose(window);
+
+            if(ec.charset) {
+                free(ec.charset);
+            }
+            return NULL;
+        }
+    } else {
+        /* Display the file contents in the text widget */
+        window->ignoreModify = True;
+        BufSetAll(window->buffer, content);
+        window->ignoreModify = False;
+        window->filenameSet = filenameSet;
+        
+        window->fileChanged = True;
     }
     
-    /* Open the file */
-    if (!doOpen(window, name, path, encoding, flags)) {
-	/* The user may have destroyed the window instead of closing the 
-	   warning dialog; don't close it twice */
-	safeClose(window);
-	
-        if(ec.charset) {
-            free(ec.charset);
-        }
-    	return NULL;
-    }
     forceShowLineNumbers(window);
 
     /* Decide what language mode to use, trigger language specific actions */

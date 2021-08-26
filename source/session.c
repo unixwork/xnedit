@@ -23,6 +23,9 @@
 
 #include "session.h"
 
+#include "file.h"
+#include "preferences.h"
+
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
 
@@ -67,8 +70,6 @@ XNESessionWriter* CreateSession(WindowInfo *window) {
     free(sessionFilePath);
     
     ftruncate(sessionFile, 0);
-    
-    printf("session: %s\n", sessionFilePath);
     
     XNESessionWriter *session = NEditMalloc(sizeof(XNESessionWriter));
     session->file = sessionFile;
@@ -137,7 +138,7 @@ int CloseSession(XNESessionWriter *session) {
 
 
 
-static int parse_line(char *line, size_t len, size_t *contentlength, XNESessionEntry **cur, XNESessionEntry **last) {
+static int parse_line(char *line, size_t len, size_t *contentlength, XNESessionEntry **cur) {
     if(len == 0) {
         return 0;
     }
@@ -170,13 +171,9 @@ static int parse_line(char *line, size_t len, size_t *contentlength, XNESessionE
         XNESessionEntry *new_entry = NEditMalloc(sizeof(XNESessionEntry));
         new_entry->name = value;
         new_entry->path = NULL;
-        new_entry->next = NULL;
         new_entry->length = 0;
         new_entry->content = NULL;
-        if(*last) {
-            (*last)->next = new_entry;
-        }
-        *last = new_entry;
+        new_entry->next = (*cur);
         *cur = new_entry;
     } else if(!strcmp(name, "Path")) {
         (*cur)->path = value;
@@ -232,7 +229,6 @@ XNESession ReadSessionFile(const char *path) {
     }
     
     XNESessionEntry *current = NULL;
-    XNESessionEntry *last = NULL;
     
     size_t line_start = 0;
     size_t line_end = 0;
@@ -252,12 +248,10 @@ XNESession ReadSessionFile(const char *path) {
             // parse the line
             // this will set the entry pointers current and last
             size_t contentlength = 0;
-            if(parse_line(line, line_len, &contentlength, &current, &last)) {
+            if(parse_line(line, line_len, &contentlength, &current)) {
                 snprintf(readErrorMsg, 256, "Cannot parse session file: Syntax error on line %zu", linenumber);
                 session.error = readErrorMsg;
                 return session;
-            } else if(current && !session.entries) {
-                session.entries = current;
             }
             
             if(contentlength > 0) {
@@ -279,6 +273,32 @@ XNESession ReadSessionFile(const char *path) {
         }
     }
     
+    session.entries = current;
+    
     return session;
+}
+
+void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile)
+{
+    XNESession session = ReadSessionFile(sessionFile);
+    if(session.error) {
+        // TODO: error
+        return;
+    }
+    
+    XNESessionEntry *entry = session.entries;
+    while(entry) {
+        XNESessionEntry *next_entry = entry->next;
+        char *todo_enc = NULL;
+        
+        EditExistingFileExt(window, entry->name, entry->path, todo_enc, 0, NULL, False, 
+            NULL, True, False, entry->content);
+        
+        
+        NEditFree(entry);
+        entry = next_entry;
+    }
+    
+    NEditFree(session.buffer);
 }
 

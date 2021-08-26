@@ -32,6 +32,7 @@
 #include "../util/getfiles.h"
 
 #include <X11/Intrinsic.h>
+#include <stdlib.h>
 
 /* flags for EditExistingFile */
 #define CREATE 1
@@ -52,6 +53,10 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         const char *path, const char *encoding, int flags, char *geometry,
         int iconic, const char *languageMode, int tabbed, int bgOpen);
+WindowInfo *EditExistingFileExt(WindowInfo *inWindow, const char *name,
+        const char *path, const char *encoding, int flags, char *geometry,
+        int iconic, const char *languageMode, int tabbed, int bgOpen,
+        const char *content);
 void RevertToSaved(WindowInfo *window, char *newEncoding);
 int SaveWindow(WindowInfo *window);
 int SaveWindowAs(WindowInfo *window, FileSelection *file);

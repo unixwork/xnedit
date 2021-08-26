@@ -75,11 +75,15 @@ int CloseSession(XNESessionWriter *session);
 
 /*
  * Open a session file and parse all entries
-
+ *
  * Returns XNESessionEntry list
  */
 XNESession ReadSessionFile(const char *path);
 
+/*
+ * Read a session file and open all session documents in a window
+ */
+void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile);
 
 
 #endif /* XNE_SESSION_H */

@@ -36,6 +36,7 @@
 #include "nedit.h"
 #include "file.h"
 #include "window.h"
+#include "session.h"
 #include "search.h"
 #include "selection.h"
 #include "undo.h"
@@ -3026,7 +3027,13 @@ static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openSessionFileAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    // TODO
+    WindowInfo *window = WidgetToWindow(w);
+    
+    FileSelection getfile = { NULL, NULL };
+    if(PromptForExistingFile(window, "Open Session File", &getfile) == 1) {
+        OpenDocumentsFromSession(window, getfile.path);
+        NEditFree(getfile.path);
+    }
 }
 
 static void includeDialogAP(Widget w, XEvent *event, String *args,
