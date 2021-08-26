@@ -383,6 +383,8 @@ typedef struct _WindowInfo {
     Widget  	tabMenuPane;
     Widget  	prevOpenMenuPane;
     Widget  	prevOpenMenuItem;
+    Widget      openSessionMenuPane;
+    Widget      openSessionMenuItem;
     Widget  	unloadTagsMenuPane;
     Widget  	unloadTagsMenuItem;
     Widget  	unloadTipsMenuPane;

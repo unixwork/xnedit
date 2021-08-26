@@ -234,6 +234,8 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
 static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
 static void revertDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
+static void openSessionFileAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs);
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
 static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs); 
@@ -449,6 +451,7 @@ static XtActionsRec Actions[] = {
     {"revert-to-saved", revertAP},
     {"revert_to_saved", revertAP},
     {"revert_to_saved_dialog", revertDialogAP},
+    {"open_session_file", openSessionFileAP},
     {"include-file", includeAP},
     {"include_file", includeAP},
     {"include-file-dialog", includeDialogAP},
@@ -674,6 +677,12 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
 	XtAddCallback(window->prevOpenMenuItem, XmNcascadingCallback,
     		(XtCallbackProc)prevOpenMenuCB, window);
     }
+    // TODO: config
+    window->openSessionMenuPane = createMenu(menuPane, "openSession",
+    		"Open Session", 'S', &window->openSessionMenuItem, SHORT);
+    createMenuItem(window->openSessionMenuPane, "openSessionFile", "Open Session File", 'O',
+    	    doActionCB, "open_session_file", SHORT);
+    
     createMenuSeparator(menuPane, "sep1", SHORT);
     window->closeItem = createMenuItem(menuPane, "close", "Close", 'C',
     	    doActionCB, "close", SHORT);
@@ -3012,6 +3021,12 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     RevertToSaved(WidgetToWindow(w), NULL);
+}
+
+static void openSessionFileAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    // TODO
 }
 
 static void includeDialogAP(Widget w, XEvent *event, String *args,
