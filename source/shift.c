@@ -40,6 +40,9 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
+#include <locale.h>
+#include <wctype.h>
+#include <wchar.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -194,44 +197,101 @@ static void changeCase(WindowInfo *window, int makeUpper)
 {
     textBuffer *buf = window->buffer;
     char *text, *c;
-    char oldChar;
     int cursorPos, start, end, isRect, rectStart, rectEnd;
+    
+    char *bak_locale = NULL;
+    if(!XNEditDefaultCharsetIsUTF8()) {
+        bak_locale = setlocale(LC_CTYPE, NULL);
+        setlocale(LC_CTYPE, "C.UTF-8");
+    }
     
     /* Get the selection.  Use character before cursor if no selection */
     if (!BufGetSelectionPos(buf, &start, &end, &isRect, &rectStart, &rectEnd)) {
-    	char bufChar[2] = " ";
     	cursorPos = TextGetCursorPos(window->lastFocus);
     	if (cursorPos == 0) {
     	    XBell(TheDisplay, 0);
+            if(bak_locale) setlocale(LC_CTYPE, bak_locale);
     	    return;
 	}
-    	*bufChar = BufGetCharacter(buf, cursorPos-1);
-    	*bufChar = makeUpper ? toupper((unsigned char)*bufChar) :
-		tolower((unsigned char)*bufChar);
-    	BufReplace(buf, cursorPos-1, cursorPos, bufChar);
+        
+        int leftPos = BufLeftPos(buf, cursorPos);
+        
+        wchar_t w = BufGetCharacterW(buf, leftPos);
+        wchar_t wc = makeUpper ? towupper(w) : towlower(w);
+        if(wc == 0) wc = w;
+        
+        char bufChar[8];
+        int clen = wctomb(bufChar, wc);
+        bufChar[clen] = 0;
+        
+    	BufReplace(buf, leftPos, cursorPos, bufChar);
     } else {
         Boolean modified = False;
 
 	text = BufGetSelectionText(buf);
-        for (c = text; *c != '\0'; c++) {
-            oldChar = *c;
-    	    *c = makeUpper ? toupper((unsigned char)*c) :
-		    tolower((unsigned char)*c);
-            if (*c != oldChar) {
-                modified = True;
+        size_t textlen = strlen(text);
+        
+        // reserve some extra space for terminator and to prevent realloc
+        size_t conv_alloc = textlen + 8;
+        size_t conv_len = 0;
+        char *converted = NEditMalloc(conv_alloc);
+        
+        mbstate_t state;
+        memset(&state, 0, sizeof(mbstate_t));
+        
+        int inc = 1;        // text increment
+        size_t i = 0;       // text position
+        size_t cpos = 0;    // converted position
+        char utf8[8];       // buffer for converting wchar_t to multibyte
+        int append_len = 0; // number of bytes that should be appended to dst
+        for(c = text; *c != '\0'; c += inc) {
+            inc = Utf8CharLen((unsigned char*)c);
+            if(i + inc > textlen) {
+                inc = textlen - i;
             }
+            
+            // convert utf8 to wchar_t
+            // if it works, convert to upper/lower
+            // if not, just copy from text to converted
+            wchar_t w;
+            size_t nconverted = mbrtowc(&w, c, inc, &state);
+            if(nconverted > 0) {
+                wchar_t wc = makeUpper ? towupper(w) : towlower(w);
+                append_len = wctomb(utf8, wc);
+                if(wc != w) {
+                    modified = True;
+                }
+                inc = nconverted;
+            } else {
+                append_len = inc;
+            }
+            
+            if(conv_alloc - cpos - 1 < append_len) {
+                conv_alloc += 32;
+                converted = NEditRealloc(converted, conv_alloc);
+            }
+            memcpy(converted + cpos, utf8, append_len);
+            conv_len += append_len;
+            
+            cpos += append_len;
+            i += inc;
         }
+        
+        converted[conv_len] = '\0';
 
         if (modified) {
-            BufReplaceSelected(buf, text);
+            BufReplaceSelected(buf, converted);
         }
-
+        
+        NEditFree(converted);
 	NEditFree(text);
 	if (isRect)
 	    BufRectSelect(buf, start, end, rectStart, rectEnd);
 	else
 	    BufSelect(buf, start, end);
     }
+    
+    if(bak_locale) setlocale(LC_CTYPE, bak_locale);
 }
 
 void FillSelection(WindowInfo *window)

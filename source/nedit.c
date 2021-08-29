@@ -65,6 +65,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <langinfo.h>
 
 #ifndef NO_XMIM
 #include <X11/Xlocale.h>
@@ -1220,6 +1221,16 @@ static void patchLocaleForMotif(void)
 }
 
 
+int XNEditDefaultCharsetIsUTF8(void)
+{
+    static int defaultCharsetIsUtf8 = -1;
+    if(defaultCharsetIsUtf8 == -1) {
+        char *l = nl_langinfo(CODESET);
+        defaultCharsetIsUtf8 = !strcmp(l, "UTF-8") ? 1 : 0;
+    }
+    return defaultCharsetIsUtf8;
+}
+
 /*
 ** Same as the default X language procedure, except we check if Motif can
 ** handle the locale as well.
@@ -1244,7 +1255,7 @@ static String neditLanguageProc(Display *dpy, String xnl, XtPointer closure)
     }
     if (! XSetLocaleModifiers(""))
         XtWarning("X locale modifiers not supported, using default");
-
+    
     return setlocale(LC_ALL, NULL); /* re-query in case overwritten */
 }
 

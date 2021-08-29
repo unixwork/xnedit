@@ -598,4 +598,6 @@ extern Boolean IsServer;
 
 char* GetAppName(void);
 
+int XNEditDefaultCharsetIsUTF8(void);
+
 #endif /* NEDIT_NEDIT_H_INCLUDED */

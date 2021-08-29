@@ -331,6 +331,39 @@ char BufGetCharacter(const textBuffer* buf, int pos)
     	return buf->buf[pos + buf->gapEnd-buf->gapStart];
 }
 
+static int BufGetCharacterBytes(const textBuffer *buf, int pos, char *buffer)
+{
+    char c = BufGetCharacter(buf, pos);
+    int len = Utf8CharLen((unsigned char*)&c);
+    if(len == 1) {
+        *buffer = c;
+        return 1;
+    } else {
+        if(pos + len <= buf->gapStart) {
+            memmove(buffer, buf->buf+pos, len);
+        } else {
+            buffer[0] = c;
+            for(int i=1;i<len;i++) {
+                buffer[i] = BufGetCharacter(buf, pos+i);
+            }
+        }
+    }
+    return len;
+}
+
+wchar_t BufGetCharacterW(const textBuffer *buf, int pos)
+{
+    char utf8[4];
+    int len = BufGetCharacterBytes(buf, pos, utf8);
+    
+    mbstate_t state;
+    memset(&state, 0, sizeof(mbstate_t));
+    
+    wchar_t w = 0;
+    mbrtowc(&w, utf8, len, &state);
+    return w;
+}
+
 /*
  * Return the UCS-4 character at buffer position "pos". Positions start at 0.
  */

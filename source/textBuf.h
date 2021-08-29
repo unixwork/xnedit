@@ -28,6 +28,7 @@
 #define NEDIT_TEXTBUF_H_INCLUDED
 
 #include <fontconfig/fontconfig.h>
+#include <wchar.h>
 
 /* Maximum length in characters of a tab or control character expansion
    of a single buffer character */
@@ -93,6 +94,7 @@ const char *BufAsString(textBuffer *buf);
 void BufSetAll(textBuffer *buf, const char *text);
 char* BufGetRange(const textBuffer* buf, int start, int end);
 char BufGetCharacter(const textBuffer* buf, int pos);
+wchar_t BufGetCharacterW(const textBuffer *buf, int pos);
 FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen);
 char *BufGetTextInRect(textBuffer *buf, int start, int end,
 	int rectStart, int rectEnd);
