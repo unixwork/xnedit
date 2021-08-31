@@ -1881,7 +1881,7 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
         char *newName = XmTextFieldGetString(data->name);
         if(newName) {
             if(strlen(newName) > 0) {
-                data->selectedPath = ConcatPath(data->currentPath, newName);
+                data->selectedPath = newName[0] == '/' ? NEditStrdup(newName) : ConcatPath(data->currentPath, newName);
                 data->status = FILEDIALOG_OK;
                 data->end = True;
                 data->selIsDir = 0;
