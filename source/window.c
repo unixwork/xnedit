@@ -1056,16 +1056,32 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 /*
 ** ButtonPress event handler for tabs.
 */
-static void tabClickEH(Widget w, XtPointer clientData, XEvent *event)
+static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *dispatch)
 {
-    /* hide the tooltip when user clicks with any button. */
-    if (BubbleButton_Timer(w)) {
-    	XtRemoveTimeOut(BubbleButton_Timer(w));
-    	BubbleButton_Timer(w) = (XtIntervalId)NULL;
+    if(event->type == ButtonRelease) {
+        if(event->xbutton.button == 2) {
+            WindowInfo *window = TabToWindow(w);
+            CloseWindow(window);
+            *dispatch = False;
+            return;
+        }
+    } else {
+        /* ButtonPress */
+        if(event->xbutton.button == 2) {
+            *dispatch = False;
+        }
+        
+        /* hide the tooltip when user clicks with any button. */
+        if (BubbleButton_Timer(w)) {
+            XtRemoveTimeOut(BubbleButton_Timer(w));
+            BubbleButton_Timer(w) = (XtIntervalId)NULL;
+        }
+        else {
+            hideTooltip(w);
+        }
     }
-    else {
-        hideTooltip(w);
-    }
+    
+    
 }
 
 /*
@@ -1093,7 +1109,7 @@ static Widget addTab(Widget folder, const char *string)
     XmStringFree(s1);
 
     /* there's things to do as user click on the tab */
-    XtAddEventHandler(tab, ButtonPressMask, False, 
+    XtAddEventHandler(tab, ButtonPressMask|ButtonReleaseMask, False, 
             (XtEventHandler)tabClickEH, (XtPointer)0);
 
     /* BubbleButton simply use reversed video for tooltips,
