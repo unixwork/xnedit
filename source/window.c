@@ -1053,25 +1053,63 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     return window;
 }
 
+static Widget evTab;
+
+static int motion_x;
+static int motion_y;
+static int pressed_x;
+static int pressed_y;
+static int drag_enabled = 0;
+
 /*
 ** ButtonPress event handler for tabs.
 */
 static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *dispatch)
 {
-    if(event->type == ButtonRelease) {
+    if(event->type == MotionNotify) {
+        //printf("motion %d\n", (int)w);
+        motion_x = event->xmotion.x;
+        motion_y = event->xmotion.y;
+        
+        if(pressed_x != 0 && abs(pressed_x - motion_x) > 10) {
+            drag_enabled = 1;
+        }
+        
+        if(drag_enabled) {
+            int tx, ty;
+            Window tw;
+            XTranslateCoordinates(XtDisplay(w), XtWindow(w), XtWindow(XtParent(w)), motion_x, pressed_y, &tx, &ty, &tw);
+            
+            Widget switchTab = XtWindowToWidget(XtDisplay(w), tw);
+            
+            if((evTab != switchTab) && switchTab) {
+                SwitchTabs(evTab, switchTab);
+                evTab = switchTab;
+            }
+        }
+    } else if(event->type == ButtonRelease) {
+        drag_enabled = 0;
+        pressed_x = 0;
+        pressed_y = 0;
         if(event->xbutton.button == 2) {
             WindowInfo *window = TabToWindow(w);
             CloseWindow(window);
             *dispatch = False;
             return;
         }
-    } else {
-        /* ButtonPress */
+    } else if(event->type == ButtonPress) {
+        evTab = w;
+        pressed_x = motion_x;
+        pressed_y = motion_y;
+        drag_enabled = 0;
+        
+        
+        // ButtonPress
         if(event->xbutton.button == 2) {
             *dispatch = False;
         }
         
-        /* hide the tooltip when user clicks with any button. */
+        // hide the tooltip when user clicks with any button.
         if (BubbleButton_Timer(w)) {
             XtRemoveTimeOut(BubbleButton_Timer(w));
             BubbleButton_Timer(w) = (XtIntervalId)NULL;
@@ -1080,8 +1118,6 @@ static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *d
             hideTooltip(w);
         }
     }
-    
-    
 }
 
 /*
@@ -1109,7 +1145,7 @@ static Widget addTab(Widget folder, const char *string)
     XmStringFree(s1);
 
     /* there's things to do as user click on the tab */
-    XtAddEventHandler(tab, ButtonPressMask|ButtonReleaseMask, False, 
+    XtAddEventHandler(tab, PointerMotionMask|ButtonPressMask|ButtonReleaseMask|EnterWindowMask|LeaveWindowMask, False, 
             (XtEventHandler)tabClickEH, (XtPointer)0);
 
     /* BubbleButton simply use reversed video for tooltips,
@@ -1195,6 +1231,46 @@ void SortTabBar(WindowInfo *window)
     }
     
     NEditFree(windows);
+}
+
+/*
+ * Switch document tabs
+ */
+void SwitchTabs(Widget from, Widget to)
+{
+    WindowInfo *winFrom = NULL;
+    WindowInfo *winTo = NULL;
+    WidgetList tabList;
+    int tabCount, nDoc;
+    
+    for(WindowInfo *w=WindowList;w;w=w->next) {
+        if(w->tab == from) {
+            winFrom = w;
+        }
+        if(w->tab == to) {
+            winTo = w;
+        }
+    }
+    
+    winTo->tab = from;
+    winFrom->tab = to;
+    RefreshTabState(winTo);
+    RefreshTabState(winFrom);
+    
+    XtVaGetValues(winFrom->tabBar, XmNtabWidgetList, &tabList,
+                  XmNtabCount, &tabCount, NULL);
+    
+    for(int i=0;i<tabCount;i++) {
+        if(tabList[i]->core.being_destroyed) {
+            continue;
+        }
+        
+        // we are moving the active tab to a new position, therefore
+        // set "to" to active
+        if(tabList[i] == to) {
+            XmLFolderSetActiveTab(winFrom->tabBar, i, False);
+        }
+    }
 }
 
 /* 
