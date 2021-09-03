@@ -1067,7 +1067,6 @@ static int drag_enabled = 0;
 static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *dispatch)
 {
     if(event->type == MotionNotify) {
-        //printf("motion %d\n", (int)w);
         motion_x = event->xmotion.x;
         motion_y = event->xmotion.y;
         
@@ -1093,7 +1092,7 @@ static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *d
         pressed_y = 0;
         if(event->xbutton.button == 2) {
             WindowInfo *window = TabToWindow(w);
-            CloseWindow(window);
+            CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
             *dispatch = False;
             return;
         }
@@ -1103,8 +1102,6 @@ static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *d
         pressed_y = motion_y;
         drag_enabled = 0;
         
-        
-        // ButtonPress
         if(event->xbutton.button == 2) {
             *dispatch = False;
         }
