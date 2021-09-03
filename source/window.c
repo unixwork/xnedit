@@ -1238,8 +1238,8 @@ void SwitchTabs(Widget from, Widget to)
     WindowInfo *winFrom = NULL;
     WindowInfo *winTo = NULL;
     WidgetList tabList;
-    int tabCount, nDoc;
-    
+    int tabCount;
+      
     for(WindowInfo *w=WindowList;w;w=w->next) {
         if(w->tab == from) {
             winFrom = w;
@@ -1268,6 +1268,8 @@ void SwitchTabs(Widget from, Widget to)
             XmLFolderSetActiveTab(winFrom->tabBar, i, False);
         }
     }
+    
+    RaiseDocument(winFrom);
 }
 
 /* 
