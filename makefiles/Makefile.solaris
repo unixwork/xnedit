@@ -23,7 +23,7 @@ ARCH=-m64
 #ARCH=-m32
 
 PKGCONFIG_CFLAGS:sh=pkg-config --cflags xft fontconfig
-CFLAGS=-O -std=gnu99 $(ARCH) -I/usr/openwin/include -I/usr/include/X11 -DUSE_DIRENT $(PKGCONFIG_CFLAGS)
+CFLAGS=-O -std=gnu99 $(ARCH) -I/usr/openwin/include -I/usr/include/X11 -I/usr/include/pcre -DUSE_DIRENT $(PKGCONFIG_CFLAGS)
 
 ARFLAGS=-urs
 
