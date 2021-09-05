@@ -43,6 +43,7 @@ if (test "$flag" = 1) then
    exit
 fi
 
+# check the running env
 os=`uname -o`
 if (test "$os" != "Cygwin") then
    echo "ERROR: You are not on Cygwin"
@@ -275,8 +276,8 @@ if (test "$cygver" != "CYGWIN_NT-5.1") then
 else # we are on WinXP
    echo "Setting ACL for files ..."
    ##echo y| cacls "$pkgWin\\xnedit.bat" /t /c /p everyone:f # do not work on localizations
-   #subinacl.exe /file "$pkgWin" /setowner=$USER > /dev/null
-   #subinacl.exe /noverbose /subdirectories "$pkgWin\*" /setowner=$USER > /dev/null
+   #subinacl /file "$pkgWin" /setowner=$USER > /dev/null
+   #subinacl /noverbose /subdirectories "$pkgWin\*" /setowner=$USER > /dev/null
    #cscript XCACLS.vbs "$pkgWin" /q /f /s /t /p everyone:f > /dev/null
 fi
 
