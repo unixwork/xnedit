@@ -1601,9 +1601,9 @@ static void autoSaveCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_incremental_backup",
+    XtCallActionProc(window->lastFocus, "set_incremental_backup",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1619,9 +1619,9 @@ static void preserveCB(Widget w, WindowInfo *window, caddr_t callData)
         SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_make_backup_copy",
+    XtCallActionProc(window->lastFocus, "set_make_backup_copy",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1638,9 +1638,9 @@ static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1657,9 +1657,9 @@ static void showMatchingDelimitCB(Widget w, WindowInfo *window, caddr_t callData
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1676,9 +1676,9 @@ static void showMatchingRangeCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1694,9 +1694,9 @@ static void matchSyntaxBasedCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_match_syntax_based",
+    XtCallActionProc(window->lastFocus, "set_match_syntax_based",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1726,9 +1726,9 @@ static void noWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1745,9 +1745,9 @@ static void newlineWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1764,9 +1764,9 @@ static void continuousWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1774,7 +1774,7 @@ static void wrapMarginCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(MENU_WIDGET(w));
 
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     WrapMarginDialog(window->shell, window);
 }
@@ -1803,8 +1803,8 @@ static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData)
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(MENU_WIDGET(w));
-
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     TabsPrefDialog(window->shell, window);
 }
@@ -1821,9 +1821,9 @@ static void statsCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_statistics_line",
+    XtCallActionProc(window->lastFocus, "set_statistics_line",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -3714,7 +3714,6 @@ static void unicodeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     WindowInfo *window = WidgetToWindow(w);
-    unsigned char charCodeString[2];
     char codePointText[DF_MAX_PROMPT_LENGTH], str[8];
     char *params[1];
     int response;
