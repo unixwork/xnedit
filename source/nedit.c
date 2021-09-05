@@ -104,7 +104,6 @@ static void unmaskArgvKeywords(int argc, char **argv, const char **maskArgs);
 static void fixupBrokenXKeysymDB(void);
 static void patchResourcesForVisual(void);
 static void patchResourcesForKDEbug(void);
-static void patchLocaleForMotif(void);
 static unsigned char* sanitizeVirtualKeyBindings(void);
 static int sortAlphabetical(const void* k1, const void* k2);
 static int virtKeyBindingsAreInvalid(const unsigned char* bindings);
@@ -1176,50 +1175,6 @@ static void patchResourcesForKDEbug(void)
         ++i;
     }
 }
-
-/*
-** It seems OSF Motif cannot handle locales with UTF-8 at the end, crashing
-** in various places.  The easiest one to find is to open the File Open
-** dialog box.  So we lop off UTF-8 if it's there and continue.  Newer 
-** versions of Linux distros (e.g., RedHat 8) set the default language to
-** to have "UTF-8" at the end, so users were seeing these crashes.
-**
-** LessTif and OpenMotif 2.3 don't appear to have this problem.
-**
-** Some versions OpenMotif 2.2.3 don't have this problem, but there's
-** no way to tell which.
-*/
-
-static void patchLocaleForMotif(void)
-{
-#if !(defined(LESSTIF_VERSION) || XmVersion >= 2003)
-    const char *ctype;
-    char ctypebuf[1024];
-    char *utf_start;
-    
-    /* We have to check LC_CTYPE specifically here, because the system
-       might specify different locales for different categories (why
-       anyone would want to do this is beyond me).  As far as I can
-       tell, only LC_CTYPE causes OSF Motif to crash.  If it turns out
-       others do, we'll have to iterate over a list of locale cateogries
-       and patch every one of them. */
-       
-    ctype = setlocale(LC_CTYPE, NULL);
-    
-    if (!ctype)
-        return;
-
-    strncpy(ctypebuf, ctype, sizeof ctypebuf);
-
-    if ((utf_start = strstr(ctypebuf, ".utf8")) || 
-        (utf_start = strstr(ctypebuf, ".UTF-8")))
-    {
-        *utf_start = '\0'; /* Samurai chop */
-        setlocale(LC_CTYPE, ctypebuf);
-    }
-#endif
-}
-
 
 int XNEditDefaultCharsetIsUTF8(void)
 {

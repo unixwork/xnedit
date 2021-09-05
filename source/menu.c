@@ -1286,7 +1286,7 @@ static void helpCB( Widget menuItem, XtPointer clientData, XtPointer callData )
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(menuItem))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtVaGetValues( menuItem, XmNuserData, &userData, NULL );
-    topic = (enum HelpTopic)userData;
+    topic = (enum HelpTopic)(long long)userData;
     
     Help(topic);
 }

@@ -1102,6 +1102,7 @@ XftColor PixelToColor(Widget w, Pixel p)
     return color;
 }
 
+/*
 XftColor RGBToColor(short r, short g, short b)
 {
     XftColor color;
@@ -1111,6 +1112,7 @@ XftColor RGBToColor(short r, short g, short b)
     color.color.alpha = 0xFFFF;
     return color;
 }
+*/
 
 /*
 ** Translate window coordinates to the nearest text cursor position.

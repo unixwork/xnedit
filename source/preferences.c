@@ -2143,11 +2143,6 @@ int GetEditorConfig(void)
     return PrefData.editorConfig;
 }
 
-void SetEditorConfig(int state)
-{
-    PrefData.editorConfig = state;
-}
-
 #ifdef SGI_CUSTOM
 void SetPrefShortMenus(int state)
 {
