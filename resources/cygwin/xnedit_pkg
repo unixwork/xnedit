@@ -26,7 +26,7 @@ pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/23"
+ver="v0.04.0 2021/09/05"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -44,20 +44,16 @@ if (test "$flag" = 1) then
 fi
 
 # check the running env
-if (test "" != "$MSYSTEM") then
-   echo "ERROR: You are on MinGw/MSYS2/Unix"
-   exit
-fi
 os=`uname -o`
 if (test "$os" != "Cygwin") then
    echo "ERROR: You are not on Cygwin"
    exit
 fi
-os=`uname`
-if (test "$os" = "CYGWIN_NT-10.0") then
+cpu=`uname -m`
+if (test "$cpu" = "x86_64") then
    bit=64
 fi
-if (test "$os" = "CYGWIN_NT-10.0-WOW") then 
+if (test "$cpu" = "i686") then 
    bit=32
 fi
 
@@ -126,7 +122,10 @@ if (test "$dbg" != "1") then
 fi
 
 # direct dependencies of xnedit and xnc
+cygver=`uname -s`
 for file in cygX11-6.dll cygwin1.dll cygxcb-1.dll cygXau-6.dll cygXdmcp-6.dll cygXft-2.dll cygfontconfig-1.dll cygexpat-1.dll cygfreetype-6.dll cygbrotlidec-1.dll cygbrotlicommon-1.dll cygbz2-1.dll cygpng16-16.dll cygz.dll cygintl-8.dll cygiconv-2.dll cyguuid-1.dll cygXrender-1.dll cygXm-4.dll cygjpeg-8.dll cygXext-6.dll cygXmu-6.dll cygXt-6.dll cygICE-6.dll cygSM-6.dll cygXpm-4.dll cygpcre-1.dll ; do
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlidec-1.dll") then continue ; fi
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlicommon-1.dll") then continue ; fi
    cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$file" = "cygwin1.dll") then continue ; fi
    if (test "$dbg" != "1") then
@@ -175,6 +174,7 @@ mkdir -p "$pkg/cygroot/tmp" # avoid "bash.exe: warning: could not find /tmp, ple
 
 # files needed to run Shell menu commands:
 for file in cygmpfr-6.dll cyggmp-10.dll; do
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygmpfr-6.dll") then continue ; fi
    cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
@@ -236,7 +236,6 @@ fi
 echo ":End"                              >> "$pkg/xnedit.bat"
 #echo "pause"                            >> "$pkg/xnedit.bat"
 unix2dos -q "$pkg/xnedit.bat"
-icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
 cp "$scriptPath/xnc.sh" "$pkg" # run script
 
 # copy text files
@@ -271,5 +270,15 @@ if (test "$bit" = "32") then
    mv $tempname.nsi "$pkg/xnedit.nsi"
 fi
 unix2dos -q "$pkg/xnedit.nsi"
+
+if (test "$cygver" != "CYGWIN_NT-5.1") then
+   icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
+else # we are on WinXP
+   echo "Setting ACL for files ..."
+   ##echo y| cacls "$pkgWin\\xnedit.bat" /t /c /p everyone:f # do not work on localizations
+   #subinacl /file "$pkgWin" /setowner=$USER > /dev/null
+   #subinacl /noverbose /subdirectories "$pkgWin\*" /setowner=$USER > /dev/null
+   #cscript XCACLS.vbs "$pkgWin" /q /f /s /t /p everyone:f > /dev/null
+fi
 
 echo Done
