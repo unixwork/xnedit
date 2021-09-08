@@ -113,4 +113,5 @@ void SetSensitive(WindowInfo *window, Widget w, Boolean sensitive);
 void CleanUpTabBarExposeQueue(WindowInfo *window);
 void SetEncoding(WindowInfo *window, const char *encoding);
 void SetZoom(WindowInfo *window, int step);
+void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors);
 #endif /* NEDIT_WINDOW_H_INCLUDED */

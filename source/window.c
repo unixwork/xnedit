@@ -109,6 +109,7 @@
 #include <Xm/PrimitiveP.h>
 #include <Xm/Frame.h>
 #include <Xm/CascadeB.h>
+#include <Xm/DropDown.h>
 #ifdef EDITRES
 #include <X11/Xmu/Editres.h>
 /* extern void _XEditResCheckMessages(); */
@@ -261,6 +262,7 @@ static void cancelTimeOut(XtIntervalId *timer);
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 
 static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
+static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb);
 static void reloadCB(Widget w, Widget mainWin, void *callData);
 
 /* From Xt, Shell.c, "BIGSIZE" */
@@ -356,6 +358,10 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->lastModTime = 0;
     window->fileMissing = True;
     strcpy(window->filename, name);
+    
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
     
     window->encoding[0] = '\0';
     const char *default_encoding = GetPrefDefaultCharset();
@@ -884,6 +890,24 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNbottomAttachment, XmATTACH_WIDGET,
             XmNbottomWidget, window->encInfoBarList,
             NULL);
+    
+    // error dropdown
+    ac = 0;
+    XtSetArg(al[ac], XmNcolumns, 15); ac++;
+    XtSetArg(al[ac], XmNleftAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNbottomAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNhighlightThickness, 1); ac++;
+    XtSetArg(al[ac], XmNvalue, "Errors"); ac++;
+    window->encInfoErrorList = XmCreateDropDownList(
+            window->encodingInfoBar,
+            "combobox",
+            al,
+            ac);
+    XtManageChild(window->encInfoErrorList);
+
+
+    XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
+                 (XtCallbackProc)jumpToEncErrorCB, window);
     
     Widget btnClose = XtVaCreateManagedWidget(
             "ibarbutton",
@@ -1456,6 +1480,10 @@ void CloseWindow(WindowInfo *window)
     FontUnref(window->boldFont);
     FontUnref(window->italicFont);
     FontUnref(window->boldItalicFont);
+    
+    if(window->encErrors) {
+        NEditFree(window->encErrors);
+    }
 
     /* deallocate the window data structure */
     NEditFree(window);
@@ -3800,7 +3828,9 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
 #endif
     
     window->showInfoBar = FALSE;
-
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
     window->multiFileReplSelected = FALSE;
     window->multiFileBusy = FALSE;
     window->writableWindows = NULL;
@@ -5219,6 +5249,11 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     /* copy undo & redo list */
     window->undo = cloneUndoItems(orgWin->undo);
     window->redo = cloneUndoItems(orgWin->redo);
+    
+    /* don't copy enc error list */
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
 
     /* copy bookmarks */
     window->nMarks = orgWin->nMarks;
@@ -5681,6 +5716,37 @@ void SetZoom(WindowInfo *window, int step)
     NEditFree(bolditalic);
 }
 
+/*
+ * set the encoding error list
+ * note: this will not copy the array, so don't free the pointer outside
+ *       of the window
+ */
+void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors)
+{
+    window->encErrors = errors;
+    window->numEncErrors = numErrors;
+    
+    char buf[256];
+    
+    XmStringTable strErrors = NEditCalloc(numErrors, sizeof(XmString));
+    for(size_t i=0;i<numErrors;i++) {
+        snprintf(buf, 256, "0x%02X", errors[i].c);
+        strErrors[i] = XmStringCreateSimple(buf);
+    }
+    
+    XtVaSetValues(
+            window->encInfoErrorList,
+            XmNitemCount, numErrors,
+            XmNitems, strErrors,
+            NULL);
+    
+    // cleanup
+    for(size_t i=0;i<numErrors;i++) {
+        XmStringFree(strErrors[i]);
+    }
+    NEditFree(strErrors);
+}
+
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)
 {
     window->opened = True;
@@ -5702,6 +5768,19 @@ static void closeInfoBarCB(Widget w, Widget mainWin, void *callData)
     window->showInfoBar = FALSE;
     XtUnmanageChild(window->encodingInfoBar);
     showStatsForm(window);
+}
+
+static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb)
+{
+    if(cb->item_position >= window->numEncErrors) {
+        return;
+    }
+    
+    EncError e = window->encErrors[cb->item_position];
+    // +3 because the unicode replacement char is encoded with 3 bytes in utf8
+    BufSelect(window->buffer, e.pos, e.pos+3);
+    MakeSelectionVisible(window, window->lastFocus);
+    TextSetCursorPos(window->lastFocus, e.pos);
 }
 
 static void reloadCB(Widget w, Widget mainWin, void *callData)

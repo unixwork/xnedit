@@ -263,6 +263,14 @@ typedef struct _UserBGMenuCache {
     UserMenuList ubmcMenuList;        /* list of all background menu items */
 } UserBGMenuCache;
 
+/*
+ * Encoding Error
+ */
+typedef struct _EncError {
+    size_t pos;
+    int    c;
+} EncError;
+
 /* The WindowInfo structure holds the information on a Document. A number
    of 'tabbed' documents may reside within a shell window, hence some of 
    its members are of 'shell-level'; namely the find/replace dialogs, the
@@ -300,6 +308,7 @@ typedef struct _WindowInfo {
     Widget  	iSearchRevToggle;
     Widget      encodingInfoBar;
     Widget      encInfoBarLabel;
+    Widget      encInfoErrorList;
     Widget      encInfoBarList;
     Widget	menuBar;    	    	/* the main menu bar */
     Widget	tabBar;			/* tab bar for tabbed window */
@@ -506,6 +515,10 @@ typedef struct _WindowInfo {
     NFont       *boldItalicFont;
     
     Boolean     resizeOnFontChange;
+    
+    EncError    *encErrors;
+    size_t      numEncErrors;
+    size_t      posEncErrors;
        
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-
