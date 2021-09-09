@@ -5726,6 +5726,11 @@ void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors)
     window->encErrors = errors;
     window->numEncErrors = numErrors;
     
+    if(numErrors == 0) {
+        XtVaSetValues(window->encInfoErrorList, XmNitemCount, 0, XmNitems, NULL, NULL);
+        XtUnmanageChild(window->encInfoErrorList);
+        return;
+    }
     char buf[256];
     
     XmStringTable strErrors = NEditCalloc(numErrors, sizeof(XmString));
@@ -5745,6 +5750,8 @@ void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors)
         XmStringFree(strErrors[i]);
     }
     NEditFree(strErrors);
+    
+    XtManageChild(window->encInfoErrorList);
 }
 
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)

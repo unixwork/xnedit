@@ -1106,10 +1106,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         
         show_infobar = TRUE;
         SetEncodingInfoBarLabel(window, msgbuf);
-        
         SetEncErrors(window, encErrors, numEncErrors);
     } else {
         SetEncodingInfoBarLabel(window, "No conversion errors");
+        SetEncErrors(window, NULL, 0);
         NEditFree(encErrors);
     }
     
