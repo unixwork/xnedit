@@ -708,7 +708,7 @@ void pathbar_input(Widget w, PathBar *p, XtPointer c)
         if (xevent->xany.type == ButtonPress) {
             XtUnmanageChild(p->left);
             XtUnmanageChild(p->right);
-            
+            XmTextFieldSetSelection(p->textfield, 0, XmTextFieldGetLastPosition(p->textfield), 0);
             XtManageChild(p->textfield);
             p->input = 1;
             
