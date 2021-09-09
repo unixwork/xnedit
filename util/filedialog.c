@@ -353,6 +353,14 @@ const char *newFolder32Data = "\377\377\377\377\377\377\377\377\377\377\377\377\
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377";
 
+typedef struct FileDialogData FileDialogData;
+
+static void FileListDetailSelect(FileDialogData *fsb, const char *item);
+static void FileListSelect(FileDialogData *fsb, const char *item);
+static void FileIconViewSelect(FileDialogData *fsb, const char *item);
+
+static void FileSelect(FileDialogData *fsb, const char *item);
+
 /*
  * get number of shifts for specific color mask
  */
@@ -955,7 +963,7 @@ struct FileElm {
     time_t lastModified;
 };
 
-typedef struct FileDialogData {
+struct FileDialogData {
     Widget shell;
     
     Widget path;
@@ -1005,7 +1013,7 @@ typedef struct FileDialogData {
     
     int end;
     int status;
-} FileDialogData;
+};
 
 static void filedialog_cancel(Widget w, FileDialogData *data, XtPointer d)
 {
@@ -1501,6 +1509,55 @@ static void filedialog_cleanup_filedata(FileDialogData *data)
     data->maxnamelen = 0;
 }
 
+
+// ported from motifextfsb
+static void FileListDetailSelect(FileDialogData *fsb, const char *item) {
+    int numRows = 0;
+    XtVaGetValues(fsb->grid, XmNrows, &numRows, NULL);
+    
+    XmLGridColumn col = XmLGridGetColumn(fsb->grid, XmCONTENT, 0);
+    for(int i=0;i<numRows;i++) {
+        XmLGridRow row = XmLGridGetRow(fsb->grid, XmCONTENT, i);
+        FileElm *elm = NULL;
+        XtVaGetValues(fsb->grid, XmNrowPtr, row, XmNcolumnPtr, col, XmNrowUserData, &elm, NULL);
+        if(elm) {
+            if(!strcmp(item, FileName(elm->path))) {
+                XmLGridSelectRow(fsb->grid, i, False);
+                XmLGridFocusAndShowRow(fsb->grid, i+1);
+                break;
+            }
+        }
+    }
+}
+
+static void FileListSelect(FileDialogData *fsb, const char *item) {
+    int numItems = 0;
+    XmStringTable items = NULL;
+    XtVaGetValues(fsb->filelist, XmNitemCount, &numItems, XmNitems, &items, NULL);
+    
+    for(int i=0;i<numItems;i++) {
+        char *str = NULL;
+        XmStringGetLtoR(items[i], XmFONTLIST_DEFAULT_TAG, &str);
+        if(!strcmp(str, item)) {
+            XmListSelectPos(fsb->filelist, i+1, False);
+            break;
+        }
+        XtFree(str);
+    }
+}
+
+static void FileIconViewSelect(FileDialogData *fsb, const char *item) {
+    // TODO
+}
+
+static void FileSelect(FileDialogData *fsb, const char *item) {
+    FileListSelect(fsb, item);
+    FileListDetailSelect(fsb, item),
+    FileIconViewSelect(fsb, item);
+}
+
+
+
 #define FILE_ARRAY_SIZE 1024
 
 void file_array_add(FileElm **files, int *alloc, int *count, FileElm elm) {
@@ -1546,8 +1603,27 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         }
     }
     
+    char *openFile = NULL;
+    
     /* read dir and insert items */
     if(path) {
+        struct stat s;
+        if(!stat(path, &s)) {
+            if(!S_ISDIR(s.st_mode)) {
+                // open file
+                if(data->selectedPath) {
+                    NEditFree(data->selectedPath);
+                }
+                data->selectedPath = NEditStrdup(path);
+                
+                openFile = FileName(path);
+                path = ParentPath(path);
+                
+                PathBarSetPath(data->pathBar, path);
+            }
+        }
+        
+        
         FileElm *dirs = calloc(sizeof(FileElm), FILE_ARRAY_SIZE);
         FileElm *files = calloc(sizeof(FileElm), FILE_ARRAY_SIZE);
         int dirs_alloc = FILE_ARRAY_SIZE;
@@ -1578,6 +1654,9 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         data->currentPath = NEditStrdup(path);
         if(oldPath) {
             NEditFree(oldPath);
+        }
+        if(openFile) {
+            NEditFree(path);
         }
         path = data->currentPath;
 
@@ -1627,6 +1706,12 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     update_view(data, data->dirs, data->files,
             data->dircount, data->filecount, data->maxnamelen);
+    
+    if(openFile) {
+        FileSelect(data, openFile);
+        data->status = FILEDIALOG_OK;
+        data->end = 1;
+    }
 }
 
 static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
