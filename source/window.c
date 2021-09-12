@@ -903,7 +903,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             "combobox",
             al,
             ac);
-    XtManageChild(window->encInfoErrorList);
+    // don't manage encInfoErrorList here
 
 
     XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
