@@ -48,6 +48,15 @@ enum helpFonts {HELP_FONT, BOLD_HELP_FONT, ITALIC_HELP_FONT,
     H1_HELP_FONT, H2_HELP_FONT, H3_HELP_FONT, NUM_HELP_FONTS
 };
 
+enum saveSession {
+    XNE_SESSION_NO = 0,
+    XNE_SESSION_NEW,
+    XNE_SESSION_LAST,
+    XNE_SESSION_DEFAULT,
+    XNE_SESSION_ASK,
+    N_XNE_SESSION_SAVE
+};
+
 XrmDatabase CreateNEditPrefDB(int *argcInOut, char **argvInOut);
 void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB);
 void SaveNEditPrefs(Widget parent, int quietly);

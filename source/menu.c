@@ -66,6 +66,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -1296,7 +1297,7 @@ static void helpCB( Widget menuItem, XtPointer clientData, XtPointer callData )
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(menuItem))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtVaGetValues( menuItem, XmNuserData, &userData, NULL );
-    topic = (enum HelpTopic)userData;
+    topic = (enum HelpTopic)(intptr_t)userData;
     
     Help(topic);
 }

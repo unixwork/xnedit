@@ -112,6 +112,19 @@
 /* Return values for checkFontStatus */
 enum fontStatus {GOOD_FONT, BAD_PRIMARY, BAD_FONT, BAD_SIZE, BAD_SPACING};
 
+/* enum preference type
+ * order must be the same as in enum saveSession
+ */
+static char *SaveSessionTo[N_XNE_SESSION_SAVE+1] = {
+    "No",
+    "New",
+    "Last",
+    "Default",
+    "Ask",
+    NULL
+};
+
+
 /* enumerated type preference strings 
 ** The order of the elements in this array must be exactly the same
 ** as the order of the corresponding integers of the enum SearchType
@@ -354,6 +367,13 @@ static struct prefData {
     int fsbShowHidden;
     int editorConfig;
     char defaultCharset[MAX_ENCODING_LENGTH];
+    
+    int sessionNewSaveTo;         /* save new sessions to */
+    int sessionSaveTo;            /* save open session to */
+    int sessionMax;               /* maximum number of sessions to keep */
+    int sessionGenerateName;      /* bool, auto generate session name */
+    char sessionDefaultName[MAX_SESSION_NAME_LEN]; /* default session name*/
+    char sessionNameFormat[MAX_SESSION_NAME_LEN];
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1068,7 +1088,21 @@ static PrefDescripRec PrefDescrip[] = {
         (void *)sizeof(PrefData.defaultCharset), True},
     {"iconSize", "IconSize", PREF_ALLOC_STRING,
       "small",
-      &PrefData.iconSize, NULL, True} 
+      &PrefData.iconSize, NULL, True} ,
+    {"sessionNewSaveTo", "SessionNewSaveTo", PREF_ENUM, "No",
+            &PrefData.sessionNewSaveTo, SaveSessionTo, True},
+    {"sessionSaveTo", "SessionSaveTo", PREF_ENUM, "No",
+            &PrefData.sessionSaveTo, SaveSessionTo, True},
+    {"sessionMax", "SessionMax", PREF_INT, "15",
+            &PrefData.sessionMax, NULL, True},
+    {"sessionGenerateName", "SessionGenerateName", PREF_BOOLEAN, "True",
+            &PrefData.sessionGenerateName, NULL, True},
+    {"sessionDefaultName", "SessionDefaultName", PREF_STRING, "Default",
+        PrefData.sessionNameFormat,
+        (void *)sizeof(PrefData.sessionDefaultName), True},
+    {"sessionNameFormat", "SessionNameFormat", PREF_STRING, "todo",
+        PrefData.sessionDefaultName,
+        (void *)sizeof(PrefData.sessionNameFormat), True}
 };
 
 static XrmOptionDescRec OpTable[] = {

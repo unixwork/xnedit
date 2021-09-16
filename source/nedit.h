@@ -81,6 +81,8 @@
 #define APP_NAME GetAppName()   /* application name for loading resources */
 #define APP_CLASS "XNEdit"	/* application class for loading resources */
 
+#define MAX_SESSION_NAME_LEN 100
+
 /* The accumulated list of undo operations can potentially consume huge
    amounts of memory.  These tuning parameters determine how much undo infor-
    mation is retained.  Normally, the list is kept between UNDO_OP_LIMIT and
