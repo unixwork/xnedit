@@ -61,6 +61,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <langinfo.h>
 #ifndef __MVS__
@@ -84,6 +85,7 @@
 #include <Xm/Frame.h>
 #include <Xm/Text.h>
 #include <Xm/Separator.h>
+#include <Xm/TextF.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -214,6 +216,30 @@ static struct {
     int nLanguageModes;
 } LMDialog = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
               NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0};
+
+/* Sessions dialog */
+static struct {
+    Widget shell;
+    /*  radio buttons for save new session */
+    Widget saveNewNoW;
+    Widget saveNewNewW;
+    Widget saveNewLastW;
+    Widget saveNewDefaultW;
+    Widget saveNewAskW;
+    /* radio buttons for save open session */
+    Widget saveNoW;
+    Widget saveNewW;
+    Widget saveLastW;
+    Widget saveDefaultW;
+    Widget saveAskW;
+    
+    Widget defaultSessionNameW;
+    Widget sessionGenerateNameW;
+    Widget sessionsMaxW;
+    Widget sessionNameFormatW;
+    
+    
+} SessionsDialog = { NULL };
 
 /* Font dialog information */
 typedef struct {
@@ -1091,17 +1117,17 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.iconSize, NULL, True} ,
     {"sessionNewSaveTo", "SessionNewSaveTo", PREF_ENUM, "No",
             &PrefData.sessionNewSaveTo, SaveSessionTo, True},
-    {"sessionSaveTo", "SessionSaveTo", PREF_ENUM, "No",
+    {"sessionSaveTo", "SessionSaveTo", PREF_ENUM, "Last",
             &PrefData.sessionSaveTo, SaveSessionTo, True},
     {"sessionMax", "SessionMax", PREF_INT, "15",
             &PrefData.sessionMax, NULL, True},
     {"sessionGenerateName", "SessionGenerateName", PREF_BOOLEAN, "True",
             &PrefData.sessionGenerateName, NULL, True},
     {"sessionDefaultName", "SessionDefaultName", PREF_STRING, "Default",
-        PrefData.sessionNameFormat,
-        (void *)sizeof(PrefData.sessionDefaultName), True},
-    {"sessionNameFormat", "SessionNameFormat", PREF_STRING, "todo",
         PrefData.sessionDefaultName,
+        (void *)sizeof(PrefData.sessionDefaultName), True},
+    {"sessionNameFormat", "SessionNameFormat", PREF_STRING, "%Y-%m-%d %H:%M",
+        PrefData.sessionNameFormat,
         (void *)sizeof(PrefData.sessionNameFormat), True}
 };
 
@@ -1123,11 +1149,11 @@ static XrmOptionDescRec OpTable[] = {
 };
 
 static const char HeaderText[] = "\
-! Preferences file for NEdit\n\
+! Preferences file for XNEdit\n\
 ! (User settings in X \"application defaults\" format)\n\
 !\n\
-! This file is overwritten by the \"Save Defaults...\" command in NEdit\n\
-! and serves only the interactively settable options presented in the NEdit\n\
+! This file is overwritten by the \"Save Defaults...\" command in XNEdit\n\
+! and serves only the interactively settable options presented in the XNEdit\n\
 ! \"Preferences\" menu.  To modify other options, such as key bindings, use\n\
 ! the .Xdefaults file in your home directory (or the X resource\n\
 ! specification method appropriate to your system).  The contents of this\n\
@@ -6955,3 +6981,549 @@ static void parseIconSize(char *iconSize)
     
     free(iconSizeStr);
 }
+
+
+
+
+static void snDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void snApplyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    int saveNew = -1;
+    if(XmToggleButtonGetState(SessionsDialog.saveNewNoW)) {
+        saveNew = XNE_SESSION_NO;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveNewNewW)) {
+        saveNew = XNE_SESSION_NEW;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveNewLastW)) {
+        saveNew = XNE_SESSION_LAST;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveNewDefaultW)) {
+        saveNew = XNE_SESSION_DEFAULT;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveNewAskW)) {
+        saveNew = XNE_SESSION_ASK;
+    }
+    if(saveNew >= 0) {
+        SetPrefSessionNewSaveTo(saveNew);
+    }
+    
+    int save = -1;
+    if(XmToggleButtonGetState(SessionsDialog.saveNoW)) {
+        save = XNE_SESSION_NO;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveNewW)) {
+        save = XNE_SESSION_NEW;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveLastW)) {
+        save = XNE_SESSION_LAST;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveDefaultW)) {
+        save = XNE_SESSION_DEFAULT;
+    } else if(XmToggleButtonGetState(SessionsDialog.saveAskW)) {
+        save = XNE_SESSION_ASK;
+    }
+    if(save >= 0) {
+        SetPrefSessionSaveTo(save);
+    }
+    
+    char *end;
+    errno = 0;
+    long val = strtol(XmTextFieldGetString(SessionsDialog.sessionsMaxW), &end, 0);
+    if(errno == 0) {
+        SetPrefSessionMax((int)val);
+    }
+    
+    char *str = XmTextFieldGetString(SessionsDialog.defaultSessionNameW);
+    if(str && strlen(str) < MAX_SESSION_NAME_LEN) {
+        SetPrefSessionDefaultName(str);
+    }
+    
+    str = XmTextFieldGetString(SessionsDialog.sessionNameFormatW);
+    if(str && strlen(str) < MAX_SESSION_NAME_LEN) {
+        SetPrefSessionNameFormat(str);
+    }
+    
+    SetPrefSessionGenerateName(XmToggleButtonGetState(SessionsDialog.sessionGenerateNameW));
+}
+
+static void snCloseCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    /* pop down and destroy the dialog */
+    XtDestroyWidget(SessionsDialog.shell);
+    SessionsDialog.shell = NULL;
+}
+
+static void snOkCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    snApplyCB(w, clientData, callData);
+    snCloseCB(w, clientData, callData);
+}
+
+
+static void snHelpCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void snMaxVerifyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    XmTextVerifyCallbackStruct *cb = callData;
+    for(int i=0;i<cb->text->length;i++) {
+        char c = cb->text->ptr[i];
+        if(c < '0' || c > '9') {
+            cb->doit = False;
+            return;
+        }
+    }
+}
+
+/*
+ * Session Preferences Dialog
+ */
+void SessionsPref(WindowInfo *window)
+{
+    /* if the dialog is already displayed, just pop it to the top and return */
+    if(SessionsDialog.shell) {
+        RaiseDialogWindow(SessionsDialog.shell);
+        return;
+    }
+    
+    Arg args[20];
+    int n = 0;
+    XmString s1;
+    
+    XtSetArg(args[n], XmNdeleteResponse, XmDO_NOTHING); n++;
+    XtSetArg(args[n], XmNtitle, "Session Preferences"); n++;
+    SessionsDialog.shell = CreateWidget(TheAppShell, "sessions",
+	    topLevelShellWidgetClass, args, n);
+    
+    Widget form = XtVaCreateManagedWidget("sessionPref", xmFormWidgetClass,
+	    SessionsDialog.shell, XmNautoUnmanage, False,
+	    XmNresizePolicy, XmRESIZE_NONE, NULL);
+    XtAddCallback(form, XmNdestroyCallback, snDestroyCB, NULL);
+    AddMotifCloseCallback(SessionsDialog.shell, snCloseCB, NULL);
+    
+    /* New Sessions
+     */
+    Widget newSessionLabel = XtVaCreateManagedWidget(
+            "label",
+            xmLabelWidgetClass,
+            form,
+            XmNlabelString, s1=XmStringCreateSimple("Save new sessions?"),
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, H_MARGIN,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            NULL);
+    XmStringFree(s1);
+    
+    Widget newSessionBox = XtVaCreateManagedWidget(
+            "sessionRC",
+            xmRowColumnWidgetClass,
+            form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, newSessionLabel,
+            XmNtopOffset, H_MARGIN,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNradioBehavior, True,
+            NULL);
+            
+    SessionsDialog.saveNewNoW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            newSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("No"),
+    	    XmNmnemonic, 'N',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveNewNewW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            newSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Create new session file"),
+    	    XmNmnemonic, 'w',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveNewLastW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            newSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Store in the last session file"),
+    	    XmNmnemonic, 'l',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveNewDefaultW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            newSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Store in the default session file"),
+    	    XmNmnemonic, 'd',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveNewAskW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            newSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Ask"),
+    	    XmNmnemonic, 'k',
+            NULL);
+    XmStringFree(s1);
+    
+    /* Open Session
+     */
+    Widget openSessionLabel = XtVaCreateManagedWidget(
+            "label",
+            xmLabelWidgetClass,
+            form,
+            XmNlabelString, s1=XmStringCreateSimple("Save open session?"),
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, newSessionBox,
+            XmNleftOffset, 3*H_MARGIN,
+            XmNtopOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_FORM,
+            NULL);
+    XmStringFree(s1);
+    
+    Widget openSessionBox = XtVaCreateManagedWidget(
+            "sessionRC",
+            xmRowColumnWidgetClass,
+            form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, openSessionLabel,
+            XmNtopOffset, H_MARGIN,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, newSessionBox,
+            XmNleftOffset, 3*H_MARGIN,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightOffset, H_MARGIN,
+            XmNradioBehavior, True,
+            NULL);
+            
+    SessionsDialog.saveNoW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            openSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("No"),
+    	    XmNmnemonic, 'o',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveNewW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            openSessionBox,
+    	    XmNlabelString, s1=XmStringCreateSimple("Create new session file"),
+    	    XmNmnemonic, 'f',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveLastW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            openSessionBox,
+    	    XmNlabelString, s1=XmStringCreateSimple("Store in the current session file"),
+    	    XmNmnemonic, 'c',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveDefaultW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            openSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Store in the default session file"),
+    	    XmNmnemonic, 'e',
+            NULL);
+    XmStringFree(s1);
+    SessionsDialog.saveAskW = XtVaCreateManagedWidget(
+            "sessionsRadio", 
+    	    xmToggleButtonWidgetClass,
+            openSessionBox,
+    	    //XmNmarginHeight, 0,
+    	    XmNlabelString, s1=XmStringCreateSimple("Ask"),
+    	    XmNmnemonic, 's',
+            NULL);
+    XmStringFree(s1);
+    
+    /*
+     * Separator
+     */
+    Widget separator = XtVaCreateManagedWidget(
+            "separator",
+            xmSeparatorWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, newSessionBox,
+            XmNtopOffset, 2*H_MARGIN,
+            NULL);
+    
+    /* general session settings */
+    Widget defaultSessionNameLabel = XtVaCreateManagedWidget(
+            "sessionsLabel",
+            xmLabelWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, separator,
+            XmNtopOffset, 4*H_MARGIN,
+            XmNlabelString, s1=XmStringCreateSimple("Default Session Name"),
+            NULL);
+    SessionsDialog.defaultSessionNameW = XtVaCreateManagedWidget(
+            "sessionsTextfield",
+            xmTextFieldWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, defaultSessionNameLabel,
+            XmNleftOffset, H_MARGIN,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, defaultSessionNameLabel,
+            NULL);
+    
+    SessionsDialog.sessionGenerateNameW = XtVaCreateManagedWidget(
+            "sessionsTextfield",
+            xmToggleButtonWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, defaultSessionNameLabel,
+            XmNtopOffset, 2*H_MARGIN,
+            XmNlabelString, s1=XmStringCreateSimple("Auto-generate session name"),
+            NULL);
+    
+    Widget sessionMaxLabel = XtVaCreateManagedWidget(
+            "sessionsLabel",
+            xmLabelWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, SessionsDialog.sessionGenerateNameW,
+            XmNtopOffset, 2*H_MARGIN,
+            XmNlabelString, s1=XmStringCreateSimple("Maximum number of stored sessions"),
+            NULL);
+    SessionsDialog.sessionsMaxW = XtVaCreateManagedWidget(
+            "sessionsTextfield",
+            xmTextFieldWidgetClass,
+            form,
+            XmNcolumns, 5,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, sessionMaxLabel,
+            XmNleftOffset, H_MARGIN,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, sessionMaxLabel,
+            NULL);
+    XtAddCallback(SessionsDialog.sessionsMaxW, XmNmodifyVerifyCallback, snMaxVerifyCB, NULL);
+    
+    Widget sessionNameLabel = XtVaCreateManagedWidget(
+            "sessionsLabel",
+            xmLabelWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, sessionMaxLabel,
+            XmNtopOffset, 3*H_MARGIN,
+            XmNlabelString, s1=XmStringCreateSimple("Session name format"),
+            NULL);
+    SessionsDialog.sessionNameFormatW = XtVaCreateManagedWidget(
+            "sessionsTextfield",
+            xmTextFieldWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, sessionNameLabel,
+            XmNleftOffset, H_MARGIN,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, sessionNameLabel,
+            NULL);
+
+    
+    /*
+     * Separator
+     */
+    Widget separator2 = XtVaCreateManagedWidget(
+            "separator",
+            xmSeparatorWidgetClass,
+            form,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, H_MARGIN,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightOffset, H_MARGIN,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, sessionNameLabel,
+            XmNtopOffset, 4*H_MARGIN,
+            NULL);
+    
+    
+    /* ok, apply, cancel buttons */
+    Widget okBtn = XtVaCreateManagedWidget("ok", xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+    	    XmNleftAttachment, XmATTACH_POSITION,
+    	    XmNleftPosition, 8,
+    	    XmNrightAttachment, XmATTACH_POSITION,
+    	    XmNrightPosition, 26,
+    	    XmNtopAttachment, XmATTACH_WIDGET,
+    	    XmNtopWidget, separator2,
+            XmNtopOffset, 4*H_MARGIN,
+            NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, snOkCB, NULL);
+    XmStringFree(s1);
+
+    Widget applyBtn = XtVaCreateManagedWidget("apply", xmPushButtonWidgetClass, form,
+    	    XmNlabelString, s1=XmStringCreateSimple("Apply"),
+    	    XmNmnemonic, 'A',
+    	    XmNleftAttachment, XmATTACH_POSITION,
+    	    XmNleftPosition, 30,
+    	    XmNrightAttachment, XmATTACH_POSITION,
+    	    XmNrightPosition, 48,
+    	    XmNtopAttachment, XmATTACH_WIDGET,
+    	    XmNtopWidget, separator2,
+            XmNtopOffset, 4*H_MARGIN,
+            NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, snApplyCB, NULL);
+    XmStringFree(s1);
+
+    Widget closeBtn = XtVaCreateManagedWidget("close",xmPushButtonWidgetClass,form,
+            XmNlabelString, s1=XmStringCreateSimple("Close"),
+    	    XmNleftAttachment, XmATTACH_POSITION,
+    	    XmNleftPosition, 52,
+    	    XmNrightAttachment, XmATTACH_POSITION,
+    	    XmNrightPosition, 70,
+    	    XmNtopAttachment, XmATTACH_WIDGET,
+    	    XmNtopWidget, separator2,
+            XmNtopOffset, 4*H_MARGIN,
+            NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, snCloseCB, NULL);
+    XmStringFree(s1);
+    
+    Widget helpBtn = XtVaCreateManagedWidget("help",xmPushButtonWidgetClass,form,
+            XmNlabelString, s1=XmStringCreateSimple("Help"),
+    	    XmNleftAttachment, XmATTACH_POSITION,
+    	    XmNleftPosition, 74,
+    	    XmNrightAttachment, XmATTACH_POSITION,
+    	    XmNrightPosition, 92,
+    	    XmNtopAttachment, XmATTACH_WIDGET,
+    	    XmNtopWidget, separator2,
+            XmNtopOffset, 4*H_MARGIN,
+            NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, snHelpCB, NULL);
+    XmStringFree(s1);
+    
+    /* invisible separator */
+    XtVaCreateManagedWidget("separator",xmSeparatorWidgetClass,form,
+    	    XmNleftAttachment, XmATTACH_FORM,
+    	    XmNtopAttachment, XmATTACH_WIDGET,
+    	    XmNtopWidget, okBtn,
+            XmNtopOffset, 2*H_MARGIN,
+            XmNseparatorType, XmNO_LINE,
+            NULL);
+    
+    /* preset current values */
+    Widget w;
+    switch(GetPrefSessionNewSaveTo()) {
+        case XNE_SESSION_NO: w = SessionsDialog.saveNewNoW; break;
+        case XNE_SESSION_NEW: w = SessionsDialog.saveNewNewW; break;
+        case XNE_SESSION_LAST: w = SessionsDialog.saveNewLastW; break;
+        case XNE_SESSION_DEFAULT: w = SessionsDialog.saveNewDefaultW; break;
+        case XNE_SESSION_ASK: w = SessionsDialog.saveNewAskW; break;
+        default: w = NULL;
+    }
+    if(w) XmToggleButtonSetState(w, True, False);
+    
+    switch(GetPrefSessionSaveTo()) {
+        case XNE_SESSION_NO: w = SessionsDialog.saveNoW; break;
+        case XNE_SESSION_NEW: w = SessionsDialog.saveNewW; break;
+        case XNE_SESSION_LAST: w = SessionsDialog.saveLastW; break;
+        case XNE_SESSION_DEFAULT: w = SessionsDialog.saveDefaultW; break;
+        case XNE_SESSION_ASK: w = SessionsDialog.saveAskW; break;
+        default: w = NULL;
+    }
+    if(w) XmToggleButtonSetState(w, True, False);
+    
+    XmTextFieldSetString(SessionsDialog.defaultSessionNameW, (char*)GetPrefSessionDefaultName());
+    XmTextFieldSetString(SessionsDialog.sessionNameFormatW, (char*)GetPrefSessionNameFormat());
+    XmToggleButtonSetState(SessionsDialog.sessionGenerateNameW, GetPrefSessionGenerateName(), False);
+    char buf[32];
+    buf[0] = 0;
+    snprintf(buf, 32, "%d", GetPrefSessionMax());
+    XmTextFieldSetString(SessionsDialog.sessionsMaxW, buf);
+    
+    /* Set initial default button */
+    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
+    XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
+    
+    /* Handle mnemonic selection of buttons and focus to dialog */
+    AddDialogMnemonicHandler(form, FALSE);
+
+    /* Realize all of the widgets in the new dialog */
+    RealizeWithoutForcingPosition(SessionsDialog.shell);
+}
+
+int  GetPrefSessionNewSaveTo(void)
+{
+    return PrefData.sessionNewSaveTo;
+}
+
+void SetPrefSessionNewSaveTo(int pref)
+{
+    setIntPref(&PrefData.sessionNewSaveTo, pref);
+}
+
+int  GetPrefSessionSaveTo(void)
+{
+    return PrefData.sessionSaveTo;
+}
+
+void SetPrefSessionSaveTo(int pref)
+{
+    setIntPref(&PrefData.sessionSaveTo, pref);
+}
+
+int  GetPrefSessionMax(void)
+{
+    return PrefData.sessionMax;
+}
+
+void SetPrefSessionMax(int max)
+{
+    setIntPref(&PrefData.sessionMax, max);
+}
+
+int  GetPrefSessionGenerateName(void)
+{
+    return PrefData.sessionGenerateName;
+}
+
+void SetPrefSessionGenerateName(int pref)
+{
+    setIntPref(&PrefData.sessionGenerateName, pref);
+}
+
+const char* GetPrefSessionDefaultName(void)
+{
+    return PrefData.sessionDefaultName;
+}
+
+void SetPrefSessionDefaultName(const char *defaultName)
+{
+    setStringPref(PrefData.sessionDefaultName, defaultName);
+}
+
+const char* GetPrefSessionNameFormat(void)
+{
+    return PrefData.sessionNameFormat;
+}
+
+void SetPrefSessionNameFormat(const char *nameFormat)
+{
+    setStringPref(PrefData.sessionNameFormat, nameFormat);
+}
+

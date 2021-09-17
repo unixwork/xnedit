@@ -243,4 +243,19 @@ int GetPrefISrcClearIconSize(void);
 
 char* ChangeFontSize(const char *name, int newsize);
 
+void SessionsPref(WindowInfo *window);
+
+int  GetPrefSessionNewSaveTo(void);
+void SetPrefSessionNewSaveTo(int pref);
+int  GetPrefSessionSaveTo(void);
+void SetPrefSessionSaveTo(int pref);
+int  GetPrefSessionMax(void);
+void SetPrefSessionMax(int max);
+int  GetPrefSessionGenerateName(void);
+void SetPrefSessionGenerateName(int pref);
+const char* GetPrefSessionDefaultName(void);
+void SetPrefSessionDefaultName(const char *defaultName);
+const char* GetPrefSessionNameFormat(void);
+void SetPrefSessionNameFormat(const char *nameFormat);
+
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */

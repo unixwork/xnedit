@@ -188,6 +188,7 @@ static void sortOpenPrevDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void reposDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void sessionsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1051,6 +1052,10 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->editorConfigDefItem = createMenuToggle(subPane, "editorConfig",
     	    "Load Settings from .editorconfig", 0, editorConfigDefCB, window,
     	    GetPrefEditorConfig(), FULL);
+    
+    createMenuItem(subPane, "sessions", "Sessions...", 'S', sessionsDefCB, window,
+    	    FULL);
+    
     subSubPane = createMenu(subPane, "warnings", "Warnings", 'r', NULL, FULL);
     window->modWarnDefItem = createMenuToggle(subSubPane,
 	    "filesModifiedExternally", "Files Modified Externally", 'F',
@@ -2323,6 +2328,13 @@ static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData)
     	if (IsTopDocument(win))
     	    XmToggleButtonSetState(win->editorConfigDefItem, state, False);
     }
+}
+
+static void sessionsDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+            ((XmAnyCallbackStruct *)callData)->event);
+    SessionsPref(WidgetToWindow(MENU_WIDGET(w)));
 }
 
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData)
