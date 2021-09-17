@@ -75,6 +75,7 @@ WindowInfo *WidgetToWindow(Widget w);
 void AddSmallIcon(Widget shell);
 void SetTabDist(WindowInfo *window, int tabDist);
 void SetEmTabDist(WindowInfo *window, int emTabDist);
+int SaveWindowSession(WindowInfo *window);
 int CloseAllDocumentInWindow(WindowInfo *window);
 WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name);
 WindowInfo *TabToWindow(Widget tab);

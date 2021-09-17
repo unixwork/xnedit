@@ -330,6 +330,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
       memset(window, 0, sizeof(WindowInfo));
          be added here ?
     */
+    window->sessionpath = NULL;
     window->replaceDlog = NULL;
     window->replaceText = NULL;
     window->replaceWithText = NULL;
@@ -1213,10 +1214,10 @@ void CloseWindow(WindowInfo *window)
        window), leave the window alive until the macro completes */
     keepWindow = !MacroWindowCloseActions(window);
     
-#ifndef VMS
+    if(window->sessionpath) NEditFree(window->sessionpath);
+    
     /* Kill shell sub-process and free related memory */
     AbortShellCommand(window);
-#endif /*VMS*/
     
     /* Unload the default tips files for this language mode if necessary */
     UnloadLanguageModeTipsFile(window);
@@ -3686,6 +3687,10 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     /* inherit settings and later reset those required */
     memcpy(window, shellWindow, sizeof(WindowInfo));
     
+    if(window->sessionpath) {
+        window->sessionpath = NEditStrdup(window->sessionpath);
+    }
+    
 #if 0
     /* share these dialog items with parent shell */
     window->replaceDlog = NULL;
@@ -4107,9 +4112,12 @@ int SaveFilesDialog(WindowInfo *window)
     int n = 0;
     XmString str;
     
+    int nunsaved = NUnsavedDocuments(window);
+    int topLabelSpacing = nunsaved == 1 ? 2 * WINDOW_SPACING : WINDOW_SPACING;
+    
     Widget winShell = window->shell;
     
-    Widget dialog = CreateDialogShell(window->shell, "Save Files", args, 0);
+    Widget dialog = CreateDialogShell(window->shell, n == 1 ? "Save File" : "Save Files", args, 0);
     
     SaveFilesData data;
     memset(&data, 0, sizeof(SaveFilesData));
@@ -4122,7 +4130,7 @@ int SaveFilesDialog(WindowInfo *window)
     XtSetArg(args[0], XmNshadowThickness, 0); n++;
     Widget form = XmCreateForm(dialog, "form", args, n);
     
-    int session = 1; // TODO: config
+    int session = 1; /* maybe make this configurable */
     int b1r, b2l, b2r, bcl;
     if(session) {
         b1r = 25;
@@ -4241,76 +4249,101 @@ int SaveFilesDialog(WindowInfo *window)
     XtManageChild(topForm);
     
     // top label
+    char *lblBuf = NULL;
+    if(nunsaved == 1) {
+        size_t nameLen = strlen(window->filename);
+        size_t lblBufLen = nameLen + 32;
+        lblBuf = NEditMalloc(lblBufLen);
+        snprintf(lblBuf, lblBufLen, "Save %s before closing?", window->filename);
+    }
+    
     n = 0;
-    str = XmStringCreateLocalized("Save files before closing?");
+    str = XmStringCreateLocalized(nunsaved == 1 ? lblBuf : "Save files before closing?");
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
+    XtSetArg(args[n], XmNtopOffset, topLabelSpacing); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
+    if(nunsaved == 1) {
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNbottomOffset, topLabelSpacing); n++;
+    }
     Widget label = XmCreateLabel(topForm, "label", args, n);
     XtManageChild(label);
     XmStringFree(str);
+    if(lblBuf) {
+        NEditFree(lblBuf);
+    }
     
-    
-    // create the ScrolledWindow for the documents checkboxes 
-    n = 0;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, label); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmAS_NEEDED); n++;
-    XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
-    XtSetArg(args[n], XmNshadowThickness, 1); n++;
-    Widget scrollW = XmCreateScrolledWindow(topForm, "scrolledwindow", args, n);
-    XtManageChild(scrollW);
-    
-    n = 0;
-    XtSetArg(args[n], XmNshadowThickness, 0); n++;
-    Widget docForm = XmCreateForm(scrollW, "form", args, n);
-    
-    // create togglebuttons for unsaved documents
     size_t dalloc = 64;
     size_t dsize = 0;
-    Widget *docButtons = NEditCalloc(dalloc, sizeof(Widget));
-    
-    n = 0;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
-    XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
-    XtSetArg(args[n], XmNset, 1); n++;
-    int k = n;
-    Widget topWid = NULL;
-    for (WindowInfo *win=WindowList;win;win=win->next) {
-        if(win->shell == winShell && win->fileChanged) {
-            n = k;
-            str = XmStringCreateLocalized(win->filename);
-            XtSetArg(args[n], XmNlabelString, str); n++;
-            XtSetArg(args[n], XmNuserData, win); n++;
-            if(topWid) {
-                XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-                XtSetArg(args[n], XmNtopWidget, topWid); n++;
-            } else {
-                XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    Widget *docButtons = NULL;
+    if(nunsaved == 1) {
+        docButtons = NEditCalloc(1, sizeof(Widget));
+        // create unmanaged button for the single document
+        n = 0;
+        XtSetArg(args[n], XmNset, 1); n++;
+        XtSetArg(args[n], XmNuserData, window); n++;
+        docButtons[0] = XmCreateToggleButton(topForm, "sfbutton", args, n);
+        dsize = 1;
+    } else {
+        // create the ScrolledWindow for the documents checkboxes 
+        n = 0;
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNtopWidget, label); n++;
+        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNtopOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmAS_NEEDED); n++;
+        XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
+        XtSetArg(args[n], XmNshadowThickness, 1); n++;
+        Widget scrollW = XmCreateScrolledWindow(topForm, "scrolledwindow", args, n);
+        XtManageChild(scrollW);
+
+        n = 0;
+        XtSetArg(args[n], XmNshadowThickness, 0); n++;
+        Widget docForm = XmCreateForm(scrollW, "form", args, n);
+
+        // create togglebuttons for unsaved documents
+        docButtons = NEditCalloc(dalloc, sizeof(Widget));
+
+        n = 0;
+        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNset, 1); n++;
+        int k = n;
+        Widget topWid = NULL;
+        for (WindowInfo *win=WindowList;win;win=win->next) {
+            if(win->shell == winShell && win->fileChanged) {
+                n = k;
+                str = XmStringCreateLocalized(win->filename);
+                XtSetArg(args[n], XmNlabelString, str); n++;
+                XtSetArg(args[n], XmNuserData, win); n++;
+                if(topWid) {
+                    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+                    XtSetArg(args[n], XmNtopWidget, topWid); n++;
+                } else {
+                    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+                }
+                topWid = XmCreateToggleButton(docForm, "sfbutton", args, n);
+                XtManageChild(topWid);            
+                XmStringFree(str);
+
+                // add togglebutton to the array
+                if(dsize >= dalloc) {
+                    dalloc += 64;
+                    docButtons = NEditRealloc(docButtons, dalloc * sizeof(Widget));
+                }
+                docButtons[dsize++] = topWid;
             }
-            topWid = XmCreateToggleButton(docForm, "sfbutton", args, n);
-            XtManageChild(topWid);            
-            XmStringFree(str);
-            
-            // add togglebutton to the array
-            if(dsize >= dalloc) {
-                dalloc += 64;
-                docButtons = NEditRealloc(docButtons, dalloc * sizeof(Widget));
-            }
-            docButtons[dsize++] = topWid;
         }
+        XtManageChild(docForm);
     }
-    XtManageChild(docForm);
     
     
     // checkbox form
@@ -4349,7 +4382,7 @@ int SaveFilesDialog(WindowInfo *window)
     }
     
     // show dialog
-    if(dsize > 0) {
+    if(nunsaved > 0) {
         ManageDialogCenteredOnPointer(form);
     
         XmProcessTraversal(buttons, XmTRAVERSE_CURRENT);
@@ -4369,16 +4402,7 @@ int SaveFilesDialog(WindowInfo *window)
         YES_SBC_DIALOG_RESPONSE : NO_SBC_DIALOG_RESPONSE;
     if(data.status == 3) {
         // save session
-        XNESessionWriter *session = CreateSession(window);
-        
-	for (WindowInfo *win = WindowList; win;) {
-            if (win->shell == winShell) {
-                SessionAddDocument(session, win);
-            }
-            win = win->next;
-        }
-        
-        CloseSession(session);
+        SaveWindowSession(window);
     }
     
     if(data.status != 2) {
@@ -4406,6 +4430,104 @@ int SaveFilesDialog(WindowInfo *window)
     return data.status == 2 ? True : False;
 }
 
+static char* SaveSessionDialog(WindowInfo *window)
+{
+    char sessionName[DF_MAX_PROMPT_LENGTH];
+    sessionName[0] = 0;
+    int resp;
+    
+    resp = DialogF(DF_PROMPT, window->shell, 2, "Save Session",
+            "Session Name:",
+            sessionName, "OK", "Cancel");
+    if (resp == 2)
+    	return NULL;
+    
+    if(resp == 1 && sessionName[0] != 0) {
+        return NEditStrdup(sessionName);
+    }
+    
+    return NULL;
+}
+
+#define SN_MAX_GEN_NAME_LEN 256
+
+/*
+ * Save window documents in a session file
+ * if name is null, a session name is generated
+ */
+int SaveWindowSession(WindowInfo *window)
+{
+    const char *sessionName = NULL;
+    char *snName = NULL; // allocated string that must be freed
+    
+    int saveSession = window->sessionpath ? GetPrefSessionSaveTo() : GetPrefSessionNewSaveTo();
+    switch(saveSession) {
+        default: return 1;
+        case XNE_SESSION_LAST: {
+            if(window->sessionpath) {
+                sessionName = window->sessionpath;
+            } else {
+                snName = GetLatestSessionFile();
+                sessionName = snName;
+            }
+            if(sessionName) break;
+            /* fall through */
+        }
+        case XNE_SESSION_NEW: {
+            const char *fmt = GetPrefSessionNameFormat();
+            
+            time_t t = time(NULL);
+            struct tm *tm = localtime(&t);
+            
+            snName = NEditMalloc(512);
+            if(strftime(snName, 512, fmt, tm) == 0) {
+                return 1;
+            }
+            sessionName = snName;
+            break;
+        }
+        case XNE_SESSION_DEFAULT: {
+            sessionName = GetPrefSessionDefaultName();
+            break;
+        }
+        case XNE_SESSION_NO: {
+            // same as ASK
+            /* fall through */
+        }
+        case XNE_SESSION_ASK: {
+            snName = SaveSessionDialog(window);
+            sessionName = snName;
+            break;
+        }
+    }
+    
+    if(!sessionName || strlen(sessionName) == 0) {
+        return 1;
+    }
+    
+    // save session
+    XNESessionWriter *session = CreateSession(window, sessionName);
+    Widget winShell = window->shell;
+    
+    for (WindowInfo *win = WindowList; win;) {
+        if (win->shell == winShell) {
+            SessionAddDocument(session, win);
+        }
+        win = win->next;
+    }
+
+    CloseSession(session);
+    
+    // cleanup
+    if(snName) {
+        NEditFree(snName);
+    }
+    
+    // close window documents
+
+    
+    return 0;
+}
 
 /*
 ** close all the documents in a window
@@ -4413,58 +4535,54 @@ int SaveFilesDialog(WindowInfo *window)
 int CloseAllDocumentInWindow(WindowInfo *window) 
 {
     WindowInfo *win;
+    Widget winShell = window->shell;
+    WindowInfo *topDocument;
     
-    if (NUnsavedDocuments(window) == 1) {
-    	/* only one document in the window */
-    	return CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
-    }
-    else {
-	Widget winShell = window->shell;
-	WindowInfo *topDocument;
-        
-#ifndef OLD_CLOSE_FILE_DIALOG
+    int preResponse = PROMPT_SBC_DIALOG_RESPONSE;
+    
+    // if sessionpath is null, we use settings for new sessions
+    int saveSession = window->sessionpath ? GetPrefSessionSaveTo() : GetPrefSessionNewSaveTo();
+    // XNE_SESSION_NO: don't save session automatically
+    // XNE_SESSION_ASK: also don't save session automatically, however SaveFilesDialog
+    //                  has a "Save Session" button
+    if(saveSession != XNE_SESSION_NO && saveSession != XNE_SESSION_ASK) {
+        // save session
+        if(SaveWindowSession(window)) {
+            // Failed to save session
+            // we don't want to exit and lose all data
+            return False;
+        }
+        preResponse = NO_SBC_DIALOG_RESPONSE;
+    } else {
         // open dialog for selecting files, that should be saved
         if(SaveFilesDialog(window)) {
             return False;
         }
-#else
-    	/* close all _modified_ documents belong to this window */
-	for (win = WindowList; win; ) {
-    	    if (win->shell == winShell && win->fileChanged) {
-	    	WindowInfo *next = win->next;
-    	    	if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
-		    return False;
-		win = next;
-	    }
-	    else
-	    	win = win->next;
-	}
-#endif        
-        
-    	/* see there's still documents left in the window */
-	for (win = WindowList; win; win=win->next)
-	    if (win->shell == winShell)
-	    	break;
-	
-	if (win) {
-	    topDocument = GetTopDocument(winShell);
+    }
 
-    	    /* close all non-top documents belong to this window */
-	    for (win = WindowList; win; ) {
-    		if (win->shell == winShell && win != topDocument) {
-	    	    WindowInfo *next = win->next;
-    	    	    if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
-			return False;
-		    win = next;
-		}
-		else
-	    	    win = win->next;
-	    }
+    /* see there's still documents left in the window */
+    for (win = WindowList; win; win=win->next)
+        if (win->shell == winShell)
+            break;
 
-	    /* close the last document and its window */
-    	    if (!CloseFileAndWindow(topDocument, PROMPT_SBC_DIALOG_RESPONSE))
-		return False;
-	}
+    if (win) {
+        topDocument = GetTopDocument(winShell);
+
+        /* close all non-top documents belong to this window */
+        for (win = WindowList; win; ) {
+            if (win->shell == winShell && win != topDocument) {
+                WindowInfo *next = win->next;
+                if (!CloseFileAndWindow(win, preResponse))
+                    return False;
+                win = next;
+            }
+            else
+                win = win->next;
+        }
+
+        /* close the last document and its window */
+        if (!CloseFileAndWindow(topDocument, preResponse))
+            return False;
     }
     
     return True;

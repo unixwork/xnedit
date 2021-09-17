@@ -28,52 +28,61 @@
 
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
+#include "../util/filedialog.h"
 
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
+#include <dirent.h>
+#
 
-#define XNE_SESSION_FILE_LEN 16
+#define XNSESSION_EXT ".xnsession"
 
-XNESessionWriter* CreateSession(WindowInfo *window) {
-    const char *sessionDir = GetRCFileName(SESSION_DIR);
-    size_t sdirlen = strlen(sessionDir);
-    
-    // check if the session directory exists and if not, create it
-    struct stat s;
-    if(stat(sessionDir, &s)) {
-        if(errno == ENOENT) {
-            if(mkdir(sessionDir, S_IRWXU)) {
+XNESessionWriter* CreateSession(WindowInfo *window, const char *sessionName) {
+    char *sessionFilePath = NULL;
+    // if sessionName is an absolute path, use it as sessionFilePath
+    // otherwise, create a session file in .xnedit/sessions/
+    if(sessionName[0] == '/') {
+        sessionFilePath = (char*)sessionName;
+    } else {
+        const char *sessionDir = GetRCFileName(SESSION_DIR);
+        size_t sdirlen = strlen(sessionDir);
+
+        // check if the session directory exists and if not, create it
+        struct stat s;
+        if(stat(sessionDir, &s)) {
+            if(errno == ENOENT) {
+                if(mkdir(sessionDir, S_IRWXU)) {
+                    // TODO: error
+                    return NULL;
+                }
+            } else {
                 // TODO: error
                 return NULL;
             }
-        } else {
-            // TODO: error
-            return NULL;
         }
+
+        // create session file name
+        size_t sfilelen = sdirlen + 16 + strlen(sessionName);
+        sessionFilePath = NEditMalloc(sfilelen);
+
+        snprintf(sessionFilePath, sfilelen, "%s/%s%s", sessionDir, sessionName, XNSESSION_EXT);
     }
-    
-    // create session file name
-    size_t sfilelen = sdirlen + 2 + XNE_SESSION_FILE_LEN;
-    char *sessionFilePath = malloc(sfilelen);
-    
-    snprintf(sessionFilePath, sfilelen, "%s/%s", sessionDir, "last");
     
     // open file and create session struct
     int sessionFile = open(sessionFilePath, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
     if(sessionFile < 0) {
         // TODO: error
-        free(sessionFilePath);
+        if(sessionName != sessionFilePath) NEditFree(sessionFilePath);
         return NULL;
     }
-    free(sessionFilePath);
+    if(sessionName != sessionFilePath) NEditFree(sessionFilePath);
     
     ftruncate(sessionFile, 0);
     
     XNESessionWriter *session = NEditMalloc(sizeof(XNESessionWriter));
     session->file = sessionFile;
-    
     
     return session;
 }
@@ -302,3 +311,58 @@ void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile)
     NEditFree(session.buffer);
 }
 
+char* GetLatestSessionFile(void)
+{
+    const char *sessionDir = GetRCFileName(SESSION_DIR);
+    
+    int dir_fd = open(sessionDir, O_RDONLY);
+    if(dir_fd == -1) {
+        return NULL;
+    }
+    DIR *dir = fdopendir(dir_fd);
+    if(!dir) {
+        close(dir_fd);
+        return NULL;
+    }
+    
+    struct stat s;
+    char *name = NULL;
+    size_t name_alloc = 0;
+    time_t mtime = 0;
+    
+    struct dirent *ent;
+    while((ent = readdir(dir)) != NULL) {
+        size_t namelen = strlen(ent->d_name);
+        if(namelen < sizeof(XNSESSION_EXT)) {
+            continue;
+        }
+        char *ext = &ent->d_name[namelen - sizeof(XNSESSION_EXT) + 1];
+        if(strcmp(ext, XNSESSION_EXT)) {
+            continue;
+        }
+        
+        if(fstatat(dir_fd, ent->d_name, &s, 0)) {
+            continue;
+        }
+        
+        if(s.st_mtime > mtime) {
+            mtime = s.st_mtime;
+            if(name_alloc < namelen + 1) {
+                name_alloc = namelen + 1 < 512 ? 512 : namelen + 1;
+                name = NEditRealloc(name, name_alloc);
+            }
+            memcpy(name, ent->d_name, namelen);
+            name[namelen] = '\0';
+        }
+    }
+    
+    closedir(dir);
+    
+    char *fullPath = NULL;
+    if(name) {
+        char *fullPath = ConcatPath(sessionDir, name);
+        NEditFree(name);
+    }
+    
+    return fullPath;
+}

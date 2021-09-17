@@ -59,7 +59,7 @@ struct XNESession {
 /*
  * Create a new session file
  */
-XNESessionWriter* CreateSession(WindowInfo *window);
+XNESessionWriter* CreateSession(WindowInfo *window, const char *sessionName);
 
 /*
  * Add a document to a session file
@@ -84,6 +84,11 @@ XNESession ReadSessionFile(const char *path);
  * Read a session file and open all session documents in a window
  */
 void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile);
+
+/*
+ * Get the path of latest session file
+ */
+char* GetLatestSessionFile(void);
 
 
 #endif /* XNE_SESSION_H */

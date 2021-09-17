@@ -473,6 +473,7 @@ typedef struct _WindowInfo {
     	    	    	    	    	   short menus on and off */
     int     	nToggleShortItems;
 #endif
+    char        *sessionpath;           /* session file path */
     char	filename[MAXPATHLEN];	/* name component of file being edited*/
     char	path[MAXPATHLEN];	/* path component of file being edited*/
     char        encoding[MAX_ENCODING_LENGTH];

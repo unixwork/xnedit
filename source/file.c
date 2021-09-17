@@ -1365,8 +1365,7 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
             response = preResponse;
         }
 
-        if (response == YES_SBC_DIALOG_RESPONSE)
-        {
+        if (response == YES_SBC_DIALOG_RESPONSE) {
             /* Save */
             stat = SaveWindow(window);
             if (stat)
@@ -1376,13 +1375,12 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
             {
                 return FALSE;
             }
-        } else if (response == NO_SBC_DIALOG_RESPONSE)
-        {
+        } else if (response == NO_SBC_DIALOG_RESPONSE) {
             /* Don't Save */
             RemoveBackupFile(window);
             CloseWindow(window);
-        } else /* 3 == Cancel */
-        {
+        } else {
+            /* 3 == Cancel */
             return FALSE;
         }
     }
