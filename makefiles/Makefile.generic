@@ -136,7 +136,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -lpcre -lXm -lXt -lX11 -lm -lXpm -lXrender `pkg-config --libs xft fontconfig`
+LIBS= -lpcre -lpthread -lXm -lXt -lX11 -lm -lXpm -lXrender `pkg-config --libs xft fontconfig`
 
 # System independent part
 include Makefile.common

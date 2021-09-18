@@ -52,6 +52,7 @@
 #include "interpret.h"
 #include "smartIndent.h"
 #include "windowTitle.h"
+#include "session.h"
 #include "../util/getfiles.h"
 #include "../util/DialogF.h"
 #include "../util/misc.h"
@@ -680,11 +681,14 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
 	XtAddCallback(window->prevOpenMenuItem, XmNcascadingCallback,
     		(XtCallbackProc)prevOpenMenuCB, window);
     }
-    // TODO: config
+    
+    /* sessions */
     window->openSessionMenuPane = createMenu(menuPane, "openSession",
     		"Open Session", 'S', &window->openSessionMenuItem, SHORT);
     createMenuItem(window->openSessionMenuPane, "openSessionFile", "Open Session File", 'O',
     	    doActionCB, "open_session_file", SHORT);
+    createMenuSeparator(window->openSessionMenuPane, "sep1", SHORT);
+    CreateSessionMenu(window->openSessionMenuPane);
     
     createMenuSeparator(menuPane, "sep1", SHORT);
     window->closeItem = createMenuItem(menuPane, "close", "Close", 'C',

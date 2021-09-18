@@ -25,6 +25,7 @@
 
 #include "file.h"
 #include "preferences.h"
+#include "window.h"
 
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
@@ -35,7 +36,9 @@
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <dirent.h>
-#
+#include <pthread.h>
+
+#include <Xm/XmAll.h>
 
 #define XNSESSION_EXT ".xnsession"
 
@@ -311,17 +314,51 @@ void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile)
     NEditFree(session.buffer);
 }
 
-char* GetLatestSessionFile(void)
+static int openSessionsDir(const char **sessionDirP, DIR **dirp, int *fd)
 {
     const char *sessionDir = GetRCFileName(SESSION_DIR);
     
     int dir_fd = open(sessionDir, O_RDONLY);
     if(dir_fd == -1) {
-        return NULL;
+        return 1;
     }
     DIR *dir = fdopendir(dir_fd);
     if(!dir) {
         close(dir_fd);
+        return 1;
+    }
+    
+    *sessionDirP = sessionDir;
+    *dirp = dir;
+    *fd = dir_fd;
+    return 0;
+}
+
+static int readSessionFileEntry(int dir_fd, struct dirent *ent, size_t *nlen, struct stat *s)
+{
+    size_t namelen = strlen(ent->d_name);
+    if(namelen < sizeof(XNSESSION_EXT)) {
+        return 1;
+    }
+    char *ext = &ent->d_name[namelen - sizeof(XNSESSION_EXT) + 1];
+    if(strcmp(ext, XNSESSION_EXT)) {
+        return 1;
+    }
+
+    if(fstatat(dir_fd, ent->d_name, s, 0)) {
+        return 1;
+    }
+    
+    *nlen = namelen;
+    return 0;
+}
+
+char* GetLatestSessionFile(void)
+{
+    const char *sessionDir;
+    int dir_fd;
+    DIR *dir;
+    if(openSessionsDir(&sessionDir, &dir, &dir_fd)) {
         return NULL;
     }
     
@@ -332,16 +369,8 @@ char* GetLatestSessionFile(void)
     
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
-        size_t namelen = strlen(ent->d_name);
-        if(namelen < sizeof(XNSESSION_EXT)) {
-            continue;
-        }
-        char *ext = &ent->d_name[namelen - sizeof(XNSESSION_EXT) + 1];
-        if(strcmp(ext, XNSESSION_EXT)) {
-            continue;
-        }
-        
-        if(fstatat(dir_fd, ent->d_name, &s, 0)) {
+        size_t namelen;
+        if(readSessionFileEntry(dir_fd, ent, &namelen, &s)) {
             continue;
         }
         
@@ -360,9 +389,174 @@ char* GetLatestSessionFile(void)
     
     char *fullPath = NULL;
     if(name) {
-        char *fullPath = ConcatPath(sessionDir, name);
+        fullPath = ConcatPath(sessionDir, name);
         NEditFree(name);
     }
     
     return fullPath;
+}
+
+/* ---------------------- CreateSessionMenu ---------------------- */
+
+typedef struct MenuPaneList MenuPaneList;
+typedef struct SessionFile SessionFile;
+
+struct MenuPaneList {
+    Widget menuPane;
+    Widget placeHolder;
+    MenuPaneList *next;
+};
+
+struct SessionFile {
+    char *path; /* full file path */
+    char *name; /* session name (without file extension) */
+    time_t mtime;
+};
+
+static MenuPaneList *waitingMenus = NULL;
+static pthread_mutex_t wmlock = PTHREAD_MUTEX_INITIALIZER;
+
+static int sessionsLoaded = 0;
+static int sessionsLoading = 0;
+
+static SessionFile *sessionFiles = NULL;
+static size_t numSessionFiles = 0;
+static size_t allocSessionFiles = 0;
+
+
+static void openSessionFileCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    char *path = clientData;
+    OpenDocumentsFromSession(WidgetToWindow(w), path);
+}
+
+static void createSessionMenuItems(Widget menuPane, Widget placeHolder)
+{
+    if(placeHolder) {
+        XtUnmanageChild(placeHolder);
+        XtDestroyWidget(placeHolder);
+    }
+    
+    Widget menuItem;
+    XmString label;
+    
+    for(int i=0;i<numSessionFiles;i++) {
+        SessionFile s = sessionFiles[i];
+        
+        label = XmStringCreateLocalized(s.name);
+        menuItem = XtVaCreateManagedWidget(
+                "sessionMenuItem", xmPushButtonWidgetClass, menuPane, 
+                XmNlabelString, label,
+                NULL);
+        XtAddCallback(menuItem, XmNactivateCallback, (XtCallbackProc)openSessionFileCB, s.path);
+        XmStringFree(label);
+    }
+}
+
+static void finishLoadingSessions(XtPointer clientData, XtIntervalId *id)
+{
+    MenuPaneList *w = waitingMenus;
+    while(w) {
+        MenuPaneList *w_next = w->next;
+        createSessionMenuItems(w->menuPane, w->placeHolder);
+        NEditFree(w);
+        w = w_next;
+    }
+    waitingMenus = NULL;
+}
+
+static int sessionFileCmp(const void *f1, const void *f2)
+{
+    const SessionFile *s1 = f1;
+    const SessionFile *s2 = f2;
+    
+    return s1->mtime < s2->mtime;
+}
+
+static void* loadSessions(void *data)
+{
+    const char *sessionDir;
+    int dir_fd;
+    DIR *dir;
+    if(openSessionsDir(&sessionDir, &dir, &dir_fd)) {
+        return NULL;
+    }
+    
+    struct stat s; 
+    struct dirent *ent;
+    while((ent = readdir(dir)) != NULL) {
+        size_t namelen;
+        if(readSessionFileEntry(dir_fd, ent, &namelen, &s)) {
+            continue;
+        }
+        
+        if(numSessionFiles >= allocSessionFiles) {
+            allocSessionFiles += 16;
+            sessionFiles = NEditRealloc((void*)sessionFiles, allocSessionFiles * sizeof(SessionFile));
+        }
+        
+        SessionFile f;
+        f.path = ConcatPath(sessionDir, ent->d_name);
+        f.name = NEditStrdup(FileName(f.path));
+        f.name[strlen(f.name) - sizeof(XNSESSION_EXT) + 1] = '\0';
+        f.mtime = s.st_mtime;
+        sessionFiles[numSessionFiles++] = f;
+    }
+    
+    closedir(dir);
+    
+    qsort(sessionFiles, numSessionFiles, sizeof(SessionFile), sessionFileCmp);
+    
+    // create menu items for all open windows
+    pthread_mutex_lock(&wmlock);
+    sessionsLoaded = 1;
+    
+    if(waitingMenus) {
+        XtAppAddTimeOut(
+                XtWidgetToApplicationContext((Widget)waitingMenus->menuPane),
+                0,
+                finishLoadingSessions,
+                NULL);
+    }
+    
+    pthread_mutex_unlock(&wmlock);
+    return NULL;
+}
+
+void CreateSessionMenu(Widget menuPane)
+{
+    pthread_mutex_lock(&wmlock);
+    
+    // if the session dir is already loaded, just create the menu items
+    if(sessionsLoaded) {
+        createSessionMenuItems(menuPane, NULL);
+        return;
+    }
+    
+    // sessions not loaded yet, load in a separate thread
+    if(!sessionsLoading) {
+        pthread_t tid;
+        pthread_create(&tid, NULL, loadSessions, NULL);
+        sessionsLoading = 1;
+    }
+    
+    // create placeholder menu item and add it to the waiting list
+    Widget menuitem;
+    XmString s1;
+    
+    s1 = XmStringCreateSimple("Loading...");
+    menuitem = XtVaCreateWidget(
+            "placeholder",xmLabelWidgetClass, menuPane, 
+    	    XmNlabelString, s1,
+    	    NULL);
+    XmStringFree(s1);
+    XtManageChild(menuitem);
+    
+    MenuPaneList *l = NEditMalloc(sizeof(MenuPaneList));
+    l->menuPane = menuPane;
+    l->next = waitingMenus;
+    l->placeHolder = menuitem;
+    waitingMenus = l;
+    
+    pthread_mutex_unlock(&wmlock);
 }

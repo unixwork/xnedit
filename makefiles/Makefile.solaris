@@ -28,7 +28,7 @@ CFLAGS=-O -std=gnu99 $(ARCH) -I/usr/openwin/include -I/usr/include/X11 -DUSE_DIR
 ARFLAGS=-urs
 
 PKGCONFIG_LIBS:sh = pkg-config --libs-only-l xft fontconfig
-LIBS= -L/usr/lib $(ARCH) -R/usr/sfw/lib/64 -L/usr/sfw/lib/64 -lpcre -lm -lXm -lXt -lXpm -lX11 -lXrender \
+LIBS= -L/usr/lib $(ARCH) -R/usr/sfw/lib/64 -L/usr/sfw/lib/64 -lpthread -lpcre -lm -lXm -lXt -lXpm -lX11 -lXrender \
     	-lsocket -lnsl $(PKGCONFIG_LIBS)
 
 include Makefile.common

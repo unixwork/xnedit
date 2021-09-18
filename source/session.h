@@ -90,6 +90,12 @@ void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile);
  */
 char* GetLatestSessionFile(void);
 
+/*
+ * Create menu items for stored sessions
+ * if the menu items are not loaded yet, insert a placeholder menuitem,
+ * that will be replaced later
+ */
+void CreateSessionMenu(Widget menuPane);
 
 #endif /* XNE_SESSION_H */
 
