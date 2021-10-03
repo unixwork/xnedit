@@ -47,6 +47,8 @@
                                    in the buffer where text might be inserted
                                    if the user is typing sequential chars) */
 
+#define ANSI_ESC_BLOCKSZ 32
+
 static void histogramCharacters(const char *string, int length, char hist[256],
 	int init);
 static void subsChars(char *string, int length, char fromChar, char toChar);
@@ -2748,6 +2750,24 @@ static char *unexpandTabs(const char *text, int startIndent, int tabDist,
     *newLen = outPtr - outStr;
     return outStr;
 }
+
+void BufEnableAnsiEsc(textBuffer *buf)
+{
+    if(buf->ansi_escpos) return;
+    
+    buf->ansi_escpos = NEditCalloc(ANSI_ESC_BLOCKSZ, sizeof(size_t));
+    buf->alloc_ansi_escpos = ANSI_ESC_BLOCKSZ;
+    buf->num_ansi_escpos = 0;
+}
+
+void BufDisableAnsiEsc(textBuffer *buf)
+{
+    NEditFree(buf->ansi_escpos);
+    buf->ansi_escpos = NULL;
+    buf->alloc_ansi_escpos = 0;
+    buf->num_ansi_escpos = 0;
+}
+
 
 int BufCharLen(const textBuffer *buf, int pos)
 {

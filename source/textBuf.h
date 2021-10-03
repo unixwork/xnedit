@@ -179,6 +179,9 @@ int BufSubstituteNullChars(char *string, int length, textBuffer *buf);
 void BufUnsubstituteNullChars(char *string, textBuffer *buf);
 int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText);
 
+void BufEnableAnsiEsc(textBuffer *buf);
+void BufDisableAnsiEsc(textBuffer *buf);
+
 int BufCharLen(const textBuffer *buf, int pos);
 int BufLeftPos(textBuffer *buf, int pos);
 int BufRightPos(textBuffer *buf, int pos);
