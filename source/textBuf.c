@@ -174,6 +174,9 @@ textBuffer *BufCreatePreallocated(int requestedSize)
     {int i; for (i=buf->gapStart; i<buf->gapEnd; i++) buf->buf[i] = '.';}
 #endif
     buf->rangesetTable = NULL;
+    buf->ansi_escpos = NULL;
+    buf->alloc_ansi_escpos = 0;
+    buf->num_ansi_escpos = 0;
     return buf;
 }
 

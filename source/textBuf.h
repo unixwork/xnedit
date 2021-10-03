@@ -84,6 +84,9 @@ typedef struct _textBuffer {
 				   use it */
     RangesetTable *rangesetTable;
 				/* current range sets */
+    size_t *ansi_escpos;        /* indices of all ansi escape positions */
+    size_t alloc_ansi_escpos;   /* ansi_escpos allocation size */
+    size_t num_ansi_escpos;     /* number of ansi escape sequences */
 } textBuffer;
 
 textBuffer *BufCreate(void);
