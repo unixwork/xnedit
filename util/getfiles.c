@@ -767,6 +767,15 @@ static void createErrorDialog(Widget parent)
     XmStringFree(buttonString);
 }
 
+int OverrideFileDialog(Widget parent, const char *filename)
+{
+    createYesNoDialog(parent);
+    int ret = doYesNoDialog(filename);
+    XtDestroyWidget(YesNoDialog);
+    YesNoDialog = NULL;
+    return ret;
+}
+
 static int doYesNoDialog(const char *filename)
 {
     char string[255];

@@ -363,6 +363,8 @@ static void FileSelect(FileDialogData *fsb, const char *item);
 
 static void select_view(FileDialogData *data);
 
+static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d);
+
 /*
  * get number of shifts for specific color mask
  */
@@ -1800,8 +1802,7 @@ static void filedialog_action(
         filedialog_update_dir(data, data->selectedPath);
         PathBarSetPath(data->pathBar, data->selectedPath);
     } else {
-        data->end = True;
-        data->status = FILEDIALOG_OK;
+        filedialog_ok(w, data, NULL);
     }
 }
 
@@ -1851,8 +1852,7 @@ void grid_select(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
 
 void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     set_path_from_row(data, cb->row);
-    data->end = True;
-    data->status = FILEDIALOG_OK;
+    filedialog_ok(w, data, NULL);
 }
  
 void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
@@ -1958,9 +1958,8 @@ void filelist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
     char *path = set_selected_path(data, cb->item);
     if(path) {
-        data->end = True;
-        data->status = FILEDIALOG_OK;
         data->selIsDir = False;
+        filedialog_ok(w, data, NULL);
     }
 }
 
@@ -1988,12 +1987,24 @@ static void filedialog_setshowhidden(
     filedialog_update_dir(data, NULL);
 }
 
+static void filedilalog_ok_end(FileDialogData *data)
+{
+    struct stat s;
+    if(data->type == FILEDIALOG_SAVE && !stat(data->selectedPath, &s)) {
+        if(OverrideFileDialog(data->shell, FileName(data->selectedPath)) != 1) {
+            return;
+        }
+    }
+    
+    data->status = FILEDIALOG_OK;
+    data->end = True;
+}
+
 static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
 {
     if(data->selectedPath) {
         if(!data->selIsDir) {
-            data->status = FILEDIALOG_OK;
-            data->end = True;
+            filedilalog_ok_end(data);
             return;
         }
     }
@@ -2003,9 +2014,8 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
         if(newName) {
             if(strlen(newName) > 0) {
                 data->selectedPath = newName[0] == '/' ? NEditStrdup(newName) : ConcatPath(data->currentPath, newName);
-                data->status = FILEDIALOG_OK;
-                data->end = True;
                 data->selIsDir = 0;
+                filedilalog_ok_end(data);
             }
             XtFree(newName);
         }
