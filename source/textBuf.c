@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <limits.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -2766,6 +2768,56 @@ void BufDisableAnsiEsc(textBuffer *buf)
     buf->ansi_escpos = NULL;
     buf->alloc_ansi_escpos = 0;
     buf->num_ansi_escpos = 0;
+}
+
+/*
+ * Adds a textBuffer position to the array of escape sequence positions.
+ * ansi_escpos will still be sorted after this call 
+ */
+void BufAddEscPos(textBuffer *buf, size_t pos)
+{
+    size_t *escpos = buf->ansi_escpos;
+    size_t num_escpos = buf->num_ansi_escpos;
+    
+    size_t insert = 0;
+    // find the insert position in the sorted array
+    if(num_escpos > 0) {
+        size_t left = 0;
+        size_t right = num_escpos; // last element is always SIZE_MAX
+        while(left <= right) {
+            insert = (left + right) / 2;
+            if(escpos[insert] < pos) {
+                left = insert+1;
+            } else if(escpos[insert] > pos) {
+                if(insert == 0) break;
+                right = insert-1;
+            } else {
+                return; // pos duplicate
+            }
+        }
+        
+        if(insert < num_escpos && escpos[insert] < pos) {
+            insert++;
+        }
+    }
+    
+    // check array size and realloc buffer if necessary
+    if(insert + 2 > buf->alloc_ansi_escpos) {
+        buf->alloc_ansi_escpos += ANSI_ESC_BLOCKSZ;
+        buf->ansi_escpos = NEditRealloc(escpos, buf->alloc_ansi_escpos * sizeof(size_t));
+        escpos = buf->ansi_escpos;
+    }
+    
+    // if we insert an element in the middle, we have to move some bytes to the right
+    if(insert < num_escpos) {
+        memmove(escpos+insert+1, escpos+insert, (num_escpos-insert)*sizeof(size_t));
+    }
+    
+    escpos[insert] = pos;
+    num_escpos++;
+    buf->num_ansi_escpos = num_escpos;
+    
+    escpos[num_escpos] = SIZE_MAX; // important to terminate the array 
 }
 
 
