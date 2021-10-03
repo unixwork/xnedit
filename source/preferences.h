@@ -119,6 +119,8 @@ void SetPrefHighlightCursorLine(int state);
 int GetPrefHighlightCursorLine(void);
 void SetPrefIndentRainbowColors(const char *colorList);
 char *GetPrefIndentRainbowColors(void);
+void SetPrefAnsiColors(int state);
+Boolean GetPrefAnsiColors(void);
 void SetPrefBacklightChars(int state);
 int GetPrefBacklightChars(void);
 char *GetPrefBacklightCharTypes(void);

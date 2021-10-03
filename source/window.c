@@ -396,6 +396,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
+    window->ansiColors = GetPrefAnsiColors();
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {

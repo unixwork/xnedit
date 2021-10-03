@@ -551,6 +551,7 @@ typedef struct _WindowInfo {
     char	*backlightCharTypes;	/* what backlighting to use */
     Boolean     indentRainbow;          /* is indentation highlight turned onß*/
     char        *indentRainbowColors;   /* indent rainbow color lists */
+    Boolean     ansiColors;
     Boolean	modeMessageDisplayed;	/* special stats line banner for learn
     					   and shell command executing modes */
     char	*modeMessage;		/* stats line banner content for learn

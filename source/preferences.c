@@ -293,6 +293,7 @@ static struct prefData {
     int highlightCursorLine;    /* highlight line of cursor */
     int indentRainbow;          /* highlight indentation level */
     char *indentRainbowColors;  /* indent rainbow colors */
+    int ansiColors;             /* coloring from ANSI escape sequences  */
     int backlightChars;		/* whether to apply character "backlighting" */
     char *backlightCharTypes;	/* the backlighting color definitions */
 #ifdef SGI_CUSTOM
@@ -833,6 +834,8 @@ static PrefDescripRec PrefDescrip[] = {
     {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
       "#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff",
       &PrefData.indentRainbowColors, NULL, True},
+    {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
+      &PrefData.ansiColors, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -1902,6 +1905,16 @@ void SetPrefIndentRainbowColors(const char *colorList)
 char *GetPrefIndentRainbowColors(void)
 {
     return PrefData.indentRainbowColors;
+}
+
+void SetPrefAnsiColors(int state)
+{
+    setIntPref(&PrefData.ansiColors, state);
+}
+
+Boolean GetPrefAnsiColors(void)
+{
+    return PrefData.ansiColors;
 }
 
 void SetPrefBacklightChars(int state)

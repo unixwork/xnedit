@@ -211,6 +211,8 @@ void SyntaxHighlightModifyCB(int pos, int nInserted, int nDeleted,
     windowHighlightData 
     	    *highlightData = (windowHighlightData *)window->highlightData;
     
+    // TODO: insert ANSI color stuff here
+    
     if (highlightData == NULL)
     	return;
     	
