@@ -3639,6 +3639,12 @@ void SetIndentRainbow(WindowInfo *window, Boolean state)
     }
 }
 
+void SetAnsiColors(WindowInfo *window, Boolean state)
+{
+    // TODO: set ansi colors
+    window->ansiColors = state;
+}
+
 /*
 ** Set the backlight character class string
 */
@@ -3874,6 +3880,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
+    window->ansiColors = GetPrefAnsiColors();
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -4590,6 +4597,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
     XmToggleButtonSetState(window->highlightCursorLineItem, window->highlightCursorLine, False);
     XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
+    XmToggleButtonSetState(window->ansiColorsItem, window->ansiColors, False);
 #ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
 #endif
@@ -5173,6 +5181,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
     SetIndentRainbowColors(window, orgWin->indentRainbowColors);
+    SetAnsiColors(window, orgWin->ansiColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
     /* Clone rangeset info.

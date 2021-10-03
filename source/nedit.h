@@ -413,10 +413,12 @@ typedef struct _WindowInfo {
     Widget	highlightDefItem;
     Widget      highlightCursorLineItem;
     Widget	indentRainbowItem;
+    Widget      ansiColorsItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
     Widget      highlightCursorLineDefItem;
     Widget      indentRainbowDefItem;
+    Widget      ansiColorsDefItem;
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;
