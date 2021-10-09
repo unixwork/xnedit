@@ -2770,44 +2770,51 @@ void BufDisableAnsiEsc(textBuffer *buf)
     buf->num_ansi_escpos = 0;
 }
 
-static void bufEscGetPosAndValue(
-        textBuffer *buf,
+static int bufEscPos2Index(
+        const textBuffer *buf,
         size_t startIndex,
         size_t startValue,
-        size_t value,
-        size_t *insertIndex,
-        size_t *insertValue)
+        size_t pos,
+        ssize_t *index,
+        size_t *value)
 {
-    size_t insert = 0;
-    size_t ival = startValue;
-    
     size_t num_escpos = buf->num_ansi_escpos;
-    size_t prev_value = 0;
-    for(size_t i=startIndex;i<num_escpos;i++) {
-        if(ival > value) {
-            break;
-        }
-        insert = i;
-        prev_value = ival;
-        ival += buf->ansi_escpos[i];
+    
+    if(num_escpos == 0 || pos == 0) {
+        *index = -1;
+        *value = 0;
+        return 1;
     }
     
-    *insertValue = value - prev_value;
-    *insertIndex = insert;
+    ssize_t prev_index = -1;
+    size_t sum = 0;
+    size_t prev_sum = 0;
+    size_t i;
+    for(i=startIndex;i<num_escpos;i++) {
+        sum += buf->ansi_escpos[i];
+        if(sum >= pos) {
+            break;
+        }
+        prev_sum = sum;
+        prev_index = i;
+    }
+    *index = prev_index;
+    *value = prev_sum;
+    
+    
+    //printf("%zu -> %zu, %zu\n", pos, *index, *value);
+    
+    return 0;
 }
 
 /*
  * Adds a textBuffer position to the array of escape sequence positions.
  * ansi_escpos will still be sorted after this call 
  */
-void BufAddEscPos(textBuffer *buf, size_t pos)
+void BufAddEscPos(textBuffer *buf, size_t insert, size_t pos)
 {
     size_t *escpos = buf->ansi_escpos;
     size_t num_escpos = buf->num_ansi_escpos;
-    
-    size_t insert;
-    size_t value;
-    bufEscGetPosAndValue(buf, 0, 0, pos, &insert, &value);
     
     // check array size and realloc buffer if necessary
     if(insert >= buf->alloc_ansi_escpos) {
@@ -2821,9 +2828,62 @@ void BufAddEscPos(textBuffer *buf, size_t pos)
         memmove(escpos+insert+1, escpos+insert, (num_escpos-insert)*sizeof(size_t));
     }
     
-    escpos[insert] = value;
+    escpos[insert] = pos;
     num_escpos++;
     buf->num_ansi_escpos = num_escpos;
+}
+
+void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted)
+{
+    if(nInserted + nDeleted == 0) {
+        size_t p = 0;
+        for(int i=0;i<buf->num_ansi_escpos;i++) {
+            int ap = buf->ansi_escpos[i];
+            int c = BufGetCharacter(buf, p+ap);
+            //printf("%zu-%d : %x\n", p+ap, ap, c);
+            p += ap;
+        }
+        return;
+    }
+    
+    // get previous element
+    ssize_t startPos;   // index to previous escape sequence
+    size_t startValue;  // abs position of previous esc
+    size_t insertPos;   // insert new escape sequence here
+    bufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
+    insertPos = startPos + 1;
+    
+    // check if the inserted text contains escape sequences
+    int set_offset = 0;        // abs position of last added esc seq
+    if(nInserted) {
+        char *range = BufGetRange(buf, pos, pos+nInserted); // inserted text
+        size_t prevEsc = startValue; // abs position of previous esc seq
+        for(size_t i=0;i<nInserted;i++) {
+            if(range[i] == 0x1b) {
+                // Escape found
+                
+                size_t newEscAbs = pos + i; // absolute position of new esc seq
+                BufAddEscPos(buf, insertPos, newEscAbs - prevEsc); // save offset to previous esc
+                prevEsc = pos + i;
+                insertPos++;
+                set_offset = prevEsc;
+            }
+        }
+        NEditFree(range);
+    }
+    
+    // adjust next esc element 
+    if(insertPos < buf->num_ansi_escpos) {
+        // set_offset > 0   --> new esc added
+        if(set_offset > 0) {
+            size_t next_abs = startValue + buf->ansi_escpos[insertPos] + nInserted;
+            buf->ansi_escpos[insertPos] = next_abs - set_offset;
+        } else {
+            // only normal text added
+            buf->ansi_escpos[insertPos] += nInserted;
+        }
+        
+    } 
 }
 
 
