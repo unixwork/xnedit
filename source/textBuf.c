@@ -2811,7 +2811,7 @@ static int bufEscPos2Index(
  * Adds a textBuffer position to the array of escape sequence positions.
  * ansi_escpos will still be sorted after this call 
  */
-void BufAddEscPos(textBuffer *buf, size_t insert, size_t pos)
+static void bufAddEscPos(textBuffer *buf, size_t insert, size_t pos)
 {
     size_t *escpos = buf->ansi_escpos;
     size_t num_escpos = buf->num_ansi_escpos;
@@ -2833,18 +2833,67 @@ void BufAddEscPos(textBuffer *buf, size_t insert, size_t pos)
     buf->num_ansi_escpos = num_escpos;
 }
 
+static void bufRemoveEscPos(textBuffer *buf, size_t start, size_t nDelete)
+{
+    size_t delEnd = start + nDelete;
+    if(delEnd < buf->num_ansi_escpos)  {
+        // remove elements in the middle --> move from right to left
+        size_t *escpos = buf->ansi_escpos;
+        memmove(escpos + start, escpos + delEnd, (buf->num_ansi_escpos - delEnd)*sizeof(size_t));
+    } // else: remove last elements
+    buf->num_ansi_escpos -= nDelete;
+}
+
+static void bufRemoveEscSeq(textBuffer *buf, size_t pos, size_t nDeleted, ssize_t startPos, size_t startValue)
+{
+    size_t nDeleteEsc = 0;                      // number of deleted esc
+    size_t num_escpos = buf->num_ansi_escpos;   // array length
+    size_t prev_pos = startValue;                        // abs position of esc before delete
+    size_t cur_pos = startValue;
+    size_t i;
+    for(i=startPos+1;i<num_escpos;i++) {
+        cur_pos += buf->ansi_escpos[i];
+        //if(cur_pos < pos) {
+        //    prev_pos = cur_pos;
+        //}
+        if(cur_pos >= pos+nDeleted) {
+            break;
+        }
+        nDeleteEsc++;
+    }
+    
+    if(nDeleteEsc > 0) {
+        if(i < buf->num_ansi_escpos) {
+            // cur_pos    absolute position of next esc seq
+            // prev_pos   absolute position of prev esc seq
+            cur_pos -= nDeleted; // calculate new abs position of next esc seq
+            buf->ansi_escpos[i] = cur_pos - prev_pos;
+        }
+        
+        bufRemoveEscPos(buf, startPos+1, nDeleteEsc);
+    } else {
+        // only normal text removed, we can just adjust the esc offset
+        if(i < buf->num_ansi_escpos) {
+            buf->ansi_escpos[i] -= nDeleted;
+        }
+    }
+}
+
 void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted)
 {
+    /*
     if(nInserted + nDeleted == 0) {
         size_t p = 0;
         for(int i=0;i<buf->num_ansi_escpos;i++) {
             int ap = buf->ansi_escpos[i];
-            int c = BufGetCharacter(buf, p+ap);
-            //printf("%zu-%d : %x\n", p+ap, ap, c);
+            unsigned int c = BufGetCharacter(buf, p+ap);
+            printf("%zu-%d : %x\n", p+ap, ap, c);
             p += ap;
         }
+        printf("\n");
         return;
     }
+    */
     
     // get previous element
     ssize_t startPos;   // index to previous escape sequence
@@ -2852,6 +2901,11 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
     size_t insertPos;   // insert new escape sequence here
     bufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
     insertPos = startPos + 1;
+    
+    // handle deletee
+    if(nDeleted > 0) {
+        bufRemoveEscSeq(buf, pos, nDeleted, startPos, startValue);
+    }
     
     // check if the inserted text contains escape sequences
     int set_offset = 0;        // abs position of last added esc seq
@@ -2863,7 +2917,7 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
                 // Escape found
                 
                 size_t newEscAbs = pos + i; // absolute position of new esc seq
-                BufAddEscPos(buf, insertPos, newEscAbs - prevEsc); // save offset to previous esc
+                bufAddEscPos(buf, insertPos, newEscAbs - prevEsc); // save offset to previous esc
                 prevEsc = pos + i;
                 insertPos++;
                 set_offset = prevEsc;
