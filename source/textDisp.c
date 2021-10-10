@@ -184,6 +184,7 @@ static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground);
 static void textDRedisplayRange(textDisp *textD, int start, int end);
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style);
 static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style);
+static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext);
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
@@ -2135,6 +2136,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	    break;
     	}
         
+        if(textD->ansiColors && baseChar == '\e') {
+            ansiStyle newStyle = { -1, -1, -1, -1 };
+            parseEscapeSequence(buf, lineStartPos + charIndex, &newStyle);
+            extendAnsiStyle(&ansi, &newStyle);
+        }
+        
         if(indentRainbow) {
             if(isspace(baseChar)) {
                 if(baseChar == '\t') {
@@ -2242,6 +2249,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                         expandedChar,
                         buf->tabDist, buf->nullSubsChar);
             }
+        }
+        
+        if(textD->ansiColors && baseChar == '\e') {
+            ansiStyle newStyle = { -1, -1, -1, -1 };
+            parseEscapeSequence(buf, lineStartPos + charIndex, &newStyle);
+            extendAnsiStyle(&ansi, &newStyle);
         }
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
@@ -4376,7 +4389,7 @@ void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
 #define ANSI_ESC_RESET_BOLD   22
 #define ANSI_ESC_RESET_ITALIC 23
 
-#define ANSI_STYLE_SET(style, value) if(style >= 0) style = value 
+#define ANSI_STYLE_SET(style, value) if(style < 0) style = value 
 
 /* Parses an ANSI Escape Sequence and sets the style in the ansiStyle object
  * Returns 1 if all possible settings are set
@@ -4385,7 +4398,7 @@ static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style)
 {
     char c1 = BufGetCharacter(buf, pos);
     char c2 = BufGetCharacter(buf, pos+1);
-    if(c1 != 0x1b || c2 != '[') return 0;
+    if(c1 != '\e' || c2 != '[') return 0;
     
     int param[ANSI_ESC_MAX_PARAM];
     int nparam = 0;
@@ -4462,6 +4475,18 @@ static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style)
     
     
     return 0;
+}
+
+static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext)
+{
+    if(ext->fg >= 0) {
+        style->fg = ext->fg;
+    }
+    if(ext->bg >= 0) {
+        style->bg = ext->bg;
+    }
+    if(ext->bold >= 0) style->bold = ext->bold;
+    if(ext->italic >= 0) style->italic = ext->italic;
 }
 
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
