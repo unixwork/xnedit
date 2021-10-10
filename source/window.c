@@ -2748,6 +2748,7 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNhighlightCursorLine, window->highlightCursorLine,
             textNindentRainbow, window->indentRainbow,
             textNindentRainbowColors, window->indentRainbowColors,
+            textNansiColors, window->ansiColors,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
@@ -3641,8 +3642,13 @@ void SetIndentRainbow(WindowInfo *window, Boolean state)
 
 void SetAnsiColors(WindowInfo *window, Boolean state)
 {
-    // TODO: set ansi colors
     window->ansiColors = state;
+    
+    XtVaSetValues(window->textArea,
+          textNansiColors, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColors, state, NULL);
+    }
 }
 
 /*

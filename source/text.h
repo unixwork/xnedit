@@ -125,6 +125,8 @@
 #define textCindentRainbowColors "indentRainbowColors"
 #define textNhighlightCursorLine "highlightCursorLine"
 #define textChighlightCursorLine "highlightCursorLine"
+#define textNansiColors "ansiColors"
+#define textCansiColors "ansiColors"
 
 
 extern WidgetClass textWidgetClass;

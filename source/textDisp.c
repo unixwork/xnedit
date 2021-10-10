@@ -192,7 +192,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         int continuousWrap, int wrapMargin, XmString bgClassString,
         Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
         Boolean indentRainbow, char *indentRainbowColors,
-        Boolean highlightCursorLine)
+        Boolean highlightCursorLine, Boolean ansiColors)
 {
     textDisp *textD;
     XGCValues gcValues;
@@ -284,6 +284,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->indentRainbow = indentRainbow;
     textD->indentRainbowColors = NULL;
     textD->highlightCursorLine = highlightCursorLine;
+    TextDSetAnsiColors(textD, ansiColors);
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
 
@@ -1584,6 +1585,16 @@ void TextDCursorLR(textDisp *textD, int *left, int *right)
     }
     *left = textD->cursorPosCacheLeft;
     *right = textD->cursorPosCacheRight;
+}
+
+void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors)
+{
+    textD->ansiColors = ansiColors;
+    if(ansiColors) {
+        BufEnableAnsiEsc(textD->buffer);
+    } else {
+        BufDisableAnsiEsc(textD->buffer);
+    }
 }
 
 /*

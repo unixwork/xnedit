@@ -678,6 +678,8 @@ static XtResource resources[] = {
     {textNlineHighlightBackground, textClineHighlightBackground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.lineHighlightBGPixel), XmRString, 
       NEDIT_DEFAULT_CURSOR_LINE_BG},
+    {textNansiColors, textCansiColors, XmRBoolean, sizeof(Boolean),
+      XtOffset(TextWidget, text.ansiColors), XmRString, "False"},
     {textNhighlightCursorLine, textChighlightCursorLine, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.highlightCursorLine), XmRString, "False"},
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
@@ -891,7 +893,7 @@ static void initialize(TextWidget request, TextWidget new)
           new->text.backlightCharTypes, new->text.calltipFGPixel,
           new->text.calltipBGPixel, 0, // TODO: replace 0
           new->text.indentRainbow, new->text.indentRainbowColors,
-          new->text.highlightCursorLine);
+          new->text.highlightCursorLine, new->text.ansiColors);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
@@ -1253,6 +1255,11 @@ static Boolean setValues(TextWidget current, TextWidget request,
         }
         TextDSetIndentRainbowColors(new->text.textD, new->text.indentRainbowColors);
         new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
+        redraw = True;
+    }
+    
+    if (new->text.ansiColors != current->text.ansiColors) {
+        TextDSetAnsiColors(new->text.textD, new->text.ansiColors);
         redraw = True;
     }
     
