@@ -182,6 +182,8 @@ static int measurePropChar(const textDisp* textD, FcChar32 c,
 static Pixel allocBGColor(Widget w, char *colorName, int *ok);
 static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground);
 static void textDRedisplayRange(textDisp *textD, int start, int end);
+static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style);
+static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style);
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
@@ -2046,6 +2048,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         if(textD->highlightCursorLine) {
             startOfLine = BufStartOfLine(buf, lineStartPos);
         }
+    }
+    
+    /* Get the active ANSI color/style */
+    ansiStyle ansi = {-1, -1, -1, -1};
+    if(textD->ansiColors && lineStartPos >= 0) {
+        findActiveAnsiStyle(textD, lineStartPos, &ansi);
     }
      
     /* Space beyond the end of the line is still counted in units of characters
@@ -4358,6 +4366,122 @@ void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
         }
     }
 }
+
+#define ANSI_ESC_MAX_PARAM 16
+#define ANSI_ESC_MAX_PARAM_LEN 4
+
+#define ANSI_ESC_RESET        0
+#define ANSI_ESC_BOLD         1
+#define ANSI_ESC_ITALIC       3
+#define ANSI_ESC_RESET_BOLD   22
+#define ANSI_ESC_RESET_ITALIC 23
+
+#define ANSI_STYLE_SET(style, value) if(style >= 0) style = value 
+
+/* Parses an ANSI Escape Sequence and sets the style in the ansiStyle object
+ * Returns 1 if all possible settings are set
+ */
+static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style)
+{
+    char c1 = BufGetCharacter(buf, pos);
+    char c2 = BufGetCharacter(buf, pos+1);
+    if(c1 != 0x1b || c2 != '[') return 0;
+    
+    int param[ANSI_ESC_MAX_PARAM];
+    int nparam = 0;
+    
+    // parse the escape sequence into an array of integer parameters
+    char paramDig[ANSI_ESC_MAX_PARAM_LEN];
+    int paramDigLen = 0;
+    
+    size_t i = pos+2;
+    while(nparam < ANSI_ESC_MAX_PARAM) {
+        char c = BufGetCharacter(buf, i++);
+        if(c >= '0' && c <= '9') {
+            if(paramDigLen >= ANSI_ESC_MAX_PARAM_LEN) break;
+            paramDig[paramDigLen++] = c - '0';
+        } else {
+            int iParam = 0;
+            int mul = 1;
+            for(int j=paramDigLen-1;j>=0;j--) {
+                iParam += paramDig[j] * mul;
+                mul *= 10;
+            }
+
+            param[nparam++] = iParam;
+            
+            paramDigLen = 0;
+            if(c != ';') break;
+        }
+    }
+    
+    // evaluate parameter
+    for(int k=0;k<nparam;k++) {
+        int p = param[k];
+        
+        switch(p) {
+            case ANSI_ESC_RESET: {
+                ANSI_STYLE_SET(style->fg, 0);
+                ANSI_STYLE_SET(style->bg, 0);
+                ANSI_STYLE_SET(style->bold, 0);
+                ANSI_STYLE_SET(style->italic, 0);
+                k = nparam; // terminate loop
+                break;
+            }
+            case ANSI_ESC_BOLD: {
+                ANSI_STYLE_SET(style->bold, 1);
+                break;
+            }
+            case ANSI_ESC_ITALIC: {
+                ANSI_STYLE_SET(style->italic, 1);
+                break;
+            }
+            case ANSI_ESC_RESET_BOLD: {
+                ANSI_STYLE_SET(style->bold, 0);
+                break;
+            }
+            case ANSI_ESC_RESET_ITALIC: {
+                ANSI_STYLE_SET(style->bold, 0);
+                break;
+            }
+            default: {
+                if((p >= 30 && p <= 39) || (p >= 90 && p <= 97)) {
+                    ANSI_STYLE_SET(style->fg, p);
+                } else if((p >= 40 && p <= 49) || (p >= 100 && p <= 107)) {
+                    ANSI_STYLE_SET(style->bg, p);
+                }
+                break;
+            }
+        }
+    }
+    
+    // check if all style options are set
+    if(style->fg != -1 && style->bg != -1 && style->bold != -1 && style->italic) {
+        return 1;
+    }
+    
+    
+    return 0;
+}
+
+static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
+{
+    textBuffer *buf = textD->buffer;
+    ssize_t prev_esc;       // index of previous escape sequence
+    size_t prev_esc_pos;    // absolute position of previous esc
+    BufEscPos2Index(buf, 0, 0, pos, &prev_esc, &prev_esc_pos);
+    if(prev_esc < 0) {
+        return;
+    }
+    
+    for(ssize_t i=prev_esc;i>=0;i--) {
+        if(parseEscapeSequence(buf, prev_esc_pos, style)) {
+            break;
+        }
+        prev_esc_pos -= buf->ansi_escpos[i]; // subtract offset to previous escape sequence
+    }
+}
+
 
 /* font list functions */
 

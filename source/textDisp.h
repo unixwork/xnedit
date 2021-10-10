@@ -87,6 +87,19 @@ typedef struct graphicExposeTranslationEntry {
     struct graphicExposeTranslationEntry *next;
 } graphicExposeTranslationEntry;
 
+typedef struct ansiStyle {
+    short fg;
+    short bg;
+    short bold;
+    short italic;
+    short fg_r;
+    short fg_g;
+    short fg_b;
+    short bg_r;
+    short bg_g;
+    short bg_b;
+} ansiStyle;
+
 typedef void (*unfinishedStyleCBProc)();
 
 typedef struct _calltipStruct {

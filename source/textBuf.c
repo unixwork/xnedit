@@ -2893,7 +2893,7 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
         printf("\n");
         return;
     }
-    */
+    //*/
     
     // get previous element
     ssize_t startPos;   // index to previous escape sequence
