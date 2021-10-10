@@ -182,6 +182,13 @@ int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText);
 void BufEnableAnsiEsc(textBuffer *buf);
 void BufDisableAnsiEsc(textBuffer *buf);
 void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted);
+int BufEscPos2Index(
+        const textBuffer *buf,
+        size_t startIndex,
+        size_t startValue,
+        size_t pos,
+        ssize_t *index,
+        size_t *value);
 
 int BufCharLen(const textBuffer *buf, int pos);
 int BufLeftPos(textBuffer *buf, int pos);

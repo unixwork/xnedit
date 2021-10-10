@@ -2770,7 +2770,7 @@ void BufDisableAnsiEsc(textBuffer *buf)
     buf->num_ansi_escpos = 0;
 }
 
-static int bufEscPos2Index(
+int BufEscPos2Index(
         const textBuffer *buf,
         size_t startIndex,
         size_t startValue,
@@ -2899,7 +2899,7 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
     ssize_t startPos;   // index to previous escape sequence
     size_t startValue;  // abs position of previous esc
     size_t insertPos;   // insert new escape sequence here
-    bufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
+    BufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
     insertPos = startPos + 1;
     
     // handle deletee
