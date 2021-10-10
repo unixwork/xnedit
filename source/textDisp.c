@@ -117,7 +117,7 @@ static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
-        int toX, FcChar32 *string, int nChars, Boolean highlightLine);
+        int toX, FcChar32 *string, int nChars, Boolean highlightLine, ansiStyle *ansi);
 static void clearRect(textDisp *textD, GC gc, int x, int y, 
         int width, int height);
 static void drawCursor(textDisp *textD, int x, int y);
@@ -2052,6 +2052,9 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     }
     
     /* Get the active ANSI color/style */
+    int ansiS = -1;
+    int ansiCharS = -1;
+    ansiStyle newAnsiStyle;
     ansiStyle ansi = {-1, -1, -1, -1};
     if(textD->ansiColors && lineStartPos >= 0) {
         findActiveAnsiStyle(textD, lineStartPos, &ansi);
@@ -2137,9 +2140,13 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
         
         if(textD->ansiColors && baseChar == '\e') {
-            ansiStyle newStyle = { -1, -1, -1, -1 };
-            parseEscapeSequence(buf, lineStartPos + charIndex, &newStyle);
-            extendAnsiStyle(&ansi, &newStyle);
+            newAnsiStyle.fg = -1;
+            newAnsiStyle.bg = -1;
+            newAnsiStyle.bold = -1;
+            newAnsiStyle.italic = -1;
+            parseEscapeSequence(buf, lineStartPos + charIndex, &newAnsiStyle);
+            extendAnsiStyle(&ansi, &newAnsiStyle);
+            ansiS = charIndex;
         }
         
         if(indentRainbow) {
@@ -2252,9 +2259,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         }
         
         if(textD->ansiColors && baseChar == '\e') {
-            ansiStyle newStyle = { -1, -1, -1, -1 };
-            parseEscapeSequence(buf, lineStartPos + charIndex, &newStyle);
-            extendAnsiStyle(&ansi, &newStyle);
+            newAnsiStyle.fg = -1;
+            newAnsiStyle.bg = -1;
+            newAnsiStyle.bold = -1;
+            newAnsiStyle.italic = -1;
+            parseEscapeSequence(buf, lineStartPos + charIndex, &newAnsiStyle);
+            ansiCharS = charIndex;
         }
         
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
@@ -2262,14 +2272,16 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         charFL = styleFontList(textD, charStyle);
         charFont = FindFont(charFL, uc);
         
-        if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex) {
-            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine);
+        if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex || ansiS != ansiCharS) {
+            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine, &ansi);
             outPtr = outStr;
             startX = x;
             style = charStyle;
             styleFont = charFont;
             rbPixelIndex = rbCurrentPixelIndex;
+            extendAnsiStyle(&ansi, &newAnsiStyle);
     	}
+        ansiS = ansiCharS;
         
         if (charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
@@ -2287,10 +2299,11 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             break;
         }
     }
+    extendAnsiStyle(&ansi, &newAnsiStyle);
     
     /* Draw the remaining style segment */
     //printf("final draw len: %d\n", outPtr - outStr);;
-    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine);
+    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine, &ansi);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
        this line.  Also check for the cases which are not caught as the
@@ -2351,7 +2364,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** the maximum y extent of the current font(s).
 */
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
-	int toX, FcChar32 *string, int nChars, Boolean highlightLine)
+	int toX, FcChar32 *string, int nChars, Boolean highlightLine, ansiStyle *ansi)
 {
     if(toX < fromX) return;
     
@@ -2475,6 +2488,30 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if (bgGC == textD->styleGC) {
         gcValues.foreground = fground;
         XChangeGC(XtDisplay(textD->w), gc, GCForeground, &gcValues);
+    }
+    
+    /* test ansi fg color */
+    if(ansi->fg > 0) {
+        switch(ansi->fg) {
+            case 31: {
+                color.color.red = 0xffff;
+                color.color.green = 0;
+                color.color.blue = 0;
+                break;
+            }
+            case 32: {
+                color.color.red = 0;
+                color.color.green = 0xffff;
+                color.color.blue = 0;
+                break;
+            }
+            case 34: {
+                color.color.red = 0;
+                color.color.green = 0;
+                color.color.blue = 0xffff;
+                break;
+            }
+        }
     }
 
     /* Draw the string using color and font set above */  
