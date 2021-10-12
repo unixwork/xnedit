@@ -2011,7 +2011,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     /* Get the active ANSI color/style */
     int ansiS = -1;
     int ansiCharS = -1;
-    ansiStyle newAnsiStyle;
+    ansiStyle newAnsiStyle = {-1, -1, -1, -1};
     ansiStyle ansi = {-1, -1, -1, -1};
     if(textD->ansiColors && lineStartPos >= 0) {
         findActiveAnsiStyle(textD, lineStartPos, &ansi);
@@ -4458,8 +4458,6 @@ static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style)
 
 static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext)
 {
-    return; // TODO: reactivate
-    
     if(ext->fg >= 0) {
         style->fg = ext->fg;
     }
@@ -4472,8 +4470,6 @@ static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext)
 
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
 {
-    return; // TODO: reactive
-    
     textBuffer *buf = textD->buffer;
     ssize_t prev_esc;       // index of previous escape sequence
     size_t prev_esc_pos;    // absolute position of previous esc
