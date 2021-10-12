@@ -165,14 +165,10 @@ typedef struct _textDisp {
     int fixedFontWidth;			/* Font width if all current fonts are
     					   fixed and match in width, else -1 */
     Widget hScrollBar, vScrollBar;
-    GC gc; 
-    XftColor *selectGC, *highlightGC;	/* GCs for drawing text */
-    XftColor *selectBGGC, *highlightBGGC;	/* GCs for erasing text */
+    GC gc;
     GC cursorFGGC;			/* GC for drawing the cursor */
-    XftColor *lineNumGC;   	    	    	/* GC for drawing line numbers */
-    XftColor *lineHighlightBGGC;               /* GC for highlighted cursor line */
-    XftColor *styleGC;     	    	    	/* GC with color and font unspecified
-    	    	    	    	    	   //for drawing colored/styled text */
+    
+    XftColor styleGC;
     
     XftColor fgPixel, bgPixel;		/* Foreground/Background colors */
     XftColor selectFGPixel,		/* Foreground select color */

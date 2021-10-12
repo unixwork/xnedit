@@ -258,8 +258,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
             textD, NULL, bgPixel, fgPixel, selectFGPixel, selectBGPixel,
             highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel);
     // TODO: remove
-    //textD->styleGC = allocateGC(textD->w, 0, 0, 0, 0,
-    //        GCClipMask|GCForeground|GCBackground, GCArcMode);
     textD->lineNumLeft = lineNumLeft;
     textD->lineNumWidth = lineNumWidth;
     textD->nVisibleLines = (height - 1) / (textD->ascent + textD->descent) + 1;
@@ -276,7 +274,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     	textD->lineStarts[i] = -1;
     textD->bgClassPixel = NULL;
     textD->bgClass = NULL;
-    // TODO: remove
     TextDSetupBGClasses(widget, bgClassString, &textD->bgClassPixel,
           &textD->bgClass, textD->bgPixel);
     textD->suppressResync = 0;
@@ -371,16 +368,6 @@ void TextDFree(textDisp *textD)
     BufRemoveModifyCB(textD->buffer, bufModifiedCB, textD);
     BufRemovePreDeleteCB(textD->buffer, bufPreDeleteCB, textD);
     releaseGC(textD->w, textD->gc);
-    // TODO: remove
-    /*
-    releaseGC(textD->w, textD->selectGC);
-    releaseGC(textD->w, textD->highlightGC);
-    releaseGC(textD->w, textD->selectBGGC);
-    releaseGC(textD->w, textD->highlightBGGC);
-    releaseGC(textD->w, textD->lineHighlightBGGC);
-    releaseGC(textD->w, textD->styleGC);
-    releaseGC(textD->w, textD->lineNumGC);
-    */
     NEditFree(textD->lineStarts);
     while (TextDPopGraphicExposeQueueEntry(textD)) {
     }
@@ -2340,7 +2327,6 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     
     XftColor *gc;
     XftColor *bgGC;
-    XGCValues gcValues;
     NFont *fontList = textD->font;
     XftColor *bground = &textD->bgPixel;
     XftColor *fground = &textD->fgPixel;
@@ -2356,27 +2342,26 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     
     /* select a GC */
     if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
-        gc = bgGC = textD->styleGC;
-        //printf("style gc\n");
+        gc = bgGC = &textD->styleGC;
     }
     else if (style & HIGHLIGHT_MASK) {
-        gc = textD->highlightGC;
-        bgGC = textD->highlightBGGC;
+        gc = &textD->highlightFGPixel;
+        bgGC = &textD->highlightBGPixel;
         color = textD->highlightFGColor;
     }
     else if (style & PRIMARY_MASK) {
-        gc = textD->selectGC;
-        bgGC = textD->selectBGGC;
+        gc = &textD->selectFGPixel;
+        bgGC = &textD->selectBGPixel;
         color = textD->selectFGColor;
     }
     else if (highlightLine && textD->highlightCursorLine) {
-        gc = bgGC = textD->lineHighlightBGGC;
+        gc = bgGC = &textD->lineHighlightBGPixel;
     }
     else {
         gc = bgGC = &textD->fgPixel; // textD->gc; // TODO: check
     }
 
-    if (gc == textD->styleGC) {
+    if (gc == &textD->styleGC) {
         /* we have work to do */
         styleTableEntry *styleRec;
         /* Set font, color, and gc depending on style.  For normal text, GCs
@@ -2415,12 +2400,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
             fground = &textD->bgPixel;
         /* set up gc for clearing using the foreground color entry */
         
-        
-        //gcValues.foreground = gcValues.background = bground;
-        //XChangeGC(XtDisplay(textD->w), gc,
-        //        GCForeground | GCBackground, &gcValues);
         if((bground == &textD->bgPixel || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
-            bgGC = textD->lineHighlightBGGC;
+            bgGC = &textD->lineHighlightBGPixel;
         }
     }
     
@@ -3331,7 +3312,7 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
         //        textD->top, textD->lineNumWidth, textD->height, False);
         XftDrawRect(
                 textD->d,
-                textD->lineNumGC,
+                &textD->lineNumBGPixel,
                 0,
                 0,
                 textD->lineNumLeft + textD->lineNumWidth,

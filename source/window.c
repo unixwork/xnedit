@@ -1611,8 +1611,8 @@ void SplitPane(WindowInfo *window)
     textD = ((TextWidget)window->textArea)->text.textD;
     newTextD = ((TextWidget)text)->text.textD;
     XtVaSetValues(text,
-                XmNforeground, textD->fgPixel,
-                XmNbackground, textD->bgPixel,
+                XmNforeground, textD->fgPixel.pixel,
+                XmNbackground, textD->bgPixel.pixel,
                 NULL);
     TextDSetColors( newTextD, &textD->fgPixel, &textD->bgPixel, 
             &textD->selectFGPixel, &textD->selectBGPixel, &textD->highlightFGPixel,
@@ -5106,8 +5106,8 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
-            XtVaSetValues(text, XmNforeground, textD->fgPixel,
-                    XmNbackground, textD->bgPixel, NULL);
+            XtVaSetValues(text, XmNforeground, textD->fgPixel.pixel,
+                    XmNbackground, textD->bgPixel.pixel, NULL);
             TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
                     &textD->selectFGPixel, &textD->selectBGPixel,
                     &textD->highlightFGPixel, &textD->highlightBGPixel,
