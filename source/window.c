@@ -1614,10 +1614,10 @@ void SplitPane(WindowInfo *window)
                 XmNforeground, textD->fgPixel,
                 XmNbackground, textD->bgPixel,
                 NULL);
-    TextDSetColors( newTextD, textD->fgPixel, textD->bgPixel, 
-            textD->selectFGPixel, textD->selectBGPixel, textD->highlightFGPixel,
-            textD->highlightBGPixel, textD->lineNumFGPixel, textD->lineNumBGPixel,
-            textD->cursorFGPixel, textD->lineHighlightBGPixel);
+    TextDSetColors( newTextD, &textD->fgPixel, &textD->bgPixel, 
+            &textD->selectFGPixel, &textD->selectBGPixel, &textD->highlightFGPixel,
+            &textD->highlightBGPixel, &textD->lineNumFGPixel, &textD->lineNumBGPixel,
+            &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2401,16 +2401,28 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             lineHiBgPix = AllocColor( window->textArea, lineHiBg, 
                     &dummy, &dummy, &dummy);
     textDisp *textD;
-
+    
+    XftColor textFgC = PixelToColor(window->textArea, textFgPix);
+    XftColor textBgC = PixelToColor(window->textArea, textBgPix);
+    XftColor selectFgC = PixelToColor(window->textArea, selectFgPix);
+    XftColor selectBgC = PixelToColor(window->textArea, selectBgPix);
+    XftColor hiliteFgC = PixelToColor(window->textArea, hiliteFgPix);
+    XftColor hiliteBgC = PixelToColor(window->textArea, hiliteBgPix);
+    XftColor lineNoFgC = PixelToColor(window->textArea, lineNoFgPix);
+    XftColor lineNoBgC = PixelToColor(window->textArea, lineNoBgPix);
+    XftColor cursorFgC = PixelToColor(window->textArea, cursorFgPix);
+    XftColor lineHiBgC = PixelToColor(window->textArea, lineHiBgPix);
+    
+    
     /* Update the main pane */
     XtVaSetValues(window->textArea,
             XmNforeground, textFgPix,
             XmNbackground, textBgPix,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
-    TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-            hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
-            cursorFgPix, lineHiBgPix );
+    TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+            &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
+            &cursorFgC, &lineHiBgC );
     /* Update any additional panes */
     for (i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i],
@@ -2418,9 +2430,9 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 XmNbackground, textBgPix,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
-        TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-                hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
-                cursorFgPix, lineHiBgPix);
+        TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+                &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
+                &cursorFgC, &lineHiBgC );
     }
     
     /* Redo any syntax highlighting */
@@ -5096,11 +5108,11 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
             newTextD = ((TextWidget)text)->text.textD;
             XtVaSetValues(text, XmNforeground, textD->fgPixel,
                     XmNbackground, textD->bgPixel, NULL);
-            TextDSetColors(newTextD, textD->fgPixel, textD->bgPixel, 
-                    textD->selectFGPixel, textD->selectBGPixel,
-                    textD->highlightFGPixel,textD->highlightBGPixel,
-                    textD->lineNumFGPixel, textD->lineNumBGPixel,
-                    textD->cursorFGPixel, textD->lineHighlightBGPixel);
+            TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
+                    &textD->selectFGPixel, &textD->selectBGPixel,
+                    &textD->highlightFGPixel, &textD->highlightBGPixel,
+                    &textD->lineNumFGPixel, &textD->lineNumBGPixel,
+                    &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
 	}
         
 	/* Set the minimum pane height in the new pane */

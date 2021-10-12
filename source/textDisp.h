@@ -68,17 +68,11 @@ typedef struct {
     char *colorName;
     char isBold;
     char isItalic;
-    unsigned short red;
-    unsigned short green;
-    unsigned short blue;
     XftColor color;
     Boolean underline;
     NFont *font;
     char *bgColorName;      /* background style coloring (name may be NULL) */
-    unsigned short bgRed;
-    unsigned short bgGreen;
-    unsigned short bgBlue;
-    Pixel bgColor;
+    XftColor bgColor;
 } styleTableEntry;
 
 typedef struct graphicExposeTranslationEntry {
@@ -171,23 +165,26 @@ typedef struct _textDisp {
     int fixedFontWidth;			/* Font width if all current fonts are
     					   fixed and match in width, else -1 */
     Widget hScrollBar, vScrollBar;
-    GC gc, selectGC, highlightGC;	/* GCs for drawing text */
-    GC selectBGGC, highlightBGGC;	/* GCs for erasing text */
+    GC gc; 
+    XftColor *selectGC, *highlightGC;	/* GCs for drawing text */
+    XftColor *selectBGGC, *highlightBGGC;	/* GCs for erasing text */
     GC cursorFGGC;			/* GC for drawing the cursor */
-    GC lineNumGC;   	    	    	/* GC for drawing line numbers */
-    GC lineHighlightBGGC;               /* GC for highlighted cursor line */
-    GC styleGC;     	    	    	/* GC with color and font unspecified
-    	    	    	    	    	   for drawing colored/styled text */
-    Pixel fgPixel, bgPixel;		/* Foreground/Background colors */
-    Pixel selectFGPixel,		/* Foreground select color */
+    XftColor *lineNumGC;   	    	    	/* GC for drawing line numbers */
+    XftColor *lineHighlightBGGC;               /* GC for highlighted cursor line */
+    XftColor *styleGC;     	    	    	/* GC with color and font unspecified
+    	    	    	    	    	   //for drawing colored/styled text */
+    
+    XftColor fgPixel, bgPixel;		/* Foreground/Background colors */
+    XftColor selectFGPixel,		/* Foreground select color */
           selectBGPixel;   		/* Background select color */
-    Pixel highlightFGPixel,             /* Highlight colors are used when */
+    XftColor highlightFGPixel,             /* Highlight colors are used when */
           highlightBGPixel;             /*    flashing matching parens    */
-    Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
-    Pixel lineNumBGPixel;               /* Background color for line numbers */
-    Pixel lineHighlightBGPixel;         /* BG for highlighted cursor line */
-    Pixel cursorFGPixel;
-    Pixel *bgClassPixel;		/* table of colors for each BG class */
+    XftColor lineNumFGPixel;   	    	/* Color for drawing line numbers */
+    XftColor lineNumBGPixel;               /* Background color for line numbers */
+    XftColor lineHighlightBGPixel;         /* BG for highlighted cursor line */
+    XftColor cursorFGPixel;
+    XftColor *bgClassPixel;		/* table of colors for each BG class */
+    
     XftColor fgColor;                   /* Foreground text color */
     XftColor selectFGColor;             /* Foreground color for selected text */
     XftColor highlightFGColor;          /* Foreground highlighted text color */
@@ -195,7 +192,7 @@ typedef struct _textDisp {
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Boolean indentRainbow;
-    Pixel *indentRainbowColors;
+    XftColor *indentRainbowColors;
     int numRainbowColors;
     
     Boolean ansiColors;
@@ -238,9 +235,9 @@ void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
-void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
-        Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
-        Pixel lineNoFgP, Pixel lineNoBgP, Pixel cursorFgP, Pixel lineHiBgP);
+void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
+        XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
+        XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
@@ -280,8 +277,8 @@ int TextDCountForwardNLines(const textDisp* textD, int startPos,
 int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines);
 int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart);
-void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
-	unsigned char **pp_bgClass, Pixel bgPixelDefault);
+void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
+	unsigned char **pp_bgClass, XftColor bgPixelDefault);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 	int textLeft);
 void TextDMaintainAbsLineNum(textDisp *textD, int state);

@@ -32,6 +32,7 @@
 #include <X11/Intrinsic.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <Xft/Xft.h>
 
 /* Resource strings */
 //define textNfont "font"
@@ -184,6 +185,8 @@ char *TextGetWrapped(Widget w, int startPos, int endPos, int *length);
 XtActionsRec *TextGetActions(int *nActions);
 void ShowHidePointer(TextWidget w, Boolean hidePointer);
 void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked);
+XftColor TextGetFGColor(Widget w);
+XftColor TextGetBGColor(Widget w);
 
 /* void TextPrintXIMError(void); */
 

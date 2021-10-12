@@ -78,9 +78,9 @@ int HighlightLengthOfCodeFromPos(WindowInfo *window, int pos, int *checkCode);
 int StyleLengthOfCodeFromPos(WindowInfo *window, int pos, const char **checkStyleName);
 char *HighlightNameOfCode(WindowInfo *window, int hCode);
 char *HighlightStyleOfCode(WindowInfo *window, int hCode);
-Pixel HighlightColorValueOfCode(WindowInfo *window, int hCode,
+XftColor HighlightColorValueOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b);
-Pixel GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
+XftColor GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b);
 
 #endif /* NEDIT_HIGHLIGHT_H_INCLUDED */

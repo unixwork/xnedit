@@ -65,7 +65,7 @@ struct _Rangeset {
 
     signed char color_set;              /* 0: unset; 1: set; -1: invalid */
     char *color_name;			/* the name of an assigned color */
-    Pixel color;			/* the value of a particular color */
+    XftColor color;			/* the value of a particular color */
     textBuffer *buf;			/* the text buffer of the rangeset */
     char *name;                         /* name of rangeset */
 };
@@ -1139,7 +1139,7 @@ int RangesetAssignName(Rangeset *rangeset, char *name)
 ** false, the color_set flag is set to an invalid (negative) value.
 */
 
-int RangesetAssignColorPixel(Rangeset *rangeset, Pixel color, int ok)
+int RangesetAssignColorPixel(Rangeset *rangeset, XftColor color, int ok)
 {
     rangeset->color_set = ok ? 1 : -1;
     rangeset->color = color;
@@ -1160,7 +1160,7 @@ char *RangesetGetName(Rangeset *rangeset)
 ** Return the color validity, if any, and the value in *color.
 */
 
-int RangesetGetColorValid(Rangeset *rangeset, Pixel *color)
+int RangesetGetColorValid(Rangeset *rangeset, XftColor *color)
 {
     *color = rangeset->color;
     return rangeset->color_set;
@@ -1180,10 +1180,11 @@ char *RangesetTableGetColorName(RangesetTable *table, int index)
 ** Return the color color validity, if any, and the value in *color.
 */
 
-int RangesetTableGetColorValid(RangesetTable *table, int index, Pixel *color)
+int RangesetTableGetColorValid(RangesetTable *table, int index, XftColor *color, Rangeset **rs)
 {
     Rangeset *rangeset = &table->set[index];
     *color = rangeset->color;
+    *rs = rangeset;
     return rangeset->color_set;
 }
 
@@ -1192,13 +1193,18 @@ int RangesetTableGetColorValid(RangesetTable *table, int index, Pixel *color)
 ** false, the color_set flag is set to an invalid (negative) value.
 */
 
-int RangesetTableAssignColorPixel(RangesetTable *table, int index, Pixel color,
+Rangeset* RangesetTableAssignColorPixel(RangesetTable *table, int index, XftColor color,
 	int ok)
 {
     Rangeset *rangeset = &table->set[index];
     rangeset->color_set = ok ? 1 : -1;
     rangeset->color = color;
-    return 1;
+    return rangeset;
+}
+
+XftColor* RangesetGetColor(Rangeset *rangeset)
+{
+    return &rangeset->color;
 }
 
 /* -------------------------------------------------------------------------- */

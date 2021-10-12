@@ -784,20 +784,11 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       p->isItalic = FontOfNamedStyleIsItalic(pat->style); \
       /* And now for the more physical stuff */ \
       p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
-      p->red = r; \
-      p->green = g; \
-      p->blue = b; \
       if (p->bgColorName) { \
-        p->bgColor = AllocColor(window->textArea, p->bgColorName, &r, &g, &b); \
-        p->bgRed = r; \
-        p->bgGreen = g; \
-        p->bgBlue = b; \
+        p->bgColor = PixelToColor(window->textArea, AllocColor(window->textArea, p->bgColorName, &r, &g, &b)); \
       } \
       else { \
-        p->bgColor = p->color.pixel; \
-        p->bgRed = r; \
-        p->bgGreen = g; \
-        p->bgBlue = b; \
+        p->bgColor = p->color; \
       } \
       p->font = FontOfNamedStyle(window, pat->style); \
     } while (0)
@@ -1217,64 +1208,46 @@ char *HighlightStyleOfCode(WindowInfo *window, int hCode)
     return entry ? entry->styleName : "";
 }
 
-// TODO: return XftColor
-Pixel HighlightColorValueOfCode(WindowInfo *window, int hCode,
+
+XftColor HighlightColorValueOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b)
 {
     styleTableEntry *entry = styleTableEntryOfCode(window, hCode);
     if (entry) {
-        *r = entry->red;
-        *g = entry->green;
-        *b = entry->blue;
-        return entry->color.pixel;
+        *r = entry->color.color.red;
+        *g = entry->color.color.green;
+        *b = entry->color.color.blue;
+        return entry->color;
     }
     else
     {
         /* pick up foreground color of the (first) text widget of the window */
-        XColor colorDef;
-        Colormap cMap;
-        Display *display = XtDisplay(window->textArea);
-        *r = *g = *b = 0;
-        XtVaGetValues(window->textArea,
-                      XtNcolormap,   &cMap,
-                      XtNforeground, &colorDef.pixel,
-                      NULL);
-        if (XQueryColor(display, cMap, &colorDef)) {
-            *r = colorDef.red;
-            *g = colorDef.green;
-            *b = colorDef.blue;
-        }
-        return colorDef.pixel;
+        XftColor color = TextGetFGColor(window->textArea);
+        *r = color.color.red;
+        *g = color.color.green;
+        *b = color.color.blue;
+        return color;
     }
 }
 
-Pixel GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
+XftColor GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b)
 {
     styleTableEntry *entry = styleTableEntryOfCode(window, hCode);
     if (entry && entry->bgColorName) {
-        *r = entry->bgRed;
-        *g = entry->bgGreen;
-        *b = entry->bgBlue;
+        *r = entry->bgColor.color.red;
+        *g = entry->bgColor.color.green;
+        *b = entry->bgColor.color.blue;
         return entry->bgColor;
     }
     else
     {
         /* pick up background color of the (first) text widget of the window */
-        XColor colorDef;
-        Colormap cMap;
-        Display *display = XtDisplay(window->textArea);
-        *r = *g = *b = 0;
-        XtVaGetValues(window->textArea,
-                      XtNcolormap,   &cMap,
-                      XtNbackground, &colorDef.pixel,
-                      NULL);
-        if (XQueryColor(display, cMap, &colorDef)) {
-            *r = colorDef.red;
-            *g = colorDef.green;
-            *b = colorDef.blue;
-        }
-        return colorDef.pixel;
+        XftColor color = TextGetBGColor(window->textArea);
+        *r = color.color.red;
+        *g = color.color.green;
+        *b = color.color.blue;
+        return color;
     }
 }
 

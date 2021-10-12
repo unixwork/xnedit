@@ -32,6 +32,7 @@
 #define rangeset_h_DEFINED
 
 #include <Xm/Xm.h>
+#include <Xft/Xft.h>
 
 #define N_RANGESETS 63
 
@@ -69,13 +70,14 @@ void RangesetBufModifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
 	const char *deletedText, void *cbArg);
 int RangesetIndex1ofPos(RangesetTable *table, int pos, int needs_color);
 int RangesetAssignColorName(Rangeset *rangeset, char *color_name);
-int RangesetAssignColorPixel(Rangeset *rangeset, Pixel color, int ok);
+int RangesetAssignColorPixel(Rangeset *rangeset, XftColor color, int ok);
 char *RangesetGetName(Rangeset *rangeset);
 int RangesetAssignName(Rangeset *rangeset, char *name);
-int RangesetGetColorValid(Rangeset *rangeset, Pixel *color);
+int RangesetGetColorValid(Rangeset *rangeset, XftColor *color);
 char *RangesetTableGetColorName(RangesetTable *table, int index);
-int RangesetTableGetColorValid(RangesetTable *table, int index, Pixel *color);
-int RangesetTableAssignColorPixel(RangesetTable *table, int index, Pixel color,
+int RangesetTableGetColorValid(RangesetTable *table, int index, XftColor *color, Rangeset **rs);
+Rangeset* RangesetTableAssignColorPixel(RangesetTable *table, int index, XftColor color,
 	int ok);
+XftColor* RangesetGetColor(Rangeset *rangeset);
 
 #endif /* rangeset_h_DEFINED */

@@ -4362,6 +4362,19 @@ void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked)
     }
 }
 
+XftColor TextGetFGColor(Widget w)
+{
+    TextWidget textWidget = (TextWidget)w;
+    return textWidget->text.textD->fgPixel;
+}
+
+XftColor TextGetBGColor(Widget w)
+{
+    TextWidget textWidget = (TextWidget)w;
+    return textWidget->text.textD->bgPixel;
+}
+
+
 /*
 ** look at an action procedure's arguments to see if argument "key" has been
 ** specified in the argument list

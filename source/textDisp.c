@@ -118,7 +118,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
         int toX, FcChar32 *string, int nChars, Boolean highlightLine, ansiStyle *ansi);
-static void clearRect(textDisp *textD, GC gc, int x, int y, 
+static void clearRect(textDisp *textD, XftColor *color, int x, int y, 
         int width, int height);
 static void drawCursor(textDisp *textD, int x, int y);
 static int styleOfPos(textDisp *textD, int lineStartPos,
@@ -179,8 +179,8 @@ static int maintainingAbsTopLineNum(textDisp *textD);
 static void resetAbsLineNum(textDisp *textD);
 static int measurePropChar(const textDisp* textD, FcChar32 c,
         int colNum, int pos);
-static Pixel allocBGColor(Widget w, char *colorName, int *ok);
-static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground);
+static XftColor allocBGColor(Widget w, char *colorName, int *ok);
+static XftColor* getRangesetColor(textDisp *textD, int ind, XftColor *bground);
 static void textDRedisplayRange(textDisp *textD, int start, int end);
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style);
 static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style);
@@ -241,24 +241,25 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->styleBuffer = NULL;
     textD->styleTable = NULL;
     textD->nStyles = 0;
-    textD->bgPixel = bgPixel;
-    textD->fgPixel = fgPixel;
-    textD->fgColor = PixelToColor(widget, fgPixel);
-    textD->selectFGPixel = selectFGPixel;
-    textD->highlightFGPixel = highlightFGPixel;
-    textD->selectBGPixel = selectBGPixel;
-    textD->highlightBGPixel = highlightBGPixel;
-    textD->lineNumFGPixel = lineNumFGPixel;
-    textD->lineNumBGPixel = lineNumBGPixel;
-    textD->lineHighlightBGPixel = lineHighlightBGPixel;
-    textD->cursorFGPixel = cursorFGPixel;
+    textD->bgPixel = PixelToColor(widget, bgPixel);
+    textD->fgPixel = PixelToColor(widget, fgPixel);
+    textD->fgColor = textD->fgPixel;
+    textD->selectFGPixel = PixelToColor(widget, selectFGPixel);
+    textD->highlightFGPixel = PixelToColor(widget, highlightFGPixel);
+    textD->selectBGPixel = PixelToColor(widget, selectBGPixel);
+    textD->highlightBGPixel = PixelToColor(widget, highlightBGPixel);
+    textD->lineNumFGPixel = PixelToColor(widget, lineNumFGPixel);
+    textD->lineNumBGPixel = PixelToColor(widget, lineNumBGPixel);
+    textD->lineHighlightBGPixel = PixelToColor(widget, lineHighlightBGPixel);
+    textD->cursorFGPixel = PixelToColor(widget, cursorFGPixel);
     textD->wrapMargin = wrapMargin;
     textD->continuousWrap = continuousWrap;
     allocateFixedFontGCs(
             textD, NULL, bgPixel, fgPixel, selectFGPixel, selectBGPixel,
             highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel);
-    textD->styleGC = allocateGC(textD->w, 0, 0, 0, 0,
-            GCClipMask|GCForeground|GCBackground, GCArcMode);
+    // TODO: remove
+    //textD->styleGC = allocateGC(textD->w, 0, 0, 0, 0,
+    //        GCClipMask|GCForeground|GCBackground, GCArcMode);
     textD->lineNumLeft = lineNumLeft;
     textD->lineNumWidth = lineNumWidth;
     textD->nVisibleLines = (height - 1) / (textD->ascent + textD->descent) + 1;
@@ -275,8 +276,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     	textD->lineStarts[i] = -1;
     textD->bgClassPixel = NULL;
     textD->bgClass = NULL;
+    // TODO: remove
     TextDSetupBGClasses(widget, bgClassString, &textD->bgClassPixel,
-          &textD->bgClass, bgPixel);
+          &textD->bgClass, textD->bgPixel);
     textD->suppressResync = 0;
     textD->nLinesDeleted = 0;
     textD->modifyingTabDist = 0;
@@ -369,6 +371,8 @@ void TextDFree(textDisp *textD)
     BufRemoveModifyCB(textD->buffer, bufModifiedCB, textD);
     BufRemovePreDeleteCB(textD->buffer, bufPreDeleteCB, textD);
     releaseGC(textD->w, textD->gc);
+    // TODO: remove
+    /*
     releaseGC(textD->w, textD->selectGC);
     releaseGC(textD->w, textD->highlightGC);
     releaseGC(textD->w, textD->selectBGGC);
@@ -376,6 +380,7 @@ void TextDFree(textDisp *textD)
     releaseGC(textD->w, textD->lineHighlightBGGC);
     releaseGC(textD->w, textD->styleGC);
     releaseGC(textD->w, textD->lineNumGC);
+    */
     NEditFree(textD->lineStarts);
     while (TextDPopGraphicExposeQueueEntry(textD)) {
     }
@@ -438,40 +443,35 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
 
 
 /* Change the (non syntax-highlit) colors */ 
-void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
-        Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
-        Pixel lineNoFgP, Pixel lineNoBgP, Pixel cursorFgP, Pixel lineHiBgP)
+void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
+        XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
+        XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP)
 {
     XGCValues values;
     Display *d = XtDisplay(textD->w);
     
     /* Update the stored pixels */
-    textD->fgPixel = textFgP;
-    textD->fgColor = PixelToColor(textD->w, textFgP);
-    textD->selectFGColor = PixelToColor(textD->w, selectFgP);
-    textD->highlightFGColor = PixelToColor(textD->w, hiliteFgP);
-    textD->bgPixel = textBgP;
-    textD->selectFGPixel = selectFgP;
-    textD->selectBGPixel = selectBgP;
-    textD->highlightFGPixel = hiliteFgP;
-    textD->highlightBGPixel = hiliteBgP;
-    textD->lineNumFGPixel = lineNoFgP;
-    textD->lineNumBGPixel = lineNoBgP;
-    textD->cursorFGPixel = cursorFgP;
-    textD->lineHighlightBGPixel = lineHiBgP;
+    textD->fgPixel = *textFgP;
+    textD->fgColor = *textFgP;
+    textD->selectFGColor = *selectFgP;
+    textD->highlightFGColor = *hiliteFgP;
+    textD->bgPixel = *textBgP;
+    textD->selectFGPixel = *selectFgP;
+    textD->selectBGPixel = *selectBgP;
+    textD->highlightFGPixel = *hiliteFgP;
+    textD->highlightBGPixel = *hiliteBgP;
+    textD->lineNumFGPixel = *lineNoFgP;
+    textD->lineNumBGPixel = *lineNoBgP;
+    textD->cursorFGPixel = *cursorFgP;
+    textD->lineHighlightBGPixel = *lineHiBgP;
 
     releaseGC(textD->w, textD->gc);
-    releaseGC(textD->w, textD->selectGC);
-    releaseGC(textD->w, textD->selectBGGC);
-    releaseGC(textD->w, textD->highlightGC);
-    releaseGC(textD->w, textD->highlightBGGC);
-    releaseGC(textD->w, textD->lineHighlightBGGC);
-    releaseGC(textD->w, textD->lineNumGC);
-    allocateFixedFontGCs(textD, NULL, textBgP, textFgP, selectFgP,
-            selectBgP, hiliteFgP, hiliteBgP, lineNoFgP, lineNoBgP, lineHiBgP);
+    allocateFixedFontGCs(textD, NULL, textBgP->pixel, textFgP->pixel, 0,
+            0, 0, 0, 0, 0, 0);
+
     
     /* Change the cursor GC (the cursor GC is not shared). */
-    values.foreground = cursorFgP;
+    values.foreground = cursorFgP->pixel;
     XChangeGC( d, textD->cursorFGGC, GCForeground, &values );
     
     /* Redisplay */
@@ -536,39 +536,9 @@ void TextDSetFont(textDisp *textD, NFont *font)
     /* Don't let the height dip below one line, or bad things can happen */
     if (textD->height < maxAscent + maxDescent)
         textD->height = maxAscent + maxDescent;
-
-    /* Change the font.  In most cases, this means re-allocating the
-       affected GCs (they are shared with other widgets, and if the primary
-       font changes, must be re-allocated to change it). Unfortunately,
-       this requres recovering all of the colors from the existing GCs */
-    // TODO: why update the GCs??
-    
+ 
     FontUnref(textD->font);
     textD->font = FontRef(font); 
-    
-    XGetGCValues(display, textD->gc, GCForeground|GCBackground, &values);
-    fgPixel = values.foreground;
-    bgPixel = values.background;
-    XGetGCValues(display, textD->selectGC, GCForeground|GCBackground, &values);
-    selectFGPixel = values.foreground;
-    selectBGPixel = values.background;
-    XGetGCValues(display, textD->highlightGC,GCForeground|GCBackground,&values);
-    highlightFGPixel = values.foreground;
-    highlightBGPixel = values.background;
-    XGetGCValues(display, textD->lineNumGC, GCForeground, &values);
-    lineNumFGPixel = textD->lineNumFGPixel;
-    lineNumBGPixel = values.foreground;
-    XGetGCValues(display, textD->lineHighlightBGGC, GCForeground, &values);
-    lineHighlightBGPixel = values.foreground;
-    releaseGC(textD->w, textD->gc);
-    releaseGC(textD->w, textD->selectGC);
-    releaseGC(textD->w, textD->highlightGC);
-    releaseGC(textD->w, textD->selectBGGC);
-    releaseGC(textD->w, textD->highlightBGGC);
-    releaseGC(textD->w, textD->lineNumGC);
-    releaseGC(textD->w, textD->lineHighlightBGGC);
-    allocateFixedFontGCs(textD, NULL, bgPixel, fgPixel, selectFGPixel,
-            selectBGPixel, highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel);
     
     if(textD->disableRedisplay) {
         return;
@@ -583,7 +553,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
     /* if the shell window doesn't get resized, and the new fonts are
        of smaller sizes, sometime we get some residual text on the
        blank space at the bottom part of text area. Clear it here. */
-    clearRect(textD, textD->gc, textD->left, 
+    clearRect(textD, &textD->bgPixel, textD->left, 
 	    textD->top + textD->height - maxAscent - maxDescent, 
 	    textD->width, maxAscent + maxDescent);
 
@@ -2368,11 +2338,12 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
 {
     if(toX < fromX) return;
     
-    GC gc, bgGC;
+    XftColor *gc;
+    XftColor *bgGC;
     XGCValues gcValues;
     NFont *fontList = textD->font;
-    Pixel bground = textD->bgPixel;
-    Pixel fground = textD->fgPixel;
+    XftColor *bground = &textD->bgPixel;
+    XftColor *fground = &textD->fgPixel;
     int underlineStyle = FALSE;
        
     XftColor color = textD->fgColor;
@@ -2402,7 +2373,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         gc = bgGC = textD->lineHighlightBGGC;
     }
     else {
-        gc = bgGC = textD->gc;
+        gc = bgGC = &textD->fgPixel; // textD->gc; // TODO: check
     }
 
     if (gc == textD->styleGC) {
@@ -2422,31 +2393,33 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         }
         else {
             styleRec = NULL;
-            fground = textD->fgPixel;
+            fground = &textD->fgPixel;
         }
         /* Background color priority order is:
            1 Primary(Selection), 2 Highlight(Parens),
            3 Rangeset, 4 SyntaxHighlightStyle,
            5 Backlight (if NOT fill), 6 DefaultBackground */
         bground =
-            style & PRIMARY_MASK   ? textD->selectBGPixel :
-            style & HIGHLIGHT_MASK ? textD->highlightBGPixel :
+            style & PRIMARY_MASK   ? &textD->selectBGPixel :
+            style & HIGHLIGHT_MASK ? &textD->highlightBGPixel :
             style & RANGESET_MASK  ?
                       getRangesetColor(textD,
                           (style&RANGESET_MASK)>>RANGESET_SHIFT,
                             bground) :
-            rbIndex >= 0 ? textD->indentRainbowColors[rbIndex%textD->numRainbowColors] : 
-            styleRec && styleRec->bgColorName ? styleRec->bgColor :
+            rbIndex >= 0 ? &textD->indentRainbowColors[rbIndex%textD->numRainbowColors] : 
+            styleRec && styleRec->bgColorName ? &styleRec->bgColor :
             (style & BACKLIGHT_MASK) && !(style & FILL_MASK) ?
-                      textD->bgClassPixel[(style>>BACKLIGHT_SHIFT) & 0xff] :
-            textD->bgPixel;
+                      &textD->bgClassPixel[(style>>BACKLIGHT_SHIFT) & 0xff] :
+            &textD->bgPixel;
         if (fground == bground) /* B&W kludge */
-            fground = textD->bgPixel;
+            fground = &textD->bgPixel;
         /* set up gc for clearing using the foreground color entry */
-        gcValues.foreground = gcValues.background = bground;
-        XChangeGC(XtDisplay(textD->w), gc,
-                GCForeground | GCBackground, &gcValues);
-        if((bground == textD->bgPixel || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
+        
+        
+        //gcValues.foreground = gcValues.background = bground;
+        //XChangeGC(XtDisplay(textD->w), gc,
+        //        GCForeground | GCBackground, &gcValues);
+        if((bground == &textD->bgPixel || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
             bgGC = textD->lineHighlightBGGC;
         }
     }
@@ -2458,7 +2431,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if (toX >= textD->left) {
         clearRect(
                 textD,
-                bgGC,
+                bground,
                 fromX,
                 y,
                 toX - fromX,
@@ -2479,16 +2452,10 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
        different sized fonts for highlighting), fill in above or below
        to erase previously drawn characters */
     if (font->ascent < textD->ascent)
-    	clearRect(textD, bgGC, fromX, y, toX - fromX, textD->ascent - font->ascent);
+    	clearRect(textD, bground, fromX, y, toX - fromX, textD->ascent - font->ascent);
     if (font->descent < textD->descent)
-    	clearRect(textD, bgGC, fromX, y + textD->ascent + font->descent, toX - fromX,
+    	clearRect(textD, bground, fromX, y + textD->ascent + font->descent, toX - fromX,
     		textD->descent - font->descent);
-
-    /* set up gc for writing text (set foreground properly) */
-    if (bgGC == textD->styleGC) {
-        gcValues.foreground = fground;
-        XChangeGC(XtDisplay(textD->w), gc, GCForeground, &gcValues);
-    }
     
     /* test ansi fg color */
     if(ansi->fg > 0) {
@@ -2520,33 +2487,29 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
     {
-        /* restore foreground in GC (was set to background by clearRect()) */
-        gcValues.foreground = fground;
-        XChangeGC(XtDisplay(textD->w), gc,
-                GCForeground, &gcValues);
         /* draw underline */
-    	XDrawLine(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
-    	    	y + textD->ascent, toX - 1, y + textD->ascent);
+    	//XDrawLine(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
+    	//    	y + textD->ascent, toX - 1, y + textD->ascent);
+        XftDrawRect(textD->d, fground, x, y + textD->ascent, toX - 1, 1);
     }
 }
 
 /*
 ** Clear a rectangle with the appropriate background color for "style"
 */
-static void clearRect(textDisp *textD, GC gc, int x, int y, 
-    	int width, int height)
+static void clearRect(textDisp *textD, XftColor *color, int x, int y, 
+        int width, int height)
 {
     /* A width of zero means "clear to end of window" to XClearArea */
     if (width == 0 || XtWindow(textD->w) == 0)
     	return;
     
-    if (gc == textD->gc) {
+    if (color == &textD->bgPixel) {
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, y,
                 width, height, False);
     }
     else {
-        XFillRectangle(XtDisplay(textD->w), XtWindow(textD->w),
-                gc, x, y, width, height);
+        XftDrawRect(textD->d, color, x, y, width, height);
     }
 }
 
@@ -3366,9 +3329,8 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     if (clearAll) {
         //XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
         //        textD->top, textD->lineNumWidth, textD->height, False);
-        XFillRectangle(
-                XtDisplay(textD->w),
-                XtWindow(textD->w),
+        XftDrawRect(
+                textD->d,
                 textD->lineNumGC,
                 0,
                 0,
@@ -3547,6 +3509,7 @@ static void blankCursorProtrusions(textDisp *textD)
 ** Allocate shared graphics contexts used by the widget, which must be
 ** re-allocated on a font change.
 */
+// TODO: remove unused parameters
 static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
         Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel, Pixel selectBGPixel,
         Pixel highlightFGPixel, Pixel highlightBGPixel, Pixel lineNumFGPixel,
@@ -3554,6 +3517,8 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
 {
     textD->gc = allocateGC(textD->w, GCForeground | GCBackground,
             fgPixel, bgPixel, 0, GCClipMask, GCArcMode); 
+    // TODO: remove
+    /*
     textD->selectGC = allocateGC(textD->w, GCForeground | GCBackground,
             selectFGPixel, selectBGPixel, 0, GCClipMask,
             GCArcMode);
@@ -3571,6 +3536,7 @@ static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
             GCBackground, lineHighlightBGPixel, bgPixel, 0, 
             GCClipMask, GCArcMode);
     textD->lineNumColor = PixelToColor(textD->w, lineNumFGPixel);
+    */
 }
 
 /*
@@ -3633,16 +3599,10 @@ static void resetClipRectangles(textDisp *textD)
     
     XSetClipRectangles(display, textD->gc, 0, 0,
     	    &clipRect, 1, Unsorted);
-    XSetClipRectangles(display, textD->selectGC, 0, 0,
-            &clipRect, 1, Unsorted);
-    XSetClipRectangles(display, textD->highlightGC, 0, 0,
-            &clipRect, 1, Unsorted);
-    XSetClipRectangles(display, textD->selectBGGC, 0, 0,
-            &clipRect, 1, Unsorted);
-    XSetClipRectangles(display, textD->highlightBGGC, 0, 0,
-            &clipRect, 1, Unsorted);
-    XSetClipRectangles(display, textD->styleGC, 0, 0,
-            &clipRect, 1, Unsorted);
+    
+    if(textD->d) {
+        XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
+    }
 } 
 
 /*
@@ -4216,18 +4176,18 @@ static void extendRangeForStyleMods(textDisp *textD, int *start, int *end)
 ** the colormap is full and there's no suitable substitute, print an error on
 ** stderr, and return the widget's background color as a backup.
 */
-static Pixel allocBGColor(Widget w, char *colorName, int *ok)
+static XftColor allocBGColor(Widget w, char *colorName, int *ok)
 {
     int r,g,b;
     *ok = 1;
-    return AllocColor(w, colorName, &r, &g, &b);
+    return PixelToColor(w, AllocColor(w, colorName, &r, &g, &b));
 }
 
-static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground)
+static XftColor* getRangesetColor(textDisp *textD, int ind, XftColor *bground)
 {
     textBuffer *buf;
     RangesetTable *tab;
-    Pixel color;
+    XftColor color;
     char *color_name;
     int valid;
 
@@ -4235,16 +4195,17 @@ static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground)
       ind--;
       buf = textD->buffer;
       tab = buf->rangesetTable;
-
-      valid = RangesetTableGetColorValid(tab, ind, &color);
+      
+      Rangeset *rangeset = NULL;
+      valid = RangesetTableGetColorValid(tab, ind, &color, &rangeset);
       if (valid == 0) {
           color_name = RangesetTableGetColorName(tab, ind);
           if (color_name)
               color = allocBGColor(textD->w, color_name, &valid);
-          RangesetTableAssignColorPixel(tab, ind, color, valid);
+          rangeset = RangesetTableAssignColorPixel(tab, ind, color, valid);
       }
       if (valid > 0) {
-          return color;
+          return RangesetGetColor(rangeset);
       }
     }
     return bground;
@@ -4260,11 +4221,11 @@ static Pixel getRangesetColor(textDisp *textD, int ind, Pixel bground)
 ** there'll be a pressing need. I suppose the scanning of the specification
 ** could be better too, but then, who cares!
 */
-void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
-      unsigned char **pp_bgClass, Pixel bgPixelDefault)
+void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
+      unsigned char **pp_bgClass, XftColor bgPixelDefault)
 {
     unsigned char bgClass[256];
-    Pixel bgClassPixel[256];
+    XftColor bgClassPixel[256];
     int class_no = 0;
     char *semicol;
     char *s = (char *)str;
@@ -4351,7 +4312,7 @@ void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
        in local variables: now put them into the "real thing" */
     class_no++;                     /* bigger than all valid class_nos */
     *pp_bgClass = (unsigned char *)NEditMalloc(256);
-    *pp_bgClassPixel = (Pixel *)NEditMalloc(class_no * sizeof (Pixel));
+    *pp_bgClassPixel = (XftColor *)NEditMalloc(class_no * sizeof (XftColor));
     if (!*pp_bgClass || !*pp_bgClassPixel) {
         NEditFree(*pp_bgClass);
         NEditFree(*pp_bgClassPixel);
@@ -4407,7 +4368,7 @@ void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
                 memcpy(color, colors+color_begin, color_len);
                 color[color_len] = '\0';
                 
-                textD->indentRainbowColors[ci++] = AllocColor(textD->w, color, &r, &g, &b);
+                textD->indentRainbowColors[ci++] = PixelToColor(textD->w, AllocColor(textD->w, color, &r, &g, &b));
             } else {
                 fprintf(stderr, "Color list entry too long: %.*s\n", color_len, colors+color_begin);
             }
