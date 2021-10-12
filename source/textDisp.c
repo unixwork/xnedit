@@ -4318,7 +4318,7 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
  * Setup indent rainbow colors
  */
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
-{
+{  
     if(!colors) return;
     
     int count = 1;
@@ -4331,7 +4331,7 @@ void TextDSetIndentRainbowColors(textDisp *textD, const char *colors)
         NEditFree(textD->indentRainbowColors);
     }
     
-    textD->indentRainbowColors = NEditCalloc(count, sizeof(Pixel));
+    textD->indentRainbowColors = NEditCalloc(count, sizeof(XftColor));
     textD->numRainbowColors = count;
     
     char color[MAX_COLOR_LEN+1];
@@ -4458,6 +4458,8 @@ static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style)
 
 static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext)
 {
+    return; // TODO: reactivate
+    
     if(ext->fg >= 0) {
         style->fg = ext->fg;
     }
@@ -4470,6 +4472,8 @@ static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext)
 
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
 {
+    return; // TODO: reactive
+    
     textBuffer *buf = textD->buffer;
     ssize_t prev_esc;       // index of previous escape sequence
     size_t prev_esc_pos;    // absolute position of previous esc
