@@ -3982,9 +3982,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    colNum += BufCharWidth((char)c, colNum, tabDist, nullSubsChar);
     	    if (countPixels)
     	    	width += measurePropChar(textD, c, colNum, p+styleBufOffset);
-    	} else {
-            printf("hello\n");
-        }// else: c == 0 => invisible escape sequence
+    	} // else: c == 0 => invisible escape sequence
 
     	/* If character exceeded wrap margin, find the break point
     	   and wrap there */
