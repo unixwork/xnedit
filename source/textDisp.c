@@ -4161,7 +4161,13 @@ static XftColor allocBGColor(Widget w, char *colorName, int *ok)
 {
     int r,g,b;
     *ok = 1;
-    return PixelToColor(w, AllocColor(w, colorName, &r, &g, &b));
+    XftColor color;
+    color.pixel = AllocColor(w, colorName, &r, &g, &b);
+    color.color.red = r;
+    color.color.green = g;
+    color.color.blue = b;
+    color.color.alpha = 0xFFFF;
+    return color;
 }
 
 static XftColor* getRangesetColor(textDisp *textD, int ind, XftColor *bground)
