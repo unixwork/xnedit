@@ -2379,7 +2379,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         else {
             styleRec = NULL;
             fground = &textD->fgPixel;
-        }
+        }     
         /* Background color priority order is:
            1 Primary(Selection), 2 Highlight(Parens),
            3 Rangeset, 4 SyntaxHighlightStyle,
@@ -4306,7 +4306,7 @@ void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
         return;
     }
     memcpy(*pp_bgClass, bgClass, 256);
-    memcpy(*pp_bgClassPixel, bgClassPixel, class_no * sizeof (Pixel));
+    memcpy(*pp_bgClassPixel, bgClassPixel, class_no * sizeof (XftColor));
 }
 
 
