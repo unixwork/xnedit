@@ -2735,7 +2735,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     outIndex = 0;
     inc = 1;
     for(charIndex=0; charIndex<lineLen; charIndex+=inc) {
-        inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen-charIndex);
+        inc = getCharWidth(textD, lineStr+charIndex, &uc, lineLen-charIndex);
         if(inc > 1) {
             /* not ascii */
             charLen = 1;
