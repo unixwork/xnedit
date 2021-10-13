@@ -115,6 +115,7 @@ static void calcLineStarts(textDisp *textD, int startLine, int endLine);
 static void calcLastChar(textDisp *textD);
 static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
 static int getCharWidth(textDisp *textD, const char *src_orig, FcChar32 *dst, int len);
+static FcChar32 getCharacter32(const textDisp *textD, const textBuffer* buf, int pos, int *charlen);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
@@ -1970,6 +1971,30 @@ static int getCharWidth(textDisp *textD, const char *src_orig, FcChar32 *dst, in
         // number of UTF-8 bytes for the Unicode Character
         return Utf8ToUcs4(src_orig, dst, len);
     }
+}
+
+static FcChar32 getCharacter32(const textDisp *textD, const textBuffer* buf, int pos, int *charlen)
+{
+    if(textD->ansiColors) {
+        if(BufGetCharacter(buf, pos) == '\e') {
+            if(BufGetCharacter(buf, pos+1) == '[') {
+                int start = pos;
+                pos += 2;
+                char c;
+                while((c = BufGetCharacter(buf, pos)) != '\0') {
+                    if(c == 'm') {
+                        pos++;
+                        break;
+                    }
+                    if(c < '0' || (c > '9' && c != ';')) break;
+                    pos++;
+                }
+                *charlen = pos - start;
+                return 0;
+            }
+        }    
+    }
+    return BufGetCharacter32(buf, pos, charlen);
 }
 
 /*
@@ -3930,7 +3955,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     width = 0;
     int inc = 1;
     for (p=lineStart; p<buf->length; p+=inc) {
-        c = BufGetCharacter32(buf, p, &inc);
+        c = getCharacter32(textD, buf, p, &inc);
         
     	/* If the character was a newline, count the line and start over,
     	   otherwise, add it to the width and column counts */
@@ -3953,11 +3978,13 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    lineStart = p + 1;
     	    colNum = 0;
     	    width = 0;
-    	} else {
+    	} else if(c != 0) {
     	    colNum += BufCharWidth((char)c, colNum, tabDist, nullSubsChar);
     	    if (countPixels)
     	    	width += measurePropChar(textD, c, colNum, p+styleBufOffset);
-    	}
+    	} else {
+            printf("hello\n");
+        }// else: c == 0 => invisible escape sequence
 
     	/* If character exceeded wrap margin, find the break point
     	   and wrap there */
@@ -3974,7 +4001,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
                         int charLen;
     	    	    	for (i=b+1; i<p+1; i+=charLen) {
     	    	    	    width += measurePropChar(textD,
-				    BufGetCharacter32(buf, i, &charLen), colNum, 
+				    getCharacter32(textD, buf, i, &charLen), colNum, 
 				    i+styleBufOffset);
     	    	    	    colNum++;
     	    	    	}
