@@ -114,6 +114,7 @@ static void offsetLineStarts(textDisp *textD, int newTopLineNum);
 static void calcLineStarts(textDisp *textD, int startLine, int endLine);
 static void calcLastChar(textDisp *textD);
 static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum);
+static int charWidth(textDisp *textD, const char *src_orig, FcChar32 *dst, int len);
 static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         int rightClip, int leftCharIndex, int rightCharIndex);
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
@@ -1944,6 +1945,34 @@ static int posToVisibleLineNum(textDisp *textD, int pos, int *lineNum)
 }
 
 /*
+ * Get the number of bytes for a character
+ * If ANSI coloring is enabled and the the first character is <ESC>
+ * return the number of bytes of the escape sequence
+ */
+static int getCharWidth(textDisp *textD, const char *src_orig, FcChar32 *dst, int len)
+{
+    if(textD->ansiColors && *src_orig == '\e') {
+        // number of bytes for the complete escape sequence
+        if(len < 3) return 1;
+        if(src_orig[1] != '[') return 1;
+        int i;
+        for(i=2;i<len;i++) {
+            char c = src_orig[i];
+            if(c == 'm') {
+                i++;
+                break;
+            }
+            if(c < '0' || (c > '9' && c != ';')) break;
+        }
+        *dst = 0;
+        return i;
+    } else {
+        // number of UTF-8 bytes for the Unicode Character
+        return Utf8ToUcs4(src_orig, dst, len);
+    }
+}
+
+/*
 ** Redisplay the text on a single line represented by "visLineNum" (the
 ** number of lines down from the top of the display), limited by
 ** "leftClip" and "rightClip" window coordinates and "leftCharIndex" and
@@ -2066,7 +2095,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
                     
-            inc = Utf8ToUcs4(line, &uc, remainingLen);
+            inc = getCharWidth(textD, line, &uc, remainingLen);
             if(inc > 1) {
                 charLen = 1;
                 expandedChar[0] = uc;
@@ -2203,10 +2232,14 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 }
             }
             
-            inc = Utf8ToUcs4(lineStr+charIndex, &uc, lineLen - charIndex);
+            inc = getCharWidth(textD, lineStr+charIndex, &uc, lineLen - charIndex);
             if(inc > 1) {
-                charLen = 1;
-                expandedChar[0] = uc;
+                if(uc != 0) {
+                    charLen = 1;
+                    expandedChar[0] = uc;
+                } else {
+                    charLen = 0;
+                }
             } else {
                 charLen = BufExpandCharacter4(lineStr[charIndex],
                         outIndex,
@@ -2628,6 +2661,8 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
     if(!fontList) {
         fontList = textD->font;
     }
+    
+    if(string[0] == 0) return 0; // special case for ansi coloring
     
     XGlyphInfo extents;
     XftFont *font = FindFont(fontList, string[0]);
