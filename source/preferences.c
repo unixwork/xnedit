@@ -5967,6 +5967,11 @@ static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
 {
     colorDialog *cd = clientData;
     
+    if(!XmToggleButtonGetState(w)) {
+        XmToggleButtonSetState(w, True, False);
+        return;
+    }
+    
     for(int i=0;i<3;i++) {
         if(cd->tabs[i] != w) {
             XmToggleButtonSetState(cd->tabs[i], False, False);
