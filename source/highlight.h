@@ -70,6 +70,7 @@ void RemoveWidgetHighlight(Widget widget);
 void UpdateHighlightStyles(WindowInfo *window, Boolean redisplay);
 int TestHighlightPatterns(patternSet *patSet);
 Pixel AllocateColor(Widget w, const char *colorName);
+void SetParseColorError(int value);
 Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b);
 void* GetHighlightInfo(WindowInfo *window, int pos);
 highlightPattern *FindPatternOfWindow(WindowInfo *window, char *name);

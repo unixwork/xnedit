@@ -5900,6 +5900,18 @@ static void colorCloseCB(Widget w, XtPointer clientData, XtPointer callData)
     XtDestroyWidget(cd->shell);
 }
 
+static void updateCGchooser(Widget w, XtPointer clientData,
+      XtPointer callData)
+{
+    Widget button = clientData;
+    char *str = XmTextGetString(w);
+    int dummy;
+    SetParseColorError(0);
+    Pixel color = AllocColor(button, str, &dummy, &dummy, &dummy);
+    SetParseColorError(1);
+    XtVaSetValues(button, XmNbackground, color, NULL);
+    XtFree(str);
+}
 
 /* Add a label, error label, and text entry label with a validation
     callback */
@@ -5944,19 +5956,40 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
     XmStringFree(s1);
     
     /* The text field entry widget */
+    Widget colorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, parent,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, rightPos,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, lblW,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
           XmNcolumns, MAX_COLOR_LEN-1,
           XmNmaxLength, MAX_COLOR_LEN-1,
           XmNleftAttachment, XmATTACH_POSITION,
           XmNleftPosition, leftPos,
-          XmNrightAttachment, XmATTACH_POSITION,
-          XmNrightPosition, rightPos,
+          XmNrightAttachment, XmATTACH_WIDGET,
+          XmNrightWidget, colorChooserButton,
           XmNtopAttachment, XmATTACH_WIDGET,
           XmNtopWidget, lblW, NULL);
+    
+    Dimension shadowThickness = 1;
+    XtVaGetValues(*fieldW, XmNshadowThickness, &shadowThickness, NULL);
+    XtVaSetValues(colorChooserButton,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, *fieldW,
+            XmNshadowThickness, shadowThickness,
+            XmNuserData, *fieldW, NULL);
+    
     RemapDeleteKey(*fieldW);
     XtAddCallback(*fieldW, XmNvalueChangedCallback,
           modCallback, cd);
+    XtAddCallback(*fieldW, XmNvalueChangedCallback,
+          updateCGchooser, colorChooserButton);
     XtVaSetValues(lblW, XmNuserData, *fieldW, NULL);
     
     NEditFree(longerName);

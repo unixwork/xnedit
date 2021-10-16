@@ -2378,7 +2378,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
         const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
         const char *cursorFg, const char *lineHiBg)
-{
+{ 
     int i, dummy;
     Pixel   textFgPix   = AllocColor( window->textArea, textFg, 
                     &dummy, &dummy, &dummy),

@@ -1950,6 +1950,14 @@ Pixel AllocateColor(Widget w, const char *colorName)
     return AllocColor(w, colorName, &dummy, &dummy, &dummy);
 }
 
+
+static int printParseColorError = 1;
+
+void SetParseColorError(int value)
+{
+    printParseColorError = value;
+}
+
 /*
 ** Allocate a read-only (shareable) colormap cell for a named color, from the
 ** the default colormap of the screen on which the widget (w) is displayed. If
@@ -1982,7 +1990,9 @@ Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b)
 
     /* First, check for valid syntax */        
     if (! XParseColor(display, cMap, colorName, &colorDef)) {
-        fprintf(stderr, "NEdit: Color name %s not in database\n",  colorName);
+        if(printParseColorError) {
+            fprintf(stderr, "NEdit: Color name %s not in database\n",  colorName);
+        }
         colorDef.pixel = foreground;
         if (XQueryColor(display, cMap, &colorDef)) {
             *r = colorDef.red;
