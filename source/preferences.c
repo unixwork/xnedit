@@ -220,6 +220,12 @@ typedef struct {
 /* Color dialog information */
 typedef struct {
     Widget shell;
+    WindowInfo *window;
+    
+    Widget tabs[3];
+    Widget tabForms[3];
+    
+    // general colors
     Widget textFgW;
     Widget textFgErrW;
     Widget textBgW;
@@ -240,7 +246,29 @@ typedef struct {
     Widget cursorFgErrW;
     Widget cursorLineBgW;
     Widget cursorLineBgErrW;
-    WindowInfo *window;
+    
+    // indent rainbow
+    Widget *indentRainbowColors;
+    size_t allocIndentRainbowColors;
+    size_t numIndentRainbowColors;
+    
+    // ansi
+    Widget ansiBlackW;
+    Widget ansiRedW;
+    Widget ansiGreenW;
+    Widget ansiYellowW;
+    Widget ansiBlueW;
+    Widget ansiMagentaW;
+    Widget ansiCyanW;
+    Widget ansiWhiteW;
+    Widget ansiBrightBlackW;
+    Widget ansiBrightRedW;
+    Widget ansiBrightGreenW;
+    Widget ansiBrightYellowW;
+    Widget ansiBrightBlueW;
+    Widget ansiBrightMagentaW;
+    Widget ansiBrightCyanW;
+    Widget ansiBrightWhiteW;
 } colorDialog;
 
 /* IndentColor dialog information */
@@ -5935,6 +5963,19 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
     return *fieldW;
 }
 
+static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
+{
+    colorDialog *cd = clientData;
+    
+    for(int i=0;i<3;i++) {
+        if(cd->tabs[i] != w) {
+            XmToggleButtonSetState(cd->tabs[i], False, False);
+            XtUnmanageChild(cd->tabForms[i]);
+        } else {
+            XtManageChild(cd->tabForms[i]);
+        }
+    }
+}
 
 /* 
  * Code for the dialog itself
@@ -5970,11 +6011,49 @@ void ChooseColors(WindowInfo *window)
     AddMotifCloseCallback(XtParent(form), colorCloseCB, cd);
     XtAddCallback(form, XmNdestroyCallback, colorDestroyCB, cd);
     
+    /* tabs */
+    cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 33,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNset, True,
+            XmNlabelString, s1 = XmStringCreateSimple("General"),
+            NULL);
+    XmStringFree(s1);
+    cd->tabs[1] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[0],
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 66,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("Indent Rainbow"),
+            NULL);
+    XmStringFree(s1);
+    cd->tabs[2] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[1],
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("ANSI Colors"),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(cd->tabs[0], XmNvalueChangedCallback, selectColorTab, cd);
+    XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
+    XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
+    
     /* Information label */
     infoLbl = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, form,
-            XmNtopAttachment, XmATTACH_POSITION,
-            XmNtopPosition, 2,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, cd->tabs[0],
+            XmNtopOffset, 6,
             XmNleftAttachment, XmATTACH_POSITION,
             XmNleftPosition, 1,
             XmNrightAttachment, XmATTACH_POSITION,
@@ -5989,42 +6068,64 @@ void ChooseColors(WindowInfo *window)
     
     topW = infoLbl;
     
+    cd->tabForms[0] = XtVaCreateManagedWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[1] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[2] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    
+    Widget tabForm = cd->tabForms[0];
+    
+    
     /* The left column (foregrounds) of color entry groups */
-    tmpW = addColorGroup( form, "textFg", 'P', "Plain Text Foreground", 
+    tmpW = addColorGroup( tabForm, "textFg", 'P', "Plain Text Foreground", 
             &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, 
             textFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "selectFg", 'S', "Selection Foreground",
+    tmpW = addColorGroup( tabForm, "selectFg", 'S', "Selection Foreground",
             &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, 
             selectFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "hiliteFg", 'M', "Matching (..) Foreground",
+    tmpW = addColorGroup( tabForm, "hiliteFg", 'M', "Matching (..) Foreground",
             &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, 
             hiliteFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "lineNoFg", 'L', "Line Numbers Foreground",
+    tmpW = addColorGroup( tabForm, "lineNoFg", 'L', "Line Numbers Foreground",
             &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, 
             lineNoFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "lineNoBg", 'N', "Line Numbers Background",
+    tmpW = addColorGroup( tabForm, "lineNoBg", 'N', "Line Numbers Background",
             &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, 
             lineNoBgModifiedCB, cd );
 
     /* The right column (backgrounds) */
-    tmpW = addColorGroup( form, "textBg", 'T', "Text Area Background",
+    tmpW = addColorGroup( tabForm, "textBg", 'T', "Text Area Background",
             &(cd->textBgW), &(cd->textBgErrW), topW, 51, 99, 
             textBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "selectBg", 'B', "Selection Background",
+    tmpW = addColorGroup( tabForm, "selectBg", 'B', "Selection Background",
             &(cd->selectBgW), &(cd->selectBgErrW), tmpW, 51, 99, 
             selectBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "hiliteBg", 'h', "Matching (..) Background",
+    tmpW = addColorGroup( tabForm, "hiliteBg", 'h', "Matching (..) Background",
             &(cd->hiliteBgW), &(cd->hiliteBgErrW), tmpW, 51, 99, 
             hiliteBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "cursorFg", 'C', "Cursor Color",
+    tmpW = addColorGroup( tabForm, "cursorFg", 'C', "Cursor Color",
             &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, 
             cursorFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "cursorLineBg", 'U', "Cursor Line Background",
+    tmpW = addColorGroup( tabForm, "cursorLineBg", 'U', "Cursor Line Background",
             &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, 
             cursorLineBgModifiedCB, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
-            xmLabelGadgetClass, form,
+            xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, tmpW,
             XmNtopOffset, MARGIN_SPACING,
@@ -6038,6 +6139,8 @@ void ChooseColors(WindowInfo *window)
                 "is DISABLED.\n", XmFONTLIST_DEFAULT_TAG),
             NULL);
     XmStringFree(s1);
+    
+    tmpW = cd->tabForms[0];
     
     tmpW = XtVaCreateManagedWidget("sep",
             xmSeparatorGadgetClass, form,
