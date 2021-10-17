@@ -54,6 +54,7 @@
 #include "../util/fileUtils.h"
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
+#include "../util/colorchooser.h"
 
 #include <ctype.h>
 #include <pwd.h>
@@ -5913,6 +5914,36 @@ static void updateCGchooser(Widget w, XtPointer clientData,
     XtFree(str);
 }
 
+static void selectColorCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    Colormap cm;
+    Pixel bg;
+    Widget textfield = NULL;
+    XtVaGetValues(w, XtNcolormap, &cm, XmNbackground, &bg, XmNuserData, &textfield, NULL);
+    
+    if(!textfield) return;
+    
+    XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
+    xcolor.pixel = bg;
+    XQueryColor(XtDisplay(w), cm, &xcolor);
+    
+    int r = xcolor.red;
+    int g = xcolor.green;
+    int b = xcolor.blue;
+    if(ColorChooser(XtParent(w), &r, &g, &b)) {
+        r /= 257;
+        g /= 257;
+        b /= 257;
+        char buf[32];
+        snprintf(buf, 32, "#%02x%02x%02x", r, g, b);
+        // alternative format
+        //snprintf(buf, 32, "rgb:%02x/%02x/%02x", r, g, b);
+        XmTextSetString(textfield, buf);
+    }
+
+}
+
 /* Add a label, error label, and text entry label with a validation
     callback */
 static Widget addColorGroup( Widget parent, const char *name, char mnemonic, 
@@ -5965,6 +5996,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
     XmStringFree(s1);
+    XtAddCallback(colorChooserButton, XmNactivateCallback, selectColorCB, NULL);
     
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
