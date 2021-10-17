@@ -268,21 +268,37 @@ typedef struct {
     
     // ansi
     Widget ansiBlackW;
+    Widget ansiBlackErrW;
     Widget ansiRedW;
+    Widget ansiRedErrW;
     Widget ansiGreenW;
+    Widget ansiGreenErrW;
     Widget ansiYellowW;
+    Widget ansiYellowErrW;
     Widget ansiBlueW;
+    Widget ansiBlueErrW;
     Widget ansiMagentaW;
+    Widget ansiMagentaErrW;
     Widget ansiCyanW;
+    Widget ansiCyanErrW;
     Widget ansiWhiteW;
+    Widget ansiWhiteErrW;
     Widget ansiBrightBlackW;
+    Widget ansiBrightBlackErrW;
     Widget ansiBrightRedW;
+    Widget ansiBrightRedErrW;
     Widget ansiBrightGreenW;
+    Widget ansiBrightGreenErrW;
     Widget ansiBrightYellowW;
+    Widget ansiBrightYellowErrW;
     Widget ansiBrightBlueW;
+    Widget ansiBrightBlueErrW;
     Widget ansiBrightMagentaW;
+    Widget ansiBrightMagentaErrW;
     Widget ansiBrightCyanW;
+    Widget ansiBrightCyanErrW;
     Widget ansiBrightWhiteW;
+    Widget ansiBrightWhiteErrW;
 } colorDialog;
 
 /* IndentColor dialog information */
@@ -5710,74 +5726,13 @@ cursorFg              CURSOR_FG_COLOR
 /* 
  * Callbacks for field modifications
  */
-static void textFgModifiedCB(Widget w, XtPointer clientData,
+static void cgTextModifiedCB(Widget w, XtPointer clientData,
       XtPointer callData)
 {
     colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->textFgW, cd->textFgErrW);
-}
-    
-static void textBgModifiedCB(Widget w, XtPointer clientData,
-      XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->textBgW, cd->textBgErrW);
-}
-
-static void selectFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->selectFgW, cd->selectFgErrW);
-}
-
-static void selectBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->selectBgW, cd->selectBgErrW);
-}
-
-static void hiliteFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->hiliteFgW, cd->hiliteFgErrW);
-}
-
-static void hiliteBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->hiliteBgW, cd->hiliteBgErrW);
-}
-
-static void lineNoFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->lineNoFgW, cd->lineNoFgErrW);
-}
-
-static void lineNoBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->lineNoBgW, cd->lineNoBgErrW);
-}
-
-static void cursorFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->cursorFgW, cd->cursorFgErrW);
-}
-
-static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->cursorLineBgW, cd->cursorLineBgErrW);
+    Widget err = NULL;
+    XtVaGetValues(w, XmNuserData, &err, NULL);
+    showColorStatus(cd, w, err);
 }
 
 /* 
@@ -5993,14 +5948,14 @@ static void selectColorCB(Widget w, XtPointer clientData, XtPointer callData)
     callback */
 static Widget addColorGroup( Widget parent, const char *name, char mnemonic, 
         char *label, Widget *fieldW, Widget *errW, Widget topWidget, 
-        int leftPos, int rightPos, XtCallbackProc modCallback, 
+        int leftPos, int rightPos, 
         colorDialog *cd )
 {
     Widget lblW;
     char *longerName;
     XmString s1;
     int nameLen = strlen(name);
-    
+       
     /* The label widget */
     longerName = (char*)NEditMalloc(nameLen+7);
     strcpy(longerName, name);
@@ -6052,7 +6007,8 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
           XmNrightAttachment, XmATTACH_WIDGET,
           XmNrightWidget, colorChooserButton,
           XmNtopAttachment, XmATTACH_WIDGET,
-          XmNtopWidget, lblW, NULL);
+          XmNtopWidget, lblW, 
+          XmNuserData, *errW, NULL);
     
     Dimension shadowThickness = 1;
     XtVaGetValues(*fieldW, XmNshadowThickness, &shadowThickness, NULL);
@@ -6064,7 +6020,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
     
     RemapDeleteKey(*fieldW);
     XtAddCallback(*fieldW, XmNvalueChangedCallback,
-          modCallback, cd);
+          cgTextModifiedCB, cd);
     XtAddCallback(*fieldW, XmNvalueChangedCallback,
           updateCGchooser, colorChooserButton);
     XtVaSetValues(lblW, XmNuserData, *fieldW, NULL);
@@ -6458,37 +6414,27 @@ void ChooseColors(WindowInfo *window)
     Widget tabForm = cd->tabForms[0];
     /* The left column (foregrounds) of color entry groups */
     tmpW = addColorGroup( tabForm, "textFg", 'P', "Plain Text Foreground", 
-            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, 
-            textFgModifiedCB, cd );
+            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "selectFg", 'S', "Selection Foreground",
-            &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, 
-            selectFgModifiedCB, cd );
+            &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "hiliteFg", 'M', "Matching (..) Foreground",
-            &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, 
-            hiliteFgModifiedCB, cd );
+            &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "lineNoFg", 'L', "Line Numbers Foreground",
-            &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, 
-            lineNoFgModifiedCB, cd );
+            &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "lineNoBg", 'N', "Line Numbers Background",
-            &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, 
-            lineNoBgModifiedCB, cd );
+            &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, cd );
 
     /* The right column (backgrounds) */
     tmpW = addColorGroup( tabForm, "textBg", 'T', "Text Area Background",
-            &(cd->textBgW), &(cd->textBgErrW), topW, 51, 99, 
-            textBgModifiedCB, cd );
+            &(cd->textBgW), &(cd->textBgErrW), topW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "selectBg", 'B', "Selection Background",
-            &(cd->selectBgW), &(cd->selectBgErrW), tmpW, 51, 99, 
-            selectBgModifiedCB, cd );
+            &(cd->selectBgW), &(cd->selectBgErrW), tmpW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "hiliteBg", 'h', "Matching (..) Background",
-            &(cd->hiliteBgW), &(cd->hiliteBgErrW), tmpW, 51, 99, 
-            hiliteBgModifiedCB, cd );
+            &(cd->hiliteBgW), &(cd->hiliteBgErrW), tmpW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "cursorFg", 'C', "Cursor Color",
-            &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, 
-            cursorFgModifiedCB, cd );
+            &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "cursorLineBg", 'U', "Cursor Line Background",
-            &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, 
-            cursorLineBgModifiedCB, cd );
+            &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, tabForm,
@@ -6539,6 +6485,49 @@ void ChooseColors(WindowInfo *window)
     addAddBtn(cd);
     
     indentRainbowDialogLoadColors(cd);
+    
+    /*
+     * Tab 3: ANSI Colors
+     */
+    
+    topW = infoLbl;
+    
+    tabForm = cd->tabForms[2];
+    /* The left column (foregrounds) of color entry groups */
+    tmpW = addColorGroup( tabForm, "ansiBlack", 'P', "Black", 
+            &(cd->ansiBlackW), &(cd->ansiBlackErrW), topW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiRed", 'S', "Red",
+            &(cd->ansiRedW), &(cd->ansiRedErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiGreen", 'M', "Green",
+            &(cd->ansiGreenW), &(cd->ansiGreenErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiYellow", 'L', "Yellow",
+            &(cd->ansiYellowW), &(cd->ansiYellowErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiBlue", 'N', "Blue",
+            &(cd->ansiBlueW), &(cd->ansiBlueErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiMagenta", 'N', "Magenta",
+            &(cd->ansiMagentaW), &(cd->ansiMagentaErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiCyan", 'N', "Cyan",
+            &(cd->ansiCyanW), &(cd->ansiCyanErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiWhite", 'N', "White",
+            &(cd->ansiWhiteW), &(cd->ansiWhiteErrW), tmpW, 1, 49, cd );
+
+    /* The right column (backgrounds) */
+    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "BrightBlack",
+            &(cd->ansiBrightBlackW), &(cd->ansiBrightBlackErrW), topW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightRed", 'B', "Bright Red",
+            &(cd->ansiBrightRedW), &(cd->ansiBrightRedErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightGreen", 'h', "Bright Green",
+            &(cd->ansiBrightGreenW), &(cd->ansiBrightGreenErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightYellow", 'C', "Bright Yellow",
+            &(cd->ansiBrightYellowW), &(cd->ansiBrightYellowErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightBlue", 'U', "Bright Blue",
+            &(cd->ansiBrightBlueW), &(cd->ansiBrightBlueErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightMagenta", 'U', "Bright Magenta",
+            &(cd->ansiBrightMagentaW), &(cd->ansiBrightMagentaErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightCyan", 'U', "Bright Cyan",
+            &(cd->ansiBrightCyanW), &(cd->ansiBrightCyanErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightWhite", 'U', "Bright White",
+            &(cd->ansiBrightWhiteW), &(cd->ansiBrightWhiteErrW), tmpW, 51, 99, cd );
     
     
     /*
