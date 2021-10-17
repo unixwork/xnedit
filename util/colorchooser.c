@@ -203,9 +203,9 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     }
     
     XtReleaseGC(data.selector, data.gc);
-    if(data->image1) XDestroyImage(data->image1);
-    if(data->image2) XDestroyImage(data->image2);
-    if(data->d) XftDrawDestroy(data->d);
+    if(data.image1) XDestroyImage(data.image1);
+    if(data.image2) XDestroyImage(data.image2);
+    if(data.d) XftDrawDestroy(data.d);
     XtDestroyWidget(dialog);
     
     if(data.status == 1) {
