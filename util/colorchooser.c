@@ -295,6 +295,12 @@ static void init_pix1(cgData *data, Widget w) {
     Display *dp = XtDisplay(w);
     Dimension width = 20;
     Dimension height = w->core.height - 20;
+    
+    if(data->image1) {
+        if(height == data->img2_height) return;
+        XDestroyImage(data->image1);
+    }
+    
     float height6 = ((float)height)/6.f;
     float step = ((float)255.f)/height6;
     
@@ -308,7 +314,7 @@ static void init_pix1(cgData *data, Widget w) {
     int green_shift = get_shift(visual->green_mask);
     int blue_shift = get_shift(visual->blue_mask);
     
-    uint32_t *imgdata = malloc(width * height * 4);
+    uint32_t *imgdata = malloc(width * height * 4); // will be freed by XDestroyImage
     uint32_t pixel_init = UINT32_MAX ^ (visual->red_mask ^ visual->green_mask ^ visual->blue_mask);
 
     
@@ -462,9 +468,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     Display *dp = XtDisplay(w);
     Window win = XtWindow(w);
     
-    if(!data->image1) {
-        init_pix1(data, w);
-    }
+    init_pix1(data, w);
     init_pix2(data, w);
     
     // clear all
@@ -476,7 +480,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
             1, IMG1_Y_OFFSET + data->img1_height,
             width-2, height - IMG1_Y_OFFSET + data->img1_height - 2, False);
     // left
-    XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-2, height-2, False);
+    XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-1, height-2, False);
     // right
     XClearArea(XtDisplay(w), XtWindow(w),
             IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, 1,
