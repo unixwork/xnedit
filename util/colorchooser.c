@@ -22,8 +22,6 @@
 
 #include "colorchooser.h"
 
-#include "misc.h"
-
 #include <Xm/XmAll.h>
 #include <Xm/XmP.h>
 #include <Xft/Xft.h>
@@ -192,8 +190,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     data.base_blue = 0;
     
     // manage dialog
-    //XtManageChild(dialog);
-    ManageDialogCenteredOnPointer(dialog);
+    XtManageChild(dialog);
     
     XtAppContext app = XtWidgetToApplicationContext(dialog);
     while(!data.end && !XtAppGetExitFlag(app)) {
