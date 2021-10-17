@@ -188,7 +188,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     
     // base color
     data.base_red = 255;
-    data.base_green = 127;
+    data.base_green = 0;
     data.base_blue = 0;
     
     // manage dialog
@@ -203,6 +203,9 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     }
     
     XtReleaseGC(data.selector, data.gc);
+    if(data->image1) XDestroyImage(data->image1);
+    if(data->image2) XDestroyImage(data->image2);
+    if(data->d) XftDrawDestroy(data->d);
     XtDestroyWidget(dialog);
     
     if(data.status == 1) {
@@ -389,6 +392,7 @@ static void init_pix2(cgData *data, Widget w) {
     Dimension height = w->core.height - 20;
     
     if(data->image2) {
+        if(width == data->img2_width == height == data->img2_height) return;
         XDestroyImage(data->image2);
     }
     
@@ -563,6 +567,8 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         data->base_green = (color & data->image1->green_mask) >> green_shift;
         data->base_blue = (color & data->image1->blue_mask) >> blue_shift;
         
+        XDestroyImage(data->image2);
+        data->image2 = NULL;
         init_pix2(data, w);
         XPutImage(dp, win, data->gc, data->image2, 0, 0, IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET, IMG2_Y_OFFSET, data->img2_width, data->img2_height);
     }
@@ -577,8 +583,7 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
                 (color & data->image2->green_mask) >> green_shift,
                 (color & data->image2->blue_mask) >> blue_shift);
         
-        w = data->preview;
-        XClearArea(XtDisplay(w), XtWindow(w), 0, 0, w->core.width, w->core.height, True);
+        preview_color(data->preview, data, NULL);
     }
 }
 
