@@ -6368,11 +6368,103 @@ void ChooseColors(WindowInfo *window)
     XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
     
+    topW = cd->tabs[0];
+      
+    
+    /*
+     * buttons
+     */
+    tmpW = cd->tabForms[0];
+    
+    /* The OK, Apply, and Cancel buttons */
+    okBtn = XtVaCreateManagedWidget("ok",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 10,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 30,
+            NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, colorOkCB, cd);
+    XmStringFree(s1);
+
+    applyBtn = XtVaCreateManagedWidget(
+            "apply", xmPushButtonWidgetClass, form,
+          XmNlabelString, s1=XmStringCreateSimple("Apply"),
+          XmNbottomAttachment, XmATTACH_FORM,
+          XmNbottomOffset, MARGIN_SPACING,
+          XmNmnemonic, 'A',
+          XmNleftAttachment, XmATTACH_POSITION,
+          XmNleftPosition, 40,
+          XmNrightAttachment, XmATTACH_POSITION,
+          XmNrightPosition, 60, NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, colorApplyCB, cd);
+    XmStringFree(s1);
+    
+    closeBtn = XtVaCreateManagedWidget("close",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("Close"),
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 70,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 90,
+            NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, colorCloseCB, cd);
+    XmStringFree(s1);
+    
+    Widget sepW = XtVaCreateManagedWidget("sep",
+            xmSeparatorGadgetClass, form,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, okBtn,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM, NULL);
+ 
+    /* Set initial default button */
+    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
+    XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
+    
+    
+    /* tab forms */
+    cd->tabForms[0] = XtVaCreateManagedWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[1] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[2] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);  
+    
+    /*
+     * Tab 1: Generral
+     */
+    Widget tabForm = cd->tabForms[0];
+    
     /* Information label */
     infoLbl = XtVaCreateManagedWidget("infoLbl",
-            xmLabelGadgetClass, form,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, cd->tabs[0],
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_FORM,
             XmNtopOffset, 6,
             XmNleftAttachment, XmATTACH_POSITION,
             XmNleftPosition, 1,
@@ -6385,33 +6477,8 @@ void ChooseColors(WindowInfo *window)
                 "is in the range 0-f.", XmFONTLIST_DEFAULT_TAG),
             NULL);
     XmStringFree(s1);
-    
     topW = infoLbl;
     
-    cd->tabForms[0] = XtVaCreateManagedWidget("colorForm", xmFormWidgetClass, form,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, topW,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM,
-            NULL);
-    cd->tabForms[1] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, topW,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM,
-            NULL);
-    cd->tabForms[2] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, topW,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM,
-            NULL);
-    
-    
-    /*
-     * Tab 1: Generral
-     */
-    Widget tabForm = cd->tabForms[0];
     /* The left column (foregrounds) of color entry groups */
     tmpW = addColorGroup( tabForm, "textFg", 'P', "Plain Text Foreground", 
             &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, cd );
@@ -6451,6 +6518,16 @@ void ChooseColors(WindowInfo *window)
                 "is DISABLED.\n", XmFONTLIST_DEFAULT_TAG),
             NULL);
     XmStringFree(s1);
+    
+    Dimension h = 60;
+    XtVaGetValues(cd->textFgW, XmNheight, &h, NULL);
+    
+    tmpW = XtVaCreateManagedWidget("sepLbl", xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, tmpW,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 3*h + 3*MARGIN_SPACING,
+            XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
     
     /*
      * Tab 2: Indent Rainbow Colors
@@ -6529,66 +6606,7 @@ void ChooseColors(WindowInfo *window)
     tmpW = addColorGroup( tabForm, "ansiBrightWhite", 'U', "Bright White",
             &(cd->ansiBrightWhiteW), &(cd->ansiBrightWhiteErrW), tmpW, 51, 99, cd );
     
-    
-    /*
-     * buttons
-     */
-    tmpW = cd->tabForms[0];
-    
-    tmpW = XtVaCreateManagedWidget("sep",
-            xmSeparatorGadgetClass, form,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM, NULL);
-    
-    /* The OK, Apply, and Cancel buttons */
-    okBtn = XtVaCreateManagedWidget("ok",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, s1=XmStringCreateSimple("OK"),
-            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 10,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 30,
-            NULL);
-    XtAddCallback(okBtn, XmNactivateCallback, colorOkCB, cd);
-    XmStringFree(s1);
 
-    applyBtn = XtVaCreateManagedWidget(
-            "apply", xmPushButtonWidgetClass, form,
-          XmNlabelString, s1=XmStringCreateSimple("Apply"),
-          XmNtopAttachment, XmATTACH_WIDGET,
-          XmNtopWidget, tmpW,
-          XmNtopOffset, MARGIN_SPACING,
-          XmNmnemonic, 'A',
-          XmNleftAttachment, XmATTACH_POSITION,
-          XmNleftPosition, 40,
-          XmNrightAttachment, XmATTACH_POSITION,
-          XmNrightPosition, 60, NULL);
-    XtAddCallback(applyBtn, XmNactivateCallback, colorApplyCB, cd);
-    XmStringFree(s1);
-    
-    closeBtn = XtVaCreateManagedWidget("close",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, s1=XmStringCreateSimple("Close"),
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 70,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 90,
-            NULL);
-    XtAddCallback(closeBtn, XmNactivateCallback, colorCloseCB, cd);
-    XmStringFree(s1);
- 
-    /* Set initial default button */
-    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
-    XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
     
     /* Set initial values */
     XmTextSetString(cd->textFgW,   GetPrefColorName(TEXT_FG_COLOR  ));
