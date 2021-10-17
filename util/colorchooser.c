@@ -468,13 +468,30 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     init_pix2(data, w);
     
     // clear all
-    XClearArea(XtDisplay(w), XtWindow(w), 0, 0, width, height, False);
+    
+    // top
+    XClearArea(XtDisplay(w), XtWindow(w), 1, 1, width-2, IMG1_Y_OFFSET-1, False);
+    // bottom
+    XClearArea(XtDisplay(w), XtWindow(w),
+            1, IMG1_Y_OFFSET + data->img1_height,
+            width-2, height - IMG1_Y_OFFSET + data->img1_height - 2, False);
+    // left
+    XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-2, height-2, False);
+    // right
+    XClearArea(XtDisplay(w), XtWindow(w),
+            IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, 1,
+            width - 1 - IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, height-2, False);
+    // middle
+    XClearArea(XtDisplay(w), XtWindow(w),
+            IMG1_X_OFFSET + data->img1_width, 1,
+            IMG2_X_OFFSET, height-2, False);
+    
     
     if(data->image1) {
-        XPutImage(dp, win, data->gc, data->image1, 0, 0, 20, 10, data->img1_width, data->img1_height);
+        XPutImage(dp, win, data->gc, data->image1, 0, 0, IMG1_X_OFFSET, IMG1_Y_OFFSET, data->img1_width, data->img1_height);
     }
     if(data->image2) {
-        XPutImage(dp, win, data->gc, data->image2, 0, 0, 20 + data->img1_width + 10, 10, data->img2_width, data->img2_height);
+        XPutImage(dp, win, data->gc, data->image2, 0, 0, IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET, IMG2_Y_OFFSET, data->img2_width, data->img2_height);
     }
     
     XDrawRectangle(dp, win, DefaultGC(dp, 0), 0, 0, width-1, height-1);
@@ -519,6 +536,8 @@ static int translate_img2(cgData *data, int x, int y, int *trans_x, int *trans_y
 static void selector_input(Widget w, XtPointer u, XtPointer c) {
     XmDrawingAreaCallbackStruct *cb = (XmDrawingAreaCallbackStruct*)c;
     cgData *data = u;
+    Display *dp = XtDisplay(w);
+    Window win = XtWindow(w);
 
     Dimension x, y;
     if(cb->event->type == MotionNotify) {
@@ -539,7 +558,9 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         data->base_red = (color & data->image1->red_mask) >> red_shift;
         data->base_green = (color & data->image1->green_mask) >> green_shift;
         data->base_blue = (color & data->image1->blue_mask) >> blue_shift;
-        XClearArea(XtDisplay(w), XtWindow(w), 0, 0, w->core.width, w->core.height, True);
+        
+        init_pix2(data, w);
+        XPutImage(dp, win, data->gc, data->image2, 0, 0, IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET, IMG2_Y_OFFSET, data->img2_width, data->img2_height);
     }
     if(translate_img2(data, x, y, &tx, &ty)) {
         uint32_t color = XGetPixel(data->image2, tx, ty);
