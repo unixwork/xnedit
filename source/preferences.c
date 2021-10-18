@@ -351,6 +351,7 @@ static struct prefData {
     int highlightCursorLine;    /* highlight line of cursor */
     int indentRainbow;          /* highlight indentation level */
     char *indentRainbowColors;  /* indent rainbow colors */
+    char *ansiColorList;        /* ANSI color table (16 colors) */
     int ansiColors;             /* coloring from ANSI escape sequences  */
     int backlightChars;		/* whether to apply character "backlighting" */
     char *backlightCharTypes;	/* the backlighting color definitions */
@@ -892,6 +893,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
       "#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff",
       &PrefData.indentRainbowColors, NULL, True},
+    {"ansiColorList", "AnsiColorList", PREF_ALLOC_STRING,
+      "#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff",
+      &PrefData.ansiColorList, NULL, True},
     {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
       &PrefData.ansiColors, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
@@ -1964,6 +1968,18 @@ void SetPrefIndentRainbowColors(const char *colorList)
 char *GetPrefIndentRainbowColors(void)
 {
     return PrefData.indentRainbowColors;
+}
+
+void SetPrefAnsiColorList(const char *colorList)
+{
+    if(PrefData.ansiColorList) NEditFree(PrefData.ansiColorList);
+    PrefData.ansiColorList = NEditStrdup(colorList);
+    PrefsHaveChanged = True;
+}
+
+char *GetPrefAnsiColorList(void)
+{
+    return PrefData.ansiColorList;
 }
 
 void SetPrefAnsiColors(int state)
