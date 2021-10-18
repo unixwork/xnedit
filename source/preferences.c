@@ -1264,6 +1264,7 @@ static void cursorFgModifiedCB(Widget w, XtPointer clientData,
 static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
 static void indentRainbowDialogLoadColors(colorDialog *cd);
+static void loadAnsiColors(colorDialog *cd);
 
 static void updateRainbowColors(indentColorDialog *cd);
 
@@ -6622,6 +6623,7 @@ void ChooseColors(WindowInfo *window)
     tmpW = addColorGroup( tabForm, "ansiBrightWhite", 'U', "Bright White",
             &(cd->ansiBrightWhiteW), &(cd->ansiBrightWhiteErrW), tmpW, 51, 99, cd );
     
+    loadAnsiColors(cd);
 
     
     /* Set initial values */
@@ -6693,6 +6695,52 @@ static void indentRainbowDialogLoadColors(colorDialog *cd)
         }
     }
     free(colors);
+}
+
+static void loadAnsiColors(colorDialog *cd)
+{
+    char *colors[16];
+    int ncolors = 0;
+    for(int i=0;i<16;i++) {
+        colors[i] = "#000000";
+    }
+    
+    char *colorList = GetPrefAnsiColorList();
+    size_t len = colorList ? strlen(colorList) : 0;
+    
+    char *colorListStr = NEditMalloc(len+1);
+    memcpy(colorListStr, colorList, len);
+    colors[len] = 0;
+    
+    int b = 0;
+    for(int i=0;i<=len;i++) {
+        int c = colorListStr[i];
+        if(c == ';' || c == '\0') {
+            colors[ncolors++] = colorListStr+b;
+            colorListStr[i] = '\0';
+            b = i+1;
+        }
+    }
+    
+    XmTextSetString(cd->ansiBlackW, colors[0]);
+    XmTextSetString(cd->ansiRedW, colors[1]);
+    XmTextSetString(cd->ansiGreenW, colors[2]);
+    XmTextSetString(cd->ansiYellowW, colors[3]);
+    XmTextSetString(cd->ansiBlueW, colors[4]);
+    XmTextSetString(cd->ansiMagentaW, colors[5]);
+    XmTextSetString(cd->ansiCyanW, colors[6]);
+    XmTextSetString(cd->ansiWhiteW, colors[7]);
+    XmTextSetString(cd->ansiBrightBlackW, colors[8]);
+    XmTextSetString(cd->ansiBrightRedW, colors[9]);
+    XmTextSetString(cd->ansiBrightGreenW, colors[10]);
+    XmTextSetString(cd->ansiBrightYellowW, colors[11]);
+    XmTextSetString(cd->ansiBrightBlueW, colors[12]);
+    XmTextSetString(cd->ansiBrightMagentaW, colors[13]);
+    XmTextSetString(cd->ansiBrightCyanW, colors[14]);
+    XmTextSetString(cd->ansiBrightWhiteW, colors[15]);
+   
+    
+    NEditFree(colorListStr);
 }
 
 /*
