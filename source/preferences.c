@@ -6695,11 +6695,6 @@ static void indentRainbowDialogLoadColors(colorDialog *cd)
     free(colors);
 }
 
-void ChooseIndentRainbowColors(WindowInfo *window)
-{
-    // TODO: remove
-}
-
 /*
 **  This function passes up a pointer to the static name of the default
 **  shell, currently defined as the user's login shell.
