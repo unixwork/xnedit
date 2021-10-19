@@ -258,6 +258,8 @@ static int min(int i1, int i2);
 static int strCaseCmp(const char *str1, const char *str2);
 static void ringIfNecessary(Boolean silent, Widget w);
 
+static XftColor defaultAnsiColors[16];
+
 static char defaultTranslations[] = 
     /* Home */
     "~Shift ~Ctrl Alt<Key>osfBeginLine: last_document()\n"
@@ -680,6 +682,8 @@ static XtResource resources[] = {
       NEDIT_DEFAULT_CURSOR_LINE_BG},
     {textNansiColors, textCansiColors, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.ansiColors), XmRString, "False"},
+    {textNansiColorList, textCansiColorList, XmRPointer, sizeof(void*),
+      XtOffset(TextWidget, text.ansiColorList), XmRPointer, defaultAnsiColors},
     {textNhighlightCursorLine, textChighlightCursorLine, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.highlightCursorLine), XmRString, "False"},
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
@@ -875,6 +879,8 @@ static void initialize(TextWidget request, TextWidget new)
        be replaced later with TextSetBuffer) */
     buf = BufCreate();
     
+    if(!new->text.ansiColorList) new->text.ansiColorList = defaultAnsiColors;
+    
     /* Create and initialize the text-display part of the widget */
     textLeft = new->text.marginWidth +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
@@ -891,7 +897,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->text.lineNumFGPixel, 0, // TODO: replace 0
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel, 0, // TODO: replace 0
+          new->text.calltipBGPixel, 0, new->text.ansiColorList, // TODO: replace 0
           new->text.indentRainbow, new->text.indentRainbowColors,
           new->text.highlightCursorLine, new->text.ansiColors);
 
@@ -1260,6 +1266,11 @@ static Boolean setValues(TextWidget current, TextWidget request,
     
     if (new->text.ansiColors != current->text.ansiColors) {
         TextDSetAnsiColors(new->text.textD, new->text.ansiColors);
+        redraw = True;
+    }
+    
+    if (new->text.ansiColorList != current->text.ansiColorList) {
+        TextDSetAnsiColorList(new->text.textD, new->text.ansiColorList);
         redraw = True;
     }
     

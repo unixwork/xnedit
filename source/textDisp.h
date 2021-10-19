@@ -192,6 +192,7 @@ typedef struct _textDisp {
     int numRainbowColors;
     
     Boolean ansiColors;
+    XftColor *ansiColorList;
     
     Widget calltipW;                    /* The Label widget for the calltip */
     Widget calltipShell;                /* The Shell that holds the calltip */
@@ -223,7 +224,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
         Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, char *indentRainbowColors,
+        XftColor *ansiColorList, Boolean indentRainbow, char *indentRainbowColors,
         Boolean highlightCursorLine, Boolean ansiColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
@@ -285,6 +286,7 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
+void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

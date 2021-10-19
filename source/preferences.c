@@ -6755,30 +6755,39 @@ static void indentRainbowDialogLoadColors(colorDialog *cd)
     free(colors);
 }
 
-static void loadAnsiColors(colorDialog *cd)
+char* ParseAnsiColorList(char **colorArray, const char *colorStr)
 {
-    char *colors[16];
-    int ncolors = 0;
     for(int i=0;i<16;i++) {
-        colors[i] = "#000000";
+        colorArray[i] = "#000000";
     }
+    int ncolors = 0;
     
-    char *colorList = GetPrefAnsiColorList();
-    size_t len = colorList ? strlen(colorList) : 0;
+    size_t len = colorStr ? strlen(colorStr) : 0;
     
     char *colorListStr = NEditMalloc(len+1);
-    memcpy(colorListStr, colorList, len);
-    colors[len] = 0;
+    memcpy(colorListStr, colorStr, len);
+    colorArray[len] = 0;
     
     int b = 0;
     for(int i=0;i<=len;i++) {
         int c = colorListStr[i];
         if(c == ';' || c == '\0') {
-            colors[ncolors++] = colorListStr+b;
+            colorArray[ncolors++] = colorListStr+b;
             colorListStr[i] = '\0';
             b = i+1;
         }
     }
+    
+    return colorListStr;
+}
+
+static void loadAnsiColors(colorDialog *cd)
+{
+    char *colors[16];
+    int ncolors = 0;
+    
+    char *colorList = GetPrefAnsiColorList();
+    char *colorListStr = ParseAnsiColorList(colors, colorList);
     
     XmTextSetString(cd->ansiBlackW, colors[0]);
     XmTextSetString(cd->ansiRedW, colors[1]);

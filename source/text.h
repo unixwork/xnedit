@@ -128,6 +128,8 @@
 #define textChighlightCursorLine "highlightCursorLine"
 #define textNansiColors "ansiColors"
 #define textCansiColors "ansiColors"
+#define textNansiColorList "ansiColorList"
+#define textCansiColorList "ansiColorList"
 
 
 extern WidgetClass textWidgetClass;

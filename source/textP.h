@@ -135,6 +135,7 @@ typedef struct _TextPart {
     char *indentRainbowColors;          /* rainbow color list */
     
     Boolean ansiColors;
+    XftColor *ansiColorList;
     
     XIM xim;
     XIC xic;

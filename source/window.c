@@ -986,6 +986,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(LINENO_BG_COLOR), 
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    SetAnsiColorList(window, GetPrefAnsiColorList());
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -3665,7 +3666,21 @@ void SetAnsiColors(WindowInfo *window, Boolean state)
 
 void SetAnsiColorList(WindowInfo *window, const char *colorList)
 {
+    memset(window->ansiColorList, 0, sizeof(window->ansiColorList));
     
+    char *colors[16];
+    char *str = ParseAnsiColorList(colors, colorList);
+    for(int i=0;i<16;i++) {
+        window->ansiColorList[i] = AllocXftColor(window->textArea, colors[i]);
+    }
+    
+    NEditFree(str);
+    
+    XtVaSetValues(window->textArea,
+          textNansiColorList, window->ansiColorList, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
+    }
 }
 
 /*

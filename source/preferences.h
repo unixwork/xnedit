@@ -119,6 +119,8 @@ void SetPrefHighlightCursorLine(int state);
 int GetPrefHighlightCursorLine(void);
 void SetPrefIndentRainbowColors(const char *colorList);
 char *GetPrefIndentRainbowColors(void);
+void SetPrefAnsiColorList(const char *colorList);
+char *GetPrefAnsiColorList(void);
 void SetPrefAnsiColors(int state);
 Boolean GetPrefAnsiColors(void);
 void SetPrefBacklightChars(int state);
@@ -233,5 +235,7 @@ int GetPrefISrcFindIconSize(void);
 int GetPrefISrcClearIconSize(void);
 
 char* ChangeFontSize(const char *name, int newsize);
+
+char* ParseAnsiColorList(char **array, const char *str);
 
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */

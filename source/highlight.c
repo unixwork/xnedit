@@ -2072,6 +2072,18 @@ Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b)
     return bestPixel;
 }
 
+XftColor AllocXftColor(Widget w, const char *colorName)
+{
+    int r, g, b;
+    XftColor c;
+    c.pixel = AllocColor(w, colorName, &r, &g, &b);
+    c.color.red = r;
+    c.color.green = g;
+    c.color.blue = b;
+    c.color.alpha = 0xFFFF;
+    return c;
+}
+
 /*
 ** Get the character before position "pos" in buffer "buf"
 */

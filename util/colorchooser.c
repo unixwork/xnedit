@@ -587,7 +587,7 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
 static void select_color(cgData *data, int r, int g, int b) {
     XftColor color;
     color.pixel = 0;
-    color.color.alpha = 0xFF;
+    color.color.alpha = 0xFFFF;
     color.color.red = r * 257;
     color.color.green = g * 257;
     color.color.blue = b * 257;

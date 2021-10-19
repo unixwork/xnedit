@@ -187,6 +187,8 @@ static void textDRedisplayRange(textDisp *textD, int start, int end);
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style);
 static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style);
 static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext);
+static int ansiFgToColorIndex(short fg);
+static int ansiBgToColorIndex(short fg);
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
@@ -196,7 +198,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
         Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, char *indentRainbowColors,
+        XftColor *ansiColorList, Boolean indentRainbow, char *indentRainbowColors,
         Boolean highlightCursorLine, Boolean ansiColors)
 {
     textDisp *textD;
@@ -288,6 +290,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->indentRainbow = indentRainbow;
     textD->indentRainbowColors = NULL;
     textD->highlightCursorLine = highlightCursorLine;
+    textD->ansiColorList = ansiColorList;
     TextDSetAnsiColors(textD, ansiColors);
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
@@ -1559,6 +1562,11 @@ void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors)
     }
 }
 
+void TextDSetAnsiColorList(textDisp *textD, XftColor *colors)
+{
+    textD->ansiColorList = colors;
+}
+
 /*
 ** Same as BufCountLines, but takes in to account wrapping if wrapping is
 ** turned on.  If the caller knows that startPos is at a line start, it
@@ -2462,6 +2470,10 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
             bgGC = &textD->lineHighlightBGPixel;
         }
     }
+     
+    /* Set ANSI color */
+    if(ansi->fg > 0) color = textD->ansiColorList[ansiFgToColorIndex(ansi->fg)];    
+    if(ansi->bg > 0) bground = &textD->ansiColorList[ansiBgToColorIndex(ansi->bg)];    
     
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
@@ -2479,7 +2491,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if(style & FILL_MASK) {
         return;
     }
-     
+
+    
     /* We assume the string should be rendered with just one font, because
      * redisplayLine breaks the strings when a different font is required.
      * The first character in the string determines the charset and FindFont
@@ -2496,29 +2509,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     	clearRect(textD, bground, fromX, y + textD->ascent + font->descent, toX - fromX,
     		textD->descent - font->descent);
     
-    /* test ansi fg color */
-    if(ansi->fg > 0) {
-        switch(ansi->fg) {
-            case 31: {
-                color.color.red = 0xffff;
-                color.color.green = 0;
-                color.color.blue = 0;
-                break;
-            }
-            case 32: {
-                color.color.red = 0;
-                color.color.green = 0xffff;
-                color.color.blue = 0;
-                break;
-            }
-            case 34: {
-                color.color.red = 0;
-                color.color.green = 0;
-                color.color.blue = 0xffff;
-                break;
-            }
-        }
-    }
+    
+    
 
     /* Draw the string using color and font set above */  
     XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
@@ -4552,6 +4544,19 @@ static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
     }
 }
 
+static int ansiFgToColorIndex(short fg)
+{
+    if(fg >= 30 && fg <= 37) return fg - 30;
+    if(fg >= 90 && fg <= 97) return fg - 90;
+    return 0;
+}
+
+static int ansiBgToColorIndex(short fg)
+{
+    if(fg >= 40 && fg <= 47) return fg - 30;
+    if(fg >= 100 && fg <= 107) return fg - 90;
+    return 0;
+}
 
 /* font list functions */
 
