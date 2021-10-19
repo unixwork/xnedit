@@ -3663,6 +3663,11 @@ void SetAnsiColors(WindowInfo *window, Boolean state)
     }
 }
 
+void SetAnsiColorList(WindowInfo *window, const char *colorList)
+{
+    
+}
+
 /*
 ** Set the backlight character class string
 */

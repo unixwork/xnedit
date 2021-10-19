@@ -5811,12 +5811,6 @@ static void updateColors(colorDialog *cd)
             *cursorFg = XmTextGetString(cd->cursorFgW),
             *cursorLineBg = XmTextGetString(cd->cursorLineBgW);
 
-    for (window = WindowList; window != NULL; window = window->next)
-    {
-        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
-                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
-    }
-
     SetPrefColorName(TEXT_FG_COLOR  , textFg  );
     SetPrefColorName(TEXT_BG_COLOR  , textBg  );
     SetPrefColorName(SELECT_FG_COLOR, selectFg);
@@ -5827,7 +5821,79 @@ static void updateColors(colorDialog *cd)
     SetPrefColorName(LINENO_BG_COLOR, lineNoBg);
     SetPrefColorName(CURSOR_FG_COLOR, cursorFg);
     SetPrefColorName(CURSOR_LINE_BG_COLOR, cursorLineBg);
-
+    
+    /*
+     * Tab 2: Indent Rainbow Colors
+     */
+    size_t alloc = cd->numIndentRainbowColors * 10;
+    char *irStr = NEditMalloc(alloc);
+    int pos = 0;
+    
+    for(int i=0;i<cd->numIndentRainbowColors;i++) {
+        char *ir = XmTextGetString(cd->indentRainbowColors[i].textfield);
+        size_t ir_len = strlen(ir);
+        if(pos + ir_len + 2 >= alloc) {
+            alloc += 4 * ir_len;
+            irStr = NEditRealloc(irStr, alloc);
+        }
+        memcpy(irStr+pos, ir, ir_len);
+        pos += ir_len;
+        irStr[pos] = ';';
+        pos++;
+        XtFree(ir);
+    }
+    
+    if(pos > 0 && irStr[pos-1] == ';') {
+        irStr[pos-1] = '\0';
+    }
+    
+    SetPrefIndentRainbowColors(irStr);
+    
+    /*
+     * Tab 3: ANSI Colors
+     */
+    char *ansiBlack = XmTextGetString(cd->ansiBlackW);
+    char *ansiRed = XmTextGetString(cd->ansiRedW);
+    char *ansiGreen = XmTextGetString(cd->ansiGreenW);
+    char *ansiYellow = XmTextGetString(cd->ansiYellowW);
+    char *ansiBlue = XmTextGetString(cd->ansiBlueW);
+    char *ansiMagenta = XmTextGetString(cd->ansiMagentaW);
+    char *ansiCyan = XmTextGetString(cd->ansiCyanW);
+    char *ansiWhite = XmTextGetString(cd->ansiWhiteW);
+    char *ansiBrightBlack = XmTextGetString(cd->ansiBrightBlackW);
+    char *ansiBrightRed = XmTextGetString(cd->ansiBrightRedW);
+    char *ansiBrightGreen = XmTextGetString(cd->ansiBrightGreenW);
+    char *ansiBrightYellow = XmTextGetString(cd->ansiBrightYellowW);
+    char *ansiBrightBlue = XmTextGetString(cd->ansiBrightBlueW);
+    char *ansiBrightMagenta = XmTextGetString(cd->ansiBrightMagentaW);
+    char *ansiBrightCyan = XmTextGetString(cd->ansiBrightCyanW);
+    char *ansiBrightWhite = XmTextGetString(cd->ansiBrightWhiteW);
+    
+    size_t len = strlen(ansiBlack) + strlen(ansiRed) + strlen(ansiGreen) + strlen(ansiYellow)
+               + strlen(ansiBlue) + strlen(ansiMagenta) + strlen(ansiCyan) + strlen(ansiWhite)
+               + strlen(ansiBrightBlack) + strlen(ansiBrightRed) + strlen(ansiBrightGreen) + strlen(ansiBrightYellow)
+               + strlen(ansiBrightBlue) + strlen(ansiBrightMagenta) + strlen(ansiBrightCyan) + strlen(ansiBrightWhite)
+               + 16;
+    char *ansiColorList = NEditMalloc(len);
+    snprintf(ansiColorList, len, "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+            ansiBlack, ansiRed, ansiGreen, ansiYellow,
+            ansiBlue, ansiMagenta, ansiCyan, ansiWhite,
+            ansiBrightBlack, ansiBrightRed, ansiBrightGreen, ansiBrightYellow,
+            ansiBrightBlue, ansiBrightMagenta, ansiBrightCyan, ansiBrightWhite);
+    
+    SetPrefAnsiColorList(ansiColorList);
+    
+    
+    // update windows
+    for (window = WindowList; window != NULL; window = window->next) {
+        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
+                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
+        SetIndentRainbowColors(window, irStr);
+        SetAnsiColorList(window, ansiColorList);
+    }
+    
+    // cleanup
+    // general
     NEditFree(textFg);
     NEditFree(textBg);
     NEditFree(selectFg);
@@ -5838,34 +5904,26 @@ static void updateColors(colorDialog *cd)
     NEditFree(lineNoBg);
     NEditFree(cursorFg);
     NEditFree(cursorLineBg);
-    
-    /*
-     * Tab 2: Indent Rainbow Colors
-     */
-    size_t alloc = cd->numIndentRainbowColors * 10;
-    char *str = NEditMalloc(alloc);
-    int pos = 0;
-    
-    for(int i=0;i<cd->numIndentRainbowColors;i++) {
-        char *ir = XmTextGetString(cd->indentRainbowColors[i].textfield);
-        size_t ir_len = strlen(ir);
-        if(pos + ir_len + 2 >= alloc) {
-            alloc += 4 * ir_len;
-            str = NEditRealloc(str, alloc);
-        }
-        memcpy(str+pos, ir, ir_len);
-        pos += ir_len;
-        str[pos] = ';';
-        pos++;
-        XtFree(ir);
-    }
-    
-    if(pos > 0 && str[pos-1] == ';') {
-        str[pos-1] = '\0';
-    }
-    
-    SetPrefIndentRainbowColors(str);
-    NEditFree(str);
+    // indent rainbow
+    NEditFree(irStr);
+    // ansi
+    NEditFree(ansiBlack);
+    NEditFree(ansiRed);
+    NEditFree(ansiGreen);
+    NEditFree(ansiYellow);
+    NEditFree(ansiBlue);
+    NEditFree(ansiMagenta);
+    NEditFree(ansiCyan);
+    NEditFree(ansiWhite);
+    NEditFree(ansiBrightBlack);
+    NEditFree(ansiBrightRed);
+    NEditFree(ansiBrightGreen);
+    NEditFree(ansiBrightYellow);
+    NEditFree(ansiBrightBlue);
+    NEditFree(ansiBrightMagenta);
+    NEditFree(ansiBrightCyan);
+    NEditFree(ansiBrightWhite);
+    NEditFree(ansiColorList);
 }
 
 
