@@ -2392,12 +2392,10 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if(toX < fromX) return;
     
     XftColor *gc = &textD->fgPixel;
-    //XftColor *bgGC;
     NFont *fontList = textD->font;
     XftColor *bground = &textD->bgPixel;
     XftColor *fground = &textD->fgPixel;
     int underlineStyle = FALSE;
-       
     XftColor color = textD->fgColor;
     
     /* Don't draw if widget isn't realized */
@@ -2474,8 +2472,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if(ansi->fg > 0) {
         ansiFgToColorIndex(textD, ansi->fg, &color);
     }
-    if(ansi->bg > 0) {
-        ansiFgToColorIndex(textD, ansi->bg, &ansiBGColor);
+    if(ansi->bg > 0 && bground == &textD->bgPixel) {
+        ansiBgToColorIndex(textD, ansi->bg, &ansiBGColor);
         bground = &ansiBGColor;
     }
     
