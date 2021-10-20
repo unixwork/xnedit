@@ -187,8 +187,8 @@ static void textDRedisplayRange(textDisp *textD, int start, int end);
 static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style);
 static int parseEscapeSequence(textBuffer *buf, size_t pos, ansiStyle *style);
 static void extendAnsiStyle(ansiStyle *style, ansiStyle *ext);
-static int ansiFgToColorIndex(short fg);
-static int ansiBgToColorIndex(short fg);
+static void ansiFgToColorIndex(textDisp *textD, short fg, XftColor *color);
+static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color);
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
@@ -2470,8 +2470,14 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     }
      
     /* Set ANSI color */
-    if(ansi->fg > 0) color = textD->ansiColorList[ansiFgToColorIndex(ansi->fg)];
-    if(ansi->bg > 0) bground = &textD->ansiColorList[ansiBgToColorIndex(ansi->bg)];    
+    XftColor ansiBGColor;
+    if(ansi->fg > 0) {
+        ansiFgToColorIndex(textD, ansi->fg, &color);
+    }
+    if(ansi->bg > 0) {
+        ansiFgToColorIndex(textD, ansi->bg, &ansiBGColor);
+        bground = &ansiBGColor;
+    }
     
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
@@ -4542,18 +4548,22 @@ static void findActiveAnsiStyle(textDisp *textD, ssize_t pos, ansiStyle *style)
     }
 }
 
-static int ansiFgToColorIndex(short fg)
+static void ansiFgToColorIndex(textDisp *textD, short fg, XftColor *color)
 {
-    if(fg >= 30 && fg <= 37) return fg - 30;
-    if(fg >= 90 && fg <= 97) return fg - 90;
-    return 0;
+    if(fg >= 30 && fg <= 37) {
+        *color = textD->ansiColorList[fg-30];
+    } else if(fg >= 90 && fg <= 97) {
+        *color = textD->ansiColorList[fg-90];
+    }
 }
 
-static int ansiBgToColorIndex(short fg)
+static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color)
 {
-    if(fg >= 40 && fg <= 47) return fg - 30;
-    if(fg >= 100 && fg <= 107) return fg - 90;
-    return 0;
+     if(bg >= 40 && bg <= 47) {
+        *color = textD->ansiColorList[bg-40];
+    } else if(bg >= 100 && bg <= 107) {
+        *color = textD->ansiColorList[bg-100];
+    }
 }
 
 /* font list functions */
