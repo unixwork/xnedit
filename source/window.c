@@ -4020,6 +4020,11 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(LINENO_BG_COLOR),
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    XtVaSetValues(window->textArea,
+          textNansiColorList, window->ansiColorList, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
+    }
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -5127,7 +5132,8 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
             XtVaSetValues(text, XmNforeground, textD->fgPixel.pixel,
-                    XmNbackground, textD->bgPixel.pixel, NULL);
+                    XmNbackground, textD->bgPixel.pixel, 
+                    textNansiColorList, window->ansiColorList, NULL);
             TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
                     &textD->selectFGPixel, &textD->selectBGPixel,
                     &textD->highlightFGPixel, &textD->highlightBGPixel,
