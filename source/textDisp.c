@@ -2391,8 +2391,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
 {
     if(toX < fromX) return;
     
-    XftColor *gc;
-    XftColor *bgGC;
+    XftColor *gc = &textD->fgPixel;
+    //XftColor *bgGC;
     NFont *fontList = textD->font;
     XftColor *bground = &textD->bgPixel;
     XftColor *fground = &textD->fgPixel;
@@ -2408,23 +2408,21 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     
     /* select a GC */
     if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
-        gc = bgGC = &textD->styleGC;
+        gc = &textD->styleGC;
     }
     else if (style & HIGHLIGHT_MASK) {
-        gc = &textD->highlightFGPixel;
-        bgGC = &textD->highlightBGPixel;
+        bground = &textD->highlightBGPixel;
         color = textD->highlightFGColor;
     }
     else if (style & PRIMARY_MASK) {
-        gc = &textD->selectFGPixel;
-        bgGC = &textD->selectBGPixel;
+        bground = &textD->selectBGPixel;
         color = textD->selectFGColor;
     }
     else if (highlightLine && textD->highlightCursorLine) {
-        gc = bgGC = &textD->lineHighlightBGPixel;
+        bground = &textD->lineHighlightBGPixel;
     }
     else {
-        gc = bgGC = &textD->fgPixel; // textD->gc; // TODO: check
+        gc = &textD->fgPixel;
     }
 
     if (gc == &textD->styleGC) {
@@ -2467,12 +2465,12 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         /* set up gc for clearing using the foreground color entry */
         
         if((bground == &textD->bgPixel || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
-            bgGC = &textD->lineHighlightBGPixel;
+            bground = &textD->lineHighlightBGPixel;
         }
     }
      
     /* Set ANSI color */
-    if(ansi->fg > 0) color = textD->ansiColorList[ansiFgToColorIndex(ansi->fg)];    
+    if(ansi->fg > 0) color = textD->ansiColorList[ansiFgToColorIndex(ansi->fg)];
     if(ansi->bg > 0) bground = &textD->ansiColorList[ansiBgToColorIndex(ansi->bg)];    
     
     /* Always draw blank area, because Xft AA text rendering needs a clean
