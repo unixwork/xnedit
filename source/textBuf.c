@@ -2760,6 +2760,10 @@ void BufEnableAnsiEsc(textBuffer *buf)
     buf->ansi_escpos = NEditCalloc(ANSI_ESC_BLOCKSZ, sizeof(size_t));
     buf->alloc_ansi_escpos = ANSI_ESC_BLOCKSZ;
     buf->num_ansi_escpos = 0;
+    
+    if(buf->length > 0) {
+        BufParseEscSeq(buf, 0, buf->length, 0);
+    }
 }
 
 void BufDisableAnsiEsc(textBuffer *buf)
