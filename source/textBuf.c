@@ -2944,11 +2944,24 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
     } 
 }
 
+static int escCharLen(const textBuffer *buf, int pos)
+{
+    if(BufGetCharacter(buf, pos+1) != '[') return 1;
+    int i;
+    for(i=pos+2;;i++) {
+        char c = BufGetCharacter(buf, i);
+        if(c < '0' || (c > '9' && c != ';')) break;
+    }
+    i = i-pos+1;
+    return i; //+ BufCharLen(buf, i);
+}
 
 int BufCharLen(const textBuffer *buf, int pos)
 {
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
+    if(utf8[0] == '\e' && buf->ansi_escpos)
+        return escCharLen(buf, pos);
     return Utf8CharLen((unsigned char*)utf8);
 }
 

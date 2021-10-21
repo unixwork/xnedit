@@ -1547,9 +1547,20 @@ void TextDCursorLR(textDisp *textD, int *left, int *right)
         textD->cursorPosCache = pos;
         textD->cursorPosCacheLeft = BufLeftPos(buf, pos);
         textD->cursorPosCacheRight = BufRightPos(buf, pos);
+        if(textD->ansiColors || 1) {
+            while(BufGetCharacter(buf, textD->cursorPosCacheLeft) == '\e') {
+                textD->cursorPosCacheLeft = BufLeftPos(buf, textD->cursorPosCacheLeft);
+            }
+            while(BufGetCharacter(buf, pos) == '\e') {
+                textD->cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
+                pos = textD->cursorPosCacheRight;
+            }
+            textD->cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
+        }
     }
     *left = textD->cursorPosCacheLeft;
     *right = textD->cursorPosCacheRight;
+    
 }
 
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors)
@@ -1557,6 +1568,7 @@ void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors)
     textD->ansiColors = ansiColors;
     if(ansiColors) {
         BufEnableAnsiEsc(textD->buffer);
+        textD->cursorPosCache = -1;
     } else {
         BufDisableAnsiEsc(textD->buffer);
     }
