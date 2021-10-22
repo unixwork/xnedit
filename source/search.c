@@ -248,6 +248,16 @@ static void iSearchRecordLastBeginPos(WindowInfo *window, int direction,
 static Boolean prefOrUserCancelsSubst(const Widget parent,
         const Display* display);
 
+static int translateEscPos(EscSeqArray *array, int pos);
+static void translatePosAndRestoreBuf(
+        textBuffer *buf,
+        EscSeqArray *array,
+        int found,
+        int *begin,
+        int *end,
+        int *extentBW,
+        int *extentFW);
+
 typedef struct _charMatchTable {
     char c;
     char match;
@@ -4151,7 +4161,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
     	return FALSE;
 
     /* get the entire text buffer from the text area widget */
-    fileString = BufAsString(window->buffer);
+    EscSeqArray *esc;
+    fileString = BufAsStringCleaned(window->buffer, &esc);
 
     /* If we're already outside the boundaries, we must consider wrapping
        immediately (Note: fileEnd+1 is a valid starting position. Consider
@@ -4190,6 +4201,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 				"Continue search from\nbeginning of file?", 
                                 "Continue", "Cancel");
 			if (resp == 2) {
+                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
 			    return False;
 			}
 		    }
@@ -4204,6 +4216,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 				"Continue search\nfrom end of file?", "Continue",
 				"Cancel");
 			if (resp == 2) {
+                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
 			    return False;
 			}
 		    }
@@ -4212,6 +4225,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 			extentFW, GetWindowDelimiters(window));
 		}
 	    }
+            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+            esc = NULL;
             if (!found) {
 		if (GetPrefSearchDlogs()) {
 		    DialogF(DF_INF, window->shell, 1, "String not found",
@@ -4236,7 +4251,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 	} else
 	    XBell(TheDisplay, 0);
     }
-
+    
+    translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
     return found;
 }
 
@@ -5033,4 +5049,36 @@ static void iSearchCaseToggleCB(Widget w, XtPointer clientData, XtPointer callDa
     	window->iSearchLastRegexCase = searchCaseSense;
     else
 	window->iSearchLastLiteralCase = searchCaseSense;
+}
+
+
+static int translateEscPos(EscSeqArray *array, int pos)
+{
+    int p = pos;
+    for(size_t i=0;i<array->num_esc;i++) {
+        EscSeqStr e = array->esc[i];
+        if(e.off_trans < pos)
+            p += e.len;
+        else
+            break;
+    }
+    return p;
+}
+
+static void translatePosAndRestoreBuf(
+        textBuffer *buf,
+        EscSeqArray *array,
+        int found,
+        int *begin,
+        int *end,
+        int *extentBW,
+        int *extentFW)
+{
+    if(found && array) {
+        if(begin) *begin = translateEscPos(array, *begin);
+        if(end) *end = translateEscPos(array, *end);
+        if(extentBW) *extentBW = translateEscPos(array, *extentBW);
+        if(extentFW) *extentFW = translateEscPos(array, *extentFW);
+    }
+    BufReintegrateEscSeq(buf, array);
 }

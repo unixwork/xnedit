@@ -248,6 +248,106 @@ const char *BufAsString(textBuffer *buf)
     return text;
 }
 
+static int escCharLen(char *esc)
+{
+    if(esc[1] != '[') return 1;
+    int i;
+    for(i=2;;i++) {
+        char c = esc[i];
+        if(c < '0' || (c > '9' && c != ';')) break;
+    }
+    if(esc[i] == 'm') i++;
+    return i;
+}
+
+const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc)
+{
+    char *text = (char*)BufAsString(buf);
+    
+    size_t num_esc = buf->num_ansi_escpos;
+    if(num_esc == 0) {
+        *esc = NULL;
+        return text;
+    }
+    
+    EscSeqArray *array = NEditMalloc(sizeof(EscSeqArray));
+    array->esc = NEditCalloc(num_esc, sizeof(EscSeqStr));
+    array->num_esc = num_esc;
+    
+    char *movbegin = NULL;
+    EscSeqStr p;
+     
+    // add escape sequence to the array and remove them from the text
+    size_t off = 0;
+    size_t removed = 0;
+    for(size_t i=0;i<num_esc;i++) {
+        size_t esc_off = buf->ansi_escpos[i];
+        
+        EscSeqStr e;
+        e.seq = text + off + esc_off;
+        e.off_orig = off + esc_off;
+        e.off_trans = e.off_orig - removed;
+        e.len = escCharLen(e.seq);
+        removed += e.len;
+        
+        if(movbegin) {
+            char *movtext = p.seq + p.len;
+            size_t movlen = e.seq - movtext;
+            memmove(movbegin, movtext, movlen);
+            movbegin += movlen;
+        } else {
+            movbegin = e.seq;
+        }
+        
+        p = e;
+        
+        // duplicate e.seq text
+        char *seq_dup = NEditMalloc(e.len);
+        memcpy(seq_dup, e.seq, e.len);
+        e.seq = seq_dup;
+        array->esc[i] = e;
+        
+        off += esc_off;
+    }
+    if(movbegin) {
+        char *movtext = p.seq + p.len;
+        size_t movlen = text + buf->length - movtext;
+        memmove(movbegin, movtext, movlen);
+        movbegin[movlen] = '\0';
+    }
+    
+    for(int i=0;i<num_esc;i++) {
+        EscSeqStr e = array->esc[i];
+        char *s = text + e.off_trans;
+        char *x = s;
+    }
+    
+    array->text = text;
+    *esc = array;
+    return text;
+}
+
+void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq)
+{
+    if(!escseq) return;
+    char *text = escseq->text;
+    
+    size_t num_esc = escseq->num_esc;
+    size_t prev_off_trans = 0;
+    for(int i=num_esc-1;i>=0;i--) {
+        EscSeqStr e = escseq->esc[i];
+        size_t len = i==num_esc-1 ? buf->length - e.off_orig : prev_off_trans - e.off_trans;
+        char *from = text + e.off_trans;
+        char *to = text + e.off_orig + e.len; 
+        memmove(to, from, len);
+        memcpy(text + e.off_orig, e.seq, e.len);
+        NEditFree(e.seq);
+        prev_off_trans = e.off_trans;
+    }
+    NEditFree(escseq->esc);
+    NEditFree(escseq);
+}
+
 /*
 ** Replace the entire contents of the text buffer
 */
@@ -2944,7 +3044,7 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
     } 
 }
 
-static int escCharLen(const textBuffer *buf, int pos)
+static int bufEscCharLen(const textBuffer *buf, int pos)
 {
     if(BufGetCharacter(buf, pos+1) != '[') return 1;
     int i;
@@ -2961,7 +3061,7 @@ int BufCharLen(const textBuffer *buf, int pos)
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
     if(utf8[0] == '\e' && buf->ansi_escpos)
-        return escCharLen(buf, pos);
+        return bufEscCharLen(buf, pos);
     return Utf8CharLen((unsigned char*)utf8);
 }
 

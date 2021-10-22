@@ -89,11 +89,26 @@ typedef struct _textBuffer {
     size_t num_ansi_escpos;     /* number of ansi escape sequences */
 } textBuffer;
 
+typedef struct EscSeqStr {
+    char *seq;
+    size_t len;
+    size_t off_orig;
+    size_t off_trans;
+} EscSeqStr;
+
+typedef struct EscSeqArray {
+    EscSeqStr *esc;
+    size_t num_esc;
+    char *text;
+} EscSeqArray;
+
 textBuffer *BufCreate(void);
 textBuffer *BufCreatePreallocated(int requestedSize);
 void BufFree(textBuffer *buf);
 char *BufGetAll(textBuffer *buf);
 const char *BufAsString(textBuffer *buf);
+const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc);
+void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq);
 void BufSetAll(textBuffer *buf, const char *text);
 char* BufGetRange(const textBuffer* buf, int start, int end);
 char BufGetCharacter(const textBuffer* buf, int pos);
