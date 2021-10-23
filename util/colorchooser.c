@@ -68,6 +68,7 @@ static XftDraw* create_xft_draw(Widget w);
 static void selector_expose(Widget w, XtPointer u, XtPointer c);
 static void selector_input(Widget w, XtPointer u, XtPointer c);
 static void preview_color(Widget w, XtPointer u, XtPointer c);
+static void set_base_color(cgData *data, int r, int g, int b);
 static void select_color(cgData *data, int r, int g, int b);
 
 static void okCB(Widget w, XtPointer u, XtPointer c);
@@ -185,9 +186,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     select_color(&data, *red / 257, *green / 257, *blue / 257);
     
     // base color
-    data.base_red = 255;
-    data.base_green = 0;
-    data.base_blue = 0;
+    set_base_color(&data, (*red)/257, (*green)/257, (*blue)/257);
     
     // manage dialog
     XtManageChild(dialog);
@@ -582,6 +581,118 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         
         preview_color(data->preview, data, NULL);
     }
+}
+
+static float max3(float a, float b, float c) {
+    if(a > b) {
+        return a > c ? a : c;
+    } else {
+        return b > c ? b : c;
+    }
+}
+
+static float min3(float a, float b, float c) {
+    if(a < b) {
+        return a < c ? a : c;
+    } else {
+        return b < c ? b : c;
+    }
+}
+
+static void rgbToHsv(int red, int green, int blue, float *hue, float *saturation, float *value) {
+    float r = red;
+    float g = green;
+    float b = blue;
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    
+    float rgbMax = max3(r, g, b);
+    float rgbMin = min3(r, g, b);
+    
+    float mmDiff = rgbMax - rgbMin;
+    
+    float h;
+    if(rgbMax == rgbMin) {
+        h = 0;
+    } else if(rgbMax == r) {
+        h = 60.f * (g-b)/mmDiff;
+    } else if(rgbMax == g) {
+        h = 60.f * (2.f + (b-r)/mmDiff);
+    } else {
+        h = 60.f * (4.f + (r-g)/mmDiff);
+    }
+    if(h < 0) h += 360;
+    
+    float s = rgbMax == 0 ? 0 : mmDiff/rgbMax;
+    float v = rgbMax;
+    
+    *hue = h;
+    *saturation = s;
+    *value = v;
+}
+
+static void hsvToRgb(float hue, float saturation, float value, int *red, int *green, int *blue) {
+    int hi = hue/60;
+    float f = (hue/60) - hi;
+    float p = value * (1-saturation);
+    float q = value * (1-saturation * f);
+    float t = value * (1-saturation * (1-f));
+    
+    float r, g, b;
+    switch(hi) {
+        case 1: {
+            r = q;
+            g = value;
+            b = p;
+            break;
+        }
+        case 2: {
+            r = p;
+            g = value;
+            b = t;
+            break;
+        }
+        case 3: {
+            r = p;
+            g = q;
+            b = value;
+            break;
+        }
+        case 4: {
+            r = t;
+            g = p;
+            b = value;
+            break;
+        }
+        case 5: {
+            r = value;
+            g = p;
+            b = q;
+            break;  
+        }
+        default: {
+            r = value;
+            g = t;
+            b = p;
+        }
+    }
+    
+    *red = r * 255;
+    *green = g * 255;
+    *blue = b * 255;
+}
+
+static void set_base_color(cgData *data, int r, int g, int b) {
+    float h, s, v;
+    rgbToHsv(r, g, b, &h, &s, &v);
+    
+    int red, green, blue;
+    hsvToRgb(h, 1, 1, &red, &green, &blue);
+    
+    data->base_red = red;
+    data->base_green = green;
+    data->base_blue = blue;
 }
 
 static void select_color(cgData *data, int r, int g, int b) {
