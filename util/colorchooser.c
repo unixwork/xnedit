@@ -41,6 +41,7 @@ typedef struct {
     Widget textfield;
     Widget selector;
     GC gc;
+    GC selGC;
     XftDraw *d; // preview xft drawable
     
     uint8_t base_red;
@@ -60,6 +61,10 @@ typedef struct {
     Dimension img2_width;
     Dimension img2_height;
     
+    int has_selection;
+    Dimension img2_select_x;
+    Dimension img2_select_y;
+    
     int status;
     int end;
 } cgData;
@@ -68,8 +73,11 @@ static XftDraw* create_xft_draw(Widget w);
 static void selector_expose(Widget w, XtPointer u, XtPointer c);
 static void selector_input(Widget w, XtPointer u, XtPointer c);
 static void preview_color(Widget w, XtPointer u, XtPointer c);
+static void textfield_changed(Widget w, XtPointer u, XtPointer c);
 static void set_base_color(cgData *data, int r, int g, int b);
 static void select_color(cgData *data, int r, int g, int b);
+
+static void draw_img2(Display *dp, Window win, cgData *data);
 
 static void okCB(Widget w, XtPointer u, XtPointer c);
 static void cancelCB(Widget w, XtPointer u, XtPointer c);
@@ -115,6 +123,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     XtSetArg(args[n], XmNleftPosition, 33); n++;
     data.textfield = XmCreateTextField(form, "cgText", args, n);
     XtManageChild(data.textfield);
+    XtAddCallback(data.textfield, XmNactivateCallback, textfield_changed, &data);
     
     XtVaSetValues(data.preview, XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET, XmNbottomWidget, data.textfield, NULL);
     
@@ -182,6 +191,11 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     gcValues.graphics_exposures = 0;
     data.gc = XtAllocateGC(data.selector, 0, GCForeground | GCBackground, &gcValues, 0, 0);
     
+    gcValues.background = data.selector->core.background_pixel;
+    gcValues.foreground = WhitePixelOfScreen(DefaultScreenOfDisplay(XtDisplay(data.selector)));
+    gcValues.graphics_exposures = 0;
+    data.selGC = XtAllocateGC(data.selector, 0, GCForeground | GCBackground, &gcValues, 0, 0);
+    
     // initial color
     select_color(&data, *red / 257, *green / 257, *blue / 257);
     
@@ -199,6 +213,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     }
     
     XtReleaseGC(data.selector, data.gc);
+    XtReleaseGC(data.selector, data.selGC);
     if(data.image1) XDestroyImage(data.image1);
     if(data.image2) XDestroyImage(data.image2);
     if(data.d) XftDrawDestroy(data.d);
@@ -461,6 +476,20 @@ static void init_pix2(cgData *data, Widget w) {
 #define IMG2_X_OFFSET 10
 #define IMG2_Y_OFFSET 10
 
+static void draw_img2(Display *dp, Window win, cgData *data) {
+    int img2_x = IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET;
+    int img2_y = IMG2_Y_OFFSET;
+    XPutImage(dp, win, data->gc, data->image2, 0, 0, img2_x, img2_y, data->img2_width, data->img2_height);
+    if(data->has_selection) {
+        XDrawLine(dp, win, data->selGC,
+                img2_x, img2_y + data->img2_select_y,
+                img2_x + data->img2_width, img2_y + data->img2_select_y);
+        XDrawLine(dp, win, data->selGC,
+                img2_x + data->img2_select_x, img2_y,
+                img2_x + data->img2_select_x, img2_y + data->img2_height);
+    }
+}
+
 static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     cgData *data = u;
     Dimension width = w->core.width;
@@ -495,7 +524,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
         XPutImage(dp, win, data->gc, data->image1, 0, 0, IMG1_X_OFFSET, IMG1_Y_OFFSET, data->img1_width, data->img1_height);
     }
     if(data->image2) {
-        XPutImage(dp, win, data->gc, data->image2, 0, 0, IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET, IMG2_Y_OFFSET, data->img2_width, data->img2_height);
+        draw_img2(dp, win, data);
     }
     
     XDrawRectangle(dp, win, DefaultGC(dp, 0), 0, 0, width-1, height-1);
@@ -566,7 +595,9 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         XDestroyImage(data->image2);
         data->image2 = NULL;
         init_pix2(data, w);
-        XPutImage(dp, win, data->gc, data->image2, 0, 0, IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET, IMG2_Y_OFFSET, data->img2_width, data->img2_height);
+        
+        data->has_selection = 0;
+        draw_img2(dp, win, data);
     }
     if(translate_img2(data, x, y, &tx, &ty)) {
         uint32_t color = XGetPixel(data->image2, tx, ty);
@@ -574,12 +605,18 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         int green_shift = get_shift(data->image2->green_mask);
         int blue_shift = get_shift(data->image2->blue_mask);
         
+        data->img2_select_x = tx;
+        data->img2_select_y = ty;
+        data->has_selection = 1;
+        
         select_color(data,
                 (color & data->image2->red_mask) >> red_shift,
                 (color & data->image2->green_mask) >> green_shift,
                 (color & data->image2->blue_mask) >> blue_shift);
         
         preview_color(data->preview, data, NULL);
+        
+        draw_img2(dp, win, data);
     }
 }
 
@@ -717,6 +754,11 @@ static void preview_color(Widget w, XtPointer u, XtPointer c) {
     
     XftDrawRect(data->d, &data->selected_color, 0, 0, w->core.width, w->core.height);
     XDrawRectangle(XtDisplay(w), XtWindow(w), data->gc, 0, 0, w->core.width-1, w->core.height-1);
+}
+
+static void textfield_changed(Widget w, XtPointer u, XtPointer c) {
+    cgData *data = u;
+    
 }
 
 static void okCB(Widget w, XtPointer u, XtPointer c) {
