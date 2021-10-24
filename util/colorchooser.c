@@ -65,6 +65,8 @@ typedef struct {
     Dimension img2_select_x;
     Dimension img2_select_y;
     
+    int parse_textfield_input;
+    
     int status;
     int end;
 } cgData;
@@ -123,7 +125,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     XtSetArg(args[n], XmNleftPosition, 33); n++;
     data.textfield = XmCreateTextField(form, "cgText", args, n);
     XtManageChild(data.textfield);
-    XtAddCallback(data.textfield, XmNactivateCallback, textfield_changed, &data);
+    XtAddCallback(data.textfield, XmNvalueChangedCallback, textfield_changed, &data);
     
     XtVaSetValues(data.preview, XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET, XmNbottomWidget, data.textfield, NULL);
     
@@ -204,6 +206,8 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     
     // manage dialog
     XtManageChild(dialog);
+    
+    data.parse_textfield_input = 1;
     
     XtAppContext app = XtWidgetToApplicationContext(dialog);
     while(!data.end && !XtAppGetExitFlag(app)) {
@@ -743,7 +747,9 @@ static void select_color(cgData *data, int r, int g, int b) {
     
     char buf[8];
     snprintf(buf, 8, "#%02x%02x%02x", r, g, b);
+    data->parse_textfield_input = 0;
     XmTextFieldSetString(data->textfield, buf);
+    data->parse_textfield_input = 1;
 }
 
 static void preview_color(Widget w, XtPointer u, XtPointer c) {
@@ -758,7 +764,38 @@ static void preview_color(Widget w, XtPointer u, XtPointer c) {
 
 static void textfield_changed(Widget w, XtPointer u, XtPointer c) {
     cgData *data = u;
+    if(!data->parse_textfield_input) return;
     
+    char *colorStr = XmTextFieldGetString(w);
+    if(strlen(colorStr) != 7) {
+        XtFree(colorStr);
+        return;
+    }
+    
+    Display *dp = XtDisplay(w);
+    Colormap cmap = w->core.colormap;
+    XColor color;
+    if(XParseColor(dp, cmap, colorStr, &color)) {
+        XftColor c;
+        c.pixel = 0;
+        c.color.alpha = 0xFFFF;
+        c.color.red = color.red;
+        c.color.green = color.green;
+        c.color.blue = color.blue;
+        data->selected_color = c;
+        
+        set_base_color(data, color.red/257, color.green/257, color.blue/257);
+        
+        XDestroyImage(data->image2);
+        data->image2 = NULL;
+        init_pix2(data, w);
+        
+        data->has_selection = 0;
+        
+        selector_expose(data->selector, data, NULL);
+        preview_color(data->preview, data, NULL);
+    }
+    XtFree(colorStr);
 }
 
 static void okCB(Widget w, XtPointer u, XtPointer c) {
