@@ -498,6 +498,8 @@ static void draw_img2(Display *dp, Window win, cgData *data) {
     }
 }
 
+#define HUE_INDICATOR_SIZE 9
+
 static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     cgData *data = u;
     Dimension width = w->core.width;
@@ -523,11 +525,11 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
         indicator[0].x = IMG1_X_OFFSET-1;
         indicator[0].y = IMG1_Y_OFFSET + data->base_sel_y;
         
-        indicator[1].x = IMG1_X_OFFSET-10;
-        indicator[1].y = IMG1_Y_OFFSET + data->base_sel_y - 9;
+        indicator[1].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
+        indicator[1].y = IMG1_Y_OFFSET + data->base_sel_y - HUE_INDICATOR_SIZE;
         
-        indicator[2].x = IMG1_X_OFFSET-10;
-        indicator[2].y = IMG1_Y_OFFSET + data->base_sel_y + 9;
+        indicator[2].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
+        indicator[2].y = IMG1_Y_OFFSET + data->base_sel_y + HUE_INDICATOR_SIZE;
         
         indicator[3].x = IMG1_X_OFFSET-1;
         indicator[3].y = IMG1_Y_OFFSET + data->base_sel_y;
@@ -559,7 +561,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
 
 #define SELECT_MARGIN 5
 static int translate_img1(cgData *data, int x, int y, int *trans_x, int *trans_y) {
-    if(x < IMG1_X_OFFSET) return 0;
+    if(x < IMG1_X_OFFSET - HUE_INDICATOR_SIZE) return 0;
     if(y < IMG1_Y_OFFSET) return 0;
     
     int tx = x - IMG1_X_OFFSET;
