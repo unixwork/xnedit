@@ -48,6 +48,8 @@ typedef struct {
     uint8_t base_green;
     uint8_t base_blue;
     
+    int base_sel_y;
+    
     uint8_t selected_red;
     uint8_t selected_green;
     uint8_t selected_blue;
@@ -91,6 +93,8 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     
     cgData data;
     memset(&data, 0, sizeof(data));
+    
+    data.base_sel_y = -1;
     
     n = 0;
     XtSetArg(args[n], XmNautoUnmanage, False); n++;
@@ -514,6 +518,24 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
             width-2, height - IMG1_Y_OFFSET + data->img1_height - 2, False);
     // left
     XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-1, height-2, False);
+    if(data->base_sel_y >= 0) {
+        XPoint indicator[4];
+        indicator[0].x = IMG1_X_OFFSET-1;
+        indicator[0].y = IMG1_Y_OFFSET + data->base_sel_y;
+        
+        indicator[1].x = IMG1_X_OFFSET-10;
+        indicator[1].y = IMG1_Y_OFFSET + data->base_sel_y - 9;
+        
+        indicator[2].x = IMG1_X_OFFSET-10;
+        indicator[2].y = IMG1_Y_OFFSET + data->base_sel_y + 9;
+        
+        indicator[3].x = IMG1_X_OFFSET-1;
+        indicator[3].y = IMG1_Y_OFFSET + data->base_sel_y;
+        
+        
+        XFillPolygon(dp, win, data->gc, indicator, 4, Convex, CoordModeOrigin);
+    }
+    
     // right
     XClearArea(XtDisplay(w), XtWindow(w),
             IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, 1,
@@ -596,12 +618,14 @@ static void selector_input(Widget w, XtPointer u, XtPointer c) {
         data->base_green = (color & data->image1->green_mask) >> green_shift;
         data->base_blue = (color & data->image1->blue_mask) >> blue_shift;
         
+        data->base_sel_y = ty;
+        
         XDestroyImage(data->image2);
         data->image2 = NULL;
         init_pix2(data, w);
         
         data->has_selection = 0;
-        draw_img2(dp, win, data);
+        selector_expose(w, u, NULL);
     }
     if(translate_img2(data, x, y, &tx, &ty)) {
         uint32_t color = XGetPixel(data->image2, tx, ty);
