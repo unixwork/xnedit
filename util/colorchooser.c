@@ -547,7 +547,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     // right
     XClearArea(XtDisplay(w), XtWindow(w),
             IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, 1,
-            width - 1 - IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET + data->img2_width, height-2, False);
+            width - 1 - IMG1_X_OFFSET - data->img1_width - IMG2_X_OFFSET - data->img2_width, height-2, False);
     // middle
     XClearArea(XtDisplay(w), XtWindow(w),
             IMG1_X_OFFSET + data->img1_width, 1,
