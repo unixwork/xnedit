@@ -49,6 +49,7 @@ typedef struct {
     uint8_t base_blue;
     
     int base_sel_y;
+    float hue;
     
     uint8_t selected_red;
     uint8_t selected_green;
@@ -510,6 +511,12 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     init_pix1(data, w);
     init_pix2(data, w);
     
+    if(data->base_sel_y < 0) {
+        float img1h = data->img1_height;
+        float deg2pix = img1h / 360.f;
+        data->base_sel_y = data->hue * deg2pix;
+    }
+    
     // clear all
     
     // top
@@ -520,23 +527,22 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
             width-2, height - IMG1_Y_OFFSET - data->img1_height - 2, False);
     // left
     XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-1, height-2, False);
-    if(data->base_sel_y >= 0) {
-        XPoint indicator[4];
-        indicator[0].x = IMG1_X_OFFSET-1;
-        indicator[0].y = IMG1_Y_OFFSET + data->base_sel_y;
-        
-        indicator[1].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
-        indicator[1].y = IMG1_Y_OFFSET + data->base_sel_y - HUE_INDICATOR_SIZE;
-        
-        indicator[2].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
-        indicator[2].y = IMG1_Y_OFFSET + data->base_sel_y + HUE_INDICATOR_SIZE;
-        
-        indicator[3].x = IMG1_X_OFFSET-1;
-        indicator[3].y = IMG1_Y_OFFSET + data->base_sel_y;
-        
-        
-        XFillPolygon(dp, win, data->gc, indicator, 4, Convex, CoordModeOrigin);
-    }
+
+    XPoint indicator[4];
+    indicator[0].x = IMG1_X_OFFSET-1;
+    indicator[0].y = IMG1_Y_OFFSET + data->base_sel_y;
+
+    indicator[1].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
+    indicator[1].y = IMG1_Y_OFFSET + data->base_sel_y - HUE_INDICATOR_SIZE;
+
+    indicator[2].x = IMG1_X_OFFSET-HUE_INDICATOR_SIZE - 1;
+    indicator[2].y = IMG1_Y_OFFSET + data->base_sel_y + HUE_INDICATOR_SIZE;
+
+    indicator[3].x = IMG1_X_OFFSET-1;
+    indicator[3].y = IMG1_Y_OFFSET + data->base_sel_y;
+
+
+    XFillPolygon(dp, win, data->gc, indicator, 4, Convex, CoordModeOrigin);
     
     // right
     XClearArea(XtDisplay(w), XtWindow(w),
@@ -760,6 +766,8 @@ static void set_base_color(cgData *data, int r, int g, int b) {
     data->base_red = red;
     data->base_green = green;
     data->base_blue = blue;
+    data->hue = h;
+    data->base_sel_y = -1;
 }
 
 static void select_color(cgData *data, int r, int g, int b) {
