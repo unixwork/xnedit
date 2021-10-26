@@ -517,7 +517,7 @@ static void selector_expose(Widget w, XtPointer u, XtPointer c) {
     // bottom
     XClearArea(XtDisplay(w), XtWindow(w),
             1, IMG1_Y_OFFSET + data->img1_height,
-            width-2, height - IMG1_Y_OFFSET + data->img1_height - 2, False);
+            width-2, height - IMG1_Y_OFFSET - data->img1_height - 2, False);
     // left
     XClearArea(XtDisplay(w), XtWindow(w), 1, 1, IMG1_X_OFFSET-1, height-2, False);
     if(data->base_sel_y >= 0) {
