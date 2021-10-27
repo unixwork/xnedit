@@ -193,7 +193,8 @@ static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color);
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        NFont *font, Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
+        NFont *font, NFont *bold, NFont *italic, NFont *boldItalic,
+        Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
         Pixel selectBGPixel, Pixel highlightFGPixel, Pixel highlightBGPixel,
         Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
@@ -238,6 +239,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->hScrollBar = hScrollBar;
     textD->vScrollBar = vScrollBar;
     textD->font = FontRef(font);
+    textD->boldFont = FontRef(bold);
+    textD->italicFont = FontRef(italic);
+    textD->boldItalicFont = FontRef(boldItalic);
     textD->ascent = xftFont->ascent;
     textD->descent = xftFont->descent;
     /* TODO: think about renabling textD->fixedFontWidth */
@@ -2488,7 +2492,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         ansiBgToColorIndex(textD, ansi->bg, &ansiBGColor);
         bground = &ansiBGColor;
     }
-    
+
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
        

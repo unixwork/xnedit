@@ -2333,9 +2333,17 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     if (primaryChanged) {
         //font = GetDefaultFontStruct(TheDisplay, window->fontList);
         font = window->font;
-        XtVaSetValues(window->textArea, textNXftFont, font, NULL);
+        XtVaSetValues(window->textArea,
+                textNXftFont, font,
+                textNXftBoldFont, window->boldFont,
+                textNXftItalicFont, window->italicFont,
+                textNXftBoldItalicFont, window->boldItalicFont, NULL);
         for (i=0; i<window->nPanes; i++) {
-            XtVaSetValues(window->textPanes[i], textNXftFont, font, NULL);
+            XtVaSetValues(window->textPanes[i],
+                textNXftFont, font,
+                textNXftBoldFont, window->boldFont,
+                textNXftItalicFont, window->italicFont,
+                textNXftBoldItalicFont, window->boldItalicFont, NULL);
         }
     }
     
@@ -2766,6 +2774,9 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
             textNXftFont, window->font,
+            textNXftBoldFont, window->boldFont,
+            textNXftItalicFont, window->italicFont,
+            textNXftBoldItalicFont, window->boldItalicFont,
             textNhScrollBar, hScrollBar, textNvScrollBar, vScrollBar,
             textNreadOnly, IS_ANY_LOCKED(window->lockReasons),
             textNwordDelimiters, delimiters,
