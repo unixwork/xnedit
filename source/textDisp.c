@@ -561,6 +561,24 @@ void TextDSetFont(textDisp *textD, NFont *font)
     redrawLineNumbers(textD, textD->top, textD->height, True);
 }
 
+void TextDSetBoldFont(textDisp *textD, NFont *boldFont)
+{
+    FontUnref(textD->boldFont);
+    textD->boldFont = FontRef(boldFont);
+}
+
+void TextDSetItalicFont(textDisp *textD, NFont *italicFont)
+{
+    FontUnref(textD->italicFont);
+    textD->italicFont = FontRef(italicFont);
+}
+
+void TextDSetBoldItalicFont(textDisp *textD, NFont *boldItalicFont)
+{
+    FontUnref(textD->boldItalicFont);
+    textD->boldItalicFont = FontRef(boldItalicFont);
+}
+
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 {
     int fontWidth = FontDefault(textD->font)->max_advance_width;
@@ -2492,6 +2510,16 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         ansiBgToColorIndex(textD, ansi->bg, &ansiBGColor);
         bground = &ansiBGColor;
     }
+    if(ansi->bold > 0 || ansi->italic > 0) {
+        if(ansi->bold == ansi->italic) {
+            fontList = textD->boldItalicFont;
+        } else if(ansi->bold == 1) {
+            fontList = textD->boldFont;
+        } else {
+            fontList = textD->italicFont;
+        }
+    }
+    
 
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */

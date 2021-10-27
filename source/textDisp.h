@@ -240,6 +240,9 @@ void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
         XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
         XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
+void TextDSetBoldFont(textDisp *textD, NFont *boldFont);
+void TextDSetItalicFont(textDisp *textD, NFont *boldFont);
+void TextDSetBoldItalicFont(textDisp *textD, NFont *boldFont);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);

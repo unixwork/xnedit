@@ -1198,6 +1198,15 @@ static Boolean setValues(TextWidget current, TextWidget request,
     	    TextDSetCursorStyle(current->text.textD, BLOCK_CURSOR);
     }
     
+    if (new->text.boldFont != current->text.boldFont) {
+        TextDSetBoldFont(new->text.textD, new->text.boldFont);
+    }
+    if (new->text.italicFont != current->text.italicFont) {
+        TextDSetItalicFont(new->text.textD, new->text.italicFont);
+    }
+    if (new->text.boldItalicFont != current->text.boldItalicFont) {
+        TextDSetBoldItalicFont(new->text.textD, new->text.boldItalicFont);
+    }
     if (new->text.font2 != current->text.font2) {
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
