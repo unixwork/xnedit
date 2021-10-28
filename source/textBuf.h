@@ -84,13 +84,31 @@ typedef struct _textBuffer {
 				   use it */
     RangesetTable *rangesetTable;
 				/* current range sets */
+    size_t *ansi_escpos;        /* indices of all ansi escape positions */
+    size_t alloc_ansi_escpos;   /* ansi_escpos allocation size */
+    size_t num_ansi_escpos;     /* number of ansi escape sequences */
 } textBuffer;
+
+typedef struct EscSeqStr {
+    char *seq;
+    size_t len;
+    size_t off_orig;
+    size_t off_trans;
+} EscSeqStr;
+
+typedef struct EscSeqArray {
+    EscSeqStr *esc;
+    size_t num_esc;
+    char *text;
+} EscSeqArray;
 
 textBuffer *BufCreate(void);
 textBuffer *BufCreatePreallocated(int requestedSize);
 void BufFree(textBuffer *buf);
 char *BufGetAll(textBuffer *buf);
 const char *BufAsString(textBuffer *buf);
+const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc);
+void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq);
 void BufSetAll(textBuffer *buf, const char *text);
 char* BufGetRange(const textBuffer* buf, int start, int end);
 char BufGetCharacter(const textBuffer* buf, int pos);
@@ -175,6 +193,17 @@ int BufSearchBackward(textBuffer *buf, int startPos, const char *searchChars,
 int BufSubstituteNullChars(char *string, int length, textBuffer *buf);
 void BufUnsubstituteNullChars(char *string, textBuffer *buf);
 int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText);
+
+void BufEnableAnsiEsc(textBuffer *buf);
+void BufDisableAnsiEsc(textBuffer *buf);
+void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted);
+int BufEscPos2Index(
+        const textBuffer *buf,
+        size_t startIndex,
+        size_t startValue,
+        size_t pos,
+        ssize_t *index,
+        size_t *value);
 
 int BufCharLen(const textBuffer *buf, int pos);
 int BufLeftPos(textBuffer *buf, int pos);

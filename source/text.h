@@ -32,12 +32,19 @@
 #include <X11/Intrinsic.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <Xft/Xft.h>
 
 /* Resource strings */
 //define textNfont "font"
 //define textCFont "Font"
 #define textNXftFont "XftFont"
 #define textCXftFont "XftFont"
+#define textNXftBoldFont "XftBoldFont"
+#define textCXftBoldFont "XftBoldFont"
+#define textNXftItalicFont "XftItalicFont"
+#define textCXftItalicFont "XftItalicFont"
+#define textNXftBoldItalicFont "XftBoldItalicFont"
+#define textCXftBoldItalicFont "XftBoldItalicFont"
 #define textTXftFont "TextXftFont"
 #define textNrows "rows"
 #define textCRows "Rows"
@@ -125,6 +132,10 @@
 #define textCindentRainbowColors "indentRainbowColors"
 #define textNhighlightCursorLine "highlightCursorLine"
 #define textChighlightCursorLine "highlightCursorLine"
+#define textNansiColors "ansiColors"
+#define textCansiColors "ansiColors"
+#define textNansiColorList "ansiColorList"
+#define textCansiColorList "ansiColorList"
 
 
 extern WidgetClass textWidgetClass;
@@ -182,6 +193,8 @@ char *TextGetWrapped(Widget w, int startPos, int endPos, int *length);
 XtActionsRec *TextGetActions(int *nActions);
 void ShowHidePointer(TextWidget w, Boolean hidePointer);
 void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked);
+XftColor TextGetFGColor(Widget w);
+XftColor TextGetBGColor(Widget w);
 
 /* void TextPrintXIMError(void); */
 

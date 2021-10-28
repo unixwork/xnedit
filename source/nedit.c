@@ -210,6 +210,8 @@ static char *fallbackResources[] = {
     
     "*pbbutton.shadowThickness: 1",
     "*pbbutton.highlightThickness: 1",
+    
+    "*tabButton.shadowThickness: 1",
        
     "*XmContainer.outlineIndentation:	30",
     "*XmContainer.outlineColumnWidth:	6cm",

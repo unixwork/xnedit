@@ -61,6 +61,9 @@ typedef struct _TextPart {
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
     Pixel cursorFGPixel, lineNumFGPixel, lineNumBGPixel, calltipFGPixel, calltipBGPixel, lineHighlightBGPixel;
     NFont *font2;
+    NFont *boldFont;
+    NFont *italicFont;
+    NFont *boldItalicFont;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;
     Boolean autoWrap;
@@ -133,6 +136,9 @@ typedef struct _TextPart {
     
     Boolean indentRainbow;              /* indent rainbow enabled? */
     char *indentRainbowColors;          /* rainbow color list */
+    
+    Boolean ansiColors;
+    XftColor *ansiColorList;
     
     XIM xim;
     XIC xic;

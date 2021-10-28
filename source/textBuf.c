@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <limits.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -46,6 +48,8 @@
 #define PREFERRED_GAP_SIZE 80	/* Initial size for the buffer gap (empty space
                                    in the buffer where text might be inserted
                                    if the user is typing sequential chars) */
+
+#define ANSI_ESC_BLOCKSZ 32
 
 static void histogramCharacters(const char *string, int length, char hist[256],
 	int init);
@@ -174,6 +178,9 @@ textBuffer *BufCreatePreallocated(int requestedSize)
     {int i; for (i=buf->gapStart; i<buf->gapEnd; i++) buf->buf[i] = '.';}
 #endif
     buf->rangesetTable = NULL;
+    buf->ansi_escpos = NULL;
+    buf->alloc_ansi_escpos = 0;
+    buf->num_ansi_escpos = 0;
     return buf;
 }
 
@@ -239,6 +246,106 @@ const char *BufAsString(textBuffer *buf)
     text[bufLen] = 0;
 
     return text;
+}
+
+static int escCharLen(char *esc)
+{
+    if(esc[1] != '[') return 1;
+    int i;
+    for(i=2;;i++) {
+        char c = esc[i];
+        if(c < '0' || (c > '9' && c != ';')) break;
+    }
+    if(esc[i] == 'm') i++;
+    return i;
+}
+
+const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc)
+{
+    char *text = (char*)BufAsString(buf);
+    
+    size_t num_esc = buf->num_ansi_escpos;
+    if(num_esc == 0) {
+        *esc = NULL;
+        return text;
+    }
+    
+    EscSeqArray *array = NEditMalloc(sizeof(EscSeqArray));
+    array->esc = NEditCalloc(num_esc, sizeof(EscSeqStr));
+    array->num_esc = num_esc;
+    
+    char *movbegin = NULL;
+    EscSeqStr p;
+     
+    // add escape sequence to the array and remove them from the text
+    size_t off = 0;
+    size_t removed = 0;
+    for(size_t i=0;i<num_esc;i++) {
+        size_t esc_off = buf->ansi_escpos[i];
+        
+        EscSeqStr e;
+        e.seq = text + off + esc_off;
+        e.off_orig = off + esc_off;
+        e.off_trans = e.off_orig - removed;
+        e.len = escCharLen(e.seq);
+        removed += e.len;
+        
+        if(movbegin) {
+            char *movtext = p.seq + p.len;
+            size_t movlen = e.seq - movtext;
+            memmove(movbegin, movtext, movlen);
+            movbegin += movlen;
+        } else {
+            movbegin = e.seq;
+        }
+        
+        p = e;
+        
+        // duplicate e.seq text
+        char *seq_dup = NEditMalloc(e.len);
+        memcpy(seq_dup, e.seq, e.len);
+        e.seq = seq_dup;
+        array->esc[i] = e;
+        
+        off += esc_off;
+    }
+    if(movbegin) {
+        char *movtext = p.seq + p.len;
+        size_t movlen = text + buf->length - movtext;
+        memmove(movbegin, movtext, movlen);
+        movbegin[movlen] = '\0';
+    }
+    
+    for(int i=0;i<num_esc;i++) {
+        EscSeqStr e = array->esc[i];
+        char *s = text + e.off_trans;
+        char *x = s;
+    }
+    
+    array->text = text;
+    *esc = array;
+    return text;
+}
+
+void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq)
+{
+    if(!escseq) return;
+    char *text = escseq->text;
+    
+    size_t num_esc = escseq->num_esc;
+    size_t prev_off_trans = 0;
+    for(int i=num_esc-1;i>=0;i--) {
+        EscSeqStr e = escseq->esc[i];
+        size_t len = i==num_esc-1 ? buf->length - e.off_orig : prev_off_trans - e.off_trans;
+        char *from = text + e.off_trans;
+        char *to = text + e.off_orig + e.len; 
+        memmove(to, from, len);
+        memcpy(text + e.off_orig, e.seq, e.len);
+        NEditFree(e.seq);
+        prev_off_trans = e.off_trans;
+    }
+    NEditFree(escseq->esc);
+    NEditFree(escseq);
 }
 
 /*
@@ -2746,10 +2853,215 @@ static char *unexpandTabs(const char *text, int startIndent, int tabDist,
     return outStr;
 }
 
+void BufEnableAnsiEsc(textBuffer *buf)
+{
+    if(buf->ansi_escpos) return;
+    
+    buf->ansi_escpos = NEditCalloc(ANSI_ESC_BLOCKSZ, sizeof(size_t));
+    buf->alloc_ansi_escpos = ANSI_ESC_BLOCKSZ;
+    buf->num_ansi_escpos = 0;
+    
+    if(buf->length > 0) {
+        BufParseEscSeq(buf, 0, buf->length, 0);
+    }
+}
+
+void BufDisableAnsiEsc(textBuffer *buf)
+{
+    NEditFree(buf->ansi_escpos);
+    buf->ansi_escpos = NULL;
+    buf->alloc_ansi_escpos = 0;
+    buf->num_ansi_escpos = 0;
+}
+
+int BufEscPos2Index(
+        const textBuffer *buf,
+        size_t startIndex,
+        size_t startValue,
+        size_t pos,
+        ssize_t *index,
+        size_t *value)
+{
+    size_t num_escpos = buf->num_ansi_escpos;
+    
+    if(num_escpos == 0 || pos == 0) {
+        *index = -1;
+        *value = 0;
+        return 1;
+    }
+    
+    ssize_t prev_index = -1;
+    size_t sum = 0;
+    size_t prev_sum = 0;
+    size_t i;
+    for(i=startIndex;i<num_escpos;i++) {
+        sum += buf->ansi_escpos[i];
+        if(sum >= pos) {
+            break;
+        }
+        prev_sum = sum;
+        prev_index = i;
+    }
+    *index = prev_index;
+    *value = prev_sum;
+    
+    
+    //printf("%zu -> %zu, %zu\n", pos, *index, *value);
+    
+    return 0;
+}
+
+/*
+ * Adds a textBuffer position to the array of escape sequence positions.
+ * ansi_escpos will still be sorted after this call 
+ */
+static void bufAddEscPos(textBuffer *buf, size_t insert, size_t pos)
+{
+    size_t *escpos = buf->ansi_escpos;
+    size_t num_escpos = buf->num_ansi_escpos;
+    
+    // check array size and realloc buffer if necessary
+    if(insert >= buf->alloc_ansi_escpos) {
+        buf->alloc_ansi_escpos += ANSI_ESC_BLOCKSZ;
+        buf->ansi_escpos = NEditRealloc(escpos, buf->alloc_ansi_escpos * sizeof(size_t));
+        escpos = buf->ansi_escpos;
+    }
+    
+    // if we insert an element in the middle, we have to move some bytes to the right
+    if(insert < num_escpos) {
+        memmove(escpos+insert+1, escpos+insert, (num_escpos-insert)*sizeof(size_t));
+    }
+    
+    escpos[insert] = pos;
+    num_escpos++;
+    buf->num_ansi_escpos = num_escpos;
+}
+
+static void bufRemoveEscPos(textBuffer *buf, size_t start, size_t nDelete)
+{
+    size_t delEnd = start + nDelete;
+    if(delEnd < buf->num_ansi_escpos)  {
+        // remove elements in the middle --> move from right to left
+        size_t *escpos = buf->ansi_escpos;
+        memmove(escpos + start, escpos + delEnd, (buf->num_ansi_escpos - delEnd)*sizeof(size_t));
+    } // else: remove last elements
+    buf->num_ansi_escpos -= nDelete;
+}
+
+static void bufRemoveEscSeq(textBuffer *buf, size_t pos, size_t nDeleted, ssize_t startPos, size_t startValue)
+{
+    size_t nDeleteEsc = 0;                      // number of deleted esc
+    size_t num_escpos = buf->num_ansi_escpos;   // array length
+    size_t prev_pos = startValue;                        // abs position of esc before delete
+    size_t cur_pos = startValue;
+    size_t i;
+    for(i=startPos+1;i<num_escpos;i++) {
+        cur_pos += buf->ansi_escpos[i];
+        //if(cur_pos < pos) {
+        //    prev_pos = cur_pos;
+        //}
+        if(cur_pos >= pos+nDeleted) {
+            break;
+        }
+        nDeleteEsc++;
+    }
+    
+    if(nDeleteEsc > 0) {
+        if(i < buf->num_ansi_escpos) {
+            // cur_pos    absolute position of next esc seq
+            // prev_pos   absolute position of prev esc seq
+            cur_pos -= nDeleted; // calculate new abs position of next esc seq
+            buf->ansi_escpos[i] = cur_pos - prev_pos;
+        }
+        
+        bufRemoveEscPos(buf, startPos+1, nDeleteEsc);
+    } else {
+        // only normal text removed, we can just adjust the esc offset
+        if(i < buf->num_ansi_escpos) {
+            buf->ansi_escpos[i] -= nDeleted;
+        }
+    }
+}
+
+void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted)
+{
+    /*
+    if(nInserted + nDeleted == 0) {
+        size_t p = 0;
+        for(int i=0;i<buf->num_ansi_escpos;i++) {
+            int ap = buf->ansi_escpos[i];
+            unsigned int c = BufGetCharacter(buf, p+ap);
+            printf("%zu-%d : %x\n", p+ap, ap, c);
+            p += ap;
+        }
+        printf("\n");
+        return;
+    }
+    //*/
+    
+    // get previous element
+    ssize_t startPos;   // index to previous escape sequence
+    size_t startValue;  // abs position of previous esc
+    size_t insertPos;   // insert new escape sequence here
+    BufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
+    insertPos = startPos + 1;
+    
+    // handle deletee
+    if(nDeleted > 0) {
+        bufRemoveEscSeq(buf, pos, nDeleted, startPos, startValue);
+    }
+    
+    // check if the inserted text contains escape sequences
+    int set_offset = 0;        // abs position of last added esc seq
+    if(nInserted) {
+        char *range = BufGetRange(buf, pos, pos+nInserted); // inserted text
+        size_t prevEsc = startValue; // abs position of previous esc seq
+        for(size_t i=0;i<nInserted;i++) {
+            if(range[i] == 0x1b) {
+                // Escape found
+                
+                size_t newEscAbs = pos + i; // absolute position of new esc seq
+                bufAddEscPos(buf, insertPos, newEscAbs - prevEsc); // save offset to previous esc
+                prevEsc = pos + i;
+                insertPos++;
+                set_offset = prevEsc;
+            }
+        }
+        NEditFree(range);
+    }
+    
+    // adjust next esc element 
+    if(insertPos < buf->num_ansi_escpos) {
+        // set_offset > 0   --> new esc added
+        if(set_offset > 0) {
+            size_t next_abs = startValue + buf->ansi_escpos[insertPos] + nInserted;
+            buf->ansi_escpos[insertPos] = next_abs - set_offset;
+        } else {
+            // only normal text added
+            buf->ansi_escpos[insertPos] += nInserted;
+        }
+        
+    } 
+}
+
+static int bufEscCharLen(const textBuffer *buf, int pos)
+{
+    if(BufGetCharacter(buf, pos+1) != '[') return 1;
+    int i;
+    for(i=pos+2;;i++) {
+        char c = BufGetCharacter(buf, i);
+        if(c < '0' || (c > '9' && c != ';')) break;
+    }
+    i = i-pos+1;
+    return i; //+ BufCharLen(buf, i);
+}
+
 int BufCharLen(const textBuffer *buf, int pos)
 {
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
+    if(utf8[0] == '\e' && buf->ansi_escpos)
+        return bufEscCharLen(buf, pos);
     return Utf8CharLen((unsigned char*)utf8);
 }
 

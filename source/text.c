@@ -258,6 +258,8 @@ static int min(int i1, int i2);
 static int strCaseCmp(const char *str1, const char *str2);
 static void ringIfNecessary(Boolean silent, Widget w);
 
+static XftColor defaultAnsiColors[16];
+
 static char defaultTranslations[] = 
     /* Home */
     "~Shift ~Ctrl Alt<Key>osfBeginLine: last_document()\n"
@@ -648,6 +650,12 @@ static XtResource resources[] = {
       XtOffset(TextWidget, primitive.shadow_thickness), XmRInt, 0},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *),
       XtOffset(TextWidget, text.font2), textTXftFont, &defaultFont},
+    {textNXftBoldFont, textCXftBoldFont, textTXftFont, sizeof(NFont *),
+      XtOffset(TextWidget, text.boldFont), textTXftFont, &defaultFont},
+    {textNXftItalicFont, textCXftItalicFont, textTXftFont, sizeof(NFont *),
+      XtOffset(TextWidget, text.italicFont), textTXftFont, &defaultFont},
+    {textNXftBoldItalicFont, textCXftBoldItalicFont, textTXftFont, sizeof(NFont *),
+      XtOffset(TextWidget, text.boldItalicFont), textTXftFont, &defaultFont},
     {textNselectForeground, textCSelectForeground, XmRPixel, sizeof(Pixel),
       XtOffset(TextWidget, text.selectFGPixel), XmRString, 
       NEDIT_DEFAULT_SEL_FG},
@@ -678,6 +686,10 @@ static XtResource resources[] = {
     {textNlineHighlightBackground, textClineHighlightBackground, XmRPixel,sizeof(Pixel),
       XtOffset(TextWidget, text.lineHighlightBGPixel), XmRString, 
       NEDIT_DEFAULT_CURSOR_LINE_BG},
+    {textNansiColors, textCansiColors, XmRBoolean, sizeof(Boolean),
+      XtOffset(TextWidget, text.ansiColors), XmRString, "False"},
+    {textNansiColorList, textCansiColorList, XmRPointer, sizeof(void*),
+      XtOffset(TextWidget, text.ansiColorList), XmRPointer, defaultAnsiColors},
     {textNhighlightCursorLine, textChighlightCursorLine, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.highlightCursorLine), XmRString, "False"},
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
@@ -873,6 +885,8 @@ static void initialize(TextWidget request, TextWidget new)
        be replaced later with TextSetBuffer) */
     buf = BufCreate();
     
+    if(!new->text.ansiColorList) new->text.ansiColorList = defaultAnsiColors;
+    
     /* Create and initialize the text-display part of the widget */
     textLeft = new->text.marginWidth +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
@@ -882,16 +896,17 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
 	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
-	    buf,new->text.font2, new->core.background_pixel,
+	    buf,new->text.font2, new->text.boldFont, new->text.italicFont,
+            new->text.boldItalicFont,new->core.background_pixel,
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
 	    new->text.highlightBGPixel, new->text.cursorFGPixel,
 	    new->text.lineNumFGPixel, 0, // TODO: replace 0
           new->text.continuousWrap, new->text.wrapMargin,
           new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel, 0, // TODO: replace 0
+          new->text.calltipBGPixel, 0, new->text.ansiColorList, // TODO: replace 0
           new->text.indentRainbow, new->text.indentRainbowColors,
-          new->text.highlightCursorLine);
+          new->text.highlightCursorLine, new->text.ansiColors);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
@@ -1183,6 +1198,15 @@ static Boolean setValues(TextWidget current, TextWidget request,
     	    TextDSetCursorStyle(current->text.textD, BLOCK_CURSOR);
     }
     
+    if (new->text.boldFont != current->text.boldFont) {
+        TextDSetBoldFont(new->text.textD, new->text.boldFont);
+    }
+    if (new->text.italicFont != current->text.italicFont) {
+        TextDSetItalicFont(new->text.textD, new->text.italicFont);
+    }
+    if (new->text.boldItalicFont != current->text.boldItalicFont) {
+        TextDSetBoldItalicFont(new->text.textD, new->text.boldItalicFont);
+    }
     if (new->text.font2 != current->text.font2) {
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
@@ -1253,6 +1277,16 @@ static Boolean setValues(TextWidget current, TextWidget request,
         }
         TextDSetIndentRainbowColors(new->text.textD, new->text.indentRainbowColors);
         new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
+        redraw = True;
+    }
+    
+    if (new->text.ansiColors != current->text.ansiColors) {
+        TextDSetAnsiColors(new->text.textD, new->text.ansiColors);
+        redraw = True;
+    }
+    
+    if (new->text.ansiColorList != current->text.ansiColorList) {
+        TextDSetAnsiColorList(new->text.textD, new->text.ansiColorList);
         redraw = True;
     }
     
@@ -4354,6 +4388,19 @@ void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked)
                     textWidget);
     }
 }
+
+XftColor TextGetFGColor(Widget w)
+{
+    TextWidget textWidget = (TextWidget)w;
+    return textWidget->text.textD->fgPixel;
+}
+
+XftColor TextGetBGColor(Widget w)
+{
+    TextWidget textWidget = (TextWidget)w;
+    return textWidget->text.textD->bgPixel;
+}
+
 
 /*
 ** look at an action procedure's arguments to see if argument "key" has been

@@ -413,10 +413,12 @@ typedef struct _WindowInfo {
     Widget	highlightDefItem;
     Widget      highlightCursorLineItem;
     Widget	indentRainbowItem;
+    Widget      ansiColorsItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
     Widget      highlightCursorLineDefItem;
     Widget      indentRainbowDefItem;
+    Widget      ansiColorsDefItem;
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;
@@ -551,6 +553,9 @@ typedef struct _WindowInfo {
     char	*backlightCharTypes;	/* what backlighting to use */
     Boolean     indentRainbow;          /* is indentation highlight turned onß*/
     char        *indentRainbowColors;   /* indent rainbow color lists */
+    Boolean     ansiColors;             /* is ansi coloring enabled? */
+    XftColor    ansiColorList[16];      /* 16 ANSI Colors */
+    
     Boolean	modeMessageDisplayed;	/* special stats line banner for learn
     					   and shell command executing modes */
     char	*modeMessage;		/* stats line banner content for learn

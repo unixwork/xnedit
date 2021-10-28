@@ -106,6 +106,8 @@ void SwitchTabs(Widget from, Widget to);
 void SetHighlightCursorLine(WindowInfo *window, Boolean state);
 void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
+void SetAnsiColors(WindowInfo *window, Boolean state);
+void SetAnsiColorList(WindowInfo *window, const char *colorList);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);

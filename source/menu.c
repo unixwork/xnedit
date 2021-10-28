@@ -127,6 +127,7 @@ static void resetZoomCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightCursorLineCB(Widget w, WindowInfo *window, caddr_t callData);
 static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData);
+static void ansiColorsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingDelimitCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -164,7 +165,7 @@ static void highlightDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData);
-static void indentRainbowColorsDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void ansiColorsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void colorDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void smartTagsDefCB(Widget parent, XtPointer client_data, XtPointer call_data);
@@ -959,16 +960,16 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
           "backlightChars", "Apply Backlighting", 'g', backlightCharsDefCB,
           window, GetPrefBacklightChars(), FULL);
 
-    /* Cursor Line Highlighting and Indent Rainbow */
+    /* Cursor Line Highlighting, Indent Rainbow, ANSI Colors */
     window->highlightCursorLineDefItem = createMenuToggle(subPane,
           "highlightCursorLine", "Highlight Cursor Line", 'e', highlightCursorLineDefCB,
           window, GetPrefHighlightCursorLine(), FULL);
     window->indentRainbowDefItem = createMenuToggle(subPane,
           "indentRainbow", "Indent Rainbow", 'R', indentRainbowDefCB,
           window, GetPrefIndentRainbow(), FULL);
-    createMenuItem(subPane,
-          "indentRainbowColors", "Indent Rainbow Colors...", 'r', indentRainbowColorsDefCB,
-          window, FULL);
+    window->ansiColorsDefItem = createMenuToggle(subPane,
+          "ansiColors", "ANSI Colors", 'I', ansiColorsDefCB,
+          window, GetPrefAnsiColors(), FULL);
     
     /* tabbed editing sub menu */
     subSubPane = createMenu(subPane, "tabbedEditMenu", "Tabbed Editing", 0,
@@ -1135,6 +1136,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->indentRainbowItem = createMenuToggle(menuPane, "indentRainbow",
           "Indent Rainbow", 'R', indentRainbowCB, window,
           window->indentRainbow, FULL);
+    window->ansiColorsItem = createMenuToggle(menuPane, "ansiColors",
+          "ANSI Colors", 'S', ansiColorsCB, window,
+          window->ansiColors, FULL);
     
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
     	    "Make Backup Copy (*.bck)", 'e', preserveCB, window,
@@ -1793,6 +1797,13 @@ static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData)
     SetIndentRainbow(window, indentRainbow);
 }
 
+static void ansiColorsCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    int state = XmToggleButtonGetState(w);
+    window = WidgetToWindow(MENU_WIDGET(w));
+    SetAnsiColors(window, state);
+}
+
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     int applyBacklight = XmToggleButtonGetState(w);
@@ -2102,11 +2113,17 @@ static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData)
     }
 }
 
-static void indentRainbowColorsDefCB(Widget w, WindowInfo *window, caddr_t callData)
+static void ansiColorsDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
-            ((XmAnyCallbackStruct *)callData)->event);
-    ChooseIndentRainbowColors(WidgetToWindow(MENU_WIDGET(w)));
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefAnsiColors(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+	    XmToggleButtonSetState(win->ansiColorsDefItem, state, False);
+    }
 }
 
 static void highlightOffDefCB(Widget w, WindowInfo *window, caddr_t callData)

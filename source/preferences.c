@@ -54,6 +54,7 @@
 #include "../util/fileUtils.h"
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
+#include "../util/colorchooser.h"
 
 #include <ctype.h>
 #include <pwd.h>
@@ -84,6 +85,8 @@
 #include <Xm/Frame.h>
 #include <Xm/Text.h>
 #include <Xm/Separator.h>
+#include <Xm/ScrolledW.h>
+#include <Xm/ArrowB.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -217,9 +220,23 @@ typedef struct {
     int forWindow;
 } fontDialog;
 
+typedef struct {
+    Widget remove;
+    Widget up;
+    Widget down;
+    Widget textfield;
+    Widget colorchooser;
+} indentRainbowColor;
+
 /* Color dialog information */
 typedef struct {
     Widget shell;
+    WindowInfo *window;
+    
+    Widget tabs[3];
+    Widget tabForms[3];
+    
+    // general colors
     Widget textFgW;
     Widget textFgErrW;
     Widget textBgW;
@@ -240,7 +257,48 @@ typedef struct {
     Widget cursorFgErrW;
     Widget cursorLineBgW;
     Widget cursorLineBgErrW;
-    WindowInfo *window;
+    
+    // indent rainbow
+    Widget scrollW;
+    Widget btnForm;
+    Widget addBtn;
+    indentRainbowColor *indentRainbowColors;
+    size_t allocIndentRainbowColors;
+    size_t numIndentRainbowColors;
+    
+    // ansi
+    Widget ansiBlackW;
+    Widget ansiBlackErrW;
+    Widget ansiRedW;
+    Widget ansiRedErrW;
+    Widget ansiGreenW;
+    Widget ansiGreenErrW;
+    Widget ansiYellowW;
+    Widget ansiYellowErrW;
+    Widget ansiBlueW;
+    Widget ansiBlueErrW;
+    Widget ansiMagentaW;
+    Widget ansiMagentaErrW;
+    Widget ansiCyanW;
+    Widget ansiCyanErrW;
+    Widget ansiWhiteW;
+    Widget ansiWhiteErrW;
+    Widget ansiBrightBlackW;
+    Widget ansiBrightBlackErrW;
+    Widget ansiBrightRedW;
+    Widget ansiBrightRedErrW;
+    Widget ansiBrightGreenW;
+    Widget ansiBrightGreenErrW;
+    Widget ansiBrightYellowW;
+    Widget ansiBrightYellowErrW;
+    Widget ansiBrightBlueW;
+    Widget ansiBrightBlueErrW;
+    Widget ansiBrightMagentaW;
+    Widget ansiBrightMagentaErrW;
+    Widget ansiBrightCyanW;
+    Widget ansiBrightCyanErrW;
+    Widget ansiBrightWhiteW;
+    Widget ansiBrightWhiteErrW;
 } colorDialog;
 
 /* IndentColor dialog information */
@@ -293,6 +351,8 @@ static struct prefData {
     int highlightCursorLine;    /* highlight line of cursor */
     int indentRainbow;          /* highlight indentation level */
     char *indentRainbowColors;  /* indent rainbow colors */
+    char *ansiColorList;        /* ANSI color table (16 colors) */
+    int ansiColors;             /* coloring from ANSI escape sequences  */
     int backlightChars;		/* whether to apply character "backlighting" */
     char *backlightCharTypes;	/* the backlighting color definitions */
 #ifdef SGI_CUSTOM
@@ -833,6 +893,11 @@ static PrefDescripRec PrefDescrip[] = {
     {"indentRainbowColors", "IndentRainbowColors", PREF_ALLOC_STRING,
       "#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff",
       &PrefData.indentRainbowColors, NULL, True},
+    {"ansiColorList", "AnsiColorList", PREF_ALLOC_STRING,
+      "#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff",
+      &PrefData.ansiColorList, NULL, True},
+    {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
+      &PrefData.ansiColors, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -1198,6 +1263,8 @@ static void cursorFgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
 static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
         XtPointer callData);
+static void indentRainbowDialogLoadColors(colorDialog *cd);
+static void loadAnsiColors(colorDialog *cd);
 
 static void updateRainbowColors(indentColorDialog *cd);
 
@@ -1902,6 +1969,28 @@ void SetPrefIndentRainbowColors(const char *colorList)
 char *GetPrefIndentRainbowColors(void)
 {
     return PrefData.indentRainbowColors;
+}
+
+void SetPrefAnsiColorList(const char *colorList)
+{
+    if(PrefData.ansiColorList) NEditFree(PrefData.ansiColorList);
+    PrefData.ansiColorList = NEditStrdup(colorList);
+    PrefsHaveChanged = True;
+}
+
+char *GetPrefAnsiColorList(void)
+{
+    return PrefData.ansiColorList;
+}
+
+void SetPrefAnsiColors(int state)
+{
+    setIntPref(&PrefData.ansiColors, state);
+}
+
+Boolean GetPrefAnsiColors(void)
+{
+    return PrefData.ansiColors;
 }
 
 void SetPrefBacklightChars(int state)
@@ -5654,74 +5743,13 @@ cursorFg              CURSOR_FG_COLOR
 /* 
  * Callbacks for field modifications
  */
-static void textFgModifiedCB(Widget w, XtPointer clientData,
+static void cgTextModifiedCB(Widget w, XtPointer clientData,
       XtPointer callData)
 {
     colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->textFgW, cd->textFgErrW);
-}
-    
-static void textBgModifiedCB(Widget w, XtPointer clientData,
-      XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->textBgW, cd->textBgErrW);
-}
-
-static void selectFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->selectFgW, cd->selectFgErrW);
-}
-
-static void selectBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->selectBgW, cd->selectBgErrW);
-}
-
-static void hiliteFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->hiliteFgW, cd->hiliteFgErrW);
-}
-
-static void hiliteBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->hiliteBgW, cd->hiliteBgErrW);
-}
-
-static void lineNoFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->lineNoFgW, cd->lineNoFgErrW);
-}
-
-static void lineNoBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->lineNoBgW, cd->lineNoBgErrW);
-}
-
-static void cursorFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->cursorFgW, cd->cursorFgErrW);
-}
-
-static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData)
-{
-    colorDialog *cd = (colorDialog *)clientData;
-    showColorStatus(cd, cd->cursorLineBgW, cd->cursorLineBgErrW);
+    Widget err = NULL;
+    XtVaGetValues(w, XmNuserData, &err, NULL);
+    showColorStatus(cd, w, err);
 }
 
 /* 
@@ -5769,6 +5797,9 @@ static void updateColors(colorDialog *cd)
 {
     WindowInfo *window;
     
+    /*
+     * Tab 1: General
+     */
     char    *textFg = XmTextGetString(cd->textFgW),
             *textBg = XmTextGetString(cd->textBgW),
             *selectFg = XmTextGetString(cd->selectFgW),
@@ -5780,12 +5811,6 @@ static void updateColors(colorDialog *cd)
             *cursorFg = XmTextGetString(cd->cursorFgW),
             *cursorLineBg = XmTextGetString(cd->cursorLineBgW);
 
-    for (window = WindowList; window != NULL; window = window->next)
-    {
-        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
-                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
-    }
-
     SetPrefColorName(TEXT_FG_COLOR  , textFg  );
     SetPrefColorName(TEXT_BG_COLOR  , textBg  );
     SetPrefColorName(SELECT_FG_COLOR, selectFg);
@@ -5796,7 +5821,79 @@ static void updateColors(colorDialog *cd)
     SetPrefColorName(LINENO_BG_COLOR, lineNoBg);
     SetPrefColorName(CURSOR_FG_COLOR, cursorFg);
     SetPrefColorName(CURSOR_LINE_BG_COLOR, cursorLineBg);
-
+    
+    /*
+     * Tab 2: Indent Rainbow Colors
+     */
+    size_t alloc = cd->numIndentRainbowColors * 10;
+    char *irStr = NEditMalloc(alloc);
+    int pos = 0;
+    
+    for(int i=0;i<cd->numIndentRainbowColors;i++) {
+        char *ir = XmTextGetString(cd->indentRainbowColors[i].textfield);
+        size_t ir_len = strlen(ir);
+        if(pos + ir_len + 2 >= alloc) {
+            alloc += 4 * ir_len;
+            irStr = NEditRealloc(irStr, alloc);
+        }
+        memcpy(irStr+pos, ir, ir_len);
+        pos += ir_len;
+        irStr[pos] = ';';
+        pos++;
+        XtFree(ir);
+    }
+    
+    if(pos > 0 && irStr[pos-1] == ';') {
+        irStr[pos-1] = '\0';
+    }
+    
+    SetPrefIndentRainbowColors(irStr);
+    
+    /*
+     * Tab 3: ANSI Colors
+     */
+    char *ansiBlack = XmTextGetString(cd->ansiBlackW);
+    char *ansiRed = XmTextGetString(cd->ansiRedW);
+    char *ansiGreen = XmTextGetString(cd->ansiGreenW);
+    char *ansiYellow = XmTextGetString(cd->ansiYellowW);
+    char *ansiBlue = XmTextGetString(cd->ansiBlueW);
+    char *ansiMagenta = XmTextGetString(cd->ansiMagentaW);
+    char *ansiCyan = XmTextGetString(cd->ansiCyanW);
+    char *ansiWhite = XmTextGetString(cd->ansiWhiteW);
+    char *ansiBrightBlack = XmTextGetString(cd->ansiBrightBlackW);
+    char *ansiBrightRed = XmTextGetString(cd->ansiBrightRedW);
+    char *ansiBrightGreen = XmTextGetString(cd->ansiBrightGreenW);
+    char *ansiBrightYellow = XmTextGetString(cd->ansiBrightYellowW);
+    char *ansiBrightBlue = XmTextGetString(cd->ansiBrightBlueW);
+    char *ansiBrightMagenta = XmTextGetString(cd->ansiBrightMagentaW);
+    char *ansiBrightCyan = XmTextGetString(cd->ansiBrightCyanW);
+    char *ansiBrightWhite = XmTextGetString(cd->ansiBrightWhiteW);
+    
+    size_t len = strlen(ansiBlack) + strlen(ansiRed) + strlen(ansiGreen) + strlen(ansiYellow)
+               + strlen(ansiBlue) + strlen(ansiMagenta) + strlen(ansiCyan) + strlen(ansiWhite)
+               + strlen(ansiBrightBlack) + strlen(ansiBrightRed) + strlen(ansiBrightGreen) + strlen(ansiBrightYellow)
+               + strlen(ansiBrightBlue) + strlen(ansiBrightMagenta) + strlen(ansiBrightCyan) + strlen(ansiBrightWhite)
+               + 16;
+    char *ansiColorList = NEditMalloc(len);
+    snprintf(ansiColorList, len, "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+            ansiBlack, ansiRed, ansiGreen, ansiYellow,
+            ansiBlue, ansiMagenta, ansiCyan, ansiWhite,
+            ansiBrightBlack, ansiBrightRed, ansiBrightGreen, ansiBrightYellow,
+            ansiBrightBlue, ansiBrightMagenta, ansiBrightCyan, ansiBrightWhite);
+    
+    SetPrefAnsiColorList(ansiColorList);
+    
+    
+    // update windows
+    for (window = WindowList; window != NULL; window = window->next) {
+        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
+                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
+        SetIndentRainbowColors(window, irStr);
+        SetAnsiColorList(window, ansiColorList);
+    }
+    
+    // cleanup
+    // general
     NEditFree(textFg);
     NEditFree(textBg);
     NEditFree(selectFg);
@@ -5807,6 +5904,26 @@ static void updateColors(colorDialog *cd)
     NEditFree(lineNoBg);
     NEditFree(cursorFg);
     NEditFree(cursorLineBg);
+    // indent rainbow
+    NEditFree(irStr);
+    // ansi
+    NEditFree(ansiBlack);
+    NEditFree(ansiRed);
+    NEditFree(ansiGreen);
+    NEditFree(ansiYellow);
+    NEditFree(ansiBlue);
+    NEditFree(ansiMagenta);
+    NEditFree(ansiCyan);
+    NEditFree(ansiWhite);
+    NEditFree(ansiBrightBlack);
+    NEditFree(ansiBrightRed);
+    NEditFree(ansiBrightGreen);
+    NEditFree(ansiBrightYellow);
+    NEditFree(ansiBrightBlue);
+    NEditFree(ansiBrightMagenta);
+    NEditFree(ansiBrightCyan);
+    NEditFree(ansiBrightWhite);
+    NEditFree(ansiColorList);
 }
 
 
@@ -5859,19 +5976,61 @@ static void colorCloseCB(Widget w, XtPointer clientData, XtPointer callData)
     XtDestroyWidget(cd->shell);
 }
 
+static void updateCGchooser(Widget w, XtPointer clientData,
+      XtPointer callData)
+{
+    Widget button = clientData;
+    char *str = XmTextGetString(w);
+    int dummy;
+    SetParseColorError(0);
+    Pixel color = AllocColor(button, str, &dummy, &dummy, &dummy);
+    SetParseColorError(1);
+    XtVaSetValues(button, XmNbackground, color, NULL);
+    XtFree(str);
+}
+
+static void selectColorCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    Colormap cm;
+    Pixel bg;
+    Widget textfield = NULL;
+    XtVaGetValues(w, XtNcolormap, &cm, XmNbackground, &bg, XmNuserData, &textfield, NULL);
+    
+    if(!textfield) return;
+    
+    XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
+    xcolor.pixel = bg;
+    XQueryColor(XtDisplay(w), cm, &xcolor);
+    
+    int r = xcolor.red;
+    int g = xcolor.green;
+    int b = xcolor.blue;
+    if(ColorChooser(XtParent(w), &r, &g, &b)) {
+        r /= 257;
+        g /= 257;
+        b /= 257;
+        char buf[32];
+        snprintf(buf, 32, "#%02x%02x%02x", r, g, b);
+        // alternative format
+        //snprintf(buf, 32, "rgb:%02x/%02x/%02x", r, g, b);
+        XmTextSetString(textfield, buf);
+    }
+
+}
 
 /* Add a label, error label, and text entry label with a validation
     callback */
 static Widget addColorGroup( Widget parent, const char *name, char mnemonic, 
         char *label, Widget *fieldW, Widget *errW, Widget topWidget, 
-        int leftPos, int rightPos, XtCallbackProc modCallback, 
+        int leftPos, int rightPos, 
         colorDialog *cd )
 {
     Widget lblW;
     char *longerName;
     XmString s1;
     int nameLen = strlen(name);
-    
+       
     /* The label widget */
     longerName = (char*)NEditMalloc(nameLen+7);
     strcpy(longerName, name);
@@ -5903,25 +6062,315 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
     XmStringFree(s1);
     
     /* The text field entry widget */
+    Widget colorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, parent,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, rightPos,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, lblW,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorChooserButton, XmNactivateCallback, selectColorCB, NULL);
+    
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
           XmNcolumns, MAX_COLOR_LEN-1,
           XmNmaxLength, MAX_COLOR_LEN-1,
           XmNleftAttachment, XmATTACH_POSITION,
           XmNleftPosition, leftPos,
-          XmNrightAttachment, XmATTACH_POSITION,
-          XmNrightPosition, rightPos,
+          XmNrightAttachment, XmATTACH_WIDGET,
+          XmNrightWidget, colorChooserButton,
           XmNtopAttachment, XmATTACH_WIDGET,
-          XmNtopWidget, lblW, NULL);
+          XmNtopWidget, lblW, 
+          XmNuserData, *errW, NULL);
+    
+    Dimension shadowThickness = 1;
+    XtVaGetValues(*fieldW, XmNshadowThickness, &shadowThickness, NULL);
+    XtVaSetValues(colorChooserButton,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, *fieldW,
+            XmNshadowThickness, shadowThickness,
+            XmNuserData, *fieldW, NULL);
+    
     RemapDeleteKey(*fieldW);
     XtAddCallback(*fieldW, XmNvalueChangedCallback,
-          modCallback, cd);
+          cgTextModifiedCB, cd);
+    XtAddCallback(*fieldW, XmNvalueChangedCallback,
+          updateCGchooser, colorChooserButton);
     XtVaSetValues(lblW, XmNuserData, *fieldW, NULL);
     
     NEditFree(longerName);
     return *fieldW;
 }
 
+static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
+{
+    colorDialog *cd = clientData;
+    
+    if(!XmToggleButtonGetState(w)) {
+        XmToggleButtonSetState(w, True, False);
+        return;
+    }
+    
+    for(int i=0;i<3;i++) {
+        if(cd->tabs[i] != w) {
+            XmToggleButtonSetState(cd->tabs[i], False, False);
+            XtUnmanageChild(cd->tabForms[i]);
+        } else {
+            XtManageChild(cd->tabForms[i]);
+        }
+    }
+}
+
+static int irFindIndex(colorDialog *cd, Widget button, int type)
+{
+    for(int i=0;i<cd->numIndentRainbowColors;i++) {
+        switch(type) {
+            case 0: if(cd->indentRainbowColors[i].remove == button) return i;
+            case 1: if(cd->indentRainbowColors[i].up == button) return i;
+            case 2: if(cd->indentRainbowColors[i].down == button) return i;
+        }
+    }
+    return -1;
+}
+
+#define IR_BTN_MARGIN 6
+
+static void addRainbowColor(colorDialog *cd, const char *value);
+
+static void irAdd(Widget w, XtPointer clientData, XtPointer callData)
+{
+    addRainbowColor(clientData, "#ffffff");
+}
+
+static void addAddBtn(colorDialog *cd)
+{
+    if(cd->addBtn) {
+        XtUnmanageChild(cd->addBtn);
+        XtDestroyWidget(cd->addBtn);
+    }
+    
+    XmString s1 = XmStringCreateSimple("Add");
+    Arg args[8];
+    int n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftOffset, IR_BTN_MARGIN); n++;
+    XtSetArg(args[n], XmNtopOffset, IR_BTN_MARGIN); n++;
+    if(cd->numIndentRainbowColors == 0) {
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    } else {
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNtopWidget, cd->indentRainbowColors[cd->numIndentRainbowColors-1].remove); n++;
+    }
+    XtSetArg(args[n], XmNlabelString, s1); n++;
+    
+    cd->addBtn = XmCreatePushButton(cd->btnForm, "irAdd", args, n);
+    XtManageChild(cd->addBtn);
+    XtAddCallback(cd->addBtn, XmNactivateCallback, irAdd, cd);
+    XmStringFree(s1); 
+}
+
+
+static void irColorRemove(Widget w, XtPointer clientData, XtPointer callData)
+{
+    colorDialog *cd = clientData;
+    int i = irFindIndex(cd, w, 0);
+    if(i == -1) return;
+    
+    
+    indentRainbowColor c = cd->indentRainbowColors[i]; 
+    if(i == 0) {
+        indentRainbowColor n = cd->indentRainbowColors[i+1];
+        XtVaSetValues(n.remove, XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.up, XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.down, XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.textfield, XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.colorchooser, XmNtopAttachment, XmATTACH_FORM, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        
+        if(cd->numIndentRainbowColors > 1) {
+            memmove(cd->indentRainbowColors, cd->indentRainbowColors + 1, (cd->numIndentRainbowColors-1)*sizeof(indentRainbowColor));
+        }
+    } else if(i+1 != cd->numIndentRainbowColors) {
+        indentRainbowColor p = cd->indentRainbowColors[i-1];
+        indentRainbowColor n = cd->indentRainbowColors[i+1];
+        XtVaSetValues(n.remove, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.up, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.down, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.textfield, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        XtVaSetValues(n.colorchooser, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
+        int len = cd->numIndentRainbowColors-i-1;
+        memmove(cd->indentRainbowColors + i, cd->indentRainbowColors + i+1, (cd->numIndentRainbowColors-i-1)*sizeof(indentRainbowColor));
+    }
+    
+    XtUnmanageChild(c.remove);
+    XtUnmanageChild(c.up);
+    XtUnmanageChild(c.down);
+    XtUnmanageChild(c.textfield);
+    XtUnmanageChild(c.colorchooser);
+    XtDestroyWidget(c.remove);
+    XtDestroyWidget(c.up);
+    XtDestroyWidget(c.down);
+    XtDestroyWidget(c.textfield);
+    XtDestroyWidget(c.colorchooser);
+    
+    cd->numIndentRainbowColors--;
+    
+    addAddBtn(cd);
+}
+
+static void irColorUp(Widget w, XtPointer clientData, XtPointer callData)
+{
+    colorDialog *cd = clientData;
+    int i = irFindIndex(cd, w, 1);
+    if(i < 1) return;
+    
+    Widget textfield = cd->indentRainbowColors[i].textfield;
+    Widget textfieldPrev = cd->indentRainbowColors[i-1].textfield;
+    
+    char *prevStr = XmTextGetString(textfieldPrev);
+    char *currentStr = XmTextGetString(textfield);
+    XmTextSetString(textfieldPrev, currentStr);
+    XmTextSetString(textfield, prevStr);
+    XtFree(prevStr);
+    XtFree(currentStr);
+}
+
+static void irColorDown(Widget w, XtPointer clientData, XtPointer callData)
+{
+    colorDialog *cd = clientData;
+    int i = irFindIndex(cd, w, 2);
+    if(i == -1 || i +1 >= cd->numIndentRainbowColors) return;
+    
+    Widget textfield = cd->indentRainbowColors[i].textfield;
+    Widget textfieldNext = cd->indentRainbowColors[i+1].textfield;
+    
+    char *nextStr = XmTextGetString(textfieldNext);
+    char *currentStr = XmTextGetString(textfield);
+    XmTextSetString(textfieldNext, currentStr);
+    XmTextSetString(textfield, nextStr);
+    XtFree(nextStr);
+    XtFree(currentStr);
+}
+
+static void addRainbowColor(colorDialog *cd, const char *value)
+{
+    XmString s;
+    Arg args[20];
+    int n = 0;
+    
+    // "remove" button
+    if(cd->numIndentRainbowColors == 0) {
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    } else {
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNtopWidget, cd->indentRainbowColors[cd->numIndentRainbowColors-1].remove); n++;
+    }
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, IR_BTN_MARGIN); n++;
+    XtSetArg(args[n], XmNleftOffset, IR_BTN_MARGIN); n++;
+    s = XmStringCreateSimple(" - ");
+    XtSetArg(args[n], XmNlabelString, s); n++;
+    Widget remove = XmCreatePushButton(cd->btnForm, "irRm", args, n);
+    XmStringFree(s);
+    XtManageChild(remove);
+    XtAddCallback(remove, XmNactivateCallback, irColorRemove, cd);
+    
+    Dimension highlightThickness, shadowThickness;
+    XtVaGetValues(remove, XmNhighlightThickness, &highlightThickness, XmNshadowThickness, &shadowThickness, NULL);
+    
+    // "move up" button
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, remove); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, remove); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, remove); n++;
+    XtSetArg(args[n], XmNarrowDirection, XmARROW_UP); n++;
+    XtSetArg(args[n], XmNhighlightThickness, highlightThickness); n++;
+    XtSetArg(args[n], XmNshadowThickness, shadowThickness); n++;
+    XtSetArg(args[n], XmNuserData, remove); n++;
+    Widget up = XmCreateArrowButton(cd->btnForm, "irUp", args, n);
+    XtManageChild(up);
+    XtAddCallback(up, XmNactivateCallback, irColorUp, cd);
+    
+    // "move down" button
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, up); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, remove); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, remove); n++;
+    XtSetArg(args[n], XmNarrowDirection, XmARROW_DOWN); n++;
+    XtSetArg(args[n], XmNhighlightThickness, highlightThickness); n++;
+    XtSetArg(args[n], XmNshadowThickness, shadowThickness); n++;
+    XtSetArg(args[n], XmNuserData, remove); n++;
+    Widget down = XmCreateArrowButton(cd->btnForm, "irDown", args, n);
+    XtManageChild(down);
+    XtAddCallback(down, XmNactivateCallback, irColorDown, cd);
+    
+    // text field
+    n = 0;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, down); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, remove); n++;
+    XtSetArg(args[n], XmNcolumns, 20); n++;
+    Widget textfield = XmCreateText(cd->btnForm, "irText", args, n);
+    XtManageChild(textfield);
+    
+    // Color Chooser
+    n = 0;
+    s = XmStringCreateSimple("    ");
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNleftWidget, textfield); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, remove); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, remove); n++;
+    XtSetArg(args[n], XmNlabelString, s); n++;
+    Widget colorChooserButton = XmCreatePushButton(cd->btnForm, "colorChooser", args, n);
+    XmStringFree(s);
+    XtAddCallback(colorChooserButton, XmNactivateCallback, selectColorCB, NULL);
+    XtManageChild(colorChooserButton);
+    
+    shadowThickness = 1;
+    XtVaGetValues(textfield, XmNshadowThickness, &shadowThickness, NULL);
+    XtVaSetValues(colorChooserButton,
+            XmNshadowThickness, shadowThickness,
+            XmNuserData, textfield, NULL);
+    
+    // update color chooser when the textfield changes
+    XtAddCallback(textfield, XmNvalueChangedCallback,
+          updateCGchooser, colorChooserButton);
+    
+    // make sure the height of all widgets is the same
+    XtVaSetValues(remove,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, textfield,
+            XmNuserData, textfield, NULL);
+    
+    XmTextSetString(textfield, (char*)value);
+
+    
+    // add the new 
+    if(cd->numIndentRainbowColors >= cd->allocIndentRainbowColors) {
+        cd->allocIndentRainbowColors += 8;
+        cd->indentRainbowColors = NEditRealloc(cd->indentRainbowColors, cd->allocIndentRainbowColors * sizeof(indentRainbowColor));
+    }
+    indentRainbowColor lineW;
+    lineW.remove = remove;
+    lineW.up = up;
+    lineW.down = down;
+    lineW.textfield = textfield;
+    lineW.colorchooser = colorChooserButton;
+    cd->indentRainbowColors[cd->numIndentRainbowColors++] = lineW;
+    
+    // update addBtn
+    addAddBtn(cd);
+}
 
 /* 
  * Code for the dialog itself
@@ -5957,11 +6406,141 @@ void ChooseColors(WindowInfo *window)
     AddMotifCloseCallback(XtParent(form), colorCloseCB, cd);
     XtAddCallback(form, XmNdestroyCallback, colorDestroyCB, cd);
     
+    /* tabs */
+    cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 33,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNset, True,
+            XmNlabelString, s1 = XmStringCreateSimple("General"),
+            NULL);
+    XmStringFree(s1);
+    cd->tabs[1] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[0],
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 66,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("Indent Rainbow"),
+            NULL);
+    XmStringFree(s1);
+    cd->tabs[2] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[1],
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("ANSI Colors"),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(cd->tabs[0], XmNvalueChangedCallback, selectColorTab, cd);
+    XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
+    XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
+    
+    topW = cd->tabs[0];
+      
+    
+    /*
+     * buttons
+     */
+    tmpW = cd->tabForms[0];
+    
+    /* The OK, Apply, and Cancel buttons */
+    okBtn = XtVaCreateManagedWidget("ok",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 10,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 30,
+            NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, colorOkCB, cd);
+    XmStringFree(s1);
+
+    applyBtn = XtVaCreateManagedWidget(
+            "apply", xmPushButtonWidgetClass, form,
+          XmNlabelString, s1=XmStringCreateSimple("Apply"),
+          XmNbottomAttachment, XmATTACH_FORM,
+          XmNbottomOffset, MARGIN_SPACING,
+          XmNmnemonic, 'A',
+          XmNleftAttachment, XmATTACH_POSITION,
+          XmNleftPosition, 40,
+          XmNrightAttachment, XmATTACH_POSITION,
+          XmNrightPosition, 60, NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, colorApplyCB, cd);
+    XmStringFree(s1);
+    
+    closeBtn = XtVaCreateManagedWidget("close",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("Close"),
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 70,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 90,
+            NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, colorCloseCB, cd);
+    XmStringFree(s1);
+    
+    Widget sepW = XtVaCreateManagedWidget("sep",
+            xmSeparatorGadgetClass, form,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, okBtn,
+            XmNbottomOffset, MARGIN_SPACING,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM, NULL);
+ 
+    /* Set initial default button */
+    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
+    XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
+    
+    
+    /* tab forms */
+    cd->tabForms[0] = XtVaCreateManagedWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[1] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    cd->tabForms[2] = XtVaCreateWidget("colorForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);  
+    
+    /*
+     * Tab 1: Generral
+     */
+    Widget tabForm = cd->tabForms[0];
+    
     /* Information label */
     infoLbl = XtVaCreateManagedWidget("infoLbl",
-            xmLabelGadgetClass, form,
-            XmNtopAttachment, XmATTACH_POSITION,
-            XmNtopPosition, 2,
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 6,
             XmNleftAttachment, XmATTACH_POSITION,
             XmNleftPosition, 1,
             XmNrightAttachment, XmATTACH_POSITION,
@@ -5973,45 +6552,34 @@ void ChooseColors(WindowInfo *window)
                 "is in the range 0-f.", XmFONTLIST_DEFAULT_TAG),
             NULL);
     XmStringFree(s1);
-    
     topW = infoLbl;
     
     /* The left column (foregrounds) of color entry groups */
-    tmpW = addColorGroup( form, "textFg", 'P', "Plain Text Foreground", 
-            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, 
-            textFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "selectFg", 'S', "Selection Foreground",
-            &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, 
-            selectFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "hiliteFg", 'M', "Matching (..) Foreground",
-            &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, 
-            hiliteFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "lineNoFg", 'L', "Line Numbers Foreground",
-            &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, 
-            lineNoFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "lineNoBg", 'N', "Line Numbers Background",
-            &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, 
-            lineNoBgModifiedCB, cd );
+    tmpW = addColorGroup( tabForm, "textFg", 'P', "Plain Text Foreground", 
+            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "selectFg", 'S', "Selection Foreground",
+            &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "hiliteFg", 'M', "Matching (..) Foreground",
+            &(cd->hiliteFgW), &(cd->hiliteFgErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "lineNoFg", 'L', "Line Numbers Foreground",
+            &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "lineNoBg", 'N', "Line Numbers Background",
+            &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, cd );
 
     /* The right column (backgrounds) */
-    tmpW = addColorGroup( form, "textBg", 'T', "Text Area Background",
-            &(cd->textBgW), &(cd->textBgErrW), topW, 51, 99, 
-            textBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "selectBg", 'B', "Selection Background",
-            &(cd->selectBgW), &(cd->selectBgErrW), tmpW, 51, 99, 
-            selectBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "hiliteBg", 'h', "Matching (..) Background",
-            &(cd->hiliteBgW), &(cd->hiliteBgErrW), tmpW, 51, 99, 
-            hiliteBgModifiedCB, cd );
-    tmpW = addColorGroup( form, "cursorFg", 'C', "Cursor Color",
-            &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, 
-            cursorFgModifiedCB, cd );
-    tmpW = addColorGroup( form, "cursorLineBg", 'U', "Cursor Line Background",
-            &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, 
-            cursorLineBgModifiedCB, cd );
+    tmpW = addColorGroup( tabForm, "textBg", 'T', "Text Area Background",
+            &(cd->textBgW), &(cd->textBgErrW), topW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "selectBg", 'B', "Selection Background",
+            &(cd->selectBgW), &(cd->selectBgErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "hiliteBg", 'h', "Matching (..) Background",
+            &(cd->hiliteBgW), &(cd->hiliteBgErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "cursorFg", 'C', "Cursor Color",
+            &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "cursorLineBg", 'U', "Cursor Line Background",
+            &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
-            xmLabelGadgetClass, form,
+            xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, tmpW,
             XmNtopOffset, MARGIN_SPACING,
@@ -6026,60 +6594,95 @@ void ChooseColors(WindowInfo *window)
             NULL);
     XmStringFree(s1);
     
-    tmpW = XtVaCreateManagedWidget("sep",
-            xmSeparatorGadgetClass, form,
+    Dimension h = 60;
+    XtVaGetValues(cd->textFgW, XmNheight, &h, NULL);
+    
+    tmpW = XtVaCreateManagedWidget("sepLbl", xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, tmpW,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 3*h + 3*MARGIN_SPACING,
+            XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
+    
+    /*
+     * Tab 2: Indent Rainbow Colors
+     */
+    tabForm = cd->tabForms[1];
+    
+    cd->scrollW = XtVaCreateManagedWidget("scrollw", xmScrolledWindowWidgetClass, tabForm,
             XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM, NULL);
-    
-    /* The OK, Apply, and Cancel buttons */
-    okBtn = XtVaCreateManagedWidget("ok",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, s1=XmStringCreateSimple("OK"),
-            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 10,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 30,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNleftOffset, 10,
+            XmNrightOffset, 10,
+            XmNbottomOffset, 10,
+            XmNtopOffset, 10,
+            XmNscrollBarDisplayPolicy, XmAS_NEEDED,
+            XmNscrollingPolicy, XmAUTOMATIC,
+            XmNshadowThickness, 1,
             NULL);
-    XtAddCallback(okBtn, XmNactivateCallback, colorOkCB, cd);
-    XmStringFree(s1);
+    cd->btnForm = XtVaCreateManagedWidget("form", xmFormWidgetClass, cd->scrollW,
+            XmNshadowThickness, 0, NULL);
+    
+    XtVaSetValues(cd->tabForms[1], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET, XmNbottomWidget, cd->tabForms[0], NULL);
+    
+    // init widget array
+    size_t irAlloc = 8;
+    cd->allocIndentRainbowColors = irAlloc;
+    cd->indentRainbowColors = NEditCalloc(irAlloc, sizeof(indentRainbowColor));
+    cd->numIndentRainbowColors = 0;
+    
+    cd->addBtn = NULL;
+    addAddBtn(cd);
+    
+    indentRainbowDialogLoadColors(cd);
+    
+    /*
+     * Tab 3: ANSI Colors
+     */
+    
+    topW = infoLbl;
+    
+    tabForm = cd->tabForms[2];
+    /* The left column (foregrounds) of color entry groups */
+    tmpW = addColorGroup( tabForm, "ansiBlack", 'P', "Black", 
+            &(cd->ansiBlackW), &(cd->ansiBlackErrW), topW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiRed", 'S', "Red",
+            &(cd->ansiRedW), &(cd->ansiRedErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiGreen", 'M', "Green",
+            &(cd->ansiGreenW), &(cd->ansiGreenErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiYellow", 'L', "Yellow",
+            &(cd->ansiYellowW), &(cd->ansiYellowErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiBlue", 'N', "Blue",
+            &(cd->ansiBlueW), &(cd->ansiBlueErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiMagenta", 'N', "Magenta",
+            &(cd->ansiMagentaW), &(cd->ansiMagentaErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiCyan", 'N', "Cyan",
+            &(cd->ansiCyanW), &(cd->ansiCyanErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "ansiWhite", 'N', "White",
+            &(cd->ansiWhiteW), &(cd->ansiWhiteErrW), tmpW, 1, 49, cd );
 
-    applyBtn = XtVaCreateManagedWidget(
-            "apply", xmPushButtonWidgetClass, form,
-          XmNlabelString, s1=XmStringCreateSimple("Apply"),
-          XmNtopAttachment, XmATTACH_WIDGET,
-          XmNtopWidget, tmpW,
-          XmNtopOffset, MARGIN_SPACING,
-          XmNmnemonic, 'A',
-          XmNleftAttachment, XmATTACH_POSITION,
-          XmNleftPosition, 40,
-          XmNrightAttachment, XmATTACH_POSITION,
-          XmNrightPosition, 60, NULL);
-    XtAddCallback(applyBtn, XmNactivateCallback, colorApplyCB, cd);
-    XmStringFree(s1);
+    /* The right column (backgrounds) */
+    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "BrightBlack",
+            &(cd->ansiBrightBlackW), &(cd->ansiBrightBlackErrW), topW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightRed", 'B', "Bright Red",
+            &(cd->ansiBrightRedW), &(cd->ansiBrightRedErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightGreen", 'h', "Bright Green",
+            &(cd->ansiBrightGreenW), &(cd->ansiBrightGreenErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightYellow", 'C', "Bright Yellow",
+            &(cd->ansiBrightYellowW), &(cd->ansiBrightYellowErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightBlue", 'U', "Bright Blue",
+            &(cd->ansiBrightBlueW), &(cd->ansiBrightBlueErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightMagenta", 'U', "Bright Magenta",
+            &(cd->ansiBrightMagentaW), &(cd->ansiBrightMagentaErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightCyan", 'U', "Bright Cyan",
+            &(cd->ansiBrightCyanW), &(cd->ansiBrightCyanErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "ansiBrightWhite", 'U', "Bright White",
+            &(cd->ansiBrightWhiteW), &(cd->ansiBrightWhiteErrW), tmpW, 51, 99, cd );
     
-    closeBtn = XtVaCreateManagedWidget("close",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, s1=XmStringCreateSimple("Close"),
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 70,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 90,
-            NULL);
-    XtAddCallback(closeBtn, XmNactivateCallback, colorCloseCB, cd);
-    XmStringFree(s1);
- 
-    /* Set initial default button */
-    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
-    XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
+    loadAnsiColors(cd);
+
     
     /* Set initial values */
     XmTextSetString(cd->textFgW,   GetPrefColorName(TEXT_FG_COLOR  ));
@@ -6098,67 +6701,6 @@ void ChooseColors(WindowInfo *window)
     
     /* put up dialog */
     ManageDialogCenteredOnPointer(form);
-}
-
-static int verifyColorStr(indentColorDialog *cd, const char *colorStr)
-{
-    if(strlen(colorStr) == 0) {
-        return 1;
-    }
-    
-    Colormap cMap;
-    XColor colorDef;
-    Status status;
-    Display *display = XtDisplay(cd->shell);
-    XtVaGetValues(cd->shell, XtNcolormap, &cMap, NULL);
-    status = XParseColor(display, cMap, colorStr, &colorDef);
-    
-    if(status == 0) {
-        int msglen = strlen(colorStr) + 24;
-        char *msg = malloc(msglen);
-        snprintf(msg, msglen, "Invalid color: %s\n", colorStr);
-        XmString s = XmStringCreateLocalized(msg);
-        XtVaSetValues(cd->msg, XmNlabelString, s, NULL);
-        XmStringFree(s);
-        DialogF(DF_ERR, cd->shell, 1, "Invalid Colors",
-                "All colors must be valid to proceed.", "OK");
-        
-        free(msg);
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-static int verifyColors(indentColorDialog *cd)
-{
-    int ret = 0;
-    
-    char *colors = XmTextGetString(cd->textarea);
-    size_t len = strlen(colors);
-    int s = 0;
-    for(int i=0;i<=len;i++) {
-        char c = colors[i];
-        if(c == '\n' || c == '\0') {
-            colors[i] = '\0';
-            char *color = colors + s;
-            if(!verifyColorStr(cd, color)) {
-                ret = 1;
-                break;
-            }
-            s = i+1;
-        }
-    }
-    
-    if(!ret) {
-        XmString s = XmStringCreateSimple("");
-        XtVaSetValues(cd->msg, XmNlabelString, s, NULL);
-        XmStringFree(s);
-    }
-    
-    XtFree(colors);
-    
-    return ret;
 }
 
 static void updateRainbowColors(indentColorDialog *cd)
@@ -6192,45 +6734,7 @@ static void updateRainbowColors(indentColorDialog *cd)
 }
 
 
-static void indentColorOkCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    indentColorDialog *cd = (indentColorDialog *)clientData;
-    
-    if(verifyColors(cd)) {
-        return;
-    }
-    
-    
-    updateRainbowColors(cd);
-    XtDestroyWidget(cd->shell);
-}
-
-static void indentColorApplyCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    indentColorDialog *cd = (indentColorDialog *)clientData;
-    
-    if(verifyColors(cd)) {
-        return;
-    }
-    
-    updateRainbowColors(cd);
-}
-
-static void indentColorCloseCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    indentColorDialog *cd = (indentColorDialog *)clientData;
-    /* pop down and destroy the dialog */
-    XtDestroyWidget(cd->shell);
-}
-
-static void indentColorDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    indentColorDialog *cd = (indentColorDialog *)clientData;
-    cd->window->indentColorDialog = NULL;
-    free(cd);
-}
-
-static void indentRainbowDialogLoadColors(indentColorDialog *cd)
+static void indentRainbowDialogLoadColors(colorDialog *cd)
 {
     char *colorList = cd->window->indentRainbowColors;
     size_t len = colorList ? strlen(colorList) : 0;
@@ -6243,162 +6747,67 @@ static void indentRainbowDialogLoadColors(indentColorDialog *cd)
         int c = colorList[i];
         if(c == ';' || c == '\0') {
             memcpy(colors+b, colorList+b, i-b);
-            colors[i] = '\n';
+            colors[i] = '\0';
+            addRainbowColor(cd, colors + b);
             b = i+1;
         }
     }
-    colors[len] = 0;
-    
-    XmTextSetString(cd->textarea, colors);
     free(colors);
-    
 }
 
-void ChooseIndentRainbowColors(WindowInfo *window)
+char* ParseAnsiColorList(char **colorArray, const char *colorStr)
 {
-    indentColorDialog *cd;
-    int n;
-    Arg args[20];
-    XmString str;
-    Widget form;
+    for(int i=0;i<16;i++) {
+        colorArray[i] = "#000000";
+    }
+    int ncolors = 0;
     
-    // if the dialog is already displayed, just pop it to the top and return 
-    if (window->indentColorDialog != NULL) {
-      RaiseDialogWindow(window->indentColorDialog);
-      return;
+    size_t len = colorStr ? strlen(colorStr) : 0;
+    
+    char *colorListStr = NEditMalloc(len+1);
+    memcpy(colorListStr, colorStr, len);
+    colorArray[len] = 0;
+    
+    int b = 0;
+    for(int i=0;i<=len;i++) {
+        int c = colorListStr[i];
+        if(c == ';' || c == '\0') {
+            colorArray[ncolors++] = colorListStr+b;
+            colorListStr[i] = '\0';
+            b = i+1;
+        }
     }
     
-    // Create a structure for keeping track of dialog state 
-    cd = NEditNew(indentColorDialog);
-    window->indentColorDialog = cd;
-    
-    // create dialog
-    n = 0;
-    XtSetArg(args[n], XmNautoUnmanage, False); n++;
-    XtSetArg(args[n], XmNresizePolicy, XmRESIZE_NONE); n++;
-    form = CreateFormDialog(window->shell, "choose colors", args, n);
-    XtVaSetValues(form, XmNshadowThickness, 0, NULL);
-    
-    cd->window = window;
-    cd->shell = XtParent(form);
-    
-    XtVaSetValues(cd->shell, XmNtitle, "Indent Rainbow Colors", NULL);
-    AddMotifCloseCallback(cd->shell, indentColorCloseCB, cd);
-    XtAddCallback(form, XmNdestroyCallback, indentColorDestroyCB, cd);
-    
-    n = 0;
-    str = XmStringCreateLocalized(
-            "One color per Line.\n\n"
-            "Colors can be entered as names (e.g. red, blue) or "
-            "as RGB triples\nin the format #RRGGBB, where each digit "
-            "is in the range 0-f.");
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNalignment, XmALIGNMENT_CENTER); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNtopOffset, 5); n++;
-    Widget infoLabel = XmCreateLabel(form, "infoLbl", args, n);
-    XtManageChild(infoLabel);
-    XmStringFree(str);
-    
-    // bottom buttons
-    /* The OK, Apply, and Cancel buttons */
-    Widget okBtn = XtVaCreateManagedWidget("ok",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, str=XmStringCreateSimple("OK"),
-            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 10,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 30,
-            XmNbottomOffset, 5,
-            NULL);
-    XtAddCallback(okBtn, XmNactivateCallback, indentColorOkCB, cd);
-    XmStringFree(str);
+    return colorListStr;
+}
 
-    Widget applyBtn = XtVaCreateManagedWidget(
-            "apply", xmPushButtonWidgetClass, form,
-            XmNlabelString, str=XmStringCreateSimple("Apply"),
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNmnemonic, 'A',
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 40,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 60,
-            XmNbottomOffset, 5,
-            NULL);
-    XtAddCallback(applyBtn, XmNactivateCallback, indentColorApplyCB, cd);
-    XmStringFree(str);
+static void loadAnsiColors(colorDialog *cd)
+{
+    char *colors[16];
+    int ncolors = 0;
     
-    Widget closeBtn = XtVaCreateManagedWidget("close",
-            xmPushButtonWidgetClass, form,
-            XmNlabelString, str=XmStringCreateSimple("Close"),
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, MARGIN_SPACING,
-            XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 70,
-            XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 90,
-            XmNbottomOffset, 5,
-            NULL);
-    XtAddCallback(closeBtn, XmNactivateCallback, indentColorCloseCB, cd);
-    XmStringFree(str);
+    char *colorList = GetPrefAnsiColorList();
+    char *colorListStr = ParseAnsiColorList(colors, colorList);
     
+    XmTextSetString(cd->ansiBlackW, colors[0]);
+    XmTextSetString(cd->ansiRedW, colors[1]);
+    XmTextSetString(cd->ansiGreenW, colors[2]);
+    XmTextSetString(cd->ansiYellowW, colors[3]);
+    XmTextSetString(cd->ansiBlueW, colors[4]);
+    XmTextSetString(cd->ansiMagentaW, colors[5]);
+    XmTextSetString(cd->ansiCyanW, colors[6]);
+    XmTextSetString(cd->ansiWhiteW, colors[7]);
+    XmTextSetString(cd->ansiBrightBlackW, colors[8]);
+    XmTextSetString(cd->ansiBrightRedW, colors[9]);
+    XmTextSetString(cd->ansiBrightGreenW, colors[10]);
+    XmTextSetString(cd->ansiBrightYellowW, colors[11]);
+    XmTextSetString(cd->ansiBrightBlueW, colors[12]);
+    XmTextSetString(cd->ansiBrightMagentaW, colors[13]);
+    XmTextSetString(cd->ansiBrightCyanW, colors[14]);
+    XmTextSetString(cd->ansiBrightWhiteW, colors[15]);
+   
     
-    n = 0;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, okBtn); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
-    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
-    Widget sep = XmCreateSeparator(form, "separator", args, n);
-    XtManageChild(sep);
-    
-    n = 0;
-    str = XmStringCreateLocalized("");
-    XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, sep); n++;
-    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
-    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
-    cd->msg = XmCreateLabel(form, "msgLabel", args, n);
-    XtManageChild(cd->msg);
-    
-    
-    n = 0;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, infoLabel); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, cd->msg); n++;
-    XtSetArg(args[n], XmNtopOffset, MARGIN_SPACING); n++;
-    XtSetArg(args[n], XmNeditMode, XmMULTI_LINE_EDIT); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNleftOffset, 5); n++;
-    XtSetArg(args[n], XmNbottomOffset, MARGIN_SPACING); n++;
-    cd->textarea = XmCreateScrolledText(form, "rainbowColorsText", args, n);
-    XtManageChild(cd->textarea);
-    
-    
-    indentRainbowDialogLoadColors(cd);
-    
-    // Handle mnemonic selection of buttons and focus to dialog
-    AddDialogMnemonicHandler(form, FALSE);
-    
-    // put up dialog 
-    Dimension w, h;
-    XtMakeResizeRequest(form, 500, 400, &w, &h);
-    ManageDialogCenteredOnPointer(form);
+    NEditFree(colorListStr);
 }
 
 /*
