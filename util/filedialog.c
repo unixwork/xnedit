@@ -794,6 +794,9 @@ static void pathTextEH(Widget widget, XtPointer data, XEvent *event, Boolean *di
             XtUnmanageChild(pb->textfield);
             pathbar_resize(pb->widget, pb, NULL);
             *dispatch = False;
+        } else if(event->xkey.keycode == 36) {
+            pathbar_pathinput(pb->textfield, pb, NULL);
+            *dispatch = False;
         }
     }
 }
@@ -2002,6 +2005,13 @@ static void filedilalog_ok_end(FileDialogData *data)
 
 static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
 {
+    XmPushButtonCallbackStruct *cb = d;
+    if(cb) {
+        if(cb->event->type == KeyPress && cb->event->xkey.keycode == 36) {
+            return;
+        }
+    }
+    
     if(data->selectedPath) {
         if(!data->selIsDir) {
             filedilalog_ok_end(data);
@@ -2446,23 +2456,14 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     /* lower part */
     n = 0;
+    str = XmStringCreateLocalized(type == FILEDIALOG_OPEN ? "Open" : "Save");
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNtopOffset, WIDGET_SPACING * 2); n++;
-    Widget buttons = XmCreateForm(form, "buttons", args, n);
-    XtManageChild(buttons);
-    
-    n = 0;
-    str = XmStringCreateLocalized(type == FILEDIALOG_OPEN ? "Open" : "Save");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-    data.okBtn = XmCreatePushButton(buttons, "filedialog_open", args, n);
+    data.okBtn = XmCreatePushButton(form, "filedialog_open", args, n);
     XtManageChild(data.okBtn);
     XmStringFree(str);
     XtAddCallback(data.okBtn, XmNactivateCallback,
@@ -2470,19 +2471,22 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     n = 0;
     str = XmStringCreateLocalized("Cancel");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNbottomOffset, WINDOW_SPACING); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    Widget cancelBtn = XmCreatePushButton(buttons, "filedialog_cancel", args, n);
+    XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+    Widget cancelBtn = XmCreatePushButton(form, "filedialog_cancel", args, n);
     XtManageChild(cancelBtn);
     XmStringFree(str);
     XtAddCallback(cancelBtn, XmNactivateCallback,
                  (XtCallbackProc)filedialog_cancel, &data);
     
+    XtVaSetValues(form, XmNdefaultButton, data.okBtn, XmNcancelButton, cancelBtn, NULL);
+    
     n = 0;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, buttons); n++;
+    XtSetArg(args[n], XmNbottomWidget, data.okBtn); n++;
     XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNleftOffset, 1); n++;
