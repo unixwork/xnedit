@@ -249,6 +249,8 @@ int  GetPrefSessionNewSaveTo(void);
 void SetPrefSessionNewSaveTo(int pref);
 int  GetPrefSessionSaveTo(void);
 void SetPrefSessionSaveTo(int pref);
+int GetPrefSessionRestore(void);
+void SetPrefSessionRestore(int pref);
 int  GetPrefSessionMax(void);
 void SetPrefSessionMax(int max);
 int  GetPrefSessionGenerateName(void);
