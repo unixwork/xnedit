@@ -122,7 +122,6 @@ static char *SaveSessionTo[N_XNE_SESSION_SAVE+1] = {
     "New",
     "Last",
     "Default",
-    "Ask",
     NULL
 };
 
@@ -225,13 +224,11 @@ static struct {
     Widget saveNewNewW;
     Widget saveNewLastW;
     Widget saveNewDefaultW;
-    Widget saveNewAskW;
     /* radio buttons for save open session */
     Widget saveNoW;
     Widget saveNewW;
     Widget saveLastW;
     Widget saveDefaultW;
-    Widget saveAskW;
     /* restore */
     Widget restoreSessionW;
     /* general settings */
@@ -7006,8 +7003,6 @@ static void snApplyCB(Widget w, XtPointer clientData, XtPointer callData)
         saveNew = XNE_SESSION_LAST;
     } else if(XmToggleButtonGetState(SessionsDialog.saveNewDefaultW)) {
         saveNew = XNE_SESSION_DEFAULT;
-    } else if(XmToggleButtonGetState(SessionsDialog.saveNewAskW)) {
-        saveNew = XNE_SESSION_ASK;
     }
     if(saveNew >= 0) {
         SetPrefSessionNewSaveTo(saveNew);
@@ -7022,8 +7017,6 @@ static void snApplyCB(Widget w, XtPointer clientData, XtPointer callData)
         save = XNE_SESSION_LAST;
     } else if(XmToggleButtonGetState(SessionsDialog.saveDefaultW)) {
         save = XNE_SESSION_DEFAULT;
-    } else if(XmToggleButtonGetState(SessionsDialog.saveAskW)) {
-        save = XNE_SESSION_ASK;
     }
     if(save >= 0) {
         SetPrefSessionSaveTo(save);
@@ -7170,15 +7163,6 @@ void SessionsPref(WindowInfo *window)
     	    XmNmnemonic, 'd',
             NULL);
     XmStringFree(s1);
-    SessionsDialog.saveNewAskW = XtVaCreateManagedWidget(
-            "sessionsRadio", 
-    	    xmToggleButtonWidgetClass,
-            newSessionBox,
-    	    //XmNmarginHeight, 0,
-    	    XmNlabelString, s1=XmStringCreateSimple("Ask"),
-    	    XmNmnemonic, 'k',
-            NULL);
-    XmStringFree(s1);
     
     /* Open Session
      */
@@ -7242,15 +7226,6 @@ void SessionsPref(WindowInfo *window)
     	    //XmNmarginHeight, 0,
     	    XmNlabelString, s1=XmStringCreateSimple("Store in the default session file"),
     	    XmNmnemonic, 'e',
-            NULL);
-    XmStringFree(s1);
-    SessionsDialog.saveAskW = XtVaCreateManagedWidget(
-            "sessionsRadio", 
-    	    xmToggleButtonWidgetClass,
-            openSessionBox,
-    	    //XmNmarginHeight, 0,
-    	    XmNlabelString, s1=XmStringCreateSimple("Ask"),
-    	    XmNmnemonic, 's',
             NULL);
     XmStringFree(s1);
     
@@ -7469,7 +7444,6 @@ void SessionsPref(WindowInfo *window)
         case XNE_SESSION_NEW: w = SessionsDialog.saveNewNewW; break;
         case XNE_SESSION_LAST: w = SessionsDialog.saveNewLastW; break;
         case XNE_SESSION_DEFAULT: w = SessionsDialog.saveNewDefaultW; break;
-        case XNE_SESSION_ASK: w = SessionsDialog.saveNewAskW; break;
         default: w = NULL;
     }
     if(w) XmToggleButtonSetState(w, True, False);
@@ -7479,7 +7453,6 @@ void SessionsPref(WindowInfo *window)
         case XNE_SESSION_NEW: w = SessionsDialog.saveNewW; break;
         case XNE_SESSION_LAST: w = SessionsDialog.saveLastW; break;
         case XNE_SESSION_DEFAULT: w = SessionsDialog.saveDefaultW; break;
-        case XNE_SESSION_ASK: w = SessionsDialog.saveAskW; break;
         default: w = NULL;
     }
     if(w) XmToggleButtonSetState(w, True, False);

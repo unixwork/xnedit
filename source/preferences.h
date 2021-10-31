@@ -53,7 +53,6 @@ enum saveSession {
     XNE_SESSION_NEW,
     XNE_SESSION_LAST,
     XNE_SESSION_DEFAULT,
-    XNE_SESSION_ASK,
     N_XNE_SESSION_SAVE
 };
 

@@ -4492,10 +4492,6 @@ int SaveWindowSession(WindowInfo *window)
             break;
         }
         case XNE_SESSION_NO: {
-            // same as ASK
-            /* fall through */
-        }
-        case XNE_SESSION_ASK: {
             snName = SaveSessionDialog(window);
             sessionName = snName;
             break;
@@ -4546,7 +4542,7 @@ int CloseAllDocumentInWindow(WindowInfo *window)
     // XNE_SESSION_NO: don't save session automatically
     // XNE_SESSION_ASK: also don't save session automatically, however SaveFilesDialog
     //                  has a "Save Session" button
-    if(saveSession != XNE_SESSION_NO && saveSession != XNE_SESSION_ASK) {
+    if(saveSession != XNE_SESSION_NO) {
         // save session
         if(SaveWindowSession(window)) {
             // Failed to save session
