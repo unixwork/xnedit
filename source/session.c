@@ -465,12 +465,14 @@ static void finishLoadingSessions(XtPointer clientData, XtIntervalId *id)
     waitingMenus = NULL;
 }
 
+/* inverse mtime cmp */
 static int sessionFileCmp(const void *f1, const void *f2)
 {
     const SessionFile *s1 = f1;
     const SessionFile *s2 = f2;
-    
-    return s1->mtime < s2->mtime;
+    if(s1->mtime < s2->mtime) return 1;
+    if(s1->mtime > s2->mtime) return -1;
+    return 0;
 }
 
 static void* loadSessions(void *data)
@@ -481,7 +483,7 @@ static void* loadSessions(void *data)
     if(openSessionsDir(&sessionDir, &dir, &dir_fd)) {
         return NULL;
     }
-    
+     
     struct stat s; 
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
@@ -506,6 +508,11 @@ static void* loadSessions(void *data)
     closedir(dir);
     
     qsort(sessionFiles, numSessionFiles, sizeof(SessionFile), sessionFileCmp);
+    
+    for(int i=0;i<numSessionFiles;i++) {
+        SessionFile s = sessionFiles[i];
+        printf("%s  %d\n", s.name, (int)s.mtime);
+    }
     
     // create menu items for all open windows
     pthread_mutex_lock(&wmlock);
