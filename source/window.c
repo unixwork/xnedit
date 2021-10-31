@@ -4475,25 +4475,31 @@ int SaveWindowSession(WindowInfo *window)
             /* fall through */
         }
         case XNE_SESSION_NEW: {
+            /* fall through */
+        }
+        case XNE_SESSION_NO: {
+            int genName = GetPrefSessionGenerateName();
             const char *fmt = GetPrefSessionNameFormat();
-            
             time_t t = time(NULL);
             struct tm *tm = localtime(&t);
-            
-            snName = NEditMalloc(512);
-            if(strftime(snName, 512, fmt, tm) == 0) {
-                return 1;
+
+            char *buf = NEditMalloc(512);
+            if(strftime(buf, 512, fmt, tm) == 0) {
+                genName = 1;
+                buf[0] = 0;
             }
-            sessionName = snName;
+            
+            if(genName) {
+                snName = buf;
+                sessionName = snName;
+            } else {
+                snName = SaveSessionDialog(window);
+                NEditFree(buf);
+            }
             break;
         }
         case XNE_SESSION_DEFAULT: {
             sessionName = GetPrefSessionDefaultName();
-            break;
-        }
-        case XNE_SESSION_NO: {
-            snName = SaveSessionDialog(window);
-            sessionName = snName;
             break;
         }
     }
