@@ -298,6 +298,9 @@ void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile)
         return;
     }
     
+    if(window->sessionpath) NEditFree(window->sessionpath);
+    window->sessionpath = NEditStrdup(sessionFile);
+    
     XNESessionEntry *entry = session.entries;
     while(entry) {
         XNESessionEntry *next_entry = entry->next;
