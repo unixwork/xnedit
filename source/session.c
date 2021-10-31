@@ -509,11 +509,6 @@ static void* loadSessions(void *data)
     
     qsort(sessionFiles, numSessionFiles, sizeof(SessionFile), sessionFileCmp);
     
-    for(int i=0;i<numSessionFiles;i++) {
-        SessionFile s = sessionFiles[i];
-        printf("%s  %d\n", s.name, (int)s.mtime);
-    }
-    
     // create menu items for all open windows
     pthread_mutex_lock(&wmlock);
     sessionsLoaded = 1;
