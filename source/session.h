@@ -91,6 +91,11 @@ void OpenDocumentsFromSession(WindowInfo *window, const char *sessionFile);
 char* GetLatestSessionFile(void);
 
 /*
+ * Reads the session directory and returns the path of the latest session file
+ */
+char* LoadSessionsAndGetLatestFile(void);
+
+/*
  * Create menu items for stored sessions
  * if the menu items are not loaded yet, insert a placeholder menuitem,
  * that will be replaced later

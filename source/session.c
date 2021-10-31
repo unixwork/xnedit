@@ -475,8 +475,12 @@ static int sessionFileCmp(const void *f1, const void *f2)
     return 0;
 }
 
-static void* loadSessions(void *data)
+static SessionFile* load_session_folder(size_t *nfiles)
 {
+    SessionFile *snFiles = NULL;
+    size_t numFiles = 0;
+    size_t snAlloc = 0;
+    
     const char *sessionDir;
     int dir_fd;
     DIR *dir;
@@ -492,9 +496,9 @@ static void* loadSessions(void *data)
             continue;
         }
         
-        if(numSessionFiles >= allocSessionFiles) {
-            allocSessionFiles += 16;
-            sessionFiles = NEditRealloc((void*)sessionFiles, allocSessionFiles * sizeof(SessionFile));
+        if(numFiles >= snAlloc) {
+            snAlloc += 16;
+            snFiles = NEditRealloc((void*)snFiles, snAlloc * sizeof(SessionFile));
         }
         
         SessionFile f;
@@ -502,15 +506,22 @@ static void* loadSessions(void *data)
         f.name = NEditStrdup(FileName(f.path));
         f.name[strlen(f.name) - sizeof(XNSESSION_EXT) + 1] = '\0';
         f.mtime = s.st_mtime;
-        sessionFiles[numSessionFiles++] = f;
+        snFiles[numFiles++] = f;
     }
     
     closedir(dir);
     
-    qsort(sessionFiles, numSessionFiles, sizeof(SessionFile), sessionFileCmp);
+    qsort(snFiles, numFiles, sizeof(SessionFile), sessionFileCmp);
     
+    *nfiles = numFiles;
+    return snFiles;
+}
+
+static void* loadSessions(void *data)
+{
     // create menu items for all open windows
     pthread_mutex_lock(&wmlock);
+    sessionFiles = load_session_folder(&numSessionFiles);
     sessionsLoaded = 1;
     
     if(waitingMenus) {
@@ -561,4 +572,11 @@ void CreateSessionMenu(Widget menuPane)
     waitingMenus = l;
     
     pthread_mutex_unlock(&wmlock);
+}
+
+char* LoadSessionsAndGetLatestFile(void)
+{
+    sessionFiles = load_session_folder(&numSessionFiles);
+    sessionsLoaded = 1;
+    return numSessionFiles > 0 ? sessionFiles[0].path : NULL;
 }
