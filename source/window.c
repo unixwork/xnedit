@@ -4205,6 +4205,12 @@ int SaveFilesDialog(WindowInfo *window)
         btnSaveSession = XmCreatePushButton(buttons, "button", args, n);
         XtManageChild(btnSaveSession);
         XmStringFree(str);
+        
+        XtAddCallback(
+                btnSaveSession,
+                XmNactivateCallback,
+                (XtCallbackProc)savefiles_save_session,
+                &data);
     }
     
     n = 0;
@@ -4373,13 +4379,6 @@ int SaveFilesDialog(WindowInfo *window)
             XmNactivateCallback,
             (XtCallbackProc)savefiles_cancel,
             &data);
-    if(btnSaveSession) {
-        XtAddCallback(
-                btnSaveSession,
-                XmNactivateCallback,
-                (XtCallbackProc)savefiles_save_session,
-                &data);
-    }
     
     // show dialog
     if(nunsaved > 0) {
@@ -4402,7 +4401,9 @@ int SaveFilesDialog(WindowInfo *window)
         YES_SBC_DIALOG_RESPONSE : NO_SBC_DIALOG_RESPONSE;
     if(data.status == 3) {
         // save session
-        SaveWindowSession(window);
+        if(SaveWindowSession(window)) {
+            data.status = 2; // cancel
+        }
     }
     
     if(data.status != 2) {
