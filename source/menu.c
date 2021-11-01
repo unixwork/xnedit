@@ -241,6 +241,8 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
 static void openSessionFileAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
+static void saveSessionDialogAP(Widget w, XEvent *event, String *args,
+        Cardinal *nArgs);
 static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs); 
 static void includeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
@@ -455,6 +457,7 @@ static XtActionsRec Actions[] = {
     {"revert-to-saved", revertAP},
     {"revert_to_saved", revertAP},
     {"revert_to_saved_dialog", revertDialogAP},
+    {"save_session_dialog", saveSessionDialogAP},
     {"open_session_file", openSessionFileAP},
     {"include-file", includeAP},
     {"include_file", includeAP},
@@ -698,6 +701,8 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     	    "save_as_dialog", SHORT);
     createMenuItem(menuPane, "revertToSaved", "Revert to Saved", 'R',
     	    doActionCB, "revert_to_saved_dialog", SHORT);
+    createMenuItem(menuPane, "saveSession", "Save Session", 'e',
+    	    doActionCB, "save_session_dialog", SHORT);
     createMenuSeparator(menuPane, "sep2", SHORT);
     createMenuItem(menuPane, "includeFile", "Include File...", 'I',
     	    doActionCB, "include_file_dialog", SHORT);
@@ -2871,7 +2876,7 @@ static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openDialogAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, True };
+    FileSelection file = { NULL, NULL, True, False };
     char *params[3];
     int response;
     int n=1;
@@ -3041,12 +3046,86 @@ static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     RevertToSaved(WidgetToWindow(w), NULL);
 }
 
+static void saveSessionDialogAP(Widget w, XEvent *event, String *args,
+        Cardinal *nArgs)
+{
+    WindowInfo *window = WidgetToWindow(w);
+    int r = DialogF(DF_QUES, window->shell, 3, "Save Session",
+                "Save the current session?", "Save Session", "Select File", "Cancel");
+    
+    const char *snName = NULL;
+    char *snNameFree = NULL;
+    if(r == 1) {
+        int saveSession = window->sessionpath ? GetPrefSessionSaveTo() : GetPrefSessionNewSaveTo();
+        int genName = GetPrefSessionGenerateName();
+        switch(saveSession) {
+            case XNE_SESSION_DEFAULT: {
+                snName = GetPrefSessionDefaultName();
+                break;
+            }
+            case XNE_SESSION_LAST: {
+                snName = window->sessionpath;
+                if(snName) break;
+                /* fall through */
+            }
+            default: {
+                const char *fmt = GetPrefSessionNameFormat();
+                time_t t = time(NULL);
+                struct tm *tm = localtime(&t);
+
+                char *buf = NEditMalloc(512);
+                if(strftime(buf, 512, fmt, tm) == 0) {
+                    genName = 1;
+                    buf[0] = 0;
+                }
+
+                if(genName) {
+                    snName = buf;
+                    snNameFree = buf;
+                } else {
+                    snNameFree = SaveSessionDialog(window);
+                    snName = snNameFree;
+                    NEditFree(buf);
+                }
+                break;
+            }
+        }
+    } else if(r == 2) {
+        FileSelection file;
+        memset(&file, 0, sizeof(file));
+        file.disableopt = 1;
+        if(GetNewFilename(window->shell, "Save Session", &file, "") == 1) {
+            snName = file.path;
+            snNameFree = file.path;
+        }
+    }
+    
+    if(snName) {
+        // save session
+        XNESessionWriter *session = CreateSession(window, snName);
+        Widget winShell = window->shell;
+
+        for (WindowInfo *win = WindowList; win;win = win->next) {
+            if (win->shell == winShell) {
+                SessionAddDocument(session, win);
+                if(win->sessionpath) NEditFree(win->sessionpath);
+                win->sessionpath = NEditStrdup(snName);
+            }
+        }
+
+        CloseSession(session);
+    }
+    if(snNameFree) {
+        NEditFree(snNameFree);
+    }
+}
+
 static void openSessionFileAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     WindowInfo *window = WidgetToWindow(w);
     
-    FileSelection getfile = { NULL, NULL };
+    FileSelection getfile = { NULL, NULL, False, False };
     if(PromptForExistingFile(window, "Open Session File", &getfile) == 1) {
         OpenDocumentsFromSession(window, getfile.path);
         NEditFree(getfile.path);
@@ -3057,7 +3136,7 @@ static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, True };
+    FileSelection file = { NULL, NULL, True, False };
     char *params[2];
     int response;
     int n = 1;
@@ -3092,7 +3171,7 @@ static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, False, False };
     char *params[1];
     int response;
     
@@ -3117,7 +3196,7 @@ static void loadTagsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, False, False };
     char *params[1];
     int response;
     
@@ -3174,7 +3253,7 @@ static void loadTipsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, False, False };
     char *params[1];
     int response;
     

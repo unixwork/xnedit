@@ -3442,7 +3442,7 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
 
     /*  Fork to one of the worker methods from util/getfiles.c.
         (This should obviously be refactored.)  */
-    FileSelection getfile = { NULL, NULL };
+    FileSelection getfile = { NULL, NULL, False, False };
     if (0 == strcmp(mode, "exist")) {
         gfnResult = GetExistingFilename(window->shell, title, &getfile);
     } else {

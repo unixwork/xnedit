@@ -2360,29 +2360,33 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         Widget nameLabel = XmCreateLabel(form, "label", args, n);
         XtManageChild(nameLabel);
         XmStringFree(str);
-
-        n = 0;
-        str = XmStringCreateSimple("Add line breaks where wrapped");
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, nameLabel); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNmnemonic, 'A'); n++;
-        XtSetArg(args[n], XmNlabelString, str); n++;
-        data.wrap = XmCreateToggleButton(form, "addWrap", args, n);
-        XtManageChild(data.wrap);
-        XmStringFree(str);
-
-        Widget formatBtns = CreateFormatButtons(
-                form,
-                data.wrap,
-                file->format,
-                &data.unixFormat,
-                &data.dosFormat,
-                &data.macFormat);
         
-        bottomWidget = formatBtns;
+        if(!file->disableopt) {
+            n = 0;
+            str = XmStringCreateSimple("Add line breaks where wrapped");
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, nameLabel); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNmnemonic, 'A'); n++;
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            data.wrap = XmCreateToggleButton(form, "addWrap", args, n);
+            XtManageChild(data.wrap);
+            XmStringFree(str);
+
+            Widget formatBtns = CreateFormatButtons(
+                    form,
+                    data.wrap,
+                    file->format,
+                    &data.unixFormat,
+                    &data.dosFormat,
+                    &data.macFormat);
+
+            bottomWidget = formatBtns;
+        } else {
+            bottomWidget = data.name;
+        }
     }
     
     n = 0;
@@ -2460,7 +2464,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         }
         
         /* bom and xattr option */
-        if(type == FILEDIALOG_SAVE) {
+        if(type == FILEDIALOG_SAVE && !file->disableopt) {
             /* only the save file dialog needs an encoding select callback */
             XtAddCallback(
                     data.encoding,
@@ -2726,29 +2730,30 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             int bomVal = 0;
             int xattrVal = 0;
             int wrapVal = 0;
-            XtVaGetValues(data.bom, XmNset, &bomVal, NULL);
-            XtVaGetValues(data.xattr, XmNset, &xattrVal, NULL);
-            XtVaGetValues(data.wrap, XmNset, &wrapVal, NULL);
+            if(data.bom) XtVaGetValues(data.bom, XmNset, &bomVal, NULL);
+            if(data.xattr) XtVaGetValues(data.xattr, XmNset, &xattrVal, NULL);
+            if(data.wrap) XtVaGetValues(data.wrap, XmNset, &wrapVal, NULL);
             file->writebom = bomVal;
             file->setxattr = xattrVal;
             file->addwrap = wrapVal;
             
-            int formatVal = 0;
-            XtVaGetValues(data.unixFormat, XmNset, &formatVal, NULL);
-            if(formatVal) {
-                file->format = UNIX_FILE_FORMAT;
-            } else {
-                XtVaGetValues(data.dosFormat, XmNset, &formatVal, NULL);
+            if(data.unixFormat) {
+                int formatVal = 0;
+                XtVaGetValues(data.unixFormat, XmNset, &formatVal, NULL);
                 if(formatVal) {
-                    file->format = DOS_FILE_FORMAT;
+                    file->format = UNIX_FILE_FORMAT;
                 } else {
-                    XtVaGetValues(data.macFormat, XmNset, &formatVal, NULL);
+                    XtVaGetValues(data.dosFormat, XmNset, &formatVal, NULL);
                     if(formatVal) {
-                        file->format = MAC_FILE_FORMAT;
+                        file->format = DOS_FILE_FORMAT;
+                    } else {
+                        XtVaGetValues(data.macFormat, XmNset, &formatVal, NULL);
+                        if(formatVal) {
+                            file->format = MAC_FILE_FORMAT;
+                        }
                     }
                 }
-            }
-            
+            } 
         }
     } else {
         data.status = FILEDIALOG_CANCEL;

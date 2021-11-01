@@ -4431,7 +4431,7 @@ int SaveFilesDialog(WindowInfo *window)
     return data.status == 2 ? True : False;
 }
 
-static char* SaveSessionDialog(WindowInfo *window)
+char* SaveSessionDialog(WindowInfo *window)
 {
     char sessionName[DF_MAX_PROMPT_LENGTH];
     sessionName[0] = 0;
