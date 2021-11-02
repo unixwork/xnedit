@@ -1214,8 +1214,6 @@ void CloseWindow(WindowInfo *window)
        window), leave the window alive until the macro completes */
     keepWindow = !MacroWindowCloseActions(window);
     
-    if(window->sessionpath) NEditFree(window->sessionpath);
-    
     /* Kill shell sub-process and free related memory */
     AbortShellCommand(window);
     
@@ -1278,6 +1276,9 @@ void CloseWindow(WindowInfo *window)
         updateLineNumDisp(window);
         return;
     }
+    
+        
+    if(window->sessionpath) NEditFree(window->sessionpath);
     
     /* Free syntax highlighting patterns, if any. w/o redisplaying */
     FreeHighlightingData(window);
