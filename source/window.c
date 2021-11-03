@@ -4570,6 +4570,9 @@ int CloseAllDocumentInWindow(WindowInfo *window)
             break;
 
     if (win) {
+        if(win->sessionpath) NEditFree(win->sessionpath);
+        win->sessionpath = NULL;
+        
         topDocument = GetTopDocument(winShell);
 
         /* close all non-top documents belong to this window */

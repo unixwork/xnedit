@@ -1308,7 +1308,7 @@ int IncludeFile(WindowInfo *window, const char *name)
 int CloseAllFilesAndWindows(void)
 {
     while (WindowList->next != NULL || 
-    		WindowList->filenameSet || WindowList->fileChanged) {
+    		WindowList->filenameSet || WindowList->fileChanged || WindowList->sessionpath) {
         /*
          * When we're exiting through a macro, the document running the 
          * macro does not disappear from the list, so we could get stuck
