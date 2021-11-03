@@ -493,7 +493,7 @@ WindowInfo *EditExistingFileExt(WindowInfo *inWindow, const char *name,
     
     EditorConfig ec;
     memset(&ec, 0, sizeof(EditorConfig));
-    if(!content) {
+    if(!content && filenameSet) {
         if(GetEditorConfig()) {
             ec = EditorConfigGet(path, name);
         }
@@ -518,7 +518,7 @@ WindowInfo *EditExistingFileExt(WindowInfo *inWindow, const char *name,
     } else {
         /* Display the file contents in the text widget */
         window->ignoreModify = True;
-        BufSetAll(window->buffer, content);
+        if(content) BufSetAll(window->buffer, content);
         window->ignoreModify = False;
         window->filenameSet = filenameSet;
         
