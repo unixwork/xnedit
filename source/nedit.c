@@ -757,8 +757,14 @@ int main(int argc, char **argv)
     	    fprintf(stderr, "xnedit: Unrecognized option %s\n%s", argv[i],
     	    	    cmdLineHelp);
     	    exit(EXIT_FAILURE);
-    	} else {
-	    if (ParseFilename(argv[i], filename, pathname) == 0 ) {
+    	} else {      
+	    if (ParseFilename(argv[i], filename, pathname) == 0 ) {        
+                if(sessionFile) {
+                    WindowInfo *snWin = WindowList ? WindowList : EditNewFile(NULL, geometry, iconic, langMode, NULL);
+                    OpenDocumentsFromSession(snWin, sessionFile);
+                    sessionFile = NULL;
+                }
+                
 		/* determine if file is to be openned in new tab, by
 		   factoring the options -group, -tabbed & -untabbed */
     		if (group == 2) {
@@ -769,7 +775,7 @@ int main(int argc, char **argv)
 		} else {           /* not in group */
 	    	    isTabbed = tabbed==-1? GetPrefOpenInTab() : tabbed; 
 		}
-		
+                
 		/* Files are opened in background to improve opening speed
 		   by defering certain time  consuiming task such as syntax
 		   highlighting. At the end of the file-opening loop, the 
@@ -819,19 +825,19 @@ int main(int argc, char **argv)
     VMSFileScanDone();
 #endif /*VMS*/
     
-    /* Raise the last file opened */
-    if (lastFile) {
-	CleanUpTabBarExposeQueue(lastFile);
-	RaiseDocument(lastFile);
-    }
-    CheckCloseDim();
-    
     /* Open Previous Session */
     if(sessionFile) {
         WindowInfo *snWin = WindowList ? WindowList : EditNewFile(NULL, geometry, iconic, langMode, NULL);
         OpenDocumentsFromSession(snWin, sessionFile);
         fileSpecified = 1;
     }
+    
+    /* Raise the last file opened */
+    if (lastFile) {
+	CleanUpTabBarExposeQueue(lastFile);
+	RaiseDocument(lastFile);
+    }
+    CheckCloseDim();
     
     /* If no file to edit was specified, open a window to edit "Untitled" */
     if (!fileSpecified) {
