@@ -6766,11 +6766,11 @@ char* ParseAnsiColorList(char **colorArray, const char *colorStr)
     
     char *colorListStr = NEditMalloc(len+1);
     memcpy(colorListStr, colorStr, len);
-    colorArray[len] = 0;
+    colorListStr[len] = 0;
     
     int b = 0;
     for(int i=0;i<=len;i++) {
-        int c = colorListStr[i];
+        char c = colorListStr[i];
         if(c == ';' || c == '\0') {
             colorArray[ncolors++] = colorListStr+b;
             colorListStr[i] = '\0';
