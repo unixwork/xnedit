@@ -187,7 +187,6 @@ typedef struct _textDisp {
     XftColor fgColor;                   /* Foreground text color */
     XftColor selectFGColor;             /* Foreground color for selected text */
     XftColor highlightFGColor;          /* Foreground highlighted text color */
-    XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Boolean indentRainbow;

@@ -3428,7 +3428,7 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
             snprintf(lineNumString, 12, "%*d", nCols, line);
             XftDrawString8(
                     textD->d,
-                    &textD->lineNumColor,
+                    &textD->lineNumFGPixel,
                     FontDefault(textD->font),
                     textD->lineNumLeft,
                     y + textD->ascent,
