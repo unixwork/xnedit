@@ -44,6 +44,7 @@
 #include "../util/DialogF.h"
 #include "../util/managedList.h"
 #include "../util/nedit_malloc.h"
+#include "../util/colorchooser.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1721,6 +1722,50 @@ static int styleError(const char *stringStart, const char *stoppedAt,
     return False;
 }
 
+
+static void updateCGchooser(Widget w, XtPointer clientData,
+      XtPointer callData)
+{
+    Widget button = clientData;
+    char *str = XmTextGetString(w);
+    int dummy;
+    SetParseColorError(0);
+    Pixel color = AllocColor(button, str, &dummy, &dummy, &dummy);
+    SetParseColorError(1);
+    XtVaSetValues(button, XmNbackground, color, NULL);
+    XtFree(str);
+}
+
+static void selectColorCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    Colormap cm;
+    Pixel bg;
+    Widget textfield = NULL;
+    XtVaGetValues(w, XtNcolormap, &cm, XmNbackground, &bg, XmNuserData, &textfield, NULL);
+    
+    if(!textfield) return;
+    
+    XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
+    xcolor.pixel = bg;
+    XQueryColor(XtDisplay(w), cm, &xcolor);
+    
+    int r = xcolor.red;
+    int g = xcolor.green;
+    int b = xcolor.blue;
+    if(ColorChooser(XtParent(w), &r, &g, &b)) {
+        r /= 257;
+        g /= 257;
+        b /= 257;
+        char buf[32];
+        snprintf(buf, 32, "#%02x%02x%02x", r, g, b);
+        // alternative format
+        //snprintf(buf, 32, "rgb:%02x/%02x/%02x", r, g, b);
+        XmTextSetString(textfield, buf);
+    }
+
+}
+
 /*
 ** Present a dialog for editing highlight style information
 */
@@ -1811,16 +1856,39 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNtopOffset, HS_H_MARGIN,
 	    XmNtopWidget, HSDialog.nameW, NULL);
     XmStringFree(s1);
- 
+    
+    Widget fgColorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, form,
+            XmNrightAttachment, XmATTACH_POSITION,
+	    XmNrightPosition, HS_RIGHT_MARGIN_POS,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorLbl,
+            XmNhighlightThickness, 2,
+            XmNshadowThickness, 0,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(fgColorChooserButton, XmNactivateCallback, selectColorCB, NULL);
+    
     HSDialog.colorW = XtVaCreateManagedWidget("color", xmTextWidgetClass, form,
 	    XmNleftAttachment, XmATTACH_POSITION,
 	    XmNleftPosition, HS_LIST_RIGHT,
 	    XmNtopAttachment, XmATTACH_WIDGET,
 	    XmNtopWidget, colorLbl,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, HS_RIGHT_MARGIN_POS, NULL);
+	    XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, fgColorChooserButton, NULL);
     RemapDeleteKey(HSDialog.colorW);
     XtVaSetValues(colorLbl, XmNuserData, HSDialog.colorW, NULL);
+    XtAddCallback(HSDialog.colorW, XmNvalueChangedCallback,
+          updateCGchooser, fgColorChooserButton);
+    
+    //Dimension shadowThickness = 1;
+    //XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
+    XtVaSetValues(fgColorChooserButton,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, HSDialog.colorW,
+            //XmNshadowThickness, shadowThickness,
+            XmNuserData, HSDialog.colorW, NULL);
     
     bgColorLbl = XtVaCreateManagedWidget("bgColorLbl", xmLabelGadgetClass, form,
     	    XmNlabelString,
@@ -1833,6 +1901,19 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNtopOffset, HS_H_MARGIN,
 	    XmNtopWidget, HSDialog.colorW, NULL);
     XmStringFree(s1);
+    
+    Widget bgColorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, form,
+            XmNrightAttachment, XmATTACH_POSITION,
+	    XmNrightPosition, HS_RIGHT_MARGIN_POS,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, bgColorLbl,
+            XmNhighlightThickness, 2,
+            XmNshadowThickness, 0,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(bgColorChooserButton, XmNactivateCallback, selectColorCB, NULL);
  
     HSDialog.bgColorW = XtVaCreateManagedWidget("bgColor",
             xmTextWidgetClass, form,
@@ -1840,10 +1921,18 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNleftPosition, HS_LIST_RIGHT,
 	    XmNtopAttachment, XmATTACH_WIDGET,
 	    XmNtopWidget, bgColorLbl,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, HS_RIGHT_MARGIN_POS, NULL);
+	    XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, bgColorChooserButton, NULL);
     RemapDeleteKey(HSDialog.bgColorW);
     XtVaSetValues(bgColorLbl, XmNuserData, HSDialog.bgColorW, NULL);
+    XtAddCallback(HSDialog.bgColorW, XmNvalueChangedCallback,
+          updateCGchooser, bgColorChooserButton);
+    
+    XtVaSetValues(bgColorChooserButton,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, HSDialog.bgColorW,
+            //XmNshadowThickness, shadowThickness,
+            XmNuserData, HSDialog.bgColorW, NULL);
     
     fontLbl = XtVaCreateManagedWidget("fontLbl", xmLabelGadgetClass, form,
     	    XmNlabelString, s1=XmStringCreateSimple("Font:"),
