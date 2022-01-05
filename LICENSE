@@ -304,6 +304,12 @@ license.
 http://creativecommons.org/licenses/by-sa/3.0/
 
 #
+# OCaml Syntax Highlighting
+#
+Copyright (C) 2021, Red Hat, Inc.
+GPL-2.0-only
+
+#
 # EditorConfig
 #
 Copyright (c) 2011-2013 EditorConfig Team, including Hong Xu and Trey Hunner
