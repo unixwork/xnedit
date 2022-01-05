@@ -59,15 +59,15 @@ realclean: clean
 #
 INSTALL_FILES=source/xnedit source/xnc
 install: $(INSTALL_FILES)
-	mkdir -p $(PREFIX)/bin
-	mkdir -p $(PREFIX)/share/icons
-	mkdir -p $(PREFIX)/share/applications
-	rm -f $(PREFIX)/bin/xnedit
-	rm -f $(PREFIX)/bin/xnc
-	cp source/xnedit $(PREFIX)/bin/xnedit
-	cp source/xnc $(PREFIX)/bin/xnc
-	cp resources/desktop/xnedit.png $(PREFIX)/share/icons/xnedit.png
-	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(PREFIX)/share/applications/xnedit.desktop
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	mkdir -p $(DESTDIR)$(PREFIX)/share/icons
+	mkdir -p $(DESTDIR)$(PREFIX)/share/applications
+	rm -f $(DESTDIR)$(PREFIX)/bin/xnedit
+	rm -f $(DESTDIR)$(PREFIX)/bin/xnc
+	cp source/xnedit $(DESTDIR)$(PREFIX)/bin/xnedit
+	cp source/xnc $(DESTDIR)$(PREFIX)/bin/xnc
+	cp resources/desktop/xnedit.png $(DESTDIR)$(PREFIX)/share/icons/xnedit.png
+	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(DESTDIR)$(PREFIX)/share/applications/xnedit.desktop
 
 
 # On Cygwin, you can customize 'bin' and 'pkg' than run 'xnedit_pkg'
