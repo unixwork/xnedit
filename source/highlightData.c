@@ -578,6 +578,22 @@ static char *DefaultPatternSets[] = {
         Macro Definition:\"(?<=define)\\s+\\w+\":::Subroutine1::\n\
         Custom Macro:\"\\w+(?=\\s*(?:\\\\\\n)?\\s*[\\(])\":::Subroutine1::\n\
         Variables:\"\\w+\":::Identifier1::D}",
+    "OCaml:1:0{\n\
+        comment:\"\\(\\*\":\"\\*\\)\"::Comment::\n\
+        string-literal:\"(?<!\\\\)\"\"\":\"\"\"\":\"\\n\":String::\n\
+        string-escape:\"\\\\(?:(?:(?#esc-named)[\\\\\"\"'ntbr ])|(?:(?#esc-dec)[0-9]{3})|(?:(?#esc-hex)x[0-9a-fA-F]{2})|(?:(?#esc-oct)o[0-3][0-7]{2})|(?:(?#esc-uni)u\\{[0-9a-fA-F]+\\})|(?:(?#esc-nl)\\n[ \\t]*))\":::String2:string-literal:\n\
+        label:\"[?~](?:(?#lowercase-ident)[a-z_](?:(?#ident-char)[A-Za-z0-9_'])*):\":::Label::D\n\
+        char-literal:\"'(?:(?:(?#regular-char)[^'\\\\])|\\\\(?:(?:(?#esc-named)[\\\\\"\"'ntbr ])|(?:(?#esc-dec)[0-9]{3})|(?:(?#esc-hex)x[0-9a-fA-F]{2})|(?:(?#esc-oct)o[0-3][0-7]{2})))'\":::Character Const::D\n\
+        float-literal-frac:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*(?:(?#hex-frac)\\.[0-9a-fA-F_]*)(?:(?#hex-exp)[pP][-+]?[0-9][0-9_]*)?|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*(?:(?#dec-frac)\\.[0-9_]*)(?:(?#dec-exp)[eE][-+]?[0-9][0-9_]*)?)\":::Numeric Const::D\n\
+        float-literal-exp:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*(?:(?#hex-exp)[pP][-+]?[0-9][0-9_]*)|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*(?:(?#dec-exp)[eE][-+]?[0-9][0-9_]*))\":::Numeric Const::D\n\
+        integer-literal:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*|(?:(?#oct-prefix)0[oO])(?:(?#three-bits)[0-7])(?:(?#three-bits-underscore)[0-7_])*|(?:(?#bin-prefix)0[bB])(?:(?#bit)[01])(?:(?#bit-underscore)[01_])*|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*)(?:(?#int-suffix)[lLn])?\":::Numeric Const::D\n\
+        keyword-op-no-look-ahead:\"(?:'|,|::|:=|:\\>|:|;;|;|\\(|\\)|\\.\\.|\\.~|\\.|\\>\\]|\\>\\}|\\[\\<|\\[\\>|\\[\\||\\[|\\]|\\{\\<|\\{|\\|\\]|\\}|_|`)\":::Keyword::D\n\
+        keyword-op-look-ahead:\"(?:!=|#|=|\\&\\&|\\&|\\*|\\+|\\-\\.|\\-\\>|\\-|\\<\\-|\\<|\\>|\\?|\\|\\||\\||~)(?#operator-char-does-not-follow)(?!(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.]))\":::Keyword::D\n\
+        infix-symbol:\"(?:(?:(?#core-operator-char)[$&*+\\-/=>@^|])|[%<])(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])*|#(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])+\":::Operator::D\n\
+        prefix-symbol:\"!(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])*|[?~](?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])+\":::Operator::D\n\
+        keyword:\"<(?:and|as|asr|assert|begin|class|constraint|do|done|downto|else|end|exception|external|false|for|fun|function|functor|if|in|include|inherit|initializer|land|lazy|let|lor|lsl|lsr|lxor|match|method|mod|module|mutable|new|nonrec|object|of|open|or|private|rec|sig|struct|then|to|true|try|type|val|virtual|when|while|with)>\":::Keyword::D\n\
+        capitalized-ident:\"[A-Z](?:(?#ident-char)[A-Za-z0-9_'])*\":::Identifier::D\n\
+        lowercase-ident:\"[a-z_](?:(?#ident-char)[A-Za-z0-9_'])*\":::Identifier1::D}",
     "Pascal:1:0{\n\
 	TP Directives:\"\\{\\$\":\"\\}\"::Comment::\n\
 	Comment:\"\\(\\*|\\{\":\"\\*\\)|\\}\"::Comment::\n\

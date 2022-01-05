@@ -782,6 +782,7 @@ static PrefDescripRec PrefDescrip[] = {
         Markdown:Default\n\
         Matlab:Default\n\
         NEdit Macro:Default\n\
+        OCaml:Default\n\
         Pascal:Default\n\
         Perl:Default\n\
         PostScript:Default\n\
@@ -813,6 +814,7 @@ static PrefDescripRec PrefDescrip[] = {
         Markdown:.md .markdown .mdtxt .mdtext:::::::\n\
         Matlab:.m .oct .sci:::::::\n\
         NEdit Macro:.nm .neditmacro:::::::\n\
+        OCaml:.ml::Auto:None:8:2:\".,/\\`'!|@#%^&*()-=+{}[]\"\":;<>?~\":\n\
         Pascal:.pas .p .int:::::::\n\
         Perl:.pl .pm .p5 .PL:\"^[ \\t]*#[ \\t]*!.*perl\":Auto:None:::\".,/\\\\`'!$@#%^&*()-=+{}[]\"\":;<>?~|\":\n\
         PostScript:.ps .eps .epsf .epsi:\"^%!\":::::\"/%(){}[]<>\":\n\
