@@ -243,7 +243,7 @@ static char *DefaultPatternSets[] = {
 	Gawk builtin variables:\"\"\"<(ARGIND|ERRNO|RT|IGNORECASE|FIELDWIDTHS)>\"\"\":::Storage Type::D\n\
 	Field:\"\\$[0-9a-zA-Z_]+|\\$[ \\t]*\\([^,;]*\\)\":::Storage Type::D\n\
 	BeginEnd:\"<(BEGIN|END)>\":::Preprocessor1::D\n\
-	Numeric constant:\"(?<!\\Y)((0(x|X)[0-9a-fA-F]*)|[0-9.]+((e|E)(\\+|-)?)?[0-9]*)(L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
+	Numeric constant:\"(?<!\\Y)((0(x|X)[0-9a-fA-F]*)|[0-9.]+((e|E)(\\+|-)?)?[0-9]*)(L|l|UL|ul|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
 	String pattern:\"~[ \\t]*\"\"\":\"\"\"\":\"\\n\":Preprocessor::\n\
 	String pattern escape:\"\\\\(.|\\n)\":::Preprocessor:String pattern:\n\
 	newline escape:\"\\\\$\":::Preprocessor1::\n\
@@ -260,7 +260,7 @@ static char *DefaultPatternSets[] = {
 	preprocessor string:\"(?:L|u|U|u8|R)?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
 	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
 	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC|STDC_HOSTED|func)__>\":::Preprocessor::\n\
-	numeric constant:\"(?<!\\Y)(?:(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
+	numeric constant:\"(?<!\\Y)(?:(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
 	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
 	keywords 1 - storage:\"<(?:register|static|extern|thread_local|mutable)>\":::Storage Type::D\n\
 	keywords 2 - declerations:\"<(?:class|typename|template|friend|virtual|inline|explicit|operator|public|private|protected|const|volatile|typedef|struct|union|enum|asm|override|final|decltype|constexpr|constinit|consteval|noexcept|export|import|module|using|namespace|concept|requires)>\":::Keyword::D\n\
