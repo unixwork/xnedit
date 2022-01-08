@@ -272,18 +272,25 @@ static char *DefaultPatternSets[] = {
 	braces:\"[{}]\":::Keyword::D}",
     "C:1:0 {\n\
     	comment:\"/\\*\":\"\\*/\"::Comment::\n\
-	string:\"L?\"\"\":\"\"\"\":\"\\n\":String::\n\
+	string:\"(?:L|u|U|u8)?\"\"\":\"\"\"\":\"\\n\":String::\n\
 	preprocessor line:\"^\\s*#\\s*(?:include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma)>\":\"$\"::Preprocessor::\n\
     	string escape chars:\"\\\\(?:.|\\n)\":::String1:string:\n\
     	preprocessor esc chars:\"\\\\(?:.|\\n)\":::Preprocessor1:preprocessor line:\n\
     	preprocessor comment:\"/\\*\":\"\\*/\"::Comment:preprocessor line:\n\
     	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
     	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
-	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__>\":::Preprocessor::\n\
-	character constant:\"L?'\":\"'\":\"[^\\\\][^']\":Character Const::\n\
-	numeric constant:\"(?<!\\Y)(?:(?:0(?:x|X)[0-9a-fA-F]*)|(?:(?:[0-9]+\\.?[0-9]*)|(?:\\.[0-9]+))(?:(?:e|E)(?:\\+|-)?[0-9]+)?)(?:L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
-    	storage keyword:\"<(?:const|extern|auto|register|static|unsigned|signed|volatile|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
-    	keyword:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for|sizeof)>\":::Keyword::D\n\
+	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__|_Pragma>\":::Preprocessor::\n\
+	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
+	numeric constant:\"(?<!\\Y)(?:(?:0b[0-1][0-1']*)|(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
+    	keywords 1 - storage:\"<(?:extern|auto|register|static|unsigned|signed|volatile|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
+    	keywords 2 - declerations:\"<(?:const|volatile|typedef|struct|union|enum|inline|restrict)>\":::Keyword::D\n\
+    	keywords 3 - types:\"<(?:unsigned|signed|char|double|float|int|long|short|void|wchar_t|char16_t|char32_t|char8_t)>\":::Storage Type::D\n\
+    	keywords 4 - starting underscore:\"<_(?:Alignas|Alignof|Atomic|Bool|Complex|Decimal128|Decimal32|Decimal64|Generic|Imaginary|Noreturn|Satic_assert|Thread_local)>\":::Keyword::D\n\
+    	keywords 5 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for)>\":::Keyword::D\n\
+    	keywords 6 - misc:\"<(?:sizeof|asm|fortran)>\":::Keyword::D\n\
+    	keywords 7 - convenience macros:\"<(?:alignas|alignof|noreturn|static_assert|thread_local)>\":::Keyword::D\n\
+    	keywords 8 - convenience type macros:\"<(?:bool|complex|imaginary)>\":::Storage Type::D\n\
+    	keywords 9 - atomic macros:\"<atomic_(?:[us]?char|double|float|[u]?int|u?l?long|u?short|bool)>\":::Storage Type::D\n\
     	braces:\"[{}]\":::Keyword::D}",
     "CSS:1:0{\n\
 	comment:\"/\\*\":\"\\*/\"::Comment::\n\
