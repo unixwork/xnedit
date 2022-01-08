@@ -267,7 +267,7 @@ static char *DefaultPatternSets[] = {
 	keywords 3 - types:\"<(?:auto|unsigned|signed|char|double|float|int|long|short|bool|wchar_t|void|nullptr_t|char8_t|char16_t|char32_t)>\":::Storage Type::D\n\
 	keywords 4 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for|try|catch|throw)>\":::Keyword::D\n\
 	keywords 5 - misc:\"<(?:new|delete|this|sizeof|true|false|dynamic_cast|static_cast|reinterpret_cast|const_cast|nullptr|static_assert|alignof|alignas|typeid|default)>\":::Keyword::D\n\
-	keywords 6 - alternate operators:\"<(?:and|and_eq|compl|not|not_eq|or|or_eq|xor|xor_eq)>\":::Operator::D\n\
+	keywords 6 - alternate operators:\"<(?:bitand|bitor|and|and_eq|compl|not|not_eq|or|or_eq|xor|xor_eq)>\":::Operator::D\n\
 	keywords 7 - co-routines:\"<co_(?:await|return|yield)>\":::Keyword::D\n\
 	braces:\"[{}]\":::Keyword::D}",
     "C:1:0 {\n\
