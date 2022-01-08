@@ -379,7 +379,9 @@ static char *DefaultPatternSets[] = {
 	long const:\"<(?i[\\d]+L)>\":::Numeric Const::\n\
 	decimal const:\"(?<!\\Y)(?i\\d+(?:\\.\\d*)?(?:E[+\\-]?\\d+)?[FD]?|\\.\\d+(?:E[+\\-]?\\d+)?[FD]?)(?!\\Y)\":::Numeric Const::\n\
 	include:\"<(?:import|package)>\":\";\":\"\\n\":Preprocessor::\n\
-	classdef:\"<(?:class|interface)>\\s*\\n?\\s*([\\l_]\\w*)\":::Keyword::\n\
+    modules decl:\"<(?:(?:open )?module)>\":::Preprocessor::\n\
+    modules def:\"<(?:exports|uses|requires|provides)>\":\";\":\"\\n\":Preprocessor::\n\
+	classdef:\"<(?:class|interface|record)>\\s*\\n?\\s*([\\l_]\\w*)\":::Keyword::\n\
 	classdef name:\"\\1\":\"\"::Storage Type:classdef:C\n\
 	extends:\"<(?:extends)>\":\"(?=(?:<implements>|[{;]))\"::Keyword::\n\
 	extends argument:\"<[\\l_][\\w\\.]*(?=\\s*(?:/\\*.*\\*/)?(?://.*)?\\n?\\s*(?:[,;{]|<implements>))\":::Storage Type:extends:\n\
@@ -411,7 +413,7 @@ static char *DefaultPatternSets[] = {
 	newarray type:\"\\1\":\"\"::Storage Type:newarray:C\n\
 	constructor def:\"<(abstract|final|native|private|protected|public|static|synchronized)\\s*[\\n|\\s]\\s*[\\l_]\\w*\\s*\\n?\\s*(?=\\()\":::Subroutine::\n\
 	constructor def modifier:\"\\1\":\"\"::Keyword:constructor def:C\n\
-	keyword - modifiers:\"<(?:abstract|final|native|private|protected|public|static|transient|synchronized|volatile)>\":::Keyword::\n\
+	keyword - modifiers:\"<(?:abstract|final|sealed|native|private|protected|public|static|transient|synchronized|volatile|var)>\":::Keyword::\n\
 	keyword - control flow:\"<(?:catch|do|else|finally|for|if|return|switch|throw|try|while)>\":::Keyword::\n\
 	keyword - calc value:\"<(?:new|super|this)>\":::Keyword::\n\
 	keyword - literal value:\"<(?:false|null|true)>\":::Numeric Const::\n\
