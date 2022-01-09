@@ -272,6 +272,7 @@ static char *DefaultPatternSets[] = {
 	braces:\"[{}]\":::Keyword::D}",
     "C:1:0 {\n\
     	comment:\"/\\*\":\"\\*/\"::Comment::\n\
+        c99 comment:\"//\":\"(?<!\\\\)$\"::Comment::\n\
 	string:\"(?:L|u|U|u8)?\"\"\":\"\"\"\":\"\\n\":String::\n\
 	preprocessor line:\"^\\s*#\\s*(?:include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma)>\":\"$\"::Preprocessor::\n\
     	string escape chars:\"\\\\(?:.|\\n)\":::String1:string:\n\
