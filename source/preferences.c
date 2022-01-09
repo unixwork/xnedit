@@ -778,6 +778,7 @@ static PrefDescripRec PrefDescrip[] = {
         JavaScript:Default\n\
         LaTeX:Default\n\
         Lex:Default\n\
+	Lua:Default\n\
         Makefile:Default\n\
         Markdown:Default\n\
         Matlab:Default\n\
@@ -810,6 +811,7 @@ static PrefDescripRec PrefDescrip[] = {
         JavaScript:.js:::::::\n\
         LaTeX:.tex .sty .cls .ltx .ins .clo .fd:::::::\n\
         Lex:.lex:::::::\n\
+	Lua:.lua:::::::\n\
         Makefile:Makefile makefile .gmk:::None:8:8::\n\
         Markdown:.md .markdown .mdtxt .mdtext:::::::\n\
         Matlab:.m .oct .sci:::::::\n\

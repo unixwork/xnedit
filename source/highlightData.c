@@ -504,6 +504,50 @@ static char *DefaultPatternSets[] = {
 	label:\"<goto>|(^[ \\t]*[A-Za-z_][A-Za-z0-9_]*[ \\t]*:)\":::Flag::D\n\
 	braces:\"[{}]\":::Keyword::D\n\
 	markers:\"(?<!\\Y)(%\\{|%\\}|%%)(?!\\Y)\":::Flag::D}",
+    "Lua:1:0{\n\
+	String:\"'\":\"'\":\"\\n\":String::\n\
+	String2:\"\"\"\":\"\"\"\":\"\\n\":String::\n\
+	LongString0:\"\\[\\[\":\"\\]\\]\"::String::\n\
+	LongString1:\"\\[=\\[\":\"\\]=\\]\"::String::\n\
+	LongString2:\"\\[==\\[\":\"\\]==\\]\"::String::\n\
+	LongString3:\"\\[===\\[\":\"\\]===\\]\"::String::\n\
+	LongString4:\"\\[====\\[\":\"\\]====\\]\"::String::\n\
+	LongString5:\"\\[=====\\[\":\"\\]=====\\]\"::String::\n\
+	LongString6:\"\\[======\\[\":\"\\]======\\]\"::String::\n\
+	LongString7:\"\\[=======\\[\":\"\\]=======\\]\"::String::\n\
+	LongString8:\"\\[========\\[\":\"\\]========\\]\"::String::\n\
+	LongString9:\"\\[=========\\[\":\"\\]=========\\]\"::String::\n\
+	Array delimitors:\"\\(\\.|\\.\\)|\\[|\\]\":::Character Const::D\n\
+	Parentheses:\"\\(|\\)\":::Keyword::D\n\
+	X Parentheses:\"\\{|\\}\":::Keyword::D\n\
+	Long Comment:\"\\-\\-\\[\\[\":\"\\]\\]\"::Comment::\n\
+	Comment:\"--\":\"(?<!\\\\)$\"::Comment::\n\
+	X Numeric Values:\"<([2-9]|[12]\\d|3[0-6])#[\\d\\l]+>\":::Text Key::D\n\
+	Numeric Values:\"<\\d+(\\.\\d+)?((e|E)(\\+|-)?\\d+)?>\":::Numeric Const::D\n\
+	Hexdecimal Values:\"0(?ix)[\\dA-Fa-z]+(\\.\[\\dA-Fa-z]+)?((e|E|p|P)(\\+|-)?\\d+)?\":::Numeric Const::D\n\
+	Reserved Words 1:\"<(?:end|do|else|elseif|function|return|for|if|repeat|then|until|while|break|goto)>\":::Keyword::D\n\
+	Reserved Words 2:\"<(?:local)>\":::Identifier::D\n\
+	Labels:\"^::[A-Za-z_][A-Z-a-z0-9_]*::$\":::Label::D\n\
+	Predefined Consts:\"<(?:false|nil|true)>\":::String1::D\n\
+	Predefined Func1:\"<(?:gettable_event|settable_event)>\":::Preprocessor::D\n\
+	Basic Functions:\"<(?:assert|collectgarbage|dofile|error|getmetatable|ipairs|load|loadfile|next|pairs|pcall|print|rawequal|rawget|rawlen|rawset|select|setmetatable|tonumber|tostring|type|xpcall)>\":::Text Arg2::D\n\
+	Coroutine Manipulation:\"coroutine\\.(create|resume|yield|wrap|running|status)\":::Text Arg2::D\n\
+	Modules:\"<(?:require|package\\.loadlib|package\\.searchpath)>\":::Text Arg2::D\n\
+	Package Variables:\"package\\.(config|cpath|loaded|path|preload|searchers)\":::Warning::D\n\
+	String Manipulation:\"string\\.(?:byte|char|dump|find|format|gmatch|gsub|len|lower|match|rep|reverse|sub|upper)\":::Text Arg2::D\n\
+	Table Manipulation:\"table\\.(?:concat|insert|pack|remove|sort|unpack)\":::Text Arg2::D\n\
+	Mathematical Functions:\"math\\.(?:abs|acos|asin|atan|atan2|ceil|cos|cosh|deg|exp|floor|fmod|frexp|ldexp|log|max|min|modf|pow|rad|random|randomseed|sin|sinh|sqrt|tan|tanh)\":::Text Arg2::D\n\
+	Mathematical Variables:\"math\\.(?:huge|pi)\":::Warning::D\n\
+	Bitwise Operations:\"bit32\\.(?:arshift|band|bnot|bor|btest|bxor|extract|replace|lrotate|lshift|rrotate|rshift)\":::Text Arg2::D\n\
+	Input and Output Facilities:\"io\\.(?:close|flush|input|lines|open|output|popen|read|tmpfile|type|write)\":::Text Arg2::D\n\
+	Operating System Facilities:\"os\\.(?:clock|date|difftime|execute|exit|getenv|remove|rename|setlocale|time|tmpname)\":::Text Arg2::D\n\
+	Debug Library:\"debug\\.(?:debug|gethook|getinfo|getlocal|getmetatable|getregistry|getupvalue|getuservalue|sethook|setlocal|setmetatable|setupvalue|setuservalue|traceback|upvalueid|upvaluejoin)\":::Text Arg2::D\n\
+	Internal Variables:\"_ENV|_G|_VERSION\":::Identifier::D\n\
+	Length Operator:\"#[A-Za-z][A-Za-z0-9]*\":::Identifier::D\n\
+	Assignment:\"=\":::Plain::D\n\
+	Metamethods:\"(?:__len|__concat|__tostring|__metatable|__ipairs|__pairs|__index|__add|__sub|__mul|__div|__mod|__pow|__unm|__eq|__lt|__le|__newindex|__call|__gc|__mode)\":::Warning::D\n\
+	Operators:\"<(?:and|in|not|or)>\":::Text Arg::D\n\
+	info:\"(?# version 0.1; based_on: Lua 5.2; author/maintainer: zeromacro, zeromacro@mailbox.org)\":::Plain::D}",
     "Makefile:8:0{\n\
 	Comment:\"#\":\"$\"::Comment::\n\
 	Comment Continuation:\"\\\\\\n\":::Keyword:Comment:\n\
