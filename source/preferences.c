@@ -98,7 +98,7 @@
 #define MENU_WIDGET(w) (w)
 #endif
 
-#define PREF_FILE_VERSION "6.1"
+#define PREF_FILE_VERSION "6.2"
 
 /* New styles added in 5.2 for auto-upgrade */
 #define ADD_5_2_STYLES " Pointer:#660000:Bold\nRegex:#009944:Bold\nWarning:brown2:Italic\n"
@@ -1298,6 +1298,7 @@ static void freeLanguageModeRec(languageModeRec *lm);
 static int lmDialogEmpty(void);
 static void updatePatternsTo5dot1(void);
 static void updatePatternsTo6dot1(void);
+static void updatePatternsTo6dot2(void);
 static void migrateColorResources(XrmDatabase prefDB, XrmDatabase appDB);
 static void spliceString(char **intoString, const char *insertString, const char *atExpr);
 static int regexFind(const char *inString, const char *expr);
@@ -1362,6 +1363,9 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
     
     if (PrefData.prefFileRead && fileVer < 6001) {
         updatePatternsTo6dot1();
+    }
+    if (PrefData.prefFileRead && fileVer < 6002) {
+        updatePatternsTo6dot2();
     }
 
     /* Note that we don't care about unreleased file versions.  Anyone
@@ -5453,6 +5457,34 @@ static void updatePatternsTo6dot1(void)
 	spliceString(&TempStringPrefs.styles, hdrStyle, "^[ \t]*Strong:");
 }
 
+static void updatePatternsTo6dot2(void) {
+    const char *luaLm6dot2 = "Lua:.lua:::::::";
+    const char *luaHl6dot2 = "Lua:Default";
+    
+    const char *ocamlLm6dot2 = "OCaml:.ml::Auto:None:8:2:\".,/\\`'!|@#%^&*()-=+{}[]\"\":;<>?~\":";
+    const char *ocamlHl6dot2 = "OCaml:Default";
+    
+    const char *stylePre26dot2 = "Preprocessor2:rebecca purple:Bold";
+    
+    /* Add new patterns if there aren't already existing patterns with
+       the same name. */
+    if (!regexFind(TempStringPrefs.language, "^[ \t]*Lua:"))
+	spliceString(&TempStringPrefs.language, luaLm6dot2, "^[ \t]*Makefile:");
+    
+    if (!regexFind(TempStringPrefs.language, "^[ \t]*OCaml:"))
+	spliceString(&TempStringPrefs.language, ocamlLm6dot2, "^[ \t]*Pascal:");
+    
+    /* Enable default highlighting patterns for these modes, unless already
+       present */
+    if (!regexFind(TempStringPrefs.highlight, "^[ \t]*Lua:"))
+	spliceString(&TempStringPrefs.highlight, luaHl6dot2, "^[ \t]*Makefile:");
+    if (!regexFind(TempStringPrefs.highlight, "^[ \t]*OCaml:"))
+	spliceString(&TempStringPrefs.highlight, ocamlHl6dot2, "^[ \t]*Pascal:");
+    
+    /* Add new styles */
+    if (!regexFind(TempStringPrefs.styles, "^[ \t]*Preprocessor2:"))
+	spliceString(&TempStringPrefs.styles, stylePre26dot2, "^[ \t]*Character Const:");
+}
 
 /* 
  * We migrate a color from the X resources to the prefs if:
