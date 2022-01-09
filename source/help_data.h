@@ -2,10 +2,10 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Aug 18, 2021 (Do NOT edit!)
+                 Generated on Jan 9, 2022 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2021 Mark Edel                                            *
+* Copyright (c) 1999-2022 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
@@ -5092,7 +5092,7 @@ static char * htxt_version [] = {
 "Max Vohlken, Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp, ",
 "Michael Turomsha, John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, ",
 "Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones, ",
-"and Niek van den Berg. ",
+"Niek van den Berg, Laszlo Ersek and Mike Becker. ",
 "\n\n",
 "XNEdit sources, executables, additional documentation, and contributed ",
 "software are available from the XNEdit web site at ",
@@ -5424,6 +5424,11 @@ static char * htxt_distribution [] = {
 "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, ",
 "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE ",
 "SOFTWARE. ",
+"\n\n",
+"OCaml Syntax Highlighting ",
+"\n\n",
+"Copyright (C) 2021, Red Hat, Inc. ",
+"GPL-2.0-only ",
 "\n\n",
 "Some icons are from the Common Desktop Environment (CDE), by The Open Group, ",
 "released under the terms of the Creative Commons Attribution Share Alike 3.0 ",
@@ -5803,4 +5808,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit 1.3.3\nAug 18, 2021\n";
+static const char * NEditVersion = "XNEdit release of Jan.  9, 2022\n";

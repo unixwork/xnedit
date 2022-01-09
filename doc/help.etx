@@ -5324,7 +5324,7 @@ Version
   Max Vohlken, Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp,
   Michael Turomsha, John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous,
   Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones,
-  Niek van den Berg and Laszlo Ersek.
+  Niek van den Berg, Laszlo Ersek and Mike Becker.
 
   XNEdit sources, executables, additional documentation, and contributed
   software are available from the XNEdit web site at
@@ -5658,6 +5658,14 @@ License
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+  
+  
+  
+  OCaml Syntax Highlighting
+  
+  Copyright (C) 2021, Red Hat, Inc.
+  GPL-2.0-only
+  
 
   Some icons are from the Common Desktop Environment (CDE), by The Open Group,
   released under the terms of the Creative Commons Attribution Share Alike 3.0
