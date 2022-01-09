@@ -5808,4 +5808,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit release of Jan.  9, 2022\n";
+static const char * NEditVersion = "XNEdit 1.4.0\nJan 9, 2022\n";
