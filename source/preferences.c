@@ -842,6 +842,7 @@ static PrefDescripRec PrefDescrip[] = {
     	String2:darkGreen:Bold\n\
     	Preprocessor:RoyalBlue4:Plain\n\
     	Preprocessor1:blue:Plain\n\
+        Preprocessor2:rebecca purple:Bold\n\
     	Character Const:darkGreen:Plain\n\
     	Numeric Const:darkGreen:Plain\n\
     	Identifier:brown:Plain\n\
