@@ -109,7 +109,13 @@
 #include <Xm/PrimitiveP.h>
 #include <Xm/Frame.h>
 #include <Xm/CascadeB.h>
+
+#ifndef __sun
 #include <Xm/DropDown.h>
+#else
+Widget XmCreateDropDown(Widget parent, String name, ArgList args, Cardinal argcount);
+#endif
+
 #ifdef EDITRES
 #include <X11/Xmu/Editres.h>
 /* extern void _XEditResCheckMessages(); */
