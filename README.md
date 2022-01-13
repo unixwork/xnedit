@@ -48,6 +48,7 @@ Available configurations are:
  - netbsd
  - openbsd
  - macosx
+ - cygwin
  - generic
 
 If everything works properly, this will produce two executables called
