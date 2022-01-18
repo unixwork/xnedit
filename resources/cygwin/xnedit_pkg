@@ -1,5 +1,5 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021 Valerio Messina GNU GPL v2+
+# xnedit_pkg: Copyright 2021-2022 Valerio Messina GNU GPL v2+
 # xnedit_pkg is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/09/05"
+ver="v0.04.0 2022/01/18"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -240,7 +240,7 @@ cp "$scriptPath/xnc.sh" "$pkg" # run script
 
 # copy text files
 cd "$src"
-cp LICENSE README ReleaseNotes CHANGELOG "$pkg"
+cp LICENSE README.md ReleaseNotes CHANGELOG "$pkg"
 
 # create the Windows shortcut in $pkgWin
 cd "$scriptPath"
