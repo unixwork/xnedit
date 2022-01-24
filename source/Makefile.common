@@ -21,11 +21,11 @@ all: xnedit xnc
 xnedit: $(OBJS) ../util/libNUtil.a $(XMLLIB) $(XLTLIB)
 	$(CC) $(CFLAGS) -c linkdate.c -o linkdate.o
 	$(CC) $(CFLAGS) $(OBJS) linkdate.o \
-	 ../util/libNUtil.a $(XMLLIB) $(XLTLIB) $(LIBS) -o $@
+	 ../util/libNUtil.a $(LDFLAGS) $(XMLLIB) $(XLTLIB) $(LIBS) -o $@
 
 # Note LIBS isn't quite right here; it links unnecessarily against Motif
 xnc: nc.o server_common.o ../util/libNUtil.a
-	$(CC) $(CFLAGS) nc.o server_common.o ../util/libNUtil.a $(LIBS) -o $@
+	$(CC) $(CFLAGS) nc.o server_common.o ../util/libNUtil.a $(LDFLAGS) $(LIBS) -o $@
 
 help.o: help.c
 	$(CC) $(CFLAGS) $(BIGGER_STRINGS) -c help.c -o $@
