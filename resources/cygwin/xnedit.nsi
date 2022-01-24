@@ -1,4 +1,4 @@
-; xnedit.nsi: Copyright 2021 Valerio Messina GNU GPL v2+
+; xnedit.nsi: Copyright 2021-2022 Valerio Messina GNU GPL v2+
 ; xnedit.nsi is part of XNEdit multi-purpose text editor:
 ; https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 ; XNEdit is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 ; International unicode version
 ; ToDo: let's choose at least the destination drive letter
 ;       unistaller should let choose to keep custom settings in ~\.xnedit\
-; V.0.01.00 2021/08/23
+; V.0.01.00 2022/01/18
 
 ;--------------------------------
 ; Compiler Compression options
@@ -72,7 +72,7 @@ Section "Xnedit (required)"
   File xnedit.bat
   File xnedit.ico
   File LICENSE
-  File README
+  File README.md
   File ReleaseNotes
   File CHANGELOG
 
@@ -119,7 +119,7 @@ Section "Uninstall"
   Delete "$INSTDIR\xnedit.bat"
   Delete "$INSTDIR\xnedit.ico"
   Delete "$INSTDIR\LICENSE"
-  Delete "$INSTDIR\README"
+  Delete "$INSTDIR\README.md"
   Delete "$INSTDIR\ReleaseNotes"
   Delete "$INSTDIR\CHANGELOG"
 
