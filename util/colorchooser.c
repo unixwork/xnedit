@@ -24,7 +24,7 @@
 
 #include <Xm/XmAll.h>
 #include <Xm/XmP.h>
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 
 #include <inttypes.h>
 #include <limits.h>

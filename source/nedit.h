@@ -34,7 +34,7 @@
 #include <X11/Intrinsic.h>
 #include <Xm/Xm.h>
 #include <Xm/XmStrDefs.h>
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else

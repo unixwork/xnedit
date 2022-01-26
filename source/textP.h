@@ -37,7 +37,7 @@
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 
 enum dragStates {NOT_CLICKED, PRIMARY_CLICKED, SECONDARY_CLICKED,
 	CLICKED_IN_SELECTION,  PRIMARY_DRAG, PRIMARY_RECT_DRAG, SECONDARY_DRAG,

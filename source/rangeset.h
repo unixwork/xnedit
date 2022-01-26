@@ -32,7 +32,7 @@
 #define rangeset_h_DEFINED
 
 #include <Xm/Xm.h>
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 
 #define N_RANGESETS 63
 

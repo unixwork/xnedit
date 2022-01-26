@@ -33,7 +33,7 @@
 #include <X11/Xlib.h>
 #include <Xm/Xm.h>
 
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 
 enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
 	HEAVY_CURSOR};
