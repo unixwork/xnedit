@@ -2423,7 +2423,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
 	int toX, FcChar32 *string, int nChars, Boolean highlightLine, ansiStyle *ansi)
 {
-    if(toX < fromX) return;
+    if(toX < fromX || nChars == 0) return;
     
     XftColor *gc = &textD->fgPixel;
     NFont *fontList = textD->font;
