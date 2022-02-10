@@ -2567,6 +2567,28 @@ void SetWindowModified(WindowInfo *window, int modified)
     }
 }
 
+static int utf8TitleAtomsInit = 0;
+static Atom utf8_string;
+static Atom net_wm_name;
+
+static void setUtf8Title(Widget shell, const char *title) {
+    Display *dp = XtDisplay(shell);
+    if(!utf8TitleAtomsInit) {
+        utf8_string = XInternAtom(dp, "UTF8_STRING", False);
+        net_wm_name = XInternAtom(dp, "_NET_WM_NAME", False);
+        utf8TitleAtomsInit = 1;
+    }
+    XChangeProperty(
+            dp, 
+            XtWindow(shell), 
+            net_wm_name,
+            utf8_string,
+            8,
+            PropModeReplace,
+            (unsigned char*)title,
+            strlen(title));
+}
+
 /*
 ** Update the window title to reflect the filename, read-only, and modified
 ** status of the window data structure
@@ -2592,8 +2614,12 @@ void UpdateWindowTitle(const WindowInfo *window)
     iconTitle = (char*)NEditMalloc(strlen(window->filename) + 2); /* strlen("*")+1 */
 
     strcpy(iconTitle, window->filename);
-    if (window->fileChanged)
+    if (window->fileChanged) {
         strcat(iconTitle, "*");
+    }
+    if(XNEditDefaultCharsetIsUTF8()) {
+        setUtf8Title(window->shell, title);
+    }
     XtVaSetValues(window->shell, XmNtitle, title, XmNiconName, iconTitle, NULL);
     
     /* If there's a find or replace dialog up in "Keep Up" mode, with a
