@@ -1959,8 +1959,10 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
     //Dimension shadowThickness = 1;
     //XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
     XtVaSetValues(fgColorChooserButton,
+#if XmVersion > 2001
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.colorW,
+#endif
             //XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.colorW, NULL);
     
@@ -2003,8 +2005,10 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
           updateCGchooser, bgColorChooserButton);
     
     XtVaSetValues(bgColorChooserButton,
+#if XmVersion > 2001
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.bgColorW,
+#endif
             //XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.bgColorW, NULL);
     

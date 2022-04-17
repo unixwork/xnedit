@@ -6082,7 +6082,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
           XmNleftAttachment, XmATTACH_POSITION,
           XmNleftPosition, leftPos, NULL);
     XmStringFree(s1);
-
+    
     /* The error label widget */
     strcpy(&(longerName[nameLen]), "ErrLbl");
     *errW = XtVaCreateManagedWidget(longerName,
@@ -6109,7 +6109,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
             NULL);
     XmStringFree(s1);
     XtAddCallback(colorChooserButton, XmNactivateCallback, selectColorCB, NULL);
-    
+     
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
           XmNcolumns, MAX_COLOR_LEN-1,
@@ -6121,11 +6121,13 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
           XmNtopAttachment, XmATTACH_WIDGET,
           XmNtopWidget, lblW, 
           XmNuserData, *errW, NULL);
-    
+      
     Dimension shadowThickness = 1;
     XtVaGetValues(*fieldW, XmNshadowThickness, &shadowThickness, NULL);
     XtVaSetValues(colorChooserButton,
+#if XmVersion > 2001 
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+#endif
             XmNbottomWidget, *fieldW,
             XmNshadowThickness, shadowThickness,
             XmNuserData, *fieldW, NULL);
@@ -6376,7 +6378,9 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     shadowThickness = 1;
     XtVaGetValues(textfield, XmNshadowThickness, &shadowThickness, NULL);
     XtVaSetValues(colorChooserButton,
+#if XmVersion > 2001
             XmNshadowThickness, shadowThickness,
+#endif
             XmNuserData, textfield, NULL);
     
     // update color chooser when the textfield changes
@@ -6385,7 +6389,9 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     
     // make sure the height of all widgets is the same
     XtVaSetValues(remove,
+#if XmVersion > 2001
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+#endif
             XmNbottomWidget, textfield,
             XmNuserData, textfield, NULL);
     
@@ -6572,7 +6578,7 @@ void ChooseColors(WindowInfo *window)
      * Tab 1: Generral
      */
     Widget tabForm = cd->tabForms[0];
-    
+  
     /* Information label */
     infoLbl = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, tabForm,
@@ -6593,7 +6599,7 @@ void ChooseColors(WindowInfo *window)
     
     /* The left column (foregrounds) of color entry groups */
     tmpW = addColorGroup( tabForm, "textFg", 'P', "Plain Text Foreground", 
-            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, cd );
+            &(cd->textFgW), &(cd->textFgErrW), topW, 1, 49, cd );  
     tmpW = addColorGroup( tabForm, "selectFg", 'S', "Selection Foreground",
             &(cd->selectFgW), &(cd->selectFgErrW), tmpW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "hiliteFg", 'M', "Matching (..) Foreground",
@@ -6640,7 +6646,7 @@ void ChooseColors(WindowInfo *window)
             XmNbottomAttachment, XmATTACH_FORM,
             XmNtopOffset, 3*h + 3*MARGIN_SPACING,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
-    
+      
     /*
      * Tab 2: Indent Rainbow Colors
      */
@@ -6674,7 +6680,7 @@ void ChooseColors(WindowInfo *window)
     addAddBtn(cd);
     
     indentRainbowDialogLoadColors(cd);
-    
+        
     /*
      * Tab 3: ANSI Colors
      */
