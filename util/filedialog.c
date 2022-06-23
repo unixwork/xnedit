@@ -2825,7 +2825,10 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         case 1: XtManageChild(data.listform); XtManageChild(data.filelistcontainer); focus = data.filelist; break;
         case 2: XtManageChild(data.listform); XtManageChild(data.gridcontainer); focus = data.grid; break;
     }
-    
+    if(data.type == FILEDIALOG_SAVE) {
+        focus = data.name;
+    }
+     
     if(file->path) {
         char *defDir = ParentPath(file->path);
         filedialog_update_dir(&data, defDir);
