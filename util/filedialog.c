@@ -2006,7 +2006,7 @@ static void filedilalog_ok_end(FileDialogData *data)
 static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
 {
     XmPushButtonCallbackStruct *cb = d;
-    if(cb) {
+    if(cb && w != data->name) {
         if(cb->event->type == KeyPress && cb->event->xkey.keycode == 36) {
             return;
         }
