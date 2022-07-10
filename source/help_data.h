@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jan 9, 2022 (Do NOT edit!)
+                 Generated on Jul 10, 2022 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2022 Mark Edel                                            *
@@ -5808,4 +5808,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit 1.4.0\nJan 9, 2022\n";
+static const char * NEditVersion = "XNEdit 1.4.1\nJul 10, 2022\n";
