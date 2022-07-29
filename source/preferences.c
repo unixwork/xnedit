@@ -2337,7 +2337,7 @@ int GetPrefCloseIconSize(void)
 
 int GetPrefISrcFindIconSize(void)
 {
-    return PrefData.isrcClearIconSize;
+    return PrefData.isrcFindIconSize;
 }
 
 int GetPrefISrcClearIconSize(void)
