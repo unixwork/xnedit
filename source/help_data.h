@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jul 10, 2022 (Do NOT edit!)
+                 Generated on Sep 4, 2022 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2022 Mark Edel                                            *
@@ -5079,6 +5079,8 @@ static char * htxt_version [] = {
 "Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn, ",
 "Steve LoBasso and Alexander Mai. ",
 "\n\n",
+"XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt. ",
+"\n\n",
 "The regular expression matching routines used in XNEdit are adapted (with ",
 "permission) from original code written by Henry Spencer at the ",
 "University of Toronto. ",
@@ -5091,8 +5093,8 @@ static char * htxt_version [] = {
 "Ivan Herman, Patrice Venant, Christian Denat, Philippe Couton, ",
 "Max Vohlken, Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp, ",
 "Michael Turomsha, John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, ",
-"Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones, ",
-"Niek van den Berg, Laszlo Ersek and Mike Becker. ",
+"Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones and ",
+"Niek van den Berg. ",
 "\n\n",
 "XNEdit sources, executables, additional documentation, and contributed ",
 "software are available from the XNEdit web site at ",
@@ -5808,4 +5810,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit 1.4.1\nJul 10, 2022\n";
+static const char * NEditVersion = "XNEdit release of Sep.  4, 2022\n";

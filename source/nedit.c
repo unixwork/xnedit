@@ -44,6 +44,7 @@
 #include "tags.h"
 #include "menu.h"
 #include "macro.h"
+#include "search.h"
 #include "server.h"
 #include "interpret.h"
 #include "parse.h"
@@ -650,7 +651,11 @@ int main(int argc, char **argv)
     /* Read the nedit dynamic database of files for the Open Previous
        command (and eventually other information as well) */
     ReadNEditDB();
-    
+
+    /* Read database of search/replace history. It's called here
+       for enabling the Find/Replace Again menu items. */
+    ReadSearchHistory();
+
     /* Process -import command line argument before others which might
        open windows (loading preferences doesn't update menu settings,
        which would then be out of sync with the real preference settings) */

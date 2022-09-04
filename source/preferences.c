@@ -317,6 +317,7 @@ static struct prefData {
     int autoIndent;		/* style for auto-indent */
     int autoSave;		/* whether automatic backup feature is on */
     int saveOldVersion;		/* whether to preserve a copy of last version */
+    int saveSearchHistory;      /* whether to store search/replace history */
     int searchDlogs;		/* whether to show explanatory search dialogs */
     int searchWrapBeep;     	/* 1=beep when search restarts at begin/end */
     int keepSearchDlogs;	/* whether to retain find and replace dialogs */
@@ -909,6 +910,8 @@ static PrefDescripRec PrefDescrip[] = {
       "0-8,10-31,127:red;9:#dedede;32,160-255:#f0f0f0;128-159:orange",
     /*                     gray87                 gray94                 */
       &PrefData.backlightCharTypes, NULL, False},
+    {"saveSearchHistory", "SaveSearchHistory", PREF_BOOLEAN, "False",
+      &PrefData.saveSearchHistory, NULL, True},
     {"searchDialogs", "SearchDialogs", PREF_BOOLEAN, "False",
     	&PrefData.searchDlogs, NULL, True},
     {"beepOnSearchWrap", "BeepOnSearchWrap", PREF_BOOLEAN, "False",
@@ -1655,6 +1658,16 @@ void SetPrefSaveOldVersion(int state)
 int GetPrefSaveOldVersion(void)
 {
     return PrefData.saveOldVersion;
+}
+
+void SetPrefSaveSearchHistory(int state)
+{
+    setIntPref(&PrefData.saveSearchHistory, state);
+}
+
+int GetPrefSaveSearchHistory(void)
+{
+    return PrefData.saveSearchHistory;
 }
 
 void SetPrefSearchDlogs(int state)

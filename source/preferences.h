@@ -58,6 +58,8 @@ void SetPrefWrap(WrapStyle state);
 WrapStyle GetPrefWrap(int langMode);
 void SetPrefWrapMargin(int margin);
 int GetPrefWrapMargin(void);
+void SetPrefSaveSearchHistory(int state);
+int GetPrefSaveSearchHistory(void);
 void SetPrefSearchDlogs(int state);
 int GetPrefSearchDlogs(void);
 void SetPrefKeepSearchDlogs(int state);

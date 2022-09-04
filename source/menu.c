@@ -181,6 +181,7 @@ static void searchDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void beepOnSearchWrapDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void keepSearchDlogsDefCB(Widget w, WindowInfo *window,
 	caddr_t callData);
+static void saveSearchHistoryDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void searchWrapsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void appendLFCB(Widget w, WindowInfo* window, caddr_t callData);
 static void sortOpenPrevDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -908,6 +909,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->keepSearchDlogsDefItem = createMenuToggle(subSubPane,
     	    "keepDialogsUp", "Keep Dialogs Up", 'K',
     	    keepSearchDlogsDefCB, window, GetPrefKeepSearchDlogs(), SHORT);
+    window->saveSearchHistoryDefItem = createMenuToggle(subSubPane,
+            "saveSearchHistory", "Save History", 'S',
+            saveSearchHistoryDefCB, window, GetPrefSaveSearchHistory(), SHORT);
     subSubSubPane = createMenu(subSubPane, "defaultSearchStyle",
     	    "Default Search Style", 'D', NULL, FULL);
     XtVaSetValues(subSubSubPane, XmNradioBehavior, True, NULL); 
@@ -2248,6 +2252,19 @@ static void keepSearchDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData)
     for (win=WindowList; win!=NULL; win=win->next) {
     	if (IsTopDocument(win))
     	    XmToggleButtonSetState(win->keepSearchDlogsDefItem, state, False);
+    }
+}
+
+static void saveSearchHistoryDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefSaveSearchHistory(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+        if (IsTopDocument(win))
+            XmToggleButtonSetState(win->saveSearchHistoryDefItem, state, False);
     }
 }
 

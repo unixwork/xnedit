@@ -422,6 +422,7 @@ typedef struct _WindowInfo {
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;
+    Widget      saveSearchHistoryDefItem;
     Widget	searchWrapsDefItem;
     Widget      appendLFItem;
     Widget	sortOpenPrevDefItem;

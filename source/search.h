@@ -77,6 +77,8 @@ void SelectToMatchingCharacter(WindowInfo *window);
 void GotoMatchingCharacter(WindowInfo *window);
 void RemoveFromMultiReplaceDialog(WindowInfo *window);
 Boolean WindowCanBeClosed(WindowInfo *window);
+void WriteSearchHistory(void);
+void ReadSearchHistory(void);
 
 /*
 ** Schwarzenberg: added SEARCH_LITERAL_WORD .. SEARCH_REGEX_NOCASE 

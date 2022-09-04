@@ -5311,6 +5311,8 @@ Version
   Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn,
   Steve LoBasso and Alexander Mai.
   
+  XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt.
+  
   The regular expression matching routines used in XNEdit are adapted (with
   permission) from original code written by Henry Spencer at the
   University of Toronto.
@@ -5323,8 +5325,8 @@ Version
   Ivan Herman, Patrice Venant, Christian Denat, Philippe Couton,
   Max Vohlken, Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp,
   Michael Turomsha, John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous,
-  Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones,
-  Niek van den Berg, Laszlo Ersek and Mike Becker.
+  Mike Duigou, Seak Teng-Fong, Joor Loohuis, Mark Jones and
+  Niek van den Berg.
 
   XNEdit sources, executables, additional documentation, and contributed
   software are available from the XNEdit web site at
