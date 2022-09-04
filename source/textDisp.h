@@ -106,6 +106,13 @@ typedef struct _calltipStruct {
     int alignMode;          /* Strict or sloppy alignment */
 } calltipStruct;
 
+typedef struct _textCursor {
+    int cursorPos;
+    int cursorPosCache;
+    int cursorPosCacheLeft;
+    int cursorPosCacheRight;
+} textCursor;
+
 typedef struct _textDisp {
     Widget w;
     XftDraw *d;
@@ -114,6 +121,9 @@ typedef struct _textDisp {
     int cursorPosCache;
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
+    textCursor *multicursor;
+    size_t mcursorAlloc;
+    size_t mcursorSize;
     int cursorOn;
     int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
@@ -252,6 +262,8 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
 void TextDSetInsertPosition(textDisp *textD, int newPos);
+void TextDAddCursor(textDisp *textD, int newMultiCursorPos);
+void TextDClearMultiCursor(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);
@@ -291,6 +303,7 @@ void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
+textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
 void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);
 

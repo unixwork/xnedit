@@ -106,6 +106,10 @@
 /* Macro for getting the TextPart from a textD */
 #define TEXT_OF_TEXTD(t)    (((TextWidget)((t)->w))->text)
 
+#define MCURSOR_ALLOC 8
+#define MCURSOR_MAX 1024
+#define MCURSOR_ALLOC_RESET 32
+
 enum positionTypes {CURSOR_POS, CHARACTER_POS};
 
 static void updateLineStarts(textDisp *textD, int pos, int charsInserted,
@@ -298,6 +302,11 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     TextDSetAnsiColors(textD, ansiColors);
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
+    
+    // Initialize multi cursor array
+    textD->mcursorAlloc = MCURSOR_ALLOC;
+    textD->mcursorSize = 0;
+    textD->multicursor = NEditCalloc(MCURSOR_ALLOC, sizeof(textCursor));
 
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
@@ -925,6 +934,68 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
         for(int i=newLine;i<=newLine2;i++) {
             redisplayLine(textD, i, 0, INT_MAX, 0, INT_MAX);
         }
+    }
+}
+
+void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
+    int mcInsertPos = 0;
+    
+    // if we only have one cursor yet, add the current cursor to the 
+    // multicursor array
+    if(textD->mcursorSize == 0) {
+        textD->multicursor[0] = (textCursor) {
+            textD->cursorPos,
+            textD->cursorPosCache,
+            textD->cursorPosCacheLeft,
+            textD->cursorPosCacheRight};
+        textD->mcursorSize++;
+    }
+    
+    // make sure, there is not already a cursor for the new position
+    for(int i=0;i<textD->mcursorSize;i++) {
+        if(textD->multicursor[i].cursorPos == newMultiCursorPos) {
+            return; // pos already in the cursor pos array
+        } else if(textD->multicursor[i].cursorPos > newMultiCursorPos) {
+            break;
+        }
+        mcInsertPos = i+1;
+    }
+    
+    // check limit
+    if(textD->mcursorSize == MCURSOR_MAX) {
+        return;
+    }
+    
+    // check array size, do we need to realloc the array?
+    if(textD->mcursorSize == textD->mcursorAlloc) {
+        textD->mcursorAlloc *= 2;
+        textD->multicursor = NEditRealloc(textD->multicursor, textD->mcursorAlloc * sizeof(textCursor));
+    }
+    
+    // add cursor (sorted)
+    textD->mcursorSize++;
+    if(mcInsertPos+1 < textD->mcursorSize) {
+        // insert pos in the middle
+        // move elements one position
+        memmove(textD->multicursor+mcInsertPos+1, textD->multicursor+mcInsertPos, (textD->mcursorSize-mcInsertPos-1)*sizeof(textCursor));
+    }
+    textD->multicursor[mcInsertPos] = TextDPos2Cursor(textD, newMultiCursorPos);
+    
+    /*
+    printf("multicursor:\n");
+    for(int i=0;i<textD->mcursorSize;i++) {
+        printf("%d\n", textD->multicursor[i].cursorPos);
+    }
+    printf("\n");
+    */
+}
+
+void TextDClearMultiCursor(textDisp *textD) {
+    textD->mcursorSize = 0;
+    if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
+        // reduce multicursor array, if it is too big
+        textD->mcursorAlloc = MCURSOR_ALLOC;
+        textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
     }
 }
 
@@ -1561,7 +1632,27 @@ int TextDMoveDown(textDisp *textD, int absolute)
     return True;
 }
 
-void TextDCursorLR(textDisp *textD, int *left, int *right)
+textCursor TextDPos2Cursor(textDisp *textD, int pos) {
+    textBuffer *buf = textD->buffer;
+    textCursor c;
+    c.cursorPos = pos;
+    c.cursorPosCache = pos;
+    c.cursorPosCacheLeft = BufLeftPos(buf, pos);
+    c.cursorPosCacheRight = BufRightPos(buf, pos);
+    if(textD->ansiColors) {
+        while(BufGetCharacter(buf, textD->cursorPosCacheLeft) == '\e') {
+                c.cursorPosCacheLeft = BufLeftPos(buf, textD->cursorPosCacheLeft);
+        }
+        while(BufGetCharacter(buf, pos) == '\e') {
+            c.cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
+            pos = textD->cursorPosCacheRight;
+        }
+        c.cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
+    }
+    return c;
+}
+
+void TextDCursorLR_Old(textDisp *textD, int *left, int *right)
 {
     if(textD->cursorPos != textD->cursorPosCache) {
         textBuffer *buf = textD->buffer;
@@ -1579,6 +1670,19 @@ void TextDCursorLR(textDisp *textD, int *left, int *right)
             }
             textD->cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
         }
+    }
+    *left = textD->cursorPosCacheLeft;
+    *right = textD->cursorPosCacheRight;
+    
+}
+
+void TextDCursorLR(textDisp *textD, int *left, int *right)
+{
+    if(textD->cursorPos != textD->cursorPosCache) {
+        textCursor c = TextDPos2Cursor(textD, textD->cursorPos);
+        textD->cursorPosCache = c.cursorPosCache;
+        textD->cursorPosCacheLeft = c.cursorPosCacheLeft;
+        textD->cursorPosCacheRight = c.cursorPosCacheRight;
     }
     *left = textD->cursorPosCacheLeft;
     *right = textD->cursorPosCacheRight;

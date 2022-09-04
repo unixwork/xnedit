@@ -430,6 +430,7 @@ static char defaultTranslations[] =
     "Meta Ctrl<Btn1Down>: move_destination()\n"
     "Shift Ctrl<Btn1Down>: extend_start(\"rect\")\n"
     "Shift<Btn1Down>: extend_start()\n"
+    "Ctrl<Btn1Down>: grab_focus(\"mc\")\n"
     "<Btn1Down>: grab_focus()\n"
     "Button1 Ctrl<MotionNotify>: extend_adjust(\"rect\")\n"
     "Button1~Ctrl<MotionNotify>: extend_adjust()\n"
@@ -1579,7 +1580,7 @@ int TextLastVisiblePos(Widget w)
 */
 void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     	int allowPendingDelete, int allowWrap)
-{
+{  
     int wrapMargin, colNum, lineStartPos, cursorPos;
     char *c, *lineStartText, *wrappedText;
     TextWidget tw = (TextWidget)w;
@@ -1778,9 +1779,15 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
 
     /* Move the cursor */
-    TextDSetInsertPosition(textD, TextDXYToPosition(textD, e->x, e->y));
-    checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    int cursorPos = TextDXYToPosition(textD, e->x, e->y);
+    if(*nArgs == 0) {
+        TextDSetInsertPosition(textD, cursorPos);
+        checkAutoShowInsertPos(w);
+        callCursorMovementCBs(w, event);
+        TextDClearMultiCursor(textD);
+    } else if (!strcmp(args[0], "mc")) {
+        TextDAddCursor(textD, cursorPos);
+    }
 }
 
 static void extendAdjustAP(Widget w, XEvent *event, String *args,
