@@ -3682,6 +3682,21 @@ static int checkReadOnly(Widget w)
     return False;
 }
 
+
+static void simpleInsertAtCursorPos(Widget w, textDisp *textD, char *chars) {
+    char *c;
+    if (((TextWidget)w)->text.overstrike) {
+        for (c=chars; *c!='\0' && *c!='\n'; c++) {}
+        if (*c == '\n') {
+            TextDInsert(textD, chars);
+        } else {
+            TextDOverstrike(textD, chars);
+        }
+    } else {
+        TextDInsert(textD, chars);
+    }
+}
+
 /*
 ** Insert text "chars" at the cursor position, as if the text had been
 ** typed.  Same as TextInsertAtCursor, but without the complicated auto-wrap
@@ -3697,14 +3712,22 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
     if (allowPendingDelete && pendingSelection(w)) {
     	BufReplaceSelected(buf, chars);
     	TextDSetInsertPosition(textD, buf->cursorPosHint);
-    } else if (((TextWidget)w)->text.overstrike) {
-    	for (c=chars; *c!='\0' && *c!='\n'; c++);
-    	if (*c == '\n')
-    	    TextDInsert(textD, chars);
-    	else
-    	    TextDOverstrike(textD, chars);
-    } else
-    	TextDInsert(textD, chars);
+    } else {
+        if(textD->mcursorSize == 0) {
+            simpleInsertAtCursorPos(w, textD, chars);
+        } else {
+            int diff = 0;
+            for(int i=0;i<textD->mcursorSize;i++) {
+                textD->multicursor[i].cursorPos += diff;
+                TextDSetCursor(textD, textD->multicursor[i]);
+                simpleInsertAtCursorPos(w, textD, chars);
+                diff += textD->cursorPos - textD->multicursor[i].cursorPos;
+                //printf("cursor  %d  ->  %d\n", textD->multicursor[i].cursorPos, textD->cursorPos);
+                textD->multicursor[i] = TextDGetCursor(textD);
+            }
+        }
+    }
+    	
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
 }
