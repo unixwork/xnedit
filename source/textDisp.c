@@ -872,6 +872,8 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 */
 void TextDSetInsertPosition(textDisp *textD, int newPos)
 {
+    printf("TextDSetInsertPosition\n");
+    
     int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
     Boolean hiline = False;
     if(textD->highlightCursorLine) {
@@ -883,6 +885,8 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
             newLineEnd = BufEndOfLine(textD->buffer, newPos);
         }
     }
+    
+    TextDClearMultiCursor(textD);
     
     /* make sure new position is ok, do nothing if it hasn't changed */
     if (newPos == textD->cursorPos)

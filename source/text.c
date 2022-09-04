@@ -1784,7 +1784,6 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
         TextDSetInsertPosition(textD, cursorPos);
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
-        TextDClearMultiCursor(textD);
     } else if (!strcmp(args[0], "mc")) {
         TextDAddCursor(textD, cursorPos);
     }
@@ -2588,30 +2587,16 @@ static void deleteSelectionAP(Widget w, XEvent *event, String *args,
     deletePendingSelection(w, event);
 }
 
-static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
-	Cardinal *nArgs)
-{
-    XKeyEvent *e = &event->xkey;
-    textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
+static int deletePreviousCharacter(Widget w, XEvent *event, textDisp *textD, int silent, int insertPos) {
     char c;
-    int silent = hasKey("nobell", args, nArgs);
     
-    cancelDrag(w);
-    if (checkReadOnly(w))
-	return;
-
-    TakeMotifDestination(w, e->time);
-    if (deletePendingSelection(w, event))
-    	return;
-
     if (insertPos == 0) {
         ringIfNecessary(silent, w);
-    	return;
+    	return 0;
     }
 
     if (deleteEmulatedTab(w, event))
-    	return;
+    	return 0;
     
     int prevPos = BufLeftPos(textD->buffer, insertPos);
     if (((TextWidget)w)->text.overstrike) {
@@ -2623,10 +2608,52 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     } else {
     	BufRemove(textD->buffer, prevPos, insertPos);
     }
+    
+    return prevPos - insertPos; // diff
+}
 
-    TextDSetInsertPosition(textD, prevPos);
+static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    XKeyEvent *e = &event->xkey;
+    textDisp *textD = ((TextWidget)w)->text.textD;  
+    int insertPos = TextDGetInsertPosition(textD);
+    char c;
+    int silent = hasKey("nobell", args, nArgs);
+    
+    cancelDrag(w);
+    if (checkReadOnly(w))
+	return;
+
+    TakeMotifDestination(w, e->time);
+    if (deletePendingSelection(w, event))
+    	return;
+    
+    if(textD->mcursorSize == 0) {
+        int diff = deletePreviousCharacter(w, event, textD, silent, insertPos);
+        TextDSetInsertPosition(textD, insertPos + diff);
+    } else {
+        int diff = 0;
+        for(int i=0;i<textD->mcursorSize;i++) {
+            textD->multicursor[i].cursorPos += diff;
+            TextDSetCursor(textD, textD->multicursor[i]);
+            diff += deletePreviousCharacter(w, event, textD, silent, textD->cursorPos);
+            textD->multicursor[i] = TextDGetCursor(textD);
+        }
+    }
+
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
+}
+
+static int deleteNextCharacter(Widget w, textDisp *textD, int silent, int insertPos) {
+    if (insertPos == textD->buffer->length) {
+        ringIfNecessary(silent, w);
+    	return 0;
+    }
+    int nextPos = BufRightPos(textD->buffer, insertPos);
+    BufRemove(textD->buffer, insertPos , nextPos);
+    return insertPos - nextPos;
 }
 
 static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
@@ -2643,12 +2670,18 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     TakeMotifDestination(w, e->time);
     if (deletePendingSelection(w, event))
     	return;
-    if (insertPos == textD->buffer->length) {
-        ringIfNecessary(silent, w);
-    	return;
+    
+    if(textD->mcursorSize == 0) {
+        deleteNextCharacter(w, textD, silent, insertPos);
+    } else {
+        int diff = 0;
+        for(int i=0;i<textD->mcursorSize;i++) {
+            textD->multicursor[i].cursorPos += diff;
+            TextDSetCursor(textD, textD->multicursor[i]);
+            diff += deleteNextCharacter(w, textD, silent, textD->cursorPos);
+        }
     }
-    int nextPos = BufRightPos(textD->buffer, insertPos);
-    BufRemove(textD->buffer, insertPos , nextPos);
+    
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
 }
