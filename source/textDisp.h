@@ -303,6 +303,8 @@ void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
+textCursor TextDGetCursor(textDisp *textD);
+void TextDSetCursor(textDisp *textD, textCursor cursor);
 textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
 void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);

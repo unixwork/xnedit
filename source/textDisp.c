@@ -999,13 +999,32 @@ void TextDClearMultiCursor(textDisp *textD) {
     }
 }
 
+static void textDBlankCursorPos(textDisp *textD) {
+    blankCursorProtrusions(textD);
+    textD->cursorOn = False;
+    int left, right;
+    TextDCursorLR(textD, &left, &right);
+    textDRedisplayRange(textD, left, right);
+}
+
 void TextDBlankCursor(textDisp *textD)
 {
     if (!textD->cursorOn)
     	return;
     
-    blankCursorProtrusions(textD);
-    textD->cursorOn = False;
+    if(textD->mcursorSize == 0) {
+        textDBlankCursorPos(textD);
+    } else {
+        textCursor origCursor = TextDGetCursor(textD);
+        for(int i=0;i<textD->mcursorSize;i++) {
+            TextDSetCursor(textD, textD->multicursor[i]);
+            textDBlankCursorPos(textD);
+        }
+        TextDSetCursor(textD, origCursor);
+    }
+}
+
+void textDUnblankCursorPos(textDisp *textD) {
     int left, right;
     TextDCursorLR(textD, &left, &right);
     textDRedisplayRange(textD, left, right);
@@ -1015,9 +1034,16 @@ void TextDUnblankCursor(textDisp *textD)
 {
     if (!textD->cursorOn) {
     	textD->cursorOn = True;
-        int left, right;
-        TextDCursorLR(textD, &left, &right);
-        textDRedisplayRange(textD, left, right);
+        if(textD->mcursorSize == 0) {
+            textDUnblankCursorPos(textD);
+        } else {
+            textCursor origCursor = TextDGetCursor(textD);
+            for(int i=0;i<textD->mcursorSize;i++) {
+                TextDSetCursor(textD, textD->multicursor[i]);
+                textDUnblankCursorPos(textD);
+            }
+            TextDSetCursor(textD, origCursor);
+        }
     }
 }
 
@@ -1630,6 +1656,17 @@ int TextDMoveDown(textDisp *textD, int absolute)
     textD->cursorPreferredCol = column;
     
     return True;
+}
+
+textCursor TextDGetCursor(textDisp *textD) {
+    return (textCursor){textD->cursorPos, textD->cursorPosCache, textD->cursorPosCacheLeft, textD->cursorPosCacheRight};
+}
+
+void TextDSetCursor(textDisp *textD, textCursor cursor) {
+    textD->cursorPos = cursor.cursorPos;
+    textD->cursorPosCache = cursor.cursorPosCache;
+    textD->cursorPosCacheLeft = cursor.cursorPosCacheLeft;
+    textD->cursorPosCacheRight = cursor.cursorPosCacheRight;
 }
 
 textCursor TextDPos2Cursor(textDisp *textD, int pos) {
