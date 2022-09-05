@@ -111,6 +111,8 @@ typedef struct _textCursor {
     int cursorPosCache;
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
+    int x;
+    int y;
 } textCursor;
 
 typedef struct _textDisp {
@@ -283,7 +285,7 @@ int TextDMoveDown(textDisp *textD, int absolute);
 void TextDBlankCursor(textDisp *textD);
 void TextDUnblankCursor(textDisp *textD);
 void TextDSetCursorStyle(textDisp *textD, int style);
-Boolean TextDPosHasCursor(textDisp *textD, int pos);
+Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index);
 void TextDSetWrapMode(textDisp *textD, int wrap, int wrapMargin);
 int TextDEndOfLine(const textDisp* textD, int pos,
     Boolean startPosIsLineStart);

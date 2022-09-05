@@ -1081,13 +1081,15 @@ void TextDSetCursorStyle(textDisp *textD, int style)
     }
 }
 
-Boolean TextDPosHasCursor(textDisp *textD, int pos) {
+Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index) {
+    *index = -1;
     if(textD->mcursorSize == 0) {
         return pos == textD->cursorPos;
     } else {
         for(int i=0;i<textD->mcursorSize;i++) {
             int cursor = textD->multicursor[i].cursorPos;
             if(pos == cursor) {
+                *index = i;
                 return True;
             }
         }
@@ -1699,7 +1701,7 @@ int TextDMoveDown(textDisp *textD, int absolute)
 }
 
 textCursor TextDGetCursor(textDisp *textD) {
-    return (textCursor){textD->cursorPos, textD->cursorPosCache, textD->cursorPosCacheLeft, textD->cursorPosCacheRight};
+    return (textCursor){textD->cursorPos, textD->cursorPosCache, textD->cursorPosCacheLeft, textD->cursorPosCacheRight, textD->cursorX, textD->cursorY };
 }
 
 void TextDSetCursor(textDisp *textD, textCursor cursor) {
@@ -1707,6 +1709,8 @@ void TextDSetCursor(textDisp *textD, textCursor cursor) {
     textD->cursorPosCache = cursor.cursorPosCache;
     textD->cursorPosCacheLeft = cursor.cursorPosCacheLeft;
     textD->cursorPosCacheRight = cursor.cursorPosCacheRight;
+    textD->cursorX = cursor.x;
+    textD->cursorY = cursor.y;
 }
 
 textCursor TextDPos2Cursor(textDisp *textD, int pos) {
@@ -2196,6 +2200,11 @@ static FcChar32 getCharacter32(const textDisp *textD, const textBuffer* buf, int
     return BufGetCharacter32(buf, pos, charlen);
 }
 
+typedef struct _textCursorX {
+    int cursorX;
+    int index;
+} textCursorX;
+
 /*
 ** Redisplay the text on a single line represented by "visLineNum" (the
 ** number of lines down from the top of the display), limited by
@@ -2211,7 +2220,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     textBuffer *buf = textD->buffer;
     int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, inc;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
-    int charLen, outStartIndex, outIndex, cursorX = 0, hasCursor = False;
+    int charLen, outStartIndex, outIndex, hasCursor = False;
     int dispIndexOffset, cursorPos = textD->cursorPos, y_orig;
     int startOfLine = INT_MAX;
     int endOfLine = 0;
@@ -2230,8 +2239,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
     Boolean indentRainbow = textD->indentRainbow;
 
-    int *mcursorX = textD->mcursorSize == 0 ? &cursorX : NEditCalloc(textD->mcursorSize, sizeof(int));
-    int mcursorNum = 0;
+    textCursorX singleCursor = { textD->cursorPos, 0 };
+    textCursorX *cursorX = textD->mcursorSize == 0 ? &singleCursor : NEditCalloc(textD->mcursorSize, sizeof(textCursorX));
+    int cursorNum = 0;
+    int cursorIndex;
     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
@@ -2428,15 +2439,19 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     x = startX;
     inc = 1;
     for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += inc) {
-    	if (TextDPosHasCursor(textD, lineStartPos+charIndex)) {
+    	if (TextDPosHasCursor(textD, lineStartPos+charIndex, &cursorIndex)) {
     	    if (charIndex < lineLen
                     || (charIndex == lineLen && (lineStartPos+charIndex) >= buf->length)) {
     		hasCursor = True;
-                mcursorX[mcursorNum++] = x - 1;
+                cursorX[cursorNum].cursorX = x - 1;
+                cursorX[cursorNum].index = cursorIndex;
+                cursorNum++;
     	    } else if (charIndex == lineLen) {
     	    	if (wrapUsesCharacter(textD, (lineStartPos+charIndex))) {
     	    	    hasCursor = True;
-    	    	    mcursorX[mcursorNum++] = x - 1;
+    	    	    cursorX[cursorNum].cursorX = x - 1;
+                    cursorX[cursorNum].index = cursorIndex;
+                    cursorNum++;
     	    	}
     	    }
     	}
@@ -2536,40 +2551,57 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     y_orig = textD->cursorY;
     if (textD->cursorOn) {
         if (hasCursor) {
-            for(int i=0;i<mcursorNum;i++) {
-                drawCursor(textD, mcursorX[i], y);
+            for(int i=0;i<cursorNum;i++) {
+                drawCursor(textD, cursorX[i].cursorX, y);
+                cursorIndex = cursorX[i].index;
+                if(cursorIndex >= 0) {
+                    textD->multicursor[cursorIndex].x = cursorX[i].cursorX;
+                    textD->multicursor[cursorIndex].y = y;
+                }
             }
         } else if (charIndex < lineLen
-                && TextDPosHasCursor(textD, lineStartPos+charIndex+1)
+                && TextDPosHasCursor(textD, lineStartPos+charIndex+1, &cursorIndex)
 	    	&& x == rightClip) {
             if ((lineStartPos+charIndex+1) >= buf->length) {
     	    	drawCursor(textD, x - 1, y);
+                if(cursorIndex >= 0) {
+                    textD->multicursor[cursorIndex].x = x - 1;
+                    textD->multicursor[cursorIndex].y = y;
+                }
             } else {
                 if (wrapUsesCharacter(textD, lineStartPos+charIndex+1)) {
     	    	    drawCursor(textD, x - 1, y);
+                    if(cursorIndex >= 0) {
+                        textD->multicursor[cursorIndex].x = x - 1;
+                        textD->multicursor[cursorIndex].y = y;
+                    }
                 }
     	    }
-        } else if (TextDPosHasCursor(textD, lineStartPos + rightCharIndex)) {
+        } else if (TextDPosHasCursor(textD, lineStartPos + rightCharIndex, &cursorIndex)) {
             drawCursor(textD, x - 1, y);
+            if(cursorIndex >= 0) {
+                textD->multicursor[cursorIndex].x = x - 1;
+                textD->multicursor[cursorIndex].y = y;
+            }
         }
     }
     
     // set the position where the input method might pop up
-    if(hasCursor) {
-        cursorX = mcursorX[0];
+    if(hasCursor && textD->mcursorSize == 0) {
+        int cx = cursorX[0].cursorX;
         // xic position should the the cursor
-        if(cursorX != textD->xic_x || y != textD->xic_y) {
+        if(cx != textD->xic_x || y != textD->xic_y) {
             TextWidget textwidget = (TextWidget)textD->w;
             if(textwidget->text.xic) {
                 // set x to the left edge of the cursor
                 XPoint ipos;
-                ipos.x = cursorX - (FontDefault(textD->font)->max_advance_width / 3);
+                ipos.x = cx - (FontDefault(textD->font)->max_advance_width / 3);
                 ipos.y = y;
                 XVaNestedList xicvals;
                 xicvals = XVaCreateNestedList(0, XNSpotLocation, &ipos, NULL);
                 XSetICValues(textwidget->text.xic, XNPreeditAttributes, xicvals, NULL);
                 XFree(xicvals);
-                textD->xic_x = cursorX;
+                textD->xic_x = cx;
                 textD->xic_y = y;
             } 
         }
@@ -2580,7 +2612,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         TextDRedrawCalltip(textD, 0);
     
     NEditFree(lineStr);
-    if(textD->mcursorSize > 0) NEditFree(mcursorX);
+    if(textD->mcursorSize > 0) NEditFree(cursorX);
 }
 
 /*
@@ -2753,10 +2785,16 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     	return;
     
     if (color == &textD->bgPixel) {
+        if(x < 5) {
+            printf("");
+        }
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, y,
                 width, height, False);
     }
     else {
+        if(x < 5) {
+            printf("");
+        }
         XftDrawRect(textD->d, color, x, y, width, height);
     }
 }
@@ -3755,6 +3793,9 @@ static void blankCursorProtrusions(textDisp *textD)
     } else
         return;
         
+    if(textD->mcursorSize > 0) {
+        printf("");
+    }
     XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, cursorY,
             width, fontHeight, False);
 }
