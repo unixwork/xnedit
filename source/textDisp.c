@@ -154,6 +154,7 @@ static int min(int i1, int i2);
 static int countLines(const char *string);
 static int measureVisLine(textDisp *textD, int visLineNum);
 static int emptyLinesVisible(textDisp *textD);
+static void blankSingleCursorProtrusions(textDisp *textD);
 static void blankCursorProtrusions(textDisp *textD);
 static void allocateFixedFontGCs(textDisp *textD, XFontStruct *fontStruct,
         Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel, Pixel selectBGPixel,
@@ -1011,7 +1012,7 @@ void TextDClearMultiCursor(textDisp *textD) {
 }
 
 static void textDBlankCursorPos(textDisp *textD) {
-    blankCursorProtrusions(textD);
+    blankSingleCursorProtrusions(textD);
     textD->cursorOn = False;
     int left, right;
     TextDCursorLR(textD, &left, &right);
@@ -1986,7 +1987,8 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     }
 
     /* If the changes caused scrolling, re-paint everything and we're done. */
-    if (scrolled) {
+    // TODO: repainting with multiple cursors is only a workaround
+    if (scrolled  || textD->mcursorSize > 0) {
     	blankCursorProtrusions(textD);
     	TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left,
 		textD->height);
@@ -2031,8 +2033,11 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
 	if (linesInserted > 2) redrawLineNumbers(textD, textD->top, textD->height, True);
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
-    	if (origCursorPos >= pos)
-    	    blankCursorProtrusions(textD);
+    	if (origCursorPos >= pos) {
+            printf("blankCursor\n");
+            blankCursorProtrusions(textD);
+        }
+    	    
 	redrawLineNumbers(textD, textD->top, textD->height, True);
     }
     
@@ -3776,7 +3781,7 @@ static int emptyLinesVisible(textDisp *textD)
 ** can not overwrite this protruding part of the cursor, so it must be
 ** erased independently by calling this routine.
 */
-static void blankCursorProtrusions(textDisp *textD)
+static void blankSingleCursorProtrusions(textDisp *textD)
 {
     int x, width, cursorX = textD->cursorX, cursorY = textD->cursorY;
     int fontWidth = FontDefault(textD->font)->max_advance_width;
@@ -3798,6 +3803,19 @@ static void blankCursorProtrusions(textDisp *textD)
     }
     XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, cursorY,
             width, fontHeight, False);
+}
+
+static void blankCursorProtrusions(textDisp *textD) {
+    if(textD->mcursorSize == 0) {
+        blankSingleCursorProtrusions(textD);
+    } else {
+        textCursor origCursor = TextDGetCursor(textD);
+        for(int i=0;i<textD->mcursorSize;i++) {
+            TextDSetCursor(textD, textD->multicursor[i]);
+            blankSingleCursorProtrusions(textD);
+        }
+        TextDSetCursor(textD, origCursor);
+    }
 }
 
 /*
