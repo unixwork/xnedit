@@ -983,7 +983,8 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
         // move elements one position
         memmove(textD->multicursor+mcInsertPos+1, textD->multicursor+mcInsertPos, (textD->mcursorSize-mcInsertPos-1)*sizeof(textCursor));
     }
-    textD->multicursor[mcInsertPos] = TextDPos2Cursor(textD, newMultiCursorPos);
+    textCursor newCursor = TextDPos2Cursor(textD, newMultiCursorPos);
+    textD->multicursor[mcInsertPos] = newCursor;
     
     /*
     printf("multicursor:\n");
@@ -992,6 +993,12 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     }
     printf("\n");
     */
+    
+    TextDSetCursor(textD, textD->multicursor[0]);
+    
+    // render new cursor
+    textD->cursorOn = False;
+    TextDUnblankCursor(textD);
 }
 
 void TextDClearMultiCursor(textDisp *textD) {
@@ -1022,7 +1029,9 @@ void TextDBlankCursor(textDisp *textD)
         textCursor origCursor = TextDGetCursor(textD);
         for(int i=0;i<textD->mcursorSize;i++) {
             TextDSetCursor(textD, textD->multicursor[i]);
+            printf("blank cursor %d    %d  <-->  %d\n", textD->cursorPos, textD->cursorPosCacheLeft, textD->cursorPosCacheRight);
             textDBlankCursorPos(textD);
+            //return;
         }
         TextDSetCursor(textD, origCursor);
     }
@@ -1040,7 +1049,7 @@ void TextDUnblankCursor(textDisp *textD)
     	textD->cursorOn = True;
         if(textD->mcursorSize == 0) {
             textDUnblankCursorPos(textD);
-        } else {
+        } else {         
             textCursor origCursor = TextDGetCursor(textD);
             for(int i=0;i<textD->mcursorSize;i++) {
                 TextDSetCursor(textD, textD->multicursor[i]);
@@ -1057,8 +1066,32 @@ void TextDSetCursorStyle(textDisp *textD, int style)
     blankCursorProtrusions(textD);
     if (textD->cursorOn) {
         int left, right;
-        TextDCursorLR(textD, &left, &right);
-        textDRedisplayRange(textD, left, right);
+        if(textD->mcursorSize == 0) {
+            TextDCursorLR(textD, &left, &right);
+            textDRedisplayRange(textD, left, right);
+        } else {
+            textCursor origCursor = TextDGetCursor(textD);
+            for(int i=0;i<textD->mcursorSize;i++) {
+                TextDSetCursor(textD, textD->multicursor[i]);
+                TextDCursorLR(textD, &left, &right);
+                textDRedisplayRange(textD, left, right);
+            }
+            TextDSetCursor(textD, origCursor);
+        } 
+    }
+}
+
+Boolean TextDPosHasCursor(textDisp *textD, int pos) {
+    if(textD->mcursorSize == 0) {
+        return pos == textD->cursorPos;
+    } else {
+        for(int i=0;i<textD->mcursorSize;i++) {
+            int cursor = textD->multicursor[i].cursorPos;
+            if(pos == cursor) {
+                return True;
+            }
+        }
+        return False;
     }
 }
 
@@ -1446,6 +1479,8 @@ int TextDOffsetWrappedRow(textDisp *textD, int row)
 */
 void TextDMakeInsertPosVisible(textDisp *textD)
 {
+    printf("TextDMakeInsertPosVisible\n");
+    
     int hOffset, topLine, x, y;
     int cursorPos = textD->cursorPos;
     int linesFromTop = 0, do_padding = 1; 
@@ -1520,6 +1555,7 @@ void TextDMakeInsertPosVisible(textDisp *textD)
 */
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos)
 {
+    printf("TextDPreferredColumn\n");
     int column;
 
     /* Find the position of the start of the line.  Use the line starts array
@@ -1691,30 +1727,6 @@ textCursor TextDPos2Cursor(textDisp *textD, int pos) {
         c.cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
     }
     return c;
-}
-
-void TextDCursorLR_Old(textDisp *textD, int *left, int *right)
-{
-    if(textD->cursorPos != textD->cursorPosCache) {
-        textBuffer *buf = textD->buffer;
-        int pos = textD->cursorPos;
-        textD->cursorPosCache = pos;
-        textD->cursorPosCacheLeft = BufLeftPos(buf, pos);
-        textD->cursorPosCacheRight = BufRightPos(buf, pos);
-        if(textD->ansiColors || 1) {
-            while(BufGetCharacter(buf, textD->cursorPosCacheLeft) == '\e') {
-                textD->cursorPosCacheLeft = BufLeftPos(buf, textD->cursorPosCacheLeft);
-            }
-            while(BufGetCharacter(buf, pos) == '\e') {
-                textD->cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
-                pos = textD->cursorPosCacheRight;
-            }
-            textD->cursorPosCacheRight += BufCharLen(buf, textD->cursorPosCacheRight);
-        }
-    }
-    *left = textD->cursorPosCacheLeft;
-    *right = textD->cursorPosCacheRight;
-    
 }
 
 void TextDCursorLR(textDisp *textD, int *left, int *right)
@@ -2218,6 +2230,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
     Boolean indentRainbow = textD->indentRainbow;
 
+    int *mcursorX = textD->mcursorSize == 0 ? &cursorX : NEditCalloc(textD->mcursorSize, sizeof(int));
+    int mcursorNum = 0;
     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
@@ -2397,6 +2411,14 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         cursorLine = True;
     }
     
+    // debug
+    if(textD->mcursorSize == 2) {
+        //printf("render %d - %d    cursor: %d, %d\n", startIndex, rightCharIndex-1, textD->multicursor[0].cursorPos, textD->multicursor[1].cursorPos);
+        if(startIndex <= textD->multicursor[0].cursorPos && rightCharIndex-1 >= textD->multicursor[1].cursorPos) {
+            //printf("");
+        }
+    }
+    
     /* Scan character positions from the beginning of the clipping range, and
        draw parts whenever the style changes (also note if the cursor is on
        this line, and where it should be drawn to take advantage of the x
@@ -2406,15 +2428,15 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     x = startX;
     inc = 1;
     for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += inc) {
-    	if (lineStartPos+charIndex == cursorPos) {
+    	if (TextDPosHasCursor(textD, lineStartPos+charIndex)) {
     	    if (charIndex < lineLen
-                    || (charIndex == lineLen && cursorPos >= buf->length)) {
+                    || (charIndex == lineLen && (lineStartPos+charIndex) >= buf->length)) {
     		hasCursor = True;
-    		cursorX = x - 1;
+                mcursorX[mcursorNum++] = x - 1;
     	    } else if (charIndex == lineLen) {
-    	    	if (wrapUsesCharacter(textD, cursorPos)) {
+    	    	if (wrapUsesCharacter(textD, (lineStartPos+charIndex))) {
     	    	    hasCursor = True;
-    	    	    cursorX = x - 1;
+    	    	    mcursorX[mcursorNum++] = x - 1;
     	    	}
     	    }
     	}
@@ -2514,24 +2536,27 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     y_orig = textD->cursorY;
     if (textD->cursorOn) {
         if (hasCursor) {
-    	    drawCursor(textD, cursorX, y);
+            for(int i=0;i<mcursorNum;i++) {
+                drawCursor(textD, mcursorX[i], y);
+            }
         } else if (charIndex < lineLen
-                && (lineStartPos+charIndex+1 == cursorPos)
+                && TextDPosHasCursor(textD, lineStartPos+charIndex+1)
 	    	&& x == rightClip) {
-            if (cursorPos >= buf->length) {
+            if ((lineStartPos+charIndex+1) >= buf->length) {
     	    	drawCursor(textD, x - 1, y);
             } else {
-                if (wrapUsesCharacter(textD, cursorPos)) {
+                if (wrapUsesCharacter(textD, lineStartPos+charIndex+1)) {
     	    	    drawCursor(textD, x - 1, y);
                 }
     	    }
-        } else if ((lineStartPos + rightCharIndex) == cursorPos) {
+        } else if (TextDPosHasCursor(textD, lineStartPos + rightCharIndex)) {
             drawCursor(textD, x - 1, y);
         }
     }
     
     // set the position where the input method might pop up
     if(hasCursor) {
+        cursorX = mcursorX[0];
         // xic position should the the cursor
         if(cursorX != textD->xic_x || y != textD->xic_y) {
             TextWidget textwidget = (TextWidget)textD->w;
@@ -2555,6 +2580,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         TextDRedrawCalltip(textD, 0);
     
     NEditFree(lineStr);
+    if(textD->mcursorSize > 0) NEditFree(mcursorX);
 }
 
 /*
@@ -2747,6 +2773,10 @@ static void drawCursor(textDisp *textD, int x, int y)
     int fontHeight = textD->ascent + textD->descent;
     int nSegs = 0;
     int bot = y + fontHeight - 1;
+    
+    if(textD->mcursorSize > 0) {
+        printf("");
+    }
     
     if (XtWindow(textD->w) == 0 || x < textD->left-1 ||
 	    x > textD->left + textD->width)
