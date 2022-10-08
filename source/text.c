@@ -2618,7 +2618,6 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;  
     int insertPos = TextDGetInsertPosition(textD);
-    char c;
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
@@ -2632,18 +2631,24 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     if(textD->mcursorSize == 0) {
         int diff = deletePreviousCharacter(w, event, textD, silent, insertPos);
         TextDSetInsertPosition(textD, insertPos + diff);
+        
+        callCursorMovementCBs(w, event);
     } else {
+        //int diff = 0;
+        size_t mcursorSize = textD->mcursorSize;
+        textD->mcursorSize = 0;
         int diff = 0;
-        for(int i=0;i<textD->mcursorSize;i++) {
+        for(int i=0;i<mcursorSize;i++) {
             textD->multicursor[i].cursorPos += diff;
             TextDSetCursor(textD, textD->multicursor[i]);
             diff += deletePreviousCharacter(w, event, textD, silent, textD->cursorPos);
             textD->multicursor[i] = TextDGetCursor(textD);
+            callCursorMovementCBs(w, event);
         }
+        textD->mcursorSize = mcursorSize;
     }
-
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 static int deleteNextCharacter(Widget w, textDisp *textD, int silent, int insertPos) {
