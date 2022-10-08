@@ -2678,17 +2678,21 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     
     if(textD->mcursorSize == 0) {
         deleteNextCharacter(w, textD, silent, insertPos);
+        callCursorMovementCBs(w, event);
     } else {
         int diff = 0;
-        for(int i=0;i<textD->mcursorSize;i++) {
+        size_t mcursorSize = textD->mcursorSize;
+        textD->mcursorSize = 0;
+        for(int i=0;i<mcursorSize;i++) {
             textD->multicursor[i].cursorPos += diff;
             TextDSetCursor(textD, textD->multicursor[i]);
             diff += deleteNextCharacter(w, textD, silent, textD->cursorPos);
+            callCursorMovementCBs(w, event);
         }
+        textD->mcursorSize = mcursorSize;
     }
     
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
