@@ -119,15 +119,16 @@ typedef struct _textDisp {
     Widget w;
     XftDraw *d;
     int top, left, width, height, lineNumLeft, lineNumWidth;
-    int cursorPos;
-    int cursorPosCache;
-    int cursorPosCacheLeft;
-    int cursorPosCacheRight;
+    //int cursorPos;
+    //int cursorPosCache;
+    //int cursorPosCacheLeft;
+    //int cursorPosCacheRight;
+    textCursor *cursor;
     textCursor *multicursor;
     size_t mcursorAlloc;
     size_t mcursorSize;
     int cursorOn;
-    int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
+    /*int cursorX, cursorY;*/		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
                                             and are not generally reliable
                                             for finding the insert position's
@@ -306,8 +307,8 @@ void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
-textCursor TextDGetCursor(textDisp *textD);
-void TextDSetCursor(textDisp *textD, textCursor cursor);
+//textCursor TextDGetCursor(textDisp *textD);
+//void TextDSetCursor(textDisp *textD, textCursor cursor);
 textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
 void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);

@@ -2628,7 +2628,7 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     if (deletePendingSelection(w, event))
     	return;
     
-    if(textD->mcursorSize == 0) {
+    if(textD->mcursorSize == 1) {
         int diff = deletePreviousCharacter(w, event, textD, silent, insertPos);
         TextDSetInsertPosition(textD, insertPos + diff);
         
@@ -2636,13 +2636,12 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     } else {
         //int diff = 0;
         size_t mcursorSize = textD->mcursorSize;
-        textD->mcursorSize = 0;
+        textD->mcursorSize = 1;
         int diff = 0;
         for(int i=0;i<mcursorSize;i++) {
             textD->multicursor[i].cursorPos += diff;
-            TextDSetCursor(textD, textD->multicursor[i]);
-            diff += deletePreviousCharacter(w, event, textD, silent, textD->cursorPos);
-            textD->multicursor[i] = TextDGetCursor(textD);
+            textD->cursor = textD->multicursor + i;
+            diff += deletePreviousCharacter(w, event, textD, silent, textD->cursor->cursorPos);
             callCursorMovementCBs(w, event);
         }
         textD->mcursorSize = mcursorSize;
@@ -2676,17 +2675,17 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     if (deletePendingSelection(w, event))
     	return;
     
-    if(textD->mcursorSize == 0) {
+    if(textD->mcursorSize == 1) {
         deleteNextCharacter(w, textD, silent, insertPos);
         callCursorMovementCBs(w, event);
     } else {
         int diff = 0;
         size_t mcursorSize = textD->mcursorSize;
-        textD->mcursorSize = 0;
+        textD->mcursorSize = 1;
         for(int i=0;i<mcursorSize;i++) {
             textD->multicursor[i].cursorPos += diff;
-            TextDSetCursor(textD, textD->multicursor[i]);
-            diff += deleteNextCharacter(w, textD, silent, textD->cursorPos);
+            textD->cursor = textD->multicursor + i;
+            diff += deleteNextCharacter(w, textD, silent, textD->cursor->cursorPos);
             callCursorMovementCBs(w, event);
         }
         textD->mcursorSize = mcursorSize;
@@ -2836,17 +2835,15 @@ static void forwardCharacterAP(Widget w, XEvent *event, String *args,
     
     textDisp *textD = ((TextWidget)w)->text.textD;
     size_t mcursorSize = textD->mcursorSize;
-    textD->mcursorSize = 0;
+    textD->mcursorSize = 1;
     int ring = 0;
     for(int i=mcursorSize-1;i>=0;i--) {
-        TextDSetCursor(textD, textD->multicursor[i]);
-        int insertPos = textD->cursorPos;
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
         
         if (!TextDMoveRight(((TextWidget)w)->text.textD)) {
             ring = 1;
         }
-        
-        textD->multicursor[i] = TextDGetCursor(textD);
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
         callCursorMovementCBs(w, event);
@@ -2877,17 +2874,15 @@ static void backwardCharacterAP(Widget w, XEvent *event, String *args,
     
     textDisp *textD = ((TextWidget)w)->text.textD;
     size_t mcursorSize = textD->mcursorSize;
-    textD->mcursorSize = 0;
+    textD->mcursorSize = 1;
     int ring = 0;
     for(int i=0;i<mcursorSize;i++) {
-        TextDSetCursor(textD, textD->multicursor[i]);
-        int insertPos = textD->cursorPos;
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
         
         if (!TextDMoveLeft(((TextWidget)w)->text.textD)) {
             ring = 1;
         }
-        
-        textD->multicursor[i] = TextDGetCursor(textD);
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
         callCursorMovementCBs(w, event);
@@ -3798,23 +3793,23 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
     	BufReplaceSelected(buf, chars);
     	TextDSetInsertPosition(textD, buf->cursorPosHint);
     } else {
-        if(textD->mcursorSize == 0) {
+        if(textD->mcursorSize == 1) {
             simpleInsertAtCursorPos(w, textD, chars);
         } else {
             int diff = 0;
             size_t mcursorSize = textD->mcursorSize;
-            textD->mcursorSize = 0;
+            //textD->mcursorSize = 1;
             for(int i=0;i<mcursorSize;i++) {
                 textD->multicursor[i].cursorPos += diff;
-                TextDSetCursor(textD, textD->multicursor[i]);
+                textD->cursor = textD->multicursor + i;
+                int prevPos = textD->cursor->cursorPos;
                 simpleInsertAtCursorPos(w, textD, chars);
-                diff += textD->cursorPos - textD->multicursor[i].cursorPos;
+                diff += textD->cursor->cursorPos - prevPos;
                 //printf("cursor  %d  ->  %d\n", textD->multicursor[i].cursorPos, textD->cursorPos);
-                textD->multicursor[i] = TextDGetCursor(textD);
                 
                 callCursorMovementCBs(w, event);
             }
-            textD->mcursorSize = mcursorSize;
+            //textD->mcursorSize = mcursorSize;
         }
     }
     	
