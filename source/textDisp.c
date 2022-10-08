@@ -887,7 +887,9 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
         }
     }
     
-    TextDClearMultiCursor(textD);
+    if(TextDClearMultiCursor(textD)) {
+        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+    }
     
     /* make sure new position is ok, do nothing if it hasn't changed */
     if (newPos == textD->cursorPos)
@@ -1002,7 +1004,7 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     TextDUnblankCursor(textD);
 }
 
-void TextDClearMultiCursor(textDisp *textD) {
+int TextDClearMultiCursor(textDisp *textD) {
     if(textD->mcursorSize > 0) {
         textD->mcursorSize = 0;
         if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
@@ -1010,7 +1012,9 @@ void TextDClearMultiCursor(textDisp *textD) {
             textD->mcursorAlloc = MCURSOR_ALLOC;
             textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
         }
+        return 1;
     }
+    return 0;
 }
 
 static void textDBlankCursorPos(textDisp *textD) {

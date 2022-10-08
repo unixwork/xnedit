@@ -265,7 +265,7 @@ void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
 void TextDSetInsertPosition(textDisp *textD, int newPos);
 void TextDAddCursor(textDisp *textD, int newMultiCursorPos);
-void TextDClearMultiCursor(textDisp *textD);
+int  TextDClearMultiCursor(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);
