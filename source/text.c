@@ -2821,31 +2821,74 @@ static void deleteToStartOfLineAP(Widget w, XEvent *event, String *args,
 static void forwardCharacterAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 0;
+    int ring = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        TextDSetCursor(textD, textD->multicursor[i]);
+        int insertPos = textD->cursorPos;
+        
+        if (!TextDMoveRight(((TextWidget)w)->text.textD)) {
+            ring = 1;
+        }
+        
+        textD->multicursor[i] = TextDGetCursor(textD);
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    checkAutoShowInsertPos(w);
+    if(ring) {
+        ringIfNecessary(silent, w);
+    }
+
+    /*
     if (!TextDMoveRight(((TextWidget)w)->text.textD)) {
         ringIfNecessary(silent, w);
     }
     checkMoveSelectionChange(w, event, insertPos, args, nArgs);
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
+     */
 }
 
 static void backwardCharacterAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (!TextDMoveLeft(((TextWidget)w)->text.textD)) {
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 0;
+    int ring = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        TextDSetCursor(textD, textD->multicursor[i]);
+        int insertPos = textD->cursorPos;
+        
+        if (!TextDMoveLeft(((TextWidget)w)->text.textD)) {
+            ring = 1;
+        }
+        
+        textD->multicursor[i] = TextDGetCursor(textD);
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    checkAutoShowInsertPos(w);
+    if(ring) {
         ringIfNecessary(silent, w);
     }
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-    checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 static void forwardWordAP(Widget w, XEvent *event, String *args,

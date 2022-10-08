@@ -1003,11 +1003,13 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
 }
 
 void TextDClearMultiCursor(textDisp *textD) {
-    textD->mcursorSize = 0;
-    if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
-        // reduce multicursor array, if it is too big
-        textD->mcursorAlloc = MCURSOR_ALLOC;
-        textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
+    if(textD->mcursorSize > 0) {
+        textD->mcursorSize = 0;
+        if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
+            // reduce multicursor array, if it is too big
+            textD->mcursorAlloc = MCURSOR_ALLOC;
+            textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
+        }
     }
 }
 
@@ -1607,6 +1609,7 @@ int TextDMoveRight(textDisp *textD)
                 BufRightPos(textD->buffer, textD->cursorPos));
         return True;
     } else {
+        /*
         Boolean ret = True;
         int prevCursor = -1;
         for(int i=textD->mcursorSize-1;i>=0;i--) {
@@ -1624,6 +1627,8 @@ int TextDMoveRight(textDisp *textD)
             textD->multicursor[i].cursorPos = newPos;
         }
         return ret;
+        */
+        return 0;
     }
 }
 
