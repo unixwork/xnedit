@@ -3793,19 +3793,23 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
             simpleInsertAtCursorPos(w, textD, chars);
         } else {
             int diff = 0;
-            for(int i=0;i<textD->mcursorSize;i++) {
+            size_t mcursorSize = textD->mcursorSize;
+            textD->mcursorSize = 0;
+            for(int i=0;i<mcursorSize;i++) {
                 textD->multicursor[i].cursorPos += diff;
                 TextDSetCursor(textD, textD->multicursor[i]);
                 simpleInsertAtCursorPos(w, textD, chars);
                 diff += textD->cursorPos - textD->multicursor[i].cursorPos;
                 //printf("cursor  %d  ->  %d\n", textD->multicursor[i].cursorPos, textD->cursorPos);
                 textD->multicursor[i] = TextDGetCursor(textD);
+                
+                callCursorMovementCBs(w, event);
             }
+            textD->mcursorSize = mcursorSize;
         }
     }
     	
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 /*
