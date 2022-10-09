@@ -1021,6 +1021,16 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     TextDUnblankCursor(textD);
 }
 
+void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
+    if(cursorIndex+1 == textD->mcursorSize) {
+        textD->mcursorSize--;
+        return;
+    }
+    
+    memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, textD->mcursorSize - cursorIndex - 1);
+    textD->mcursorSize--;
+}
+
 int TextDClearMultiCursor(textDisp *textD) {
     if(textD->mcursorSize > 1) {
         textD->mcursorSize = 1;
