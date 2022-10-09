@@ -1733,7 +1733,6 @@ int TextDMoveDown(textDisp *textD, int absolute)
     return True;
 }
 
-// TODO: refactor
 textCursor TextDPos2Cursor(textDisp *textD, int pos) {
     textBuffer *buf = textD->buffer;
     textCursor c;
@@ -1741,21 +1740,22 @@ textCursor TextDPos2Cursor(textDisp *textD, int pos) {
     c.cursorPosCache = pos;
     c.cursorPosCacheLeft = BufLeftPos(buf, pos);
     c.cursorPosCacheRight = BufRightPos(buf, pos);
+    c.cursorPreferredCol = -1;
+    c.x = -100;
+    c.y = -100;
     if(textD->ansiColors) {
-        // TODO: fix
-        while(BufGetCharacter(buf, textD->cursor->cursorPosCacheLeft) == '\e') {
-                c.cursorPosCacheLeft = BufLeftPos(buf, textD->cursor->cursorPosCacheLeft);
+        while(BufGetCharacter(buf, c.cursorPosCacheLeft) == '\e') {
+                c.cursorPosCacheLeft = BufLeftPos(buf, c.cursorPosCacheLeft);
         }
         while(BufGetCharacter(buf, pos) == '\e') {
-            c.cursorPosCacheRight += BufCharLen(buf, textD->cursor->cursorPosCacheRight);
-            pos = textD->cursor->cursorPosCacheRight;
+            c.cursorPosCacheRight += BufCharLen(buf, c.cursorPosCacheRight);
+            pos = c.cursorPosCacheRight;
         }
         c.cursorPosCacheRight += BufCharLen(buf, textD->cursor->cursorPosCacheRight);
     }
     return c;
 }
 
-// TODO: refactor
 void TextDCursorLR(textDisp *textD, int *left, int *right)
 {
     if(textD->cursor->cursorPos != textD->cursor->cursorPosCache) {
@@ -2813,16 +2813,10 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     	return;
     
     if (color == &textD->bgPixel) {
-        if(x < 5) {
-            printf("");
-        }
         XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, y,
                 width, height, False);
     }
     else {
-        if(x < 5) {
-            printf("");
-        }
         XftDrawRect(textD->d, color, x, y, width, height);
     }
 }
