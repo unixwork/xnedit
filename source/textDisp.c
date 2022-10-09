@@ -1621,66 +1621,22 @@ int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos)
 */
 int TextDMoveRight(textDisp *textD)
 {
-    if(textD->mcursorSize == 1) {
-        if (textD->cursor->cursorPos >= textD->buffer->length)
-            return False;
+    if (textD->cursor->cursorPos >= textD->buffer->length)
+        return False;
 
-        TextDSetInsertPosition(
-                textD,
-                BufRightPos(textD->buffer, textD->cursor->cursorPos));
-        return True;
-    } else {
-        // TODO
-        /*
-        Boolean ret = True;
-        int prevCursor = -1;
-        for(int i=textD->mcursorSize-1;i>=0;i--) {
-            int pos = textD->multicursor[i].cursorPos;
-            if(pos == textD->buffer->length) {
-                prevCursor = pos;
-                ret = False;
-                continue;
-            }
-            int newPos = BufRightPos(textD->buffer, pos);
-            if(newPos == prevCursor) {
-                prevCursor = pos;
-                continue; // maybe we should delete this cursor
-            }
-            textD->multicursor[i].cursorPos = newPos;
-        }
-        return ret;
-        */
-        return 0;
-    }
+    TextDSetInsertPosition(
+            textD,
+            BufRightPos(textD->buffer, textD->cursor->cursorPos));
+    return True;
 }
 
 int TextDMoveLeft(textDisp *textD)
 {
-    if(textD->mcursorSize == 1) {
-        if (textD->cursor->cursorPos <= 0)
-            return False;
+    if (textD->cursor->cursorPos <= 0)
+        return False;
 
-        TextDSetInsertPosition(textD, BufLeftPos(textD->buffer, textD->cursor->cursorPos)); 
-        return True;
-    } else {
-        Boolean ret = True;
-        int prevCursor = -1;
-        for(int i=0;i<textD->mcursorSize;i++) {
-            int pos = textD->multicursor[i].cursorPos;
-            if(pos == 0) {
-                prevCursor = pos;
-                ret = False;
-                continue;
-            }
-            int newPos = BufLeftPos(textD->buffer, pos);
-            if(newPos == prevCursor) {
-                prevCursor = pos;
-                continue; // maybe we should delete this cursor
-            }
-            textD->multicursor[i].cursorPos = newPos;
-        }
-        return ret;
-    }
+    TextDSetInsertPosition(textD, BufLeftPos(textD->buffer, textD->cursor->cursorPos)); 
+    return True;
 }
 
 int TextDMoveUp(textDisp *textD, int absolute)
