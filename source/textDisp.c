@@ -231,7 +231,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     */
     textD->cursorToHint = NO_HINT;
     textD->cursorStyle = NORMAL_CURSOR;
-    textD->cursorPreferredCol = -1;
     textD->xic_x = 0;
     textD->xic_y = 0;
     textD->buffer = buffer;
@@ -316,6 +315,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->multicursor[0].cursorPosCache = -1;
     textD->multicursor[0].cursorPosCacheLeft = 0;
     textD->multicursor[0].cursorPosCacheRight = 0;
+    textD->multicursor[0].cursorPreferredCol = -1;
     textD->multicursor[0].x = -100;
     textD->multicursor[0].y = -100;
     
@@ -912,7 +912,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     if (newPos > textD->buffer->length) newPos = textD->buffer->length;
     
     /* cursor movement cancels vertical cursor motion column */
-    textD->cursorPreferredCol = -1;
+    textD->cursor->cursorPreferredCol = -1;
    
     /* erase the cursor at it's previous position */
     TextDBlankCursor(textD);
@@ -1605,8 +1605,8 @@ int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos)
     }
 
     /* Decide what column to move to, if there's a preferred column use that */
-    column = (textD->cursorPreferredCol >= 0)
-            ? textD->cursorPreferredCol
+    column = (textD->cursor->cursorPreferredCol >= 0)
+            ? textD->cursor->cursorPreferredCol
             : BufCountDispChars(textD->buffer, *lineStartPos, textD->cursor->cursorPos);
     return(column);
 }
@@ -1668,8 +1668,8 @@ int TextDMoveUp(textDisp *textD, int absolute)
     	return False;
     
     /* Decide what column to move to, if there's a preferred column use that */
-    column = textD->cursorPreferredCol >= 0
-            ? textD->cursorPreferredCol
+    column = textD->cursor->cursorPreferredCol >= 0
+            ? textD->cursor->cursorPreferredCol
             : BufCountDispChars(textD->buffer, lineStartPos, textD->cursor->cursorPos);
     
     /* count forward from the start of the previous line to reach the column */
@@ -1689,7 +1689,7 @@ int TextDMoveUp(textDisp *textD, int absolute)
     TextDSetInsertPosition(textD, newPos);
     
     /* if a preferred column wasn't aleady established, establish it */
-    textD->cursorPreferredCol = column;
+    textD->cursor->cursorPreferredCol = column;
     
     return True;
 }
@@ -1712,8 +1712,8 @@ int TextDMoveDown(textDisp *textD, int absolute)
         visLineNum = -1;
     }
 
-    column = textD->cursorPreferredCol >= 0
-            ? textD->cursorPreferredCol
+    column = textD->cursor->cursorPreferredCol >= 0
+            ? textD->cursor->cursorPreferredCol
             : BufCountDispChars(textD->buffer, lineStartPos, textD->cursor->cursorPos);
 
     if (absolute)
@@ -1728,7 +1728,7 @@ int TextDMoveDown(textDisp *textD, int absolute)
     }
 
     TextDSetInsertPosition(textD, newPos);
-    textD->cursorPreferredCol = column;
+    textD->cursor->cursorPreferredCol = column;
     
     return True;
 }
@@ -1949,7 +1949,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     
     /* buffer modification cancels vertical cursor motion column */
     if (nInserted != 0 || nDeleted != 0)
-    	textD->cursorPreferredCol = -1;
+    	textD->cursor->cursorPreferredCol = -1;
     
     /* Count the number of lines inserted and deleted, and in the case
        of continuous wrap mode, how much has changed */

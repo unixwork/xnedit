@@ -111,6 +111,7 @@ typedef struct _textCursor {
     int cursorPosCache;
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
+    int cursorPreferredCol;
     int x;
     int y;
 } textCursor;
@@ -137,7 +138,7 @@ typedef struct _textDisp {
     					   where to move the cursor, to reduce
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
-    int cursorPreferredCol;		/* Column for vert. cursor movement */
+    //int cursorPreferredCol;		/* Column for vert. cursor movement */
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */

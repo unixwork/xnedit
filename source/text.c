@@ -3193,11 +3193,44 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int abs = hasKey("absolute", args, nArgs);
 
     cancelDrag(w);
-    if (!TextDMoveUp(((TextWidget)w)->text.textD, abs))
-        ringIfNecessary(silent, w);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        insertPos = textD->cursor->cursorPos;
+        
+        if (!TextDMoveUp(((TextWidget)w)->text.textD, abs)) {
+            notMoved = 1;
+            continue;
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        checkAutoShowInsertPos(w);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+                i--;
+            }
+        }
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void processShiftUpAP(Widget w, XEvent *event, String *args,
@@ -3218,16 +3251,47 @@ static void processShiftUpAP(Widget w, XEvent *event, String *args,
 static void processDownAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    int insertPos;
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
 
     cancelDrag(w);
-    if (!TextDMoveDown(((TextWidget)w)->text.textD, abs))
-        ringIfNecessary(silent, w);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    int notMoved = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        textD->cursor = textD->multicursor + i;
+        insertPos = textD->cursor->cursorPos;
+        
+        if (!TextDMoveDown(((TextWidget)w)->text.textD, abs)) {
+            notMoved = 1;
+            continue;
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i+1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+            }
+        }
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void processShiftDownAP(Widget w, XEvent *event, String *args,
@@ -3259,7 +3323,7 @@ static void beginningOfLineAP(Widget w, XEvent *event, String *args,
     checkMoveSelectionChange(w, event, insertPos, args, nArgs);
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
-    textD->cursorPreferredCol = 0;
+    textD->cursor->cursorPreferredCol = 0;
 }
 
 static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
@@ -3275,7 +3339,7 @@ static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     checkMoveSelectionChange(w, event, insertPos, args, nArgs);
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
-    textD->cursorPreferredCol = -1;
+    textD->cursor->cursorPreferredCol = -1;
 }
 
 static void beginningOfFileAP(Widget w, XEvent *event, String *args,
@@ -3383,10 +3447,10 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
     else { /* "standard" */
@@ -3410,10 +3474,10 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
 }
@@ -3469,10 +3533,10 @@ static void previousPageAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
     else { /* "standard" */
@@ -3495,10 +3559,10 @@ static void previousPageAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
 }
