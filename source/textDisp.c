@@ -885,8 +885,6 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 */
 void TextDSetInsertPosition(textDisp *textD, int newPos)
 {
-    printf("TextDSetInsertPosition\n");
-    
     int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
     Boolean hiline = False;
     if(textD->highlightCursorLine) {
@@ -961,20 +959,6 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
 void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     int mcInsertPos = 0;
     
-    // if we only have one cursor yet, add the current cursor to the 
-    // multicursor array
-    // TODO: remove, not needed anymore
-    /*
-    if(textD->mcursorSize == 0) {
-        textD->multicursor[0] = (textCursor) {
-            textD->cursor->cursorPos,
-            textD->cursor->cursorPosCache,
-            textD->cursor->cursorPosCacheLeft,
-            textD->cursor->cursorPosCacheRight};
-        textD->mcursorSize++;
-    }
-    */
-    
     // make sure, there is not already a cursor for the new position
     for(int i=0;i<textD->mcursorSize;i++) {
         if(textD->multicursor[i].cursorPos == newMultiCursorPos) {
@@ -1005,14 +989,6 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     }
     textCursor newCursor = TextDPos2Cursor(textD, newMultiCursorPos);
     textD->multicursor[mcInsertPos] = newCursor;
-    
-    /*
-    printf("multicursor:\n");
-    for(int i=0;i<textD->mcursorSize;i++) {
-        printf("%d\n", textD->multicursor[i].cursorPos);
-    }
-    printf("\n");
-    */
     
     textD->cursor = textD->multicursor;
     
@@ -1063,9 +1039,7 @@ void TextDBlankCursor(textDisp *textD)
         textCursor *origCursor = textD->cursor;
         for(int i=0;i<textD->mcursorSize;i++) {
             textD->cursor = textD->multicursor + i;
-            //printf("blank cursor %d    %d  <-->  %d\n", textD->cursor->cursorPos, textD->cursor->cursorPosCacheLeft, textD->cursor->cursorPosCacheRight);
             textDBlankCursorPos(textD);
-            //return;
         }
         textD->cursor = origCursor;
     }
@@ -2834,10 +2808,6 @@ static void drawCursor(textDisp *textD, int x, int y)
     int nSegs = 0;
     int bot = y + fontHeight - 1;
     
-    if(textD->mcursorSize > 0) {
-        printf("");
-    }
-    
     if (XtWindow(textD->w) == 0 || x < textD->left-1 ||
 	    x > textD->left + textD->width)
     	return;
@@ -3814,10 +3784,7 @@ static void blankSingleCursorProtrusions(textDisp *textD)
         width = cursorX + cursorWidth/2 + 2 - right;
     } else
         return;
-        
-    if(textD->mcursorSize > 0) {
-        printf("");
-    }
+    
     XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, cursorY,
             width, fontHeight, False);
 }
