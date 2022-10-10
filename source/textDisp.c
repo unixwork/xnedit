@@ -956,13 +956,13 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     }
 }
 
-void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
+int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     int mcInsertPos = 0;
     
     // make sure, there is not already a cursor for the new position
     for(int i=0;i<textD->mcursorSize;i++) {
         if(textD->multicursor[i].cursorPos == newMultiCursorPos) {
-            return; // pos already in the cursor pos array
+            return i; // pos already in the cursor pos array
         } else if(textD->multicursor[i].cursorPos > newMultiCursorPos) {
             break;
         }
@@ -971,7 +971,7 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     
     // check limit
     if(textD->mcursorSize == MCURSOR_MAX) {
-        return;
+        return -1;
     }
     
     // check array size, do we need to realloc the array?
@@ -995,9 +995,15 @@ void TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     // render new cursor
     textD->cursorOn = False;
     TextDUnblankCursor(textD);
+    
+    return -1;
 }
 
 void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
+    if(textD->mcursorSize == 1) {
+        return;
+    }
+    
     if(cursorIndex+1 == textD->mcursorSize) {
         textD->mcursorSize--;
         return;
@@ -1489,8 +1495,6 @@ int TextDOffsetWrappedRow(textDisp *textD, int row)
 */
 void TextDMakeInsertPosVisible(textDisp *textD)
 {
-    printf("TextDMakeInsertPosVisible\n");
-    
     int hOffset, topLine, x, y;
     int cursorPos = textD->cursor->cursorPos;
     int linesFromTop = 0, do_padding = 1; 

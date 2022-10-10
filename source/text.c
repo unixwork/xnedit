@@ -1785,7 +1785,11 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
     } else if (!strcmp(args[0], "mc")) {
-        TextDAddCursor(textD, cursorPos);
+        int cursorIndex = TextDAddCursor(textD, cursorPos);
+        if(cursorIndex >= 0) {
+            TextDBlankCursor(textD);
+            TextDRemoveCursor(textD, cursorIndex);
+        }
     }
 }
 
