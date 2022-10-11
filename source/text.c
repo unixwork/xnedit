@@ -2701,8 +2701,9 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int pos, lineStart = BufStartOfLine(textD->buffer, insertPos);
+    textBuffer *buffer = textD->buffer;
+    int insertPos ;
+    int pos, lineStart;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2716,21 +2717,46 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
         return;
     }
 
-    if (insertPos == lineStart) {
-        ringIfNecessary(silent, w);
-        return;
+    size_t mcursorSize = textD->mcursorSize;
+    int diff = 0;
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        
+        insertPos = textD->cursor->cursorPos;
+        lineStart = BufStartOfLine(buffer, insertPos);
+        
+        if (insertPos == lineStart) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = max(insertPos - 1, 0);
+        while(strchr(delimiters, BufGetCharacter(buffer, pos)) != NULL &&
+                pos != lineStart)
+        {
+            pos--;
+        }
+        
+        pos = startOfWord((TextWidget)w, pos);
+        BufRemove(buffer, pos, insertPos);
+        diff -= insertPos - pos;
+        
+        if(i > 0 && textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+        
+        callCursorMovementCBs(w, event);
     }
 
-    pos = max(insertPos - 1, 0);
-    while (strchr(delimiters, BufGetCharacter(textD->buffer, pos)) != NULL &&
-            pos != lineStart) {
-        pos--;
-    }
-
-    pos = startOfWord((TextWidget)w, pos);
-    BufRemove(textD->buffer, pos, insertPos);
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void deleteNextWordAP(Widget w, XEvent *event, String *args,
@@ -2738,8 +2764,9 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int pos, lineEnd = BufEndOfLine(textD->buffer, insertPos);
+    textBuffer *buffer = textD->buffer;
+    int insertPos;
+    int pos, lineEnd;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2752,22 +2779,48 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     if (deletePendingSelection(w, event)) {
         return;
     }
-
-    if (insertPos == lineEnd) {
-        ringIfNecessary(silent, w);
-        return;
+    
+    int diff = 0;
+    int prevPos = -1;
+    int notMoved = 0;
+    size_t mcursorSize = textD->mcursorSize;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        
+        insertPos = TextDGetInsertPosition(textD);
+        lineEnd = BufEndOfLine(buffer, insertPos);
+        
+        if (insertPos == lineEnd) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = insertPos;
+        while(strchr(delimiters, BufGetCharacter(buffer, pos)) != NULL &&
+                pos != lineEnd)
+        {
+            pos++;
+        }
+        
+        pos = endOfWord((TextWidget)w, pos);
+        BufRemove(textD->buffer, insertPos, pos);
+        diff += insertPos - pos;
+        
+        if(i > 0 && textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+    
+        callCursorMovementCBs(w, event);
     }
-
-    pos = insertPos;
-    while (strchr(delimiters, BufGetCharacter(textD->buffer, pos)) != NULL &&
-            pos != lineEnd) {
-        pos++;
-    }
-
-    pos = endOfWord((TextWidget)w, pos);
-    BufRemove(textD->buffer, insertPos, pos);
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void deleteToEndOfLineAP(Widget w, XEvent *event, String *args,
