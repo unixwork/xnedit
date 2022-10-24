@@ -2285,8 +2285,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     }
     borderWidth = oldWindowWidth - oldTextWidth;
     borderHeight = oldWindowHeight - oldTextHeight;
-    XftFont *oldXftFont = FontDefault(oldFont);
-    oldFontWidth = oldXftFont->max_advance_width;
+    oldFontWidth = oldFont->maxWidth;
     oldFontHeight = textD->ascent + textD->descent;
     
         
@@ -2375,7 +2374,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
             size appropriate for the new font, but only do so if there's only
             _one_ document in the window, in order to avoid growing-window bug */
         if (NDocuments(window) == 1) {
-            fontWidth = window->font->fonts->font->max_advance_width;
+            fontWidth = window->font->maxWidth;
             fontHeight = textD->ascent + textD->descent;
             newWindowWidth = (oldTextWidth*fontWidth) / oldFontWidth + borderWidth;
             newWindowHeight = (oldTextHeight*fontHeight) / oldFontHeight + 

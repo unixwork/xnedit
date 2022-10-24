@@ -322,7 +322,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     if (hScrollBar != NULL) {
 	XtVaSetValues(hScrollBar, XmNminimum, 0, XmNmaximum, 1,
     		XmNsliderSize, 1, XmNrepeatDelay, 10, XmNvalue, 0,
-    		XmNincrement, xftFont->max_advance_width, NULL);
+    		XmNincrement, font->maxWidth, NULL);
 	XtAddCallback(hScrollBar, XmNdragCallback, hScrollCB, (XtPointer)textD);
 	XtAddCallback(hScrollBar, XmNvalueChangedCallback, hScrollCB,
 		(XtPointer)textD);
@@ -510,7 +510,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
     textD->descent = maxDescent;
     
     /* If all of the current fonts are fixed and match in width, compute */
-    fontWidth = fontStruct->max_advance_width;
+    fontWidth = font->maxWidth;
     if (fontWidth != 0)
         fontWidth = -1;
     else {
@@ -581,34 +581,29 @@ void TextDSetBoldItalicFont(textDisp *textD, NFont *boldItalicFont)
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
-            NFont *font = textD->styleTable[i].font;
-            printf("implement me\n");
-            /*
-            int thisWidth = (textD->styleTable[i].font)->min_bounds.width;
+            int thisWidth = (textD->styleTable[i].font)->minWidth;
             if (thisWidth < fontWidth) {
                 fontWidth = thisWidth;
             }
-            */
         }
     }
-    //return(fontWidth); // TODO
+    return(fontWidth);
     return fontWidth;
 }
 
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth;
     int i;
 
     if (considerStyles) {
         for (i = 0; i < textD->nStyles; ++i) {
-            XftFont *font = FontDefault(textD->styleTable[i].font);
-            int thisWidth = font->max_advance_width;
+            int thisWidth = textD->styleTable[i].font->maxWidth;
             if (thisWidth > fontWidth) {
                 fontWidth = thisWidth;
             }
@@ -2598,7 +2593,8 @@ static void drawCursor(textDisp *textD, int x, int y)
     XSegment segs[5];
     int left, right, cursorWidth, midY;
     //int fontWidth = textD->fontStruct->min_bounds.width, nSegs = 0;
-    int fontWidth = FontDefault(textD->font)->max_advance_width; // TODO: get min width
+    //int fontWidth = FontDefault(textD->font)->max_advance_width; // TODO: get min width
+    int fontWidth = textD->font->minWidth;
     int fontHeight = textD->ascent + textD->descent;
     int nSegs = 0;
     int bot = y + fontHeight - 1;
@@ -4609,6 +4605,26 @@ static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color)
 }
 
 /* font list functions */
+static void getFontMinMax(NFont *font, int *min, int *max) {
+    XftFont *xftFont = FontDefault(font);
+    int fontMin = xftFont->max_advance_width;
+    int fontMax = 0;
+    
+    for(int i=32;i<127;i++) {
+        XGlyphInfo extents;
+        char c = i;
+        XftTextExtents8(font->display, xftFont, &c, 1, &extents);
+        if(extents.xOff < fontMin) {
+            fontMin = extents.xOff;
+        }
+        if(extents.xOff > fontMax) {
+            fontMax = extents.xOff;
+        }
+    }
+    
+    *min = fontMin;
+    *max = fontMax;
+}
 
 NFont *FontCreate(Display *dp, FcPattern *pattern)
 {
@@ -4642,6 +4658,8 @@ NFont *FontCreate(Display *dp, FcPattern *pattern)
     list->font = defaultFont;
     list->next = NULL;
     font->fonts = list;
+    
+    getFontMinMax(font, &font->minWidth, &font->maxWidth);
     
     return font;
 }

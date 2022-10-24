@@ -854,7 +854,7 @@ static void initialize(TextWidget request, TextWidget new)
     int marginWidth;
     int lineNumCols;
 
-    charWidth = xfont->max_advance_width;
+    charWidth = font->maxWidth;
     marginWidth = new->text.marginWidth;
     lineNumCols = new->text.lineNumCols;
     
@@ -1051,13 +1051,15 @@ static void destroy(TextWidget w)
 static void resize(TextWidget w)
 {
     XftFont *fs = FontDefault(w->text.font2);
+    NFont *font = w->text.font2;
     int height = w->core.height, width = w->core.width;
     int marginWidth = w->text.marginWidth, marginHeight = w->text.marginHeight;
     int lineNumAreaWidth = w->text.lineNumCols == 0 ? 0 : w->text.marginWidth +
-		fs->max_advance_width * w->text.lineNumCols;
+		font->maxWidth * w->text.lineNumCols;
 
+    int test_max_advance_width = fs->max_advance_width;
     w->text.columns = (width - marginWidth*2 - lineNumAreaWidth) /
-    	    fs->max_advance_width;
+    	    font->maxWidth /* fs->max_advance_width */;
     w->text.rows = (height - marginHeight*2) / (fs->ascent + fs->descent);
     
     /* Reject widths and heights less than a character, which the text
@@ -1069,7 +1071,7 @@ static void resize(TextWidget w)
        Fixing it here is 100x easier than re-designing textDisp.c */
     if (w->text.columns < 1) {
     	w->text.columns = 1;
-    	w->core.width = width = fs->max_advance_width + marginWidth*2 +
+    	w->core.width = width = font->maxWidth + marginWidth*2 +
 		lineNumAreaWidth;
     }
     if (w->text.rows < 1) {
@@ -1188,6 +1190,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
 {
     Boolean redraw = False, reconfigure = False;
     XftFont *fs = FontDefault(new->text.font2);
+    NFont *font = new->text.font2;
     
     if (new->text.overstrike != current->text.overstrike) {
     	if (current->text.textD->cursorStyle == BLOCK_CURSOR)
@@ -1235,7 +1238,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if (new->text.lineNumCols != current->text.lineNumCols || reconfigure)
     {
         int marginWidth = new->text.marginWidth;
-        int charWidth = fs->max_advance_width;
+        int charWidth = font->maxWidth;
         int lineNumCols = new->text.lineNumCols;
         if (lineNumCols == 0)
         {
@@ -1349,11 +1352,8 @@ static XtGeometryResult queryGeometry(Widget w, XtWidgetGeometry *proposed,
     
     int curHeight = tw->core.height;
     int curWidth = tw->core.width;
-    //XFontStruct *fs = tw->text.textD->fontStruct;
-    //int fontWidth = fs->max_bounds.width;
-    //int fontHeight = fs->ascent + fs->descent;
     XftFont *font = FontDefault(tw->text.textD->font);
-    int fontWidth = font->max_advance_width;
+    int fontWidth = tw->text.textD->font->maxWidth;
     int fontHeight = font->height;
     int marginHeight = tw->text.marginHeight;
     int propWidth = (proposed->request_mode & CWWidth) ? proposed->width : 0;
@@ -1585,7 +1585,7 @@ void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth;
     int replaceSel, singleLine, breakAt = 0;
 
     /* Don't wrap if auto-wrap is off or suppressed, or it's just a newline */
@@ -3287,7 +3287,7 @@ static void pageLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = FontDefault(textD->font)->max_advance_width;
+    int maxCharWidth = textD->font->maxWidth;
     int lineStartPos, indent, pos;
     int horizOffset;
     int silent = hasKey("nobell", args, nArgs);
@@ -3324,7 +3324,7 @@ static void pageRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     int insertPos = TextDGetInsertPosition(textD);
-    int maxCharWidth = FontDefault(textD->font)->max_advance_width;
+    int maxCharWidth = textD->font->maxWidth;
     int oldHorizOffset = textD->horizOffset;
     int lineStartPos, indent, pos;
     int horizOffset, sliderSize, sliderMax;
@@ -4289,7 +4289,7 @@ static void autoScrollTimerProc(XtPointer clientData, XtIntervalId *id)
     textDisp *textD = w->text.textD;
     XftFont *xftFont = FontDefault(textD->font);
     int topLineNum, horizOffset, newPos, cursorX, y;
-    int fontWidth = xftFont->max_advance_width;
+    int fontWidth = textD->font->maxWidth;
     int fontHeight = xftFont->ascent + xftFont->descent;
 
     /* For vertical autoscrolling just dragging the mouse outside of the top

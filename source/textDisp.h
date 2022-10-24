@@ -59,6 +59,8 @@ struct NFont {
     Display *display;
     FcPattern *pattern;
     double size;
+    int minWidth;
+    int maxWidth;
     unsigned int ref;
 };
 
