@@ -57,6 +57,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <wctype.h>
+#include <wchar.h>
 #include <errno.h>
 #include <sys/stat.h>
 #ifdef VMS
@@ -4647,13 +4649,52 @@ static int backwardRegexSearch(const char *string, const char *searchString, int
     return FALSE;
 }
 
+static int check_len(const char *in, int len) {
+    for(int i=0;i<len;i++) {
+        if(in[i] == 0) return i;
+    }
+    return len;
+}
+
+static void changeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_len) {
+    mbstate_t state;
+    memset(&state, 0, sizeof(mbstate_t));
+    wchar_t w = 0;
+    
+    int len = Utf8CharLen((const unsigned char*)in);
+    len = check_len(in, len);
+    *in_len = len;
+    
+    mbrtowc(&w, in, len, &state);
+    wchar_t wc = makeUpper ? towupper(w) : towlower(w);
+    if(wc == 0) wc = w;
+    char bufChar[8];
+    const char *src_buf = bufChar;
+    int clen = wctomb(bufChar, wc);
+    if(clen > len) {
+        clen = len;
+        src_buf = in;
+    }
+    *out_len = clen;
+    
+    memcpy(out, src_buf, clen);
+}
+
 static void upCaseString(char *outString, const char *inString)
 {
     char *outPtr;
     const char *inPtr;
     
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	*outPtr = toupper((unsigned char)*inPtr);
+        if(*inPtr >= 0) {
+            *outPtr = toupper((unsigned char)*inPtr);
+        } else {
+            int in_len, out_len;
+            changeCase(inPtr, outPtr, True, &in_len, &out_len);
+            inPtr += in_len - 1;
+            outPtr += out_len - 1;
+        }
+    	
     }
     *outPtr = 0;
 }
@@ -4664,7 +4705,14 @@ static void downCaseString(char *outString, const char *inString)
     const char *inPtr;
     
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	*outPtr = tolower((unsigned char)*inPtr);
+    	if(*inPtr >= 0) {
+            *outPtr = tolower((unsigned char)*inPtr);
+        } else {
+            int in_len, out_len;
+            changeCase(inPtr, outPtr, False, &in_len, &out_len);
+            inPtr += in_len - 1;
+            outPtr += out_len - 1;
+        }
     }
     *outPtr = 0;
 }

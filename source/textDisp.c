@@ -4612,7 +4612,7 @@ static void getFontMinMax(NFont *font, int *min, int *max) {
     
     for(int i=32;i<127;i++) {
         XGlyphInfo extents;
-        char c = i;
+        FcChar8 c = i;
         XftTextExtents8(font->display, xftFont, &c, 1, &extents);
         if(extents.xOff < fontMin) {
             fontMin = extents.xOff;
