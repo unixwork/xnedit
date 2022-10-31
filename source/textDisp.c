@@ -3390,10 +3390,10 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     /* Make sure we reset the clipping range for the line numbers GC, because
        the GC may be shared (eg, if the line numbers and text have the same
        color) and therefore the clipping ranges may be invalid. */
-    clipRect.x = textD->lineNumLeft;
-    clipRect.y = textD->top;
-    clipRect.width = textD->lineNumWidth;
-    clipRect.height = textD->height;
+    clipRect.x = 0; //textD->lineNumLeft;
+    clipRect.y = 0; //textD->top;
+    clipRect.width = textD->lineNumWidth + textD->lineNumLeft;
+    clipRect.height = textD->height + 2*textD->top;
     //XSetClipRectangles(display, textD->lineNumGC, 0, 0,
     //	    &clipRect, 1, Unsorted);
     if(textD->d) {
