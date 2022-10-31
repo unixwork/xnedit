@@ -885,6 +885,7 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 */
 void TextDSetInsertPosition(textDisp *textD, int newPos)
 {
+    //printf("TextDSetInsertPosition\n");
     int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
     Boolean hiline = False;
     if(textD->highlightCursorLine) {
@@ -994,6 +995,15 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     
     // render new cursor
     textD->cursorOn = False;
+    if(textD->highlightCursorLine) {
+        // redraw entire line
+        int newCursorLine;
+        int newCursorLineStart = BufStartOfLine(textD->buffer, newMultiCursorPos);
+        posToVisibleLineNum(textD, newMultiCursorPos, &newCursorLine);
+        redisplayLine(textD, newCursorLine, 0, INT_MAX, 0, INT_MAX);
+        
+        //textDRedisplayRange(textD, newCursorLineStart, newCursorLineEnd);
+    }
     TextDUnblankCursor(textD);
     
     return -1;
@@ -1104,6 +1114,21 @@ Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index) {
             int cursor = textD->multicursor[i].cursorPos;
             if(pos == cursor) {
                 *index = i;
+                return True;
+            }
+        }
+        return False;
+    }
+}
+
+Boolean TextDRangeHasCursor(textDisp *textD, int start, int end) {
+    if(textD->mcursorSize == 1) {
+        int cursor = textD->cursor->cursorPos;
+        return cursor >= start && cursor <= end;
+    } else {
+        for(int i=0;i<textD->mcursorSize;i++) {
+            int cursor = textD->multicursor[i].cursorPos;
+            if(cursor >= start && cursor <= end) {
                 return True;
             }
         }
@@ -2424,10 +2449,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     /* check if the line contains the cursor
      */
-    if(textD->highlightCursorLine && startOfLine <= cursorPos && cursorPos <= endOfLine) {
+    if(textD->highlightCursorLine && TextDRangeHasCursor(textD, startOfLine, endOfLine)) {
         cursorLine = True;
     }
-    
+     
     // debug
     if(textD->mcursorSize == 2) {
         //printf("render %d - %d    cursor: %d, %d\n", startIndex, rightCharIndex-1, textD->multicursor[0].cursorPos, textD->multicursor[1].cursorPos);

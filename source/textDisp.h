@@ -289,6 +289,7 @@ void TextDBlankCursor(textDisp *textD);
 void TextDUnblankCursor(textDisp *textD);
 void TextDSetCursorStyle(textDisp *textD, int style);
 Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index);
+Boolean TextDRangeHasCursor(textDisp *textD, int start, int end);
 void TextDSetWrapMode(textDisp *textD, int wrap, int wrapMargin);
 int TextDEndOfLine(const textDisp* textD, int pos,
     Boolean startPosIsLineStart);
