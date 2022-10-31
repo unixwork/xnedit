@@ -885,11 +885,9 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 */
 void TextDSetInsertPosition(textDisp *textD, int newPos)
 {
-    //printf("TextDSetInsertPosition\n");
     int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
     Boolean hiline = False;
     if(textD->highlightCursorLine) {
-        // TODO: needs adapted for multicursor
         oldLineStart = BufStartOfLine(textD->buffer, textD->cursor->cursorPos);
         newLineStart = BufStartOfLine(textD->buffer, newPos);
         if(oldLineStart != newLineStart) {
@@ -957,6 +955,19 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     }
 }
 
+/*
+ * Add diff to all cursors >= startPos
+ */
+void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
+    for(int i=textD->mcursorSize-1;i>=0;i--) {
+        if(textD->multicursor[i].cursorPos < startPos) {
+            break;
+        }
+        textD->multicursor[i].cursorPos += diff;
+        textD->multicursor[i].cursorPreferredCol = -1;
+    }
+}
+
 int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     int mcInsertPos = 0;
     
@@ -1001,8 +1012,6 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
         int newCursorLineStart = BufStartOfLine(textD->buffer, newMultiCursorPos);
         posToVisibleLineNum(textD, newMultiCursorPos, &newCursorLine);
         redisplayLine(textD, newCursorLine, 0, INT_MAX, 0, INT_MAX);
-        
-        //textDRedisplayRange(textD, newCursorLineStart, newCursorLineEnd);
     }
     TextDUnblankCursor(textD);
     
@@ -2005,10 +2014,15 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     	textD->cursor->cursorPos = textD->cursorToHint;
     	textD->cursorToHint = NO_HINT;
     } else if (textD->cursor->cursorPos > pos) {
-    	if (textD->cursor->cursorPos < pos + nDeleted)
-    	    textD->cursor->cursorPos = pos;
-    	else
-    	    textD->cursor->cursorPos += nInserted - nDeleted;
+        if(textD->mcursorSize > 1) {
+            // multi cursor update
+            TextDChangeCursors(textD, pos, nInserted - nDeleted);
+        } else {
+            if (textD->cursor->cursorPos < pos + nDeleted)
+                textD->cursor->cursorPos = pos;
+            else
+                textD->cursor->cursorPos += nInserted - nDeleted;
+        }
     }
 
     /* If the changes caused scrolling, re-paint everything and we're done. */

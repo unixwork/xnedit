@@ -172,6 +172,9 @@ typedef struct _UndoInfo {
     int		endPos;
     int 	oldLen;
     char	*oldText;
+    short       numOp;                  /* Number of undo records for this
+                                           for this operation.
+                                           */
     char	inUndo;			/* flag to indicate undo command on
     					   this record in progress.  Redirects
     					   SaveUndoInfo to save the next mod-
@@ -496,6 +499,8 @@ typedef struct _WindowInfo {
     ino_t       inode;                  /*  file's inode  */
     UndoInfo	*undo;			/* info for undoing last operation */
     UndoInfo	*redo;			/* info for redoing last undone op */
+    UndoInfo    *undo_batch_begin;      /* last undo item at batch-begin */
+    int         undo_batch_count;       /* undo items per batch */
     textBuffer	*buffer;		/* holds the text being edited */
     int		nPanes;			/* number of additional text editing
     					   areas, created by splitWindow */

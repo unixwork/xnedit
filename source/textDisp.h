@@ -266,6 +266,7 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
 void TextDSetInsertPosition(textDisp *textD, int newPos);
+void TextDChangeCursors(textDisp *textD, int startPos, int diff);
 int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
 void TextDRemoveCursor(textDisp *textD, int cursorIndex);
 int  TextDClearMultiCursor(textDisp *textD);

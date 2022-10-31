@@ -71,7 +71,7 @@ static void trimUndoList(WindowInfo *window, int maxLength);
 static int determineUndoType(int nInserted, int nDeleted);
 static void freeUndoRecord(UndoInfo *undo);
 
-void Undo(WindowInfo *window)
+static void doUndo(WindowInfo *window, int isBatch)
 {
     UndoInfo *undo = window->undo;
     int restoredTextLength;
@@ -86,20 +86,22 @@ void Undo(WindowInfo *window)
        of an undo.  The inUndo field in the undo record indicates that this
        record is in the process of being undone. */
     undo->inUndo = True;
-    
+       
     /* use the saved undo information to reverse changes */
     BufReplace(window->buffer, undo->startPos, undo->endPos,
     	    (undo->oldText != NULL ? undo->oldText : ""));
     
     restoredTextLength = undo->oldText != NULL ? strlen(undo->oldText) : 0;
     if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
-	/* position the cursor in the focus pane after the changed text
-	   to show the user where the undo was done */
-	TextSetCursorPos(window->lastFocus, undo->startPos + 
-	        restoredTextLength);
+        if(!isBatch) {
+            /* position the cursor in the focus pane after the changed text
+               to show the user where the undo was done */
+            TextSetCursorPos(window->lastFocus, undo->startPos + 
+                    restoredTextLength);
+        }
     }
     
-    if (GetPrefUndoModifiesSelection()) {
+    if (GetPrefUndoModifiesSelection() && !isBatch) {
         if (restoredTextLength > 0) {
     	    BufSelect(window->buffer, undo->startPos, undo->startPos + 
 	            restoredTextLength);
@@ -121,6 +123,22 @@ void Undo(WindowInfo *window)
     
     /* free the undo record and remove it from the chain */
     removeUndoItem(window);
+}
+
+void Undo(WindowInfo *window) {
+    int numOp = window->undo->numOp;
+    int undoCount = 1;
+    int isBatch = 0;
+    if(numOp > 0) {
+        undoCount = numOp;
+        isBatch = 1;
+    }
+    
+    TextChangeCursors(window->lastFocus, 0, 0);
+    
+    for(int i=0;i<undoCount;i++) {
+        doUndo(window, isBatch);
+    }
 }
 
 void Redo(WindowInfo *window)
@@ -209,8 +227,11 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     ** than just the last character that the user typed.  If the window
     ** is currently in an unmodified state, don't accumulate operations
     ** across the save, so the user can undo back to the unmodified state.
+    ** 
+    ** In multi cursor mode, this doesn't work. Multi-cursor modifications
+    ** are indicated by the undo-batch  
     */
-    if (window->fileChanged) {
+    if (window->fileChanged && !window->undo_batch_begin) {
     
 	/* normal sequential character insertion */
 	if (  ((oldType == ONE_CHAR_INSERT || oldType == ONE_CHAR_REPLACE)
@@ -255,6 +276,7 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     undo->oldText = NULL;
     undo->type = newType;
     undo->inUndo = False;
+    undo->numOp = 0;
     undo->restoresToSaved = False;
     undo->startPos = pos;
     undo->endPos = pos + nInserted;

@@ -75,6 +75,8 @@ static void overlayRectInLine(const char *line, const char *insLine, int rectSta
 static void callPreDeleteCBs(textBuffer *buf, int pos, int nDeleted);
 static void callModifyCBs(textBuffer *buf, int pos, int nDeleted,
 	int nInserted, int nRestyled, const char *deletedText);
+static void callBeginModifyCBs(textBuffer *buf);
+static void callEndModifyCBs(textBuffer *buf);
 static void redisplaySelection(textBuffer *buf, selection *oldSelection,
 	selection *newSelection);
 static void moveGap(textBuffer *buf, int pos);
@@ -498,6 +500,14 @@ FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen)
     }
     return result;
     
+}
+
+void BufBeginModifyBatch(textBuffer *buf) {
+    callBeginModifyCBs(buf);
+}
+
+void BufEndModifyBatch(textBuffer *buf) {
+    callEndModifyCBs(buf);
 }
 
 /*
@@ -1158,6 +1168,156 @@ void BufRemovePreDeleteCB(textBuffer *buf, bufPreDeleteCallbackProc bufPreDelete
     NEditFree(buf->preDeleteCbArgs);
     buf->preDeleteProcs = newPreDeleteProcs;
     buf->preDeleteCbArgs = newCBArgs;
+}
+
+void BufAddBeginModifyCB(textBuffer *buf, bufBeginModifyCallbackProc bufBeginModifyCB,
+	void *cbArg)
+{
+    bufBeginModifyCallbackProc *newBeginModifyProcs;
+    void **newCBArgs;
+    int i;
+    
+    newBeginModifyProcs = (bufBeginModifyCallbackProc *)
+    	    NEditMalloc(sizeof(bufBeginModifyCallbackProc *) * (buf->nBeginModifyProcs+1));
+    newCBArgs = (void **)NEditMalloc(sizeof(void *) * (buf->nBeginModifyProcs+1));
+    for (i=0; i<buf->nBeginModifyProcs; i++) {
+    	newBeginModifyProcs[i] = buf->beginModifyProcs[i];
+    	newCBArgs[i] = buf->beginModifyCbArgs[i];
+    }
+    if (buf->nBeginModifyProcs != 0) {
+	NEditFree(buf->beginModifyProcs);
+	NEditFree(buf->beginModifyCbArgs);
+    }
+    newBeginModifyProcs[buf->nBeginModifyProcs] =  bufBeginModifyCB;
+    newCBArgs[buf->nBeginModifyProcs] = cbArg;
+    buf->nBeginModifyProcs++;
+    buf->beginModifyProcs = newBeginModifyProcs;
+    buf->beginModifyCbArgs = newCBArgs;
+}
+
+void BufRemoveBeginModifyCB(textBuffer *buf, bufBeginModifyCallbackProc 
+	bufBeginModifyCB,	void *cbArg)
+{
+    int i, toRemove = -1;
+    bufBeginModifyCallbackProc *newBeginModifyProcs;
+    void **newCBArgs;
+
+    /* find the matching callback to remove */
+    for (i=0; i<buf->nBeginModifyProcs; i++) {
+    	if (buf->beginModifyProcs[i] == bufBeginModifyCB && 
+	    buf->beginModifyCbArgs[i] == cbArg) {
+    	    toRemove = i;
+    	    break;
+    	}
+    }
+    if (toRemove == -1) {
+        fprintf(stderr, "XNEdit Internal Error: Can't find begin-modify CB to remove\n");
+    	return;
+    }
+    
+    /* Allocate new lists for remaining callback procs and args (if
+       any are left) */
+    buf->nBeginModifyProcs--;
+    if (buf->nBeginModifyProcs == 0) {
+    	buf->nBeginModifyProcs = 0;
+    	NEditFree(buf->beginModifyProcs);
+    	buf->beginModifyProcs = NULL;
+	NEditFree(buf->beginModifyCbArgs);
+	buf->beginModifyCbArgs = NULL;
+	return;
+    }
+    newBeginModifyProcs = (bufBeginModifyCallbackProc *)
+    	    NEditMalloc(sizeof(bufBeginModifyCallbackProc *) * (buf->nBeginModifyProcs));
+    newCBArgs = (void **)NEditMalloc(sizeof(void *) * (buf->nBeginModifyProcs));
+    
+    /* copy out the remaining members and free the old lists */
+    for (i=0; i<toRemove; i++) {
+    	newBeginModifyProcs[i] = buf->beginModifyProcs[i];
+    	newCBArgs[i] = buf->beginModifyCbArgs[i];
+    }
+    for (; i<buf->nBeginModifyProcs; i++) {
+	newBeginModifyProcs[i] = buf->beginModifyProcs[i+1];
+    	newCBArgs[i] = buf->beginModifyCbArgs[i+1];
+    }
+    NEditFree(buf->beginModifyProcs);
+    NEditFree(buf->beginModifyCbArgs);
+    buf->beginModifyProcs = newBeginModifyProcs;
+    buf->beginModifyCbArgs = newCBArgs;
+}
+
+void BufAddEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc bufEndModifyCB,
+	void *cbArg)
+{
+    bufEndModifyCallbackProc *newEndModifyProcs;
+    void **newCBArgs;
+    int i;
+    
+    newEndModifyProcs = (bufEndModifyCallbackProc *)
+    	    NEditMalloc(sizeof(bufEndModifyCallbackProc *) * (buf->nEndModifyProcs+1));
+    newCBArgs = (void **)NEditMalloc(sizeof(void *) * (buf->nEndModifyProcs+1));
+    for (i=0; i<buf->nEndModifyProcs; i++) {
+    	newEndModifyProcs[i] = buf->endModifyProcs[i];
+    	newCBArgs[i] = buf->endModifyCbArgs[i];
+    }
+    if (buf->nEndModifyProcs != 0) {
+	NEditFree(buf->endModifyProcs);
+	NEditFree(buf->endModifyCbArgs);
+    }
+    newEndModifyProcs[buf->nEndModifyProcs] =  bufEndModifyCB;
+    newCBArgs[buf->nEndModifyProcs] = cbArg;
+    buf->nEndModifyProcs++;
+    buf->endModifyProcs = newEndModifyProcs;
+    buf->endModifyCbArgs = newCBArgs;
+}
+
+void BufRemoveEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc 
+	bufEndModifyCB,	void *cbArg)
+{
+    int i, toRemove = -1;
+    bufEndModifyCallbackProc *newEndModifyProcs;
+    void **newCBArgs;
+
+    /* find the matching callback to remove */
+    for (i=0; i<buf->nEndModifyProcs; i++) {
+    	if (buf->endModifyProcs[i] == bufEndModifyCB && 
+	    buf->endModifyCbArgs[i] == cbArg) {
+    	    toRemove = i;
+    	    break;
+    	}
+    }
+    if (toRemove == -1) {
+        fprintf(stderr, "XNEdit Internal Error: Can't find end-modify CB to remove\n");
+    	return;
+    }
+    
+    /* Allocate new lists for remaining callback procs and args (if
+       any are left) */
+    buf->nEndModifyProcs--;
+    if (buf->nEndModifyProcs == 0) {
+    	buf->nEndModifyProcs = 0;
+    	NEditFree(buf->endModifyProcs);
+    	buf->endModifyProcs = NULL;
+	NEditFree(buf->endModifyCbArgs);
+	buf->endModifyCbArgs = NULL;
+	return;
+    }
+    newEndModifyProcs = (bufEndModifyCallbackProc *)
+    	    NEditMalloc(sizeof(bufEndModifyCallbackProc *) * (buf->nEndModifyProcs));
+    newCBArgs = (void **)NEditMalloc(sizeof(void *) * (buf->nEndModifyProcs));
+    
+    /* copy out the remaining members and free the old lists */
+    for (i=0; i<toRemove; i++) {
+    	newEndModifyProcs[i] = buf->endModifyProcs[i];
+    	newCBArgs[i] = buf->endModifyCbArgs[i];
+    }
+    for (; i<buf->nEndModifyProcs; i++) {
+	newEndModifyProcs[i] = buf->endModifyProcs[i+1];
+    	newCBArgs[i] = buf->endModifyCbArgs[i+1];
+    }
+    NEditFree(buf->endModifyProcs);
+    NEditFree(buf->endModifyCbArgs);
+    buf->endModifyProcs = newEndModifyProcs;
+    buf->endModifyCbArgs = newCBArgs;
 }
 
 /*
@@ -2380,6 +2540,22 @@ static void callModifyCBs(textBuffer *buf, int pos, int nDeleted,
     for (i=0; i<buf->nModifyProcs; i++) {
     	(*buf->modifyProcs[i])(pos, nInserted, nDeleted, nRestyled,
     		deletedText, buf->cbArgs[i]);
+    }
+}
+
+static void callBeginModifyCBs(textBuffer *buf) {
+    int i;
+    
+    for (i=0; i<buf->nBeginModifyProcs; i++) {
+    	(*buf->beginModifyProcs[i])(buf->cbArgs[i]);
+    }
+}
+
+static void callEndModifyCBs(textBuffer *buf) {
+    int i;
+    
+    for (i=0; i<buf->nEndModifyProcs; i++) {
+    	(*buf->endModifyProcs[i])(buf->cbArgs[i]);
     }
 }
 

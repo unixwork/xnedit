@@ -1461,6 +1461,12 @@ void TextSetCursorPos(Widget w, int pos)
 
 }
 
+void TextChangeCursors(Widget w, int startPos, int diff)
+{
+    TextDChangeCursors(((TextWidget)w)->text.textD, startPos, diff);
+    callCursorMovementCBs(w, NULL);
+}
+
 /*
 ** Return the horizontal and vertical scroll positions of the widget
 */
@@ -2621,7 +2627,6 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;  
-    int insertPos;
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
@@ -2633,6 +2638,10 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     	return;
     
     size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
     int diff = 0;
     int prevPos = -1;
     for(int i=0;i<mcursorSize;i++) {  
@@ -2650,6 +2659,9 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
 
     
     checkAutoShowInsertPos(w);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
 }
 
 static int deleteNextCharacter(Widget w, textDisp *textD, int silent, int insertPos) {
@@ -2676,10 +2688,14 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     TakeMotifDestination(w, e->time);
     if (deletePendingSelection(w, event))
     	return;
-    
+      
     int diff = 0;
     int prevPos = -1;
     size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
     for(int i=0;i<mcursorSize;i++) {
         textD->multicursor[i].cursorPos += diff;
         textD->cursor = textD->multicursor + i;
@@ -2694,6 +2710,10 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     }
     
     checkAutoShowInsertPos(w);
+    
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
 }
 
 static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
@@ -2718,6 +2738,10 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     }
 
     size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
     int diff = 0;
     int notMoved = 0;
     for(int i=0;i<mcursorSize;i++) {
@@ -2753,6 +2777,9 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     }
 
     checkAutoShowInsertPos(w);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
     
     if(notMoved) {
         ringIfNecessary(silent, w);
@@ -2781,9 +2808,12 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     }
     
     int diff = 0;
-    int prevPos = -1;
     int notMoved = 0;
     size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
     for(int i=0;i<mcursorSize;i++) {
         textD->multicursor[i].cursorPos += diff;
         textD->cursor = textD->multicursor + i;
@@ -2817,6 +2847,9 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     }
     
     checkAutoShowInsertPos(w);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
     
     if(notMoved) {
         ringIfNecessary(silent, w);
@@ -4049,6 +4082,8 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
         if(textD->mcursorSize == 1) {
             simpleInsertAtCursorPos(w, textD, chars);
         } else {
+            BufBeginModifyBatch(buf);
+            
             int diff = 0;
             size_t mcursorSize = textD->mcursorSize;
             //textD->mcursorSize = 1;
@@ -4063,6 +4098,8 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
                 callCursorMovementCBs(w, event);
             }
             //textD->mcursorSize = mcursorSize;
+            
+            BufEndModifyBatch(buf);
         }
     }
     	
