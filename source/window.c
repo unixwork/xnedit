@@ -270,6 +270,11 @@ static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
 static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb);
 static void reloadCB(Widget w, Widget mainWin, void *callData);
+static void windowStructureNotifyEventEH(
+        Widget widget,
+        XtPointer data,
+        XEvent *event,
+        Boolean *dispatch);
 
 /* From Xt, Shell.c, "BIGSIZE" */
 static const Dimension XT_IGNORE_PPOSITION = 32767;
@@ -304,7 +309,6 @@ static char *default_encodings[] = {
     "ISO8859-16",
     NULL
 };
-
 
 /*
 ** Create a new editor window
@@ -529,6 +533,13 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 #ifndef SGI_CUSTOM
     addWindowIcon(winShell);
 #endif
+    
+    XtAddEventHandler(
+            winShell,
+            StructureNotifyMask,
+            False,
+            (XtEventHandler)windowStructureNotifyEventEH,
+            window);
 
     /* Create a MainWindow to manage the menubar and text area, set the
        userData resource to be used by WidgetToWindow to recover the
@@ -5921,4 +5932,28 @@ static void reloadCB(Widget w, Widget mainWin, void *callData)
     // cleanup
     XmStringFree(item);
     XtFree(encoding);
+}
+
+static void updateWindowMapStatus(Widget widget, Boolean status) {
+    for (WindowInfo *w=WindowList; w!=NULL; w=w->next) {
+    	if(w->shell == widget) {
+            w->mapped = status;
+        }
+    }
+}
+
+static void windowStructureNotifyEventEH(
+        Widget widget,
+        XtPointer data,
+        XEvent *event,
+        Boolean *dispatch)
+{
+    WindowInfo *window = data;
+    if(event->type == UnmapNotify) {
+        updateWindowMapStatus(widget, False);
+        InvalidateWindowMenus();
+    } else if(event->type == MapNotify) {
+        updateWindowMapStatus(widget, True);
+        InvalidateWindowMenus();
+    }
 }

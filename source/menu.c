@@ -4736,17 +4736,33 @@ void AddToPrevOpenMenu(const char *filename)
     WriteNEditDB();
 }
 
+#define MAX_WINDOW_TITLE_LEN MAXPATHLEN * 2 + 3 + 2 + 1
 static char* getWindowsMenuEntry(const WindowInfo* window)
 {
-    static char fullTitle[MAXPATHLEN * 2 + 3+ 1];
+    static char fullTitle[MAX_WINDOW_TITLE_LEN];
 
-    sprintf(fullTitle, "%s%s", window->filename, 
-	  window->fileChanged? "*" : "");
-
-    if (GetPrefShowPathInWindowsMenu() && window->filenameSet)
-    {
-       strcat(fullTitle, " - ");
-       strcat(fullTitle, window->path);
+    char *parenthese_open = "";
+    char *parenthese_close = "";
+    if(!window->mapped) {
+        parenthese_open = "(";
+        parenthese_close = ")";
+    }
+    if (GetPrefShowPathInWindowsMenu() && window->filenameSet) {
+        snprintf(
+                fullTitle,
+                MAX_WINDOW_TITLE_LEN,
+                "%s%s%s - %s%s",
+                parenthese_open,
+                window->filename, window->fileChanged? "*" : "", window->path,
+                parenthese_close);
+    } else {
+        snprintf(
+                fullTitle,
+                MAX_WINDOW_TITLE_LEN,
+                "%s%s%s%s",
+                parenthese_open,
+                window->filename, window->fileChanged? "*" : "",
+                parenthese_close);
     }
     
     return(fullTitle);

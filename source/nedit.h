@@ -607,6 +607,7 @@ typedef struct _WindowInfo {
                                            "tabbed" documents, while each document
                                            has its own background menu. */
     Boolean opened;                     /* Set to true when the window is opened */
+    Boolean mapped;
 } WindowInfo;
 
 extern WindowInfo *WindowList;
