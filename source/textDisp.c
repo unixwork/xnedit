@@ -2269,10 +2269,12 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	    }
     	}
         
+        int cpCharLen;
         if(charIndex >= lineLen) {
             baseChar = '\0';   
             charLen = 1;
             rbCurrentPixelIndex = -1;
+            cpCharLen = -1;
         } else {
             baseChar = lineStr[charIndex];
             
@@ -2308,6 +2310,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                         expandedChar,
                         buf->tabDist, buf->nullSubsChar);
             }
+            cpCharLen = charLen;
         }
         
         if(textD->ansiColors && baseChar == '\e') {
@@ -2335,7 +2338,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	}
         ansiS = ansiCharS;
         
-        if (charIndex < lineLen) {
+        if(cpCharLen == 1) {
+            *outPtr = *expandedChar;
+            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
+        } else if(charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
             charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
         } else {
