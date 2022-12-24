@@ -175,6 +175,12 @@ textBuffer *BufCreatePreallocated(int requestedSize)
     buf->preDeleteProcs = NULL;
     buf->preDeleteCbArgs = NULL;
     buf->nPreDeleteProcs = 0;
+    buf->nBeginModifyProcs = 0;
+    buf->beginModifyProcs = NULL;
+    buf->beginModifyCbArgs = NULL;
+    buf->nEndModifyProcs = 0;
+    buf->endModifyProcs = NULL;
+    buf->endModifyCbArgs = NULL;
     buf->nullSubsChar = '\0';
 #ifdef PURIFY
     {int i; for (i=buf->gapStart; i<buf->gapEnd; i++) buf->buf[i] = '.';}
