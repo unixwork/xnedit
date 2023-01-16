@@ -21,6 +21,8 @@ all:
 	@(cd makefiles && ls -C Makefile* | sed -e 's/Makefile.//g')
 
 .DEFAULT:
+	DYLD_LIBRARY_PATH=/opt/X11/lib/flat_namespace
+
 	@- (cd Microline/XmL;   if [ -f ../../makefiles/Makefile.$@ -a ! -f ./Makefile.$@ ];\
 	   then ln -s ../../makefiles/Makefile.$@ .; fi)
 	@- (cd Xlt;   if [ -f ../makefiles/Makefile.$@ -a ! -f ./Makefile.$@ ];\
