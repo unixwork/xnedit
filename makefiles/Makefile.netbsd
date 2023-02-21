@@ -11,6 +11,6 @@ AR=ar
 # add -DHAVE__XMVERSIONSTRING to CFLAGS
 #
 CFLAGS=-O -I/usr/pkg/include -I/usr/pkg/include/X11 -I/usr/X11R7/include -DUSE_LPR_PRINT_CMD -DUSE_XMIM `pkg-config --cflags xft fontconfig`
-LIBS= -L/usr/X11R7/lib -R/usr/X11R7/lib -lpcre -liconv -lm -lXm -lXt -lSM -lICE -lX11 -lXrender -lXpm -lXext `pkg-config --libs xft fontconfig`
+LIBS= -L/usr/X11R7/lib -R/usr/X11R7/lib -lpcre -liconv -lm -lXm -lXt -lSM -lICE -lX11 -lXrender -lXext `pkg-config --libs xft fontconfig`
 
 include Makefile.common

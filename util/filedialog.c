@@ -33,10 +33,6 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "icons.h"
-
-#include <X11/xpm.h>
-
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
@@ -68,10 +64,6 @@
 
 static int pixmaps_initialized = 0;
 static int pixmaps_error = 0;
-static Pixmap folderIcon;
-static Pixmap fileIcon;
-static Pixmap folderShape;
-static Pixmap fileShape;
 
 static Pixmap newFolderIcon16;
 static Pixmap newFolderIcon24;
@@ -454,15 +446,7 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
 }
 
 static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
-{
-    // TODO: remove Xpm dependency and use create_image
-    if(XpmCreatePixmapFromData(dp, d, DtdirB_m_pm, &folderIcon, &folderShape, NULL)) {
-        fprintf(stderr, "failed to create folder pixmap\n");
-    }
-    if(XpmCreatePixmapFromData(dp, d, Dtdata_m_pm, &fileIcon, &fileShape, NULL)) {
-        fprintf(stderr, "failed to create file pixmap\n");
-    }
-      
+{    
     // get the correct visual for current screen/depth
     Visual *visual = NULL;
     for(int i=0;i<screen->ndepths;i++) {
@@ -1007,10 +991,6 @@ struct FileDialogData {
     
     int selectedview;
     
-    // icon view
-    Widget scrollw;
-    Widget container;
-    
     // dir/file list view
     Widget listform;
     Widget dirlist;
@@ -1151,107 +1131,8 @@ static int filecmp(const void *f1, const void *f2)
     return ret * cmp_order;
 }
 
-static void resize_container(Widget w, FileDialogData *data, XtPointer d) 
-{
-    Dimension width, height;
-    Dimension cw, ch;
-    
-    XtVaGetValues(w, XtNwidth, &width, XtNheight, &height, NULL);
-    XtVaGetValues(data->container, XtNwidth, &cw, XtNheight, &ch, NULL);
-    
-    if(ch < height) {
-        XtVaSetValues(data->container, XtNwidth, width, XtNheight, height, NULL);
-    } else {
-        XtVaSetValues(data->container, XtNwidth, width, NULL);
-    }
-}
-
-static void init_container_size(FileDialogData *data)
-{
-    Widget parent = XtParent(data->container);
-    Dimension width;
-    
-    XtVaGetValues(parent, XtNwidth, &width, NULL);
-    XtVaSetValues(data->container, XtNwidth, width, XtNheight, 100, NULL);
-}
-
 typedef void(*ViewUpdateFunc)(FileDialogData*,FileElm*,FileElm*,int,int,int);
 
-static void filedialog_update_iconview(
-        FileDialogData *data,
-        FileElm *dirs,
-        FileElm *files,
-        int dircount,
-        int filecount,
-        int maxnamelen)
-{
-    Arg args[16];
-    XmString str;
-    int n;
-    WidgetList gadgets = NEditCalloc(dircount+filecount, sizeof(Widget));
-    
-    // TODO: better width calculation
-    // FIXME: for some reason setting XmNlargeCellWidth on Solaris doesn't work
-#ifndef __sun
-    Dimension cellwidth = maxnamelen * 8;
-    XtVaSetValues(data->container, XmNlargeCellWidth, cellwidth, NULL);
-#endif
-    
-    char *filter = XmTextFieldGetString(data->filter);
-    char *filterStr = filter;
-    if(!filter || strlen(filter) == 0) {
-        filterStr = "*";
-    }
-    
-    int numgadgets = 0;
-    FileElm *ls = dirs;
-    int count = dircount;
-    int pos = 0;
-    for(int i=0;i<2;i++) {
-        for(int j=0;j<count;j++) {
-            FileElm *e = &ls[j];
-            
-            char *name = FileName(e->path);
-            if((!data->showHidden && name[0] == '.') || (!e->isDirectory && fnmatch(filterStr, name, 0))) {
-                continue;
-            }
-            
-            n = 0;
-            str = XmStringCreateLocalized(name);
-            XtSetArg(args[n], XmNuserData, e); n++;
-            XtSetArg(args[n], XmNlabelString, str); n++;
-            XtSetArg(args[n], XmNshadowThickness, 0); n++;
-            XtSetArg(args[n], XmNpositionIndex, pos); n++;
-            XtSetArg(args[n], XmNalignment, XmALIGNMENT_BEGINNING); n++;
-            if(e->isDirectory) {
-                XtSetArg(args[n], XmNlargeIconPixmap, folderIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, folderShape); n++;
-            } else {
-                XtSetArg(args[n], XmNlargeIconPixmap, fileIcon); n++;
-                XtSetArg(args[n], XmNlargeIconMask, fileShape); n++;
-            }
-            Widget item = XmCreateIconGadget(data->container, "table", args, n);
-            XtManageChild(item);
-            numgadgets++;
-
-            gadgets[pos] = item;
-            XmStringFree(str);
-            pos++;
-        }
-        ls = files;
-        count = filecount;
-    }
-    
-    if(filter) {
-        XtFree(filter);
-    }
-    
-    data->gadgets = gadgets;
-    data->numGadgets = numgadgets;
-    
-    //XmContainerRelayout(data->container);   
-    resize_container(XtParent(data->container), data, NULL);
-}
 
 static void filelistwidget_add(Widget w, int showHidden, char *filter, FileElm *ls, int count)
 {   
@@ -1620,13 +1501,6 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     
     ViewUpdateFunc update_view = NULL;
     switch(data->selectedview) {
-        case 0: {
-            if(cleanupFileView(data)) {
-                init_container_size(data);
-            }
-            update_view = filedialog_update_iconview;
-            break;
-        }
         case 1: {
             cleanupLists(data);
             update_view = filedialog_update_lists;
@@ -2103,11 +1977,6 @@ static void filedialog_filter(Widget w, FileDialogData *data, XtPointer c)
 static void unselect_view(FileDialogData *data)
 {
     switch(data->selectedview) {
-        case 0: {
-            XtUnmanageChild(data->scrollw);
-            cleanupFileView(data);
-            break;
-        }
         case 1: {
             XtUnmanageChild(data->listform);
             XtUnmanageChild(data->filelistcontainer);
@@ -2127,16 +1996,6 @@ static void unselect_view(FileDialogData *data)
             break;
         }
     }
-}
-
-static void select_iconview(Widget w, FileDialogData *data, XtPointer u)
-{
-    unselect_view(data);
-    data->selectedview = 0;
-    XtManageChild(data->scrollw);
-    filedialog_update_dir(data, NULL);
-    filedialog_update_dir(data, NULL); // workaround for what I do not know
-    XmProcessTraversal(data->scrollw, XmTRAVERSE_CURRENT);
 }
 
 static void select_listview(Widget w, FileDialogData *data, XtPointer u)
@@ -2168,7 +2027,6 @@ static void select_view(FileDialogData *data)
         default: return;
         case 0: w = data->grid; break;
         case 1: w = data->filelist; break;
-        case 2: w = data->container; break;
     }
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
 }
@@ -2284,34 +2142,23 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     Widget viewframe = XmCreateForm(form, "vframe", args, n);
     XtManageChild(viewframe);
     
-    XmString v0 = XmStringCreateLocalized("Icons");
     XmString v1 = XmStringCreateLocalized("List");
     XmString v2 = XmStringCreateLocalized("Detail");
     
     Widget menu = XmCreatePulldownMenu(viewframe, "menu", NULL, 0);
     
-    XtSetArg(args[0], XmNlabelString, v0);
-    XtSetArg(args[1], XmNpositionIndex, LastView == 0 ? 0 : 1);
-    Widget mitem0 = XmCreatePushButton(menu, "menuitem", args, 2);
     XtSetArg(args[0], XmNlabelString, v1);
     XtSetArg(args[1], XmNpositionIndex, LastView == 1 ? 0 : 1);
     Widget mitem1 = XmCreatePushButton(menu, "menuitem", args, 2);
     XtSetArg(args[0], XmNlabelString, v2);
     XtSetArg(args[1], XmNpositionIndex, LastView == 2 ? 0 : 2);
     Widget mitem2 = XmCreatePushButton(menu, "menuitem", args, 2);
-    XtManageChild(mitem0);
     XtManageChild(mitem1);
 #ifdef FSB_ENABLE_DETAIL
     XtManageChild(mitem2);
 #endif
-    XmStringFree(v0);
     XmStringFree(v1);
-    XmStringFree(v2);
-    XtAddCallback(
-            mitem0,
-            XmNactivateCallback,
-            (XtCallbackProc)select_iconview,
-            &data);
+    XmStringFree(v2);;
     XtAddCallback(
             mitem1,
             XmNactivateCallback,
@@ -2669,40 +2516,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     layout = n;
     data.listform = XmCreateForm(form, "fds_listform", args, n); 
     
-    // icon view
-    n = layout;
-    XtSetArg(args[n], XmNscrollingPolicy, XmAUTOMATIC); n++;
-    XtSetArg(args[n], XmNscrollBarDisplayPolicy, XmSTATIC); n++;
-    //XtSetArg(args[n], XmNwidth, 580); n++;
-    //XtSetArg(args[n], XmNheight, 400); n++;
-    Widget scrollw = XmCreateScrolledWindow(form, "scroll_win", args, n);
-    data.scrollw = scrollw;
-    
-    n = 0;
-    XtSetArg(args[n], XmNlayoutType,  XmSPATIAL); n++;
-    XtSetArg(args[n], XmNselectionPolicy, XmSINGLE_SELECT); n++;
-    XtSetArg(args[n], XmNentryViewType, XmLARGE_ICON); n++;
-    XtSetArg(args[n], XmNspatialStyle, XmGRID); n++;
-    XtSetArg(args[n], XmNspatialIncludeModel, XmAPPEND); n++;
-    XtSetArg(args[n], XmNspatialResizeModel, XmGROW_MINOR); n++;
-    XtSetArg(args[n], XmNlargeCellWidth, 150); n++;
-    data.container = XmCreateContainer(scrollw, "table", args, n);
-    XtManageChild(data.container);
-    XtAddCallback(XtParent(data.container), XmNresizeCallback,
-		(XtCallbackProc)resize_container, &data);
-    XmContainerAddMouseWheelSupport(data.container);
-    
-    XtAddCallback(
-            data.container,
-            XmNselectionCallback,
-            (XtCallbackProc)filedialog_select,
-            &data);
-    XtAddCallback(
-            data.container,
-            XmNdefaultActionCallback,
-            (XtCallbackProc)filedialog_action,
-            &data);
-    
     // dir/file lists
     n = 0;
     str = XmStringCreateLocalized("Directories");
@@ -2821,7 +2634,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     Widget focus = NULL;
     switch(data.selectedview) {
-        case 0: XtManageChild(scrollw); focus = data.container; break;
         case 1: XtManageChild(data.listform); XtManageChild(data.filelistcontainer); focus = data.filelist; break;
         case 2: XtManageChild(data.listform); XtManageChild(data.gridcontainer); focus = data.grid; break;
     }

@@ -25,7 +25,6 @@ sources are:
  - make utility (eg, GNU make)
  - X11 development stuff (headers, libraries)
  - Xrender and Xft
- - Xpm
  - iconv (*BSD, cygwin)
  - Fontconfig
  - Motif 2.0 or above 
