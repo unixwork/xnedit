@@ -77,7 +77,6 @@
 #include <Xm/Xm.h>
 #include <Xm/XmAll.h>
 
-#include <X11/xpm.h>
 #include "utils.h"
 #include "fileUtils.h"
 
