@@ -5429,7 +5429,11 @@ Widget CreateBGMenu(WindowInfo *window)
        with modifiers.  I don't entirely understand why it works properly now
        when it failed often in development, and certainly ignores the ~ syntax
        in translation event specifications. */
-    XtSetArg(args[0], XmNmenuPost, GetPrefBGMenuBtn());
+    
+    // setting XmNmenuPost seems to be unnecessary and the bg menu doesn't
+    // if numlock is enabled
+    // not setting XmNmenuPost will fix that
+    //XtSetArg(args[0], XmNmenuPost, GetPrefBGMenuBtn());
     return CreatePopupMenu(window->textArea, "bgMenu", args, 1);
 }
 
@@ -5469,7 +5473,7 @@ void AddBGMenuAction(Widget widget)
 
     if (table == NULL) {
 	char translations[MAX_ACCEL_LEN + 25];
-	sprintf(translations, "%s: post_window_bg_menu()\n",GetPrefBGMenuBtn());
+	snprintf(translations, MAX_ACCEL_LEN + 25, "%s: post_window_bg_menu()\n",GetPrefBGMenuBtn());
     	table = XtParseTranslationTable(translations);
     }
     XtOverrideTranslations(widget, table);
