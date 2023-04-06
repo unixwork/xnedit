@@ -1712,15 +1712,15 @@ void set_path_from_row(FileDialogData *data, int row) {
     
     char *path = NEditStrdup(elm->path);
     
-    data->selIsDir = False;
     if(data->type == FILEDIALOG_SAVE) {
         XmTextFieldSetString(data->name, FileName(path));
+    } else {
+        if(data->selectedPath) {
+            NEditFree(data->selectedPath);
+        }
+        data->selectedPath = path;
+        data->selIsDir = False;
     }
-    
-    if(data->selectedPath) {
-        NEditFree(data->selectedPath);
-    }
-    data->selectedPath = path;
 }
 
 void grid_select(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
