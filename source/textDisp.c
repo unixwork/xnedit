@@ -2859,6 +2859,12 @@ static void drawCursor(textDisp *textD, int x, int y)
        width, rounded to an even number of pixels so that X will draw an
        odd number centered on the stem at x. */
     cursorWidth = (fontWidth/3) * 2;
+    
+    // simplify the cursor in multicursor mode
+    if(textD->mcursorSize > 1 && textD->cursorStyle != CARET_CURSOR && textD->cursorStyle != BLOCK_CURSOR) {
+        cursorWidth = 0;
+    }
+    
     left = x - cursorWidth/2;
     right = left + cursorWidth;
     
