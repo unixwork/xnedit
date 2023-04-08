@@ -3459,33 +3459,57 @@ static void beginningOfLineAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-
+    int absolute = hasKey("absolute", args, nArgs);
+    
     cancelDrag(w);
-    if (hasKey("absolute", args, nArgs))
-        TextDSetInsertPosition(textD, BufStartOfLine(textD->buffer, insertPos));
-    else
-        TextDSetInsertPosition(textD, TextDStartOfLine(textD, insertPos));
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if(absolute) {
+            TextDSetInsertPosition(textD, BufStartOfLine(textD->buffer, insertPos));
+        } else {
+            TextDSetInsertPosition(textD, TextDStartOfLine(textD, insertPos));
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        textD->cursor->cursorPreferredCol = 0;
+    }
+    textD->mcursorSize = mcursorSize;
+
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
-    textD->cursor->cursorPreferredCol = 0;
 }
 
 static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-
+    int absolute = hasKey("absolute", args, nArgs);
+    
     cancelDrag(w);
-    if (hasKey("absolute", args, nArgs))
-        TextDSetInsertPosition(textD, BufEndOfLine(textD->buffer, insertPos));
-    else
-        TextDSetInsertPosition(textD, TextDEndOfLine(textD, insertPos, False));
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if(absolute) {
+            TextDSetInsertPosition(textD, BufEndOfLine(textD->buffer, insertPos));
+        } else {
+            TextDSetInsertPosition(textD, TextDEndOfLine(textD, insertPos, False));
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        textD->cursor->cursorPreferredCol = -1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
-    textD->cursor->cursorPreferredCol = -1;
 }
 
 static void beginningOfFileAP(Widget w, XEvent *event, String *args,
