@@ -217,6 +217,10 @@ static void focusOutAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void addCursorUpAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs);
+static void addCursorDownAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs);
 
 static void checkMoveSelectionChange(Widget w, XEvent *event, int startPos,
 	String *args, Cardinal *nArgs);
@@ -343,6 +347,7 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfRight: forward_character()\n"
 
     /* Up */
+    "Ctrl Super<KeyPress>osfUp: add_cursor_up()\n"
     "Alt Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfUp: process_shift_up(\"rect\")\n"
@@ -353,6 +358,7 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfUp: process_up()\n"
 
     /* Down */
+    "Ctrl Super<KeyPress>osfDown: add_cursor_down()\n"
     "Alt Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfDown: process_shift_down(\"rect\")\n"
@@ -603,7 +609,11 @@ static XtActionsRec actionsList[] = {
     {"insert_string", insertStringAP},
     {"mouse_pan", mousePanAP},
     {"zoom_in", zoomInAP},
-    {"zoom_out", zoomOutAP}
+    {"zoom_out", zoomOutAP},
+    {"add_cursor_up", addCursorUpAP},
+    {"add-cursor-up", addCursorUpAP},
+    {"add_cursor_down", addCursorDownAP},
+    {"add-cursor-down", addCursorDownAP}
 };
 
 /* The motif text widget defined a bunch of actions which the nedit text
@@ -3342,7 +3352,7 @@ static void processDownAP(Widget w, XEvent *event, String *args,
     int insertPos;
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
-
+    
     cancelDrag(w);
     
     textDisp *textD = ((TextWidget)w)->text.textD;
@@ -3395,6 +3405,54 @@ static void processShiftDownAP(Widget w, XEvent *event, String *args,
     keyMoveExtendSelection(w, event, insertPos, hasKey("rect", args, nArgs));
     checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
+}
+
+static void addCursorUpAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    
+    // get the first cursor (textD->multicursor is sorted)
+    textD->cursor = &textD->multicursor[0];
+    int oldPos = textD->cursor->cursorPos;
+    
+    // move last cursor down
+    int moved = 0;
+    if(TextDMoveUp(textD, 0)) {
+        moved = 1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    // if the last cursor was moved, re-add the previous position
+    if(moved) {
+        TextDAddCursor(textD, oldPos);
+    }
+}
+
+static void addCursorDownAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    
+    // get the last cursor (textD->multicursor is sorted)
+    textD->cursor = &textD->multicursor[mcursorSize-1];
+    int oldPos = textD->cursor->cursorPos;
+    
+    // move last cursor down
+    int moved = 0;
+    if(TextDMoveDown(textD, 0)) {
+        moved = 1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    // if the last cursor was moved, re-add the previous position
+    if(moved) {
+        TextDAddCursor(textD, oldPos);
+    }
 }
 
 static void beginningOfLineAP(Widget w, XEvent *event, String *args,
