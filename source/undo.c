@@ -135,6 +135,9 @@ void Undo(WindowInfo *window) {
     }
     
     TextChangeCursors(window->lastFocus, 0, 0);
+    if(!isBatch) {
+        TextClearMultiCursors(window->lastFocus);
+    }
     
     window->undo_op_batch_size = numOp;
     for(int i=0;i<undoCount;i++) {
@@ -207,7 +210,7 @@ void Redo(WindowInfo *window)
         redoCount = numOp;
         isBatch = 1;
     }
-    
+      
     window->undo_op_batch_size = numOp;
     for(int i=0;i<redoCount;i++) {
         doRedo(window, isBatch);

@@ -176,6 +176,7 @@ void TextSetCursorPos(Widget w, int pos);
 int TextGetLastCursorPos(Widget w);
 void TextSetLastCursorPos(Widget w, int pos);
 void TextChangeCursors(Widget w, int startPos, int diff);
+void TextClearMultiCursors(Widget w);
 void TextGetScroll(Widget w, int *topLineNum, int *horizOffset);
 void TextSetScroll(Widget w, int topLineNum, int horizOffset);
 int TextGetMinFontWidth(Widget w, Boolean considerStyles);

@@ -1502,6 +1502,18 @@ void TextChangeCursors(Widget w, int startPos, int diff)
     callCursorMovementCBs(w, NULL);
 }
 
+void TextClearMultiCursors(Widget w)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    if(textD->mcursorSize > 0) {
+        TextDBlankCursor(textD);
+    }
+    if(TextDClearMultiCursor(textD)) {
+        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+        textD->cursor = textD->multicursor;
+    }
+}
+
 /*
 ** Return the horizontal and vertical scroll positions of the widget
 */

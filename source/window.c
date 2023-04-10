@@ -385,6 +385,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->redo = NULL;
     window->undo_batch_begin = NULL;
     window->undo_batch_count = 0;
+    window->undo_op_batch_size = 0;
     window->nPanes = 0;
     window->autoSaveCharCount = 0;
     window->autoSaveOpCount = 0;
@@ -2971,7 +2972,6 @@ static void beginModifyCB(void *cbArg) {
 static void endModifyCB(void *cbArg) {
     WindowInfo *window = cbArg;
     if(window->undo_batch_begin && window->undo_batch_count > 1) {
-        window->undo_batch_begin->numOp = window->undo_batch_count;
         window->undo->numOp = window->undo_batch_count;
     }
     window->undo_batch_begin = NULL;
@@ -3975,6 +3975,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->autoSaveOpCount = 0;
     window->undoOpCount = 0;
     window->undoMemUsed = 0;
+    window->undo_op_batch_size = 0;
     CLEAR_ALL_LOCKS(window->lockReasons);
     window->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
     window->autoSave = GetPrefAutoSave();
