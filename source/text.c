@@ -1476,6 +1476,26 @@ void TextSetCursorPos(Widget w, int pos)
 
 }
 
+int TextGetLastCursorPos(Widget w)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    return textD->multicursor[textD->mcursorSize-1].cursorPos;
+}
+
+void TextSetLastCursorPos(Widget w, int pos)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    
+    // emulate single cursor
+    textD->mcursorSize = 1;
+    textD->cursor = &textD->multicursor[mcursorSize-1];
+    TextSetCursorPos(w, pos);
+    
+    // restore mcursor
+    textD->mcursorSize = mcursorSize;
+}
+
 void TextChangeCursors(Widget w, int startPos, int diff)
 {
     TextDChangeCursors(((TextWidget)w)->text.textD, startPos, diff);

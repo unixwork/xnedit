@@ -136,6 +136,7 @@ void Undo(WindowInfo *window) {
     
     TextChangeCursors(window->lastFocus, 0, 0);
     
+    window->undo_op_batch_size = numOp;
     for(int i=0;i<undoCount;i++) {
         doUndo(window, isBatch);
     }
@@ -146,9 +147,12 @@ static void doRedo(WindowInfo *window, int isBatch)
     UndoInfo *redo = window->redo;
     int restoredTextLength;
     
-    /* BufReplace will eventually call SaveUndoInformation.  To indicate
-       to SaveUndoInformation that this is the context of a redo operation,
-       we set the inUndo indicator in the redo record */
+    if (window->redo == NULL)
+    	return;
+    
+    // BufReplace will eventually call SaveUndoInformation.  To indicate
+    // to SaveUndoInformation that this is the context of a redo operation,
+    // we set the inUndo indicator in the redo record
     redo->inUndo = True;
     
     /* use the saved redo information to reverse changes */
@@ -157,13 +161,15 @@ static void doRedo(WindowInfo *window, int isBatch)
        
     restoredTextLength = redo->oldText != NULL ? strlen(redo->oldText) : 0;
     if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
-	/* position the cursor in the focus pane after the changed text
-	   to show the user where the undo was done */
-	TextSetCursorPos(window->lastFocus, redo->startPos + 
-	        restoredTextLength);
+	// position the cursor in the focus pane after the changed text
+        // to show the user where the undo was done
+        if(!isBatch) {
+            TextSetCursorPos(window->lastFocus, redo->startPos + restoredTextLength);
+        } else if(redo->startPos == TextGetLastCursorPos(window->lastFocus)) {
+            TextSetLastCursorPos(window->lastFocus, redo->startPos + restoredTextLength);
+        }
     }
-    if (GetPrefUndoModifiesSelection()) {
-
+    if (!isBatch && GetPrefUndoModifiesSelection()) {
         if (restoredTextLength > 0) {
     	    BufSelect(window->buffer, redo->startPos, redo->startPos + 
 	            restoredTextLength);
@@ -174,16 +180,16 @@ static void doRedo(WindowInfo *window, int isBatch)
     }
     MakeSelectionVisible(window, window->lastFocus);
        
-    /* restore the file's unmodified status if the file was unmodified
-       when the change being redone was originally made. Also, remove
-       the backup file, since the text in the buffer is now identical to
-       the original file */
+    // restore the file's unmodified status if the file was unmodified
+    // when the change being redone was originally made. Also, remove
+    // the backup file, since the text in the buffer is now identical to
+    // the original file
     if (redo->restoresToSaved) {
     	SetWindowModified(window, False);
     	RemoveBackupFile(window);
     }
     
-    /* remove the redo record from the chain and free it */
+    // remove the redo record from the chain and free it
     removeRedoItem(window);
 }
 
@@ -202,6 +208,7 @@ void Redo(WindowInfo *window)
         isBatch = 1;
     }
     
+    window->undo_op_batch_size = numOp;
     for(int i=0;i<redoCount;i++) {
         doRedo(window, isBatch);
     }
@@ -223,7 +230,7 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     UndoInfo *u, *undo = window->undo;
     int isUndo = (undo != NULL && undo->inUndo);
     int isRedo = (window->redo != NULL && window->redo->inUndo);
-    int numOp = undo ? undo->numOp : 0;
+    int numOp = window->undo_op_batch_size;
     
     /* redo operations become invalid once the user begins typing or does
        other editing.  If this is not a redo or undo operation and a redo

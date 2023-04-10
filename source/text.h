@@ -173,6 +173,8 @@ int TextPosToLineAndCol(Widget w, int pos, int *lineNum, int *column);
 int TextPosToXY(Widget w, int pos, int *x, int *y);
 int TextGetCursorPos(Widget w);
 void TextSetCursorPos(Widget w, int pos);
+int TextGetLastCursorPos(Widget w);
+void TextSetLastCursorPos(Widget w, int pos);
 void TextChangeCursors(Widget w, int startPos, int diff);
 void TextGetScroll(Widget w, int *topLineNum, int *horizOffset);
 void TextSetScroll(Widget w, int topLineNum, int horizOffset);

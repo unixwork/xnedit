@@ -501,6 +501,7 @@ typedef struct _WindowInfo {
     UndoInfo	*redo;			/* info for redoing last undone op */
     UndoInfo    *undo_batch_begin;      /* last undo item at batch-begin */
     int         undo_batch_count;       /* undo items per batch */
+    int         undo_op_batch_size;     /* batch size of undo operation */
     textBuffer	*buffer;		/* holds the text being edited */
     int		nPanes;			/* number of additional text editing
     					   areas, created by splitWindow */
