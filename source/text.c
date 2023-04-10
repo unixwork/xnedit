@@ -102,6 +102,7 @@ static XtGeometryResult queryGeometry(Widget w, XtWidgetGeometry *proposed,
 	XtWidgetGeometry *answer);
 static void grabFocusAP(Widget w, XEvent *event, String *args,
 	Cardinal *n_args);
+static void cancelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void moveDestinationAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void extendAdjustAP(Widget w, XEvent *event, String *args,
@@ -267,6 +268,9 @@ static XftColor defaultAnsiColors[16];
 static char defaultTranslations[] = 
     /* Home */
     "~Shift ~Ctrl Alt<Key>osfBeginLine: last_document()\n"
+    
+    "<KeyPress>osfCancel: cancel()\n"
+    "Alt<KeyPress>osfCancel: cancel()\n"
 
     /* Keypad */
     ":<Key>KP_7: self_insert()\n"
@@ -482,6 +486,7 @@ static char defaultTranslations[] =
 
 
 static XtActionsRec actionsList[] = {
+    {"cancel", cancelAP},
     {"self-insert", selfInsertAP},
     {"self_insert", selfInsertAP},
     {"grab-focus", grabFocusAP},
@@ -1783,6 +1788,15 @@ static void grabFocusAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     TextDXYToUnconstrainedPosition(textD, e->x, e->y, &row, &column);
     column = TextDOffsetWrappedColumn(textD, row, column);
     tw->text.rectAnchor = column;
+}
+
+static void cancelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    
+    if(TextDClearMultiCursor(textD)) {
+        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+        textD->cursor = textD->multicursor;
+    }
 }
 
 static void moveDestinationAP(Widget w, XEvent *event, String *args,
