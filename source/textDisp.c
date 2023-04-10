@@ -309,7 +309,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->mcursorAlloc = MCURSOR_ALLOC;
     textD->mcursorSize = 1;
     textD->multicursor = NEditCalloc(MCURSOR_ALLOC, sizeof(textCursor));
-
+    textD->mcursorOn = FALSE;
+    
     // Initialize main cursor
     textD->multicursor[0].cursorPos = 0;
     textD->multicursor[0].cursorPosCache = -1;
@@ -992,6 +993,8 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
         textD->multicursor = NEditRealloc(textD->multicursor, textD->mcursorAlloc * sizeof(textCursor));
     }
     
+    textD->mcursorOn = TRUE;
+    
     // add cursor (sorted)
     textD->mcursorSize++;
     if(mcInsertPos+1 < textD->mcursorSize) {
@@ -1021,6 +1024,8 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
 void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
     if(textD->mcursorSize == 1) {
         return;
+    } else if(textD->mcursorSize == 2) {
+        textD->mcursorOn = FALSE;
     }
     
     if(cursorIndex+1 == textD->mcursorSize) {
@@ -1034,6 +1039,7 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
 
 int TextDClearMultiCursor(textDisp *textD) {
     if(textD->mcursorSize > 1) {
+        textD->mcursorOn = FALSE;
         textD->mcursorSize = 1;
         if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
             // reduce multicursor array, if it is too big
@@ -2861,7 +2867,7 @@ static void drawCursor(textDisp *textD, int x, int y)
     cursorWidth = (fontWidth/3) * 2;
     
     // simplify the cursor in multicursor mode
-    if(textD->mcursorSize > 1 && textD->cursorStyle != CARET_CURSOR && textD->cursorStyle != BLOCK_CURSOR) {
+    if(textD->mcursorOn && textD->cursorStyle != CARET_CURSOR && textD->cursorStyle != BLOCK_CURSOR) {
         cursorWidth = 0;
     }
     

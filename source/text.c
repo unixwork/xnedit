@@ -2954,6 +2954,7 @@ static void forwardCharacterAP(Widget w, XEvent *event, String *args,
                 textD->mcursorSize = mcursorSize;
                 TextDRemoveCursor(textD, i);
                 textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
             }
         }
         

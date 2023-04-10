@@ -223,6 +223,7 @@ typedef struct _textDisp {
                                            suppressed) */
     int modifyingTabDist;		/* Whether tab distance is being
     					   modified */
+    Boolean mcursorOn;                  /* Is there more than one cursor */
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
     Boolean disableRedisplay;
