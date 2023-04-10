@@ -75,7 +75,7 @@ static void doUndo(WindowInfo *window, int isBatch)
 {
     UndoInfo *undo = window->undo;
     int restoredTextLength;
-    
+     
     /* return if nothing to undo */
     if (undo == NULL)
     	return;
@@ -141,15 +141,11 @@ void Undo(WindowInfo *window) {
     }
 }
 
-void Redo(WindowInfo *window)
+static void doRedo(WindowInfo *window, int isBatch)
 {
     UndoInfo *redo = window->redo;
     int restoredTextLength;
-
-    /* return if nothing to redo */
-    if (window->redo == NULL)
-    	return;
-
+    
     /* BufReplace will eventually call SaveUndoInformation.  To indicate
        to SaveUndoInformation that this is the context of a redo operation,
        we set the inUndo indicator in the redo record */
@@ -158,7 +154,7 @@ void Redo(WindowInfo *window)
     /* use the saved redo information to reverse changes */
     BufReplace(window->buffer, redo->startPos, redo->endPos,
     	    (redo->oldText != NULL ? redo->oldText : ""));
-    
+       
     restoredTextLength = redo->oldText != NULL ? strlen(redo->oldText) : 0;
     if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
 	/* position the cursor in the focus pane after the changed text
@@ -177,7 +173,7 @@ void Redo(WindowInfo *window)
         }
     }
     MakeSelectionVisible(window, window->lastFocus);
-    
+       
     /* restore the file's unmodified status if the file was unmodified
        when the change being redone was originally made. Also, remove
        the backup file, since the text in the buffer is now identical to
@@ -189,6 +185,26 @@ void Redo(WindowInfo *window)
     
     /* remove the redo record from the chain and free it */
     removeRedoItem(window);
+}
+
+void Redo(WindowInfo *window)
+{  
+    UndoInfo *redo = window->redo;
+    /* return if nothing to redo */
+    if (window->redo == NULL)
+    	return;
+    
+    int numOp = redo ? redo->numOp : 0;
+    int redoCount = 1;
+    int isBatch = 0;
+    if(numOp > 0) {
+        redoCount = numOp;
+        isBatch = 1;
+    }
+    
+    for(int i=0;i<redoCount;i++) {
+        doRedo(window, isBatch);
+    }
 }
 
 
@@ -207,6 +223,7 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     UndoInfo *u, *undo = window->undo;
     int isUndo = (undo != NULL && undo->inUndo);
     int isRedo = (window->redo != NULL && window->redo->inUndo);
+    int numOp = undo ? undo->numOp : 0;
     
     /* redo operations become invalid once the user begins typing or does
        other editing.  If this is not a redo or undo operation and a redo
@@ -276,7 +293,7 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     undo->oldText = NULL;
     undo->type = newType;
     undo->inUndo = False;
-    undo->numOp = 0;
+    undo->numOp = numOp;
     undo->restoresToSaved = False;
     undo->startPos = pos;
     undo->endPos = pos + nInserted;
