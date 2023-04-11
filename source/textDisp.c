@@ -1050,6 +1050,7 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
 
 int TextDClearMultiCursor(textDisp *textD) {
     if(textD->mcursorSize > 1) {
+        TextDBlankCursor(textD);     
         textD->mcursorOn = FALSE;
         textD->mcursorSize = 1;
         if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
