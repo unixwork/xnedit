@@ -150,15 +150,17 @@ static void doRedo(WindowInfo *window, int isBatch)
     UndoInfo *redo = window->redo;
     int restoredTextLength;
     
-    if (window->redo == NULL)
-    	return;
-    
+    // not really necessary, but in case of redo-bugs, this prevents a crash
+    if (window->redo == NULL) {
+        return;
+    }
+        
     // BufReplace will eventually call SaveUndoInformation.  To indicate
     // to SaveUndoInformation that this is the context of a redo operation,
     // we set the inUndo indicator in the redo record
     redo->inUndo = True;
     
-    /* use the saved redo information to reverse changes */
+    // use the saved redo information to reverse changes
     BufReplace(window->buffer, redo->startPos, redo->endPos,
     	    (redo->oldText != NULL ? redo->oldText : ""));
        
@@ -199,7 +201,7 @@ static void doRedo(WindowInfo *window, int isBatch)
 void Redo(WindowInfo *window)
 {  
     UndoInfo *redo = window->redo;
-    /* return if nothing to redo */
+    // return if nothing to redo
     if (window->redo == NULL)
     	return;
     
