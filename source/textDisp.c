@@ -960,12 +960,23 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
  * Add diff to all cursors >= startPos
  */
 void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
+    int prevPos = -2;
+    size_t newMCursorSize = textD->mcursorSize;
     for(int i=textD->mcursorSize-1;i>=0;i--) {
         if(textD->multicursor[i].cursorPos < startPos) {
             break;
         }
         textD->multicursor[i].cursorPos += diff;
         textD->multicursor[i].cursorPreferredCol = -1;
+        
+        // cursor out of bounds: remove cursor
+        if(textD->multicursor[i].cursorPos > textD->buffer->length) {
+            newMCursorSize = i;
+        } 
+    }
+    textD->mcursorSize = newMCursorSize > 0 ? newMCursorSize : 1;
+    if(textD->mcursorSize == 1) {
+        textD->mcursorOn = False;
     }
 }
 
