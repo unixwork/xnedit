@@ -53,6 +53,8 @@ typedef struct {
 typedef void (*bufModifyCallbackProc)(int pos, int nInserted, int nDeleted,
 	int nRestyled, const char *deletedText, void *cbArg);
 typedef void (*bufPreDeleteCallbackProc)(int pos, int nDeleted, void *cbArg);
+typedef void (*bufBeginModifyCallbackProc)(void *cbArg);
+typedef void (*bufEndModifyCallbackProc)(void *cbArg);
 
 typedef struct _textBuffer {
     int length; 	        /* length of the text in the buffer (the length
@@ -75,6 +77,14 @@ typedef struct _textBuffer {
     bufPreDeleteCallbackProc	/* procedure to call before text is deleted */
 	 *preDeleteProcs;	/* from the buffer; at most one is supported. */
     void **preDeleteCbArgs;	/* caller argument for pre-delete proc above */
+    int nBeginModifyProcs;	/* number of begin-modify procs attached */
+    bufBeginModifyCallbackProc	/* procedure to call before a batch of  */
+	 *beginModifyProcs;	/* modifications is done. */
+    void **beginModifyCbArgs;	/* caller args for begin-modify proc above */
+    int nEndModifyProcs;	/* number of end-modify procs attached */
+    bufEndModifyCallbackProc	/* procedure to call after a batch of  */
+	 *endModifyProcs;	/* modifications is done. */
+    void **endModifyCbArgs;	/* caller args for end-modify proc above */
     int cursorPosHint;		/* hint for reasonable cursor position after
     				   a buffer modification operation */
     char nullSubsChar;	    	/* NEdit is based on C null-terminated strings,
@@ -116,6 +126,8 @@ wchar_t BufGetCharacterW(const textBuffer *buf, int pos);
 FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen);
 char *BufGetTextInRect(textBuffer *buf, int start, int end,
 	int rectStart, int rectEnd);
+void BufBeginModifyBatch(textBuffer *buf);
+void BufEndModifyBatch(textBuffer *buf);
 void BufInsert(textBuffer *buf, int pos, const char *text);
 void BufRemove(textBuffer *buf, int start, int end);
 void BufReplace(textBuffer *buf, int start, int end, const char *text);
@@ -170,6 +182,14 @@ void BufAddPreDeleteCB(textBuffer *buf, bufPreDeleteCallbackProc bufPreDeleteCB,
 	void *cbArg);
 void BufRemovePreDeleteCB(textBuffer *buf, bufPreDeleteCallbackProc 
 	bufPreDeleteCB,	void *cbArg);
+void BufAddBeginModifyCB(textBuffer *buf, bufBeginModifyCallbackProc bufBeginModifyCB,
+	void *cbArg);
+void BufRemoveBeginModifyCB(textBuffer *buf, bufBeginModifyCallbackProc 
+	bufBeginModifyCB,	void *cbArg);
+void BufAddEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc bufEndModifyCB,
+	void *cbArg);
+void BufRemoveEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc 
+	bufEndModifyCB,	void *cbArg);
 int BufStartOfLine(textBuffer *buf, int pos);
 int BufEndOfLine(textBuffer *buf, int pos);
 int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,

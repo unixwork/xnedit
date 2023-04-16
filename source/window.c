@@ -237,6 +237,8 @@ static void removeFromWindowList(WindowInfo *window);
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData);
 static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
         const char *deletedText, void *cbArg);
+static void beginModifyCB(void *cbArg);
+static void endModifyCB(void *cbArg);
 static void movedCB(Widget w, WindowInfo *window, XtPointer callData);
 static void dragStartCB(Widget w, WindowInfo *window, XtPointer callData);
 static void dragEndCB(Widget w, WindowInfo *window, dragEndCBStruct *callData);
@@ -385,6 +387,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->bom = FALSE;
     window->undo = NULL;
     window->redo = NULL;
+    window->undo_batch_begin = NULL;
+    window->undo_batch_count = 0;
+    window->undo_op_batch_size = 0;
     window->nPanes = 0;
     window->autoSaveCharCount = 0;
     window->autoSaveOpCount = 0;
@@ -1025,6 +1030,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Attach the buffer to the text widget, and add callbacks for modify */
     TextSetBuffer(text, window->buffer);
     BufAddModifyCB(window->buffer, modifiedCB, window);
+    BufAddBeginModifyCB(window->buffer, beginModifyCB, window);
+    BufAddEndModifyCB(window->buffer, endModifyCB, window);
     
     /* Designate the permanent text area as the owner for selections */
     HandleXSelections(text);
@@ -2960,6 +2967,25 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
     
     /* Check if external changes have been made to file and warn user */
     CheckForChangesToFile(window);
+    
+    /* count modify operations per modification batch
+     * this is only relevant if window->undo_batch_begin != NULL */
+    window->undo_batch_count++;
+}
+
+static void beginModifyCB(void *cbArg) {
+    WindowInfo *window = cbArg;
+    window->undo_batch_begin = window->undo;
+    window->undo_batch_count = 0;
+}
+
+static void endModifyCB(void *cbArg) {
+    WindowInfo *window = cbArg;
+    if(window->undo_batch_begin && window->undo_batch_count > 1) {
+        window->undo->numOp = window->undo_batch_count;
+    }
+    window->undo_batch_begin = NULL;
+    window->undo_batch_count = 0;
 }
 
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData) 
@@ -3959,6 +3985,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->autoSaveOpCount = 0;
     window->undoOpCount = 0;
     window->undoMemUsed = 0;
+    window->undo_op_batch_size = 0;
     CLEAR_ALL_LOCKS(window->lockReasons);
     window->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
     window->autoSave = GetPrefAutoSave();

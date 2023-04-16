@@ -102,6 +102,7 @@ static XtGeometryResult queryGeometry(Widget w, XtWidgetGeometry *proposed,
 	XtWidgetGeometry *answer);
 static void grabFocusAP(Widget w, XEvent *event, String *args,
 	Cardinal *n_args);
+static void cancelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void moveDestinationAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void extendAdjustAP(Widget w, XEvent *event, String *args,
@@ -217,6 +218,10 @@ static void focusOutAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+static void addCursorUpAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs);
+static void addCursorDownAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs);
 
 static void checkMoveSelectionChange(Widget w, XEvent *event, int startPos,
 	String *args, Cardinal *nArgs);
@@ -263,6 +268,9 @@ static XftColor defaultAnsiColors[16];
 static char defaultTranslations[] = 
     /* Home */
     "~Shift ~Ctrl Alt<Key>osfBeginLine: last_document()\n"
+    
+    "<KeyPress>osfCancel: cancel()\n"
+    "Alt<KeyPress>osfCancel: cancel()\n"
 
     /* Keypad */
     ":<Key>KP_7: self_insert()\n"
@@ -343,6 +351,7 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfRight: forward_character()\n"
 
     /* Up */
+    "Ctrl Super<KeyPress>osfUp: add_cursor_up()\n"
     "Alt Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfUp: process_shift_up(\"rect\")\n"
@@ -353,6 +362,7 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfUp: process_up()\n"
 
     /* Down */
+    "Ctrl Super<KeyPress>osfDown: add_cursor_down()\n"
     "Alt Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfDown: process_shift_down(\"rect\")\n"
@@ -430,6 +440,7 @@ static char defaultTranslations[] =
     "Meta Ctrl<Btn1Down>: move_destination()\n"
     "Shift Ctrl<Btn1Down>: extend_start(\"rect\")\n"
     "Shift<Btn1Down>: extend_start()\n"
+    "Ctrl<Btn1Down>: grab_focus(\"mc\")\n"
     "<Btn1Down>: grab_focus()\n"
     "Button1 Ctrl<MotionNotify>: extend_adjust(\"rect\")\n"
     "Button1~Ctrl<MotionNotify>: extend_adjust()\n"
@@ -475,6 +486,7 @@ static char defaultTranslations[] =
 
 
 static XtActionsRec actionsList[] = {
+    {"cancel", cancelAP},
     {"self-insert", selfInsertAP},
     {"self_insert", selfInsertAP},
     {"grab-focus", grabFocusAP},
@@ -602,7 +614,11 @@ static XtActionsRec actionsList[] = {
     {"insert_string", insertStringAP},
     {"mouse_pan", mousePanAP},
     {"zoom_in", zoomInAP},
-    {"zoom_out", zoomOutAP}
+    {"zoom_out", zoomOutAP},
+    {"add_cursor_up", addCursorUpAP},
+    {"add-cursor-up", addCursorUpAP},
+    {"add_cursor_down", addCursorDownAP},
+    {"add-cursor-down", addCursorDownAP}
 };
 
 /* The motif text widget defined a bunch of actions which the nedit text
@@ -1460,6 +1476,41 @@ void TextSetCursorPos(Widget w, int pos)
 
 }
 
+int TextGetLastCursorPos(Widget w)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    return textD->multicursor[textD->mcursorSize-1].cursorPos;
+}
+
+void TextSetLastCursorPos(Widget w, int pos)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    
+    // emulate single cursor
+    textD->mcursorSize = 1;
+    textD->cursor = &textD->multicursor[mcursorSize-1];
+    TextSetCursorPos(w, pos);
+    
+    // restore mcursor
+    textD->mcursorSize = mcursorSize;
+}
+
+void TextChangeCursors(Widget w, int startPos, int diff)
+{
+    TextDChangeCursors(((TextWidget)w)->text.textD, startPos, diff);
+    callCursorMovementCBs(w, NULL);
+}
+
+void TextClearMultiCursors(Widget w)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    if(TextDClearMultiCursor(textD)) {
+        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+        textD->cursor = textD->multicursor;
+    }
+}
+
 /*
 ** Return the horizontal and vertical scroll positions of the widget
 */
@@ -1579,7 +1630,7 @@ int TextLastVisiblePos(Widget w)
 */
 void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     	int allowPendingDelete, int allowWrap)
-{
+{  
     int wrapMargin, colNum, lineStartPos, cursorPos;
     char *c, *lineStartText, *wrappedText;
     TextWidget tw = (TextWidget)w;
@@ -1768,6 +1819,10 @@ static void grabFocusAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     tw->text.rectAnchor = column;
 }
 
+static void cancelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
+    TextClearMultiCursors(w);
+}
+
 static void moveDestinationAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
@@ -1778,9 +1833,18 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
 
     /* Move the cursor */
-    TextDSetInsertPosition(textD, TextDXYToPosition(textD, e->x, e->y));
-    checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    int cursorPos = TextDXYToPosition(textD, e->x, e->y);
+    if(*nArgs == 0) {
+        TextDSetInsertPosition(textD, cursorPos);
+        checkAutoShowInsertPos(w);
+        callCursorMovementCBs(w, event);
+    } else if (!strcmp(args[0], "mc")) {
+        int cursorIndex = TextDAddCursor(textD, cursorPos);
+        if(cursorIndex >= 0) {
+            TextDBlankCursor(textD);
+            TextDRemoveCursor(textD, cursorIndex);
+        }
+    }
 }
 
 static void extendAdjustAP(Widget w, XEvent *event, String *args,
@@ -2581,30 +2645,16 @@ static void deleteSelectionAP(Widget w, XEvent *event, String *args,
     deletePendingSelection(w, event);
 }
 
-static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
-	Cardinal *nArgs)
-{
-    XKeyEvent *e = &event->xkey;
-    textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
+static int deletePreviousCharacter(Widget w, XEvent *event, textDisp *textD, int silent, int insertPos) {
     char c;
-    int silent = hasKey("nobell", args, nArgs);
     
-    cancelDrag(w);
-    if (checkReadOnly(w))
-	return;
-
-    TakeMotifDestination(w, e->time);
-    if (deletePendingSelection(w, event))
-    	return;
-
     if (insertPos == 0) {
         ringIfNecessary(silent, w);
-    	return;
+    	return 0;
     }
 
     if (deleteEmulatedTab(w, event))
-    	return;
+    	return 0;
     
     int prevPos = BufLeftPos(textD->buffer, insertPos);
     if (((TextWidget)w)->text.overstrike) {
@@ -2616,10 +2666,60 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     } else {
     	BufRemove(textD->buffer, prevPos, insertPos);
     }
+    
+    return prevPos - insertPos; // diff
+}
 
-    TextDSetInsertPosition(textD, prevPos);
+static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    XKeyEvent *e = &event->xkey;
+    textDisp *textD = ((TextWidget)w)->text.textD;  
+    int silent = hasKey("nobell", args, nArgs);
+    
+    cancelDrag(w);
+    if (checkReadOnly(w))
+	return;
+
+    TakeMotifDestination(w, e->time);
+    if (deletePendingSelection(w, event))
+    	return;
+    
+    size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
+    int diff = 0;
+    int prevPos = -1;
+    for(int i=0;i<mcursorSize;i++) {  
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        diff += deletePreviousCharacter(w, event, textD, silent, textD->cursor->cursorPos);
+        if(textD->cursor->cursorPos == prevPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+        prevPos = textD->cursor->cursorPos;
+        callCursorMovementCBs(w, event);
+    }
+
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
+}
+
+static int deleteNextCharacter(Widget w, textDisp *textD, int silent, int insertPos) {
+    if (insertPos == textD->buffer->length) {
+        ringIfNecessary(silent, w);
+    	return 0;
+    }
+    int nextPos = BufRightPos(textD->buffer, insertPos);
+    BufRemove(textD->buffer, insertPos , nextPos);
+    return insertPos - nextPos;
 }
 
 static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
@@ -2636,14 +2736,32 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     TakeMotifDestination(w, e->time);
     if (deletePendingSelection(w, event))
     	return;
-    if (insertPos == textD->buffer->length) {
-        ringIfNecessary(silent, w);
-    	return;
+      
+    int diff = 0;
+    int prevPos = -1;
+    size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
     }
-    int nextPos = BufRightPos(textD->buffer, insertPos);
-    BufRemove(textD->buffer, insertPos , nextPos);
+    
+    for(int i=0;i<mcursorSize;i++) {
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        diff += deleteNextCharacter(w, textD, silent, textD->cursor->cursorPos);
+        if(textD->cursor->cursorPos == prevPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+        prevPos = textD->cursor->cursorPos;
+        callCursorMovementCBs(w, event);
+    }
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
 }
 
 static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
@@ -2651,8 +2769,9 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int pos, lineStart = BufStartOfLine(textD->buffer, insertPos);
+    textBuffer *buffer = textD->buffer;
+    int insertPos ;
+    int pos, lineStart;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2666,21 +2785,53 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
         return;
     }
 
-    if (insertPos == lineStart) {
-        ringIfNecessary(silent, w);
-        return;
+    size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
+    }
+    
+    int diff = 0;
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        
+        insertPos = textD->cursor->cursorPos;
+        lineStart = BufStartOfLine(buffer, insertPos);
+        
+        if (insertPos == lineStart) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = max(insertPos - 1, 0);
+        while(strchr(delimiters, BufGetCharacter(buffer, pos)) != NULL &&
+                pos != lineStart)
+        {
+            pos--;
+        }
+        
+        pos = startOfWord((TextWidget)w, pos);
+        BufRemove(buffer, pos, insertPos);
+        diff -= insertPos - pos;
+        
+        if(i > 0 && textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+        
+        callCursorMovementCBs(w, event);
     }
 
-    pos = max(insertPos - 1, 0);
-    while (strchr(delimiters, BufGetCharacter(textD->buffer, pos)) != NULL &&
-            pos != lineStart) {
-        pos--;
-    }
-
-    pos = startOfWord((TextWidget)w, pos);
-    BufRemove(textD->buffer, pos, insertPos);
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
+    
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void deleteNextWordAP(Widget w, XEvent *event, String *args,
@@ -2688,8 +2839,9 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int pos, lineEnd = BufEndOfLine(textD->buffer, insertPos);
+    textBuffer *buffer = textD->buffer;
+    int insertPos;
+    int pos, lineEnd;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2702,22 +2854,54 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     if (deletePendingSelection(w, event)) {
         return;
     }
-
-    if (insertPos == lineEnd) {
-        ringIfNecessary(silent, w);
-        return;
+    
+    int diff = 0;
+    int notMoved = 0;
+    size_t mcursorSize = textD->mcursorSize;
+    if(mcursorSize > 1) {
+        BufBeginModifyBatch(textD->buffer);
     }
-
-    pos = insertPos;
-    while (strchr(delimiters, BufGetCharacter(textD->buffer, pos)) != NULL &&
-            pos != lineEnd) {
-        pos++;
+    
+    for(int i=0;i<mcursorSize;i++) {
+        textD->multicursor[i].cursorPos += diff;
+        textD->cursor = textD->multicursor + i;
+        
+        insertPos = TextDGetInsertPosition(textD);
+        lineEnd = BufEndOfLine(buffer, insertPos);
+        
+        if (insertPos == lineEnd) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = insertPos;
+        while(strchr(delimiters, BufGetCharacter(buffer, pos)) != NULL &&
+                pos != lineEnd)
+        {
+            pos++;
+        }
+        
+        pos = endOfWord((TextWidget)w, pos);
+        BufRemove(textD->buffer, insertPos, pos);
+        diff += insertPos - pos;
+        
+        if(i > 0 && textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+    
+        callCursorMovementCBs(w, event);
     }
-
-    pos = endOfWord((TextWidget)w, pos);
-    BufRemove(textD->buffer, insertPos, pos);
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(mcursorSize > 1) {
+        BufEndModifyBatch(textD->buffer);
+    }
+    
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void deleteToEndOfLineAP(Widget w, XEvent *event, String *args,
@@ -2781,31 +2965,87 @@ static void deleteToStartOfLineAP(Widget w, XEvent *event, String *args,
 static void forwardCharacterAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (!TextDMoveRight(((TextWidget)w)->text.textD)) {
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    // we have to fake single cursor mode for correct cursor rendering here
+    textD->mcursorSize = 1;
+    int notMoved = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+              
+        int prevNotMoved = notMoved;
+        if (!TextDMoveRight(((TextWidget)w)->text.textD)) {
+            notMoved = 1;
+        }
+        
+        if(prevNotMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i+1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+            }
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    checkAutoShowInsertPos(w);
+    if(notMoved) {
         ringIfNecessary(silent, w);
     }
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-    checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 static void backwardCharacterAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (!TextDMoveLeft(((TextWidget)w)->text.textD)) {
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor mode
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        int prevNotMoved = notMoved;
+        if (!TextDMoveLeft(((TextWidget)w)->text.textD)) {
+            notMoved = 1;
+        }
+        
+        if(prevNotMoved) {
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+                i--;
+            }
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    checkAutoShowInsertPos(w);
+    if(notMoved) {
         ringIfNecessary(silent, w);
     }
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-    checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 static void forwardWordAP(Widget w, XEvent *event, String *args,
@@ -2813,41 +3053,71 @@ static void forwardWordAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int pos, insertPos = TextDGetInsertPosition(textD);
+    int pos, insertPos; // = TextDGetInsertPosition(textD);
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
+    int tail = hasKey("tail", args, nArgs);
     
     cancelDrag(w);
-    if (insertPos == buf->length) {
-        ringIfNecessary(silent, w);
-    	return;
-    }
-    pos = insertPos;
-
-    if (hasKey("tail", args, nArgs)) {
-        for (; pos<buf->length; pos++) {
+    
+    size_t mcursorSize = textD->mcursorSize;
+    // emulate single-cursor mode
+    textD->mcursorSize = 1;
+    int notMoved = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        textD->cursor = textD->multicursor + i;
+        insertPos = textD->cursor->cursorPos;
+        
+        if (insertPos == buf->length) {
+            notMoved = 1;
+            continue;
+        }
+        pos = insertPos;
+        
+        if(tail) {
+            for (; pos<buf->length; pos++) {
+                if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
+                    break;
+                }
+            }
             if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
-                break;
+                pos = endOfWord((TextWidget)w, pos);
+            }
+        } else {
+            if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
+                pos = endOfWord((TextWidget)w, pos);
+            }
+            for (; pos<buf->length; pos++) {
+                if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
+                    break;
+                }
             }
         }
-        if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
-            pos = endOfWord((TextWidget)w, pos);
-        }
-    } else {
-        if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
-            pos = endOfWord((TextWidget)w, pos);
-        }
-        for (; pos<buf->length; pos++) {
-            if (NULL == strchr(delimiters, BufGetCharacter(buf, pos))) {
-                break;
+        
+        TextDSetInsertPosition(textD, pos);
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(pos == textD->multicursor[i+1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
             }
         }
     }
+    textD->mcursorSize = mcursorSize;
 
-    TextDSetInsertPosition(textD, pos);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void backwardWordAP(Widget w, XEvent *event, String *args,
@@ -2855,89 +3125,177 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int pos, insertPos = TextDGetInsertPosition(textD);
+    int pos, insertPos; //TextDGetInsertPosition(textD);
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (insertPos == 0) {
-        ringIfNecessary(silent, w);
-    	return;
+    
+    size_t mcursorSize = textD->mcursorSize;
+    // emulate single-cursor mode
+    textD->mcursorSize = 1;
+    int notMoved = 0;
+    
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if (insertPos == 0) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = max(insertPos - 1, 0);
+        while (strchr(delimiters, BufGetCharacter(buf, pos)) != NULL && pos > 0)
+            pos--;
+        pos = startOfWord((TextWidget)w, pos);
+        
+        TextDSetInsertPosition(textD, pos);
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // check for cursor dup
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+                i--;
+            }
+        }
     }
-    pos = max(insertPos - 1, 0);
-    while (strchr(delimiters, BufGetCharacter(buf, pos)) != NULL && pos > 0)
-    	pos--;
-    pos = startOfWord((TextWidget)w, pos);
-    	
-    TextDSetInsertPosition(textD, pos);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void forwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int pos, insertPos = TextDGetInsertPosition(textD);
+    int pos, insertPos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (insertPos == buf->length) {
-        ringIfNecessary(silent, w);
-    	return;
+    
+    size_t mcursorSize = textD->mcursorSize;
+    // we have to fake single cursor mode for correct cursor rendering here
+    textD->mcursorSize = 1;
+    int notMoved = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if (insertPos == buf->length) {
+            notMoved = 1;
+            continue;
+        }
+        
+        pos = min(BufEndOfLine(buf, insertPos)+1, buf->length);
+        while (pos < buf->length) {
+            c = BufGetCharacter(buf, pos);
+            if (c == '\n')
+                break;
+            if (strchr(whiteChars, c) != NULL)
+                pos++;
+            else
+                pos = min(BufEndOfLine(buf, pos)+1, buf->length);
+        }
+        TextDSetInsertPosition(textD, min(pos+1, buf->length));
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(pos == textD->multicursor[i+1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+            }
+        }
     }
-    pos = min(BufEndOfLine(buf, insertPos)+1, buf->length);
-    while (pos < buf->length) {
-    	c = BufGetCharacter(buf, pos);
-    	if (c == '\n')
-    	    break;
-    	if (strchr(whiteChars, c) != NULL)
-    	    pos++;
-    	else
-    	    pos = min(BufEndOfLine(buf, pos)+1, buf->length);
-    }
-    TextDSetInsertPosition(textD, min(pos+1, buf->length));
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void backwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int parStart, pos, insertPos = TextDGetInsertPosition(textD);
+    int parStart, pos, insertPos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
-    if (insertPos == 0) {
-        ringIfNecessary(silent, w);
-    	return;
+    
+    size_t mcursorSize = textD->mcursorSize;
+    // emulate single-cursor mode
+    textD->mcursorSize = 1;
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if (insertPos == 0) {
+            notMoved = 1;
+            continue;
+        }
+        parStart = BufStartOfLine(buf, max(insertPos-1, 0));
+        pos = max(parStart - 2, 0);
+        while (pos > 0) {
+            c = BufGetCharacter(buf, pos);
+            if (c == '\n')
+                break;
+            if (strchr(whiteChars, c) != NULL)
+                pos--;
+            else {
+                parStart = BufStartOfLine(buf, pos);
+                pos = max(parStart - 2, 0);
+            }
+        }
+        TextDSetInsertPosition(textD, parStart);
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // check for cursor dup
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+                i--;
+            }
+        }
     }
-    parStart = BufStartOfLine(buf, max(insertPos-1, 0));
-    pos = max(parStart - 2, 0);
-    while (pos > 0) {
-    	c = BufGetCharacter(buf, pos);
-    	if (c == '\n')
-    	    break;
-    	if (strchr(whiteChars, c) != NULL)
-    	    pos--;
-    	else {
-    	    parStart = BufStartOfLine(buf, pos);
-    	    pos = max(parStart - 2, 0);
-    	}
-    }
-    TextDSetInsertPosition(textD, parStart);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void keySelectAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
@@ -2972,11 +3330,44 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int abs = hasKey("absolute", args, nArgs);
 
     cancelDrag(w);
-    if (!TextDMoveUp(((TextWidget)w)->text.textD, abs))
-        ringIfNecessary(silent, w);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    int notMoved = 0;
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        insertPos = textD->cursor->cursorPos;
+        
+        if (!TextDMoveUp(((TextWidget)w)->text.textD, abs)) {
+            notMoved = 1;
+            continue;
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        checkAutoShowInsertPos(w);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+                i--;
+            }
+        }
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void processShiftUpAP(Widget w, XEvent *event, String *args,
@@ -2997,16 +3388,47 @@ static void processShiftUpAP(Widget w, XEvent *event, String *args,
 static void processDownAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    int insertPos;
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
-
+    
     cancelDrag(w);
-    if (!TextDMoveDown(((TextWidget)w)->text.textD, abs))
-        ringIfNecessary(silent, w);
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    int notMoved = 0;
+    for(int i=mcursorSize-1;i>=0;i--) {
+        textD->cursor = textD->multicursor + i;
+        insertPos = textD->cursor->cursorPos;
+        
+        if (!TextDMoveDown(((TextWidget)w)->text.textD, abs)) {
+            notMoved = 1;
+            continue;
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        
+        if(notMoved) {
+            // if a cursor was not moved, we have to make sure, that another
+            // cursor doesn't have the same position
+            if(textD->multicursor[i].cursorPos == textD->multicursor[i+1].cursorPos) {
+                // because we simulate single-cursor mode, we have to set
+                // mcursorSize to the correct value here
+                textD->mcursorSize = mcursorSize;
+                TextDRemoveCursor(textD, i);
+                textD->mcursorSize = 1; // reactivate single-cursor simulation
+                mcursorSize--;
+            }
+        }
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
+    if(notMoved) {
+        ringIfNecessary(silent, w);
+    }
 }
 
 static void processShiftDownAP(Widget w, XEvent *event, String *args,
@@ -3024,37 +3446,109 @@ static void processShiftDownAP(Widget w, XEvent *event, String *args,
     callCursorMovementCBs(w, event);
 }
 
+static void addCursorUpAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    
+    // get the first cursor (textD->multicursor is sorted)
+    textD->cursor = &textD->multicursor[0];
+    int oldPos = textD->cursor->cursorPos;
+    
+    // move last cursor down
+    int moved = 0;
+    if(TextDMoveUp(textD, 0)) {
+        moved = 1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    // if the last cursor was moved, re-add the previous position
+    if(moved) {
+        TextDAddCursor(textD, oldPos);
+    }
+}
+
+static void addCursorDownAP(Widget w, XEvent *event, String *args,
+	Cardinal *nArgs)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    
+    // get the last cursor (textD->multicursor is sorted)
+    textD->cursor = &textD->multicursor[mcursorSize-1];
+    int oldPos = textD->cursor->cursorPos;
+    
+    // move last cursor down
+    int moved = 0;
+    if(TextDMoveDown(textD, 0)) {
+        moved = 1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
+    // if the last cursor was moved, re-add the previous position
+    if(moved) {
+        TextDAddCursor(textD, oldPos);
+    }
+}
+
 static void beginningOfLineAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-
+    int absolute = hasKey("absolute", args, nArgs);
+    
     cancelDrag(w);
-    if (hasKey("absolute", args, nArgs))
-        TextDSetInsertPosition(textD, BufStartOfLine(textD->buffer, insertPos));
-    else
-        TextDSetInsertPosition(textD, TextDStartOfLine(textD, insertPos));
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if(absolute) {
+            TextDSetInsertPosition(textD, BufStartOfLine(textD->buffer, insertPos));
+        } else {
+            TextDSetInsertPosition(textD, TextDStartOfLine(textD, insertPos));
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        textD->cursor->cursorPreferredCol = 0;
+    }
+    textD->mcursorSize = mcursorSize;
+
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
-    textD->cursorPreferredCol = 0;
 }
 
 static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-
+    int absolute = hasKey("absolute", args, nArgs);
+    
     cancelDrag(w);
-    if (hasKey("absolute", args, nArgs))
-        TextDSetInsertPosition(textD, BufEndOfLine(textD->buffer, insertPos));
-    else
-        TextDSetInsertPosition(textD, TextDEndOfLine(textD, insertPos, False));
-    checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+    
+    size_t mcursorSize = textD->mcursorSize;
+    textD->mcursorSize = 1; // emulate single-cursor
+    for(int i=0;i<mcursorSize;i++) {
+        textD->cursor = textD->multicursor + i;
+        int insertPos = textD->cursor->cursorPos;
+        
+        if(absolute) {
+            TextDSetInsertPosition(textD, BufEndOfLine(textD->buffer, insertPos));
+        } else {
+            TextDSetInsertPosition(textD, TextDEndOfLine(textD, insertPos, False));
+        }
+        
+        checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+        callCursorMovementCBs(w, event);
+        textD->cursor->cursorPreferredCol = -1;
+    }
+    textD->mcursorSize = mcursorSize;
+    
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
-    textD->cursorPreferredCol = -1;
 }
 
 static void beginningOfFileAP(Widget w, XEvent *event, String *args,
@@ -3162,10 +3656,10 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
     else { /* "standard" */
@@ -3189,10 +3683,10 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
 }
@@ -3248,10 +3742,10 @@ static void previousPageAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
     else { /* "standard" */
@@ -3274,10 +3768,10 @@ static void previousPageAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         if (maintainColumn) {
-            textD->cursorPreferredCol = column;
+            textD->cursor->cursorPreferredCol = column;
         }
         else {
-            textD->cursorPreferredCol = -1;
+            textD->cursor->cursorPreferredCol = -1;
         }
     }
 }
@@ -3675,6 +4169,21 @@ static int checkReadOnly(Widget w)
     return False;
 }
 
+
+static void simpleInsertAtCursorPos(Widget w, textDisp *textD, char *chars) {
+    char *c;
+    if (((TextWidget)w)->text.overstrike) {
+        for (c=chars; *c!='\0' && *c!='\n'; c++) {}
+        if (*c == '\n') {
+            TextDInsert(textD, chars);
+        } else {
+            TextDOverstrike(textD, chars);
+        }
+    } else {
+        TextDInsert(textD, chars);
+    }
+}
+
 /*
 ** Insert text "chars" at the cursor position, as if the text had been
 ** typed.  Same as TextInsertAtCursor, but without the complicated auto-wrap
@@ -3690,16 +4199,32 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
     if (allowPendingDelete && pendingSelection(w)) {
     	BufReplaceSelected(buf, chars);
     	TextDSetInsertPosition(textD, buf->cursorPosHint);
-    } else if (((TextWidget)w)->text.overstrike) {
-    	for (c=chars; *c!='\0' && *c!='\n'; c++);
-    	if (*c == '\n')
-    	    TextDInsert(textD, chars);
-    	else
-    	    TextDOverstrike(textD, chars);
-    } else
-    	TextDInsert(textD, chars);
+    } else {
+        if(textD->mcursorSize == 1) {
+            simpleInsertAtCursorPos(w, textD, chars);
+        } else {
+            BufBeginModifyBatch(buf);
+            
+            int diff = 0;
+            size_t mcursorSize = textD->mcursorSize;
+            //textD->mcursorSize = 1;
+            for(int i=0;i<mcursorSize;i++) {
+                textD->multicursor[i].cursorPos += diff;
+                textD->cursor = textD->multicursor + i;
+                int prevPos = textD->cursor->cursorPos;
+                simpleInsertAtCursorPos(w, textD, chars);
+                diff += textD->cursor->cursorPos - prevPos;
+                //printf("cursor  %d  ->  %d\n", textD->multicursor[i].cursorPos, textD->cursorPos);
+                
+                callCursorMovementCBs(w, event);
+            }
+            //textD->mcursorSize = mcursorSize;
+            
+            BufEndModifyBatch(buf);
+        }
+    }
+    	
     checkAutoShowInsertPos(w);
-    callCursorMovementCBs(w, event);
 }
 
 /*

@@ -108,16 +108,30 @@ typedef struct _calltipStruct {
     int alignMode;          /* Strict or sloppy alignment */
 } calltipStruct;
 
-typedef struct _textDisp {
-    Widget w;
-    XftDraw *d;
-    int top, left, width, height, lineNumLeft, lineNumWidth;
+typedef struct _textCursor {
     int cursorPos;
     int cursorPosCache;
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
+    int cursorPreferredCol;
+    int x;
+    int y;
+} textCursor;
+
+typedef struct _textDisp {
+    Widget w;
+    XftDraw *d;
+    int top, left, width, height, lineNumLeft, lineNumWidth;
+    //int cursorPos;
+    //int cursorPosCache;
+    //int cursorPosCacheLeft;
+    //int cursorPosCacheRight;
+    textCursor *cursor;
+    textCursor *multicursor;
+    size_t mcursorAlloc;
+    size_t mcursorSize;
     int cursorOn;
-    int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
+    /*int cursorX, cursorY;*/		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
                                             and are not generally reliable
                                             for finding the insert position's
@@ -126,7 +140,7 @@ typedef struct _textDisp {
     					   where to move the cursor, to reduce
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
-    int cursorPreferredCol;		/* Column for vert. cursor movement */
+    //int cursorPreferredCol;		/* Column for vert. cursor movement */
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */
@@ -211,6 +225,7 @@ typedef struct _textDisp {
                                            suppressed) */
     int modifyingTabDist;		/* Whether tab distance is being
     					   modified */
+    Boolean mcursorOn;                  /* Is there more than one cursor */
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
     Boolean disableRedisplay;
@@ -254,6 +269,10 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
 void TextDSetInsertPosition(textDisp *textD, int newPos);
+void TextDChangeCursors(textDisp *textD, int startPos, int diff);
+int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
+void TextDRemoveCursor(textDisp *textD, int cursorIndex);
+int  TextDClearMultiCursor(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);
@@ -273,6 +292,8 @@ int TextDMoveDown(textDisp *textD, int absolute);
 void TextDBlankCursor(textDisp *textD);
 void TextDUnblankCursor(textDisp *textD);
 void TextDSetCursorStyle(textDisp *textD, int style);
+Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index);
+Boolean TextDRangeHasCursor(textDisp *textD, int start, int end);
 void TextDSetWrapMode(textDisp *textD, int wrap, int wrapMargin);
 int TextDEndOfLine(const textDisp* textD, int pos,
     Boolean startPosIsLineStart);
@@ -293,6 +314,9 @@ void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
+//textCursor TextDGetCursor(textDisp *textD);
+//void TextDSetCursor(textDisp *textD, textCursor cursor);
+textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
 void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);
 
