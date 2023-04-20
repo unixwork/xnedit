@@ -2693,9 +2693,9 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     int diff = 0;
     int prevPos = -1;
     for(int i=0;i<mcursorSize;i++) {  
-        textD->multicursor[i].cursorPos += diff;
+        //textD->multicursor[i].cursorPos += diff;
         textD->cursor = textD->multicursor + i;
-        diff += deletePreviousCharacter(w, event, textD, silent, textD->cursor->cursorPos);
+        diff += deletePreviousCharacter(w, event, textD, silent, textD->cursor->cursorPos);     
         if(textD->cursor->cursorPos == prevPos) {
             TextDRemoveCursor(textD, i);
             mcursorSize--;
@@ -2704,7 +2704,7 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
         prevPos = textD->cursor->cursorPos;
         callCursorMovementCBs(w, event);
     }
-
+    
     
     checkAutoShowInsertPos(w);
     if(mcursorSize > 1) {

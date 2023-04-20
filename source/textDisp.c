@@ -967,7 +967,7 @@ void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
         // cursor out of bounds: remove cursor
         if(textD->multicursor[i].cursorPos > textD->buffer->length) {
             newMCursorSize = i;
-        } 
+        }
     }
     textD->mcursorSize = newMCursorSize > 0 ? newMCursorSize : 1;
     if(textD->mcursorSize == 1) {
@@ -2037,7 +2037,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
                 textD->cursor->cursorPos += nInserted - nDeleted;
         }
     }
-
+    
     /* If the changes caused scrolling, re-paint everything and we're done. */
     // TODO: repainting with multiple cursors is only a workaround
     if (scrolled  || textD->mcursorSize > 0) {
