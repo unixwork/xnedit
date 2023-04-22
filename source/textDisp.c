@@ -1039,7 +1039,7 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
         return;
     }
     
-    memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, textD->mcursorSize - cursorIndex - 1);
+    memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, (textD->mcursorSize - cursorIndex - 1)*sizeof(textCursor));
     textD->mcursorSize--;
 }
 
