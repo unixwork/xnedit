@@ -308,6 +308,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     // Initialize multi cursor array
     textD->mcursorAlloc = MCURSOR_ALLOC;
     textD->mcursorSize = 1;
+    textD->mcursorSizeReal = 1;
     textD->multicursor = NEditCalloc(MCURSOR_ALLOC, sizeof(textCursor));
     textD->mcursorOn = FALSE;
     
@@ -886,7 +887,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     if(textD->highlightCursorLine) {
         oldLineStart = BufStartOfLine(textD->buffer, textD->cursor->cursorPos);
         newLineStart = BufStartOfLine(textD->buffer, newPos);
-        if(oldLineStart != newLineStart) {
+        if(oldLineStart != newLineStart || textD->mcursorOn) {
             hiline = True;
             oldLineEnd = BufEndOfLine(textD->buffer, textD->cursor->cursorPos);
             newLineEnd = BufEndOfLine(textD->buffer, newPos);
@@ -970,6 +971,7 @@ void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
         }
     }
     textD->mcursorSize = newMCursorSize > 0 ? newMCursorSize : 1;
+    textD->mcursorSizeReal = textD->mcursorSize;
     if(textD->mcursorSize == 1) {
         textD->mcursorOn = False;
     }
@@ -1003,6 +1005,7 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     
     // add cursor (sorted)
     textD->mcursorSize++;
+    textD->mcursorSizeReal = textD->mcursorSize;
     if(mcInsertPos+1 < textD->mcursorSize) {
         // insert pos in the middle
         // move elements one position
@@ -1036,6 +1039,7 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
     
     if(cursorIndex+1 == textD->mcursorSize) {
         textD->mcursorSize--;
+        textD->mcursorSizeReal = textD->mcursorSize;
         return;
     }
     
@@ -1048,6 +1052,7 @@ int TextDClearMultiCursor(textDisp *textD) {
         TextDBlankCursor(textD);     
         textD->mcursorOn = FALSE;
         textD->mcursorSize = 1;
+        textD->mcursorSizeReal = 1;
         if(textD->mcursorAlloc > MCURSOR_ALLOC_RESET) {
             // reduce multicursor array, if it is too big
             textD->mcursorAlloc = MCURSOR_ALLOC;
@@ -1144,11 +1149,11 @@ Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index) {
 }
 
 Boolean TextDRangeHasCursor(textDisp *textD, int start, int end) {
-    if(textD->mcursorSize == 1) {
+    if(textD->mcursorSizeReal == 1) {
         int cursor = textD->cursor->cursorPos;
         return cursor >= start && cursor <= end;
     } else {
-        for(int i=0;i<textD->mcursorSize;i++) {
+        for(int i=0;i<textD->mcursorSizeReal;i++) {
             int cursor = textD->multicursor[i].cursorPos;
             if(cursor >= start && cursor <= end) {
                 return True;

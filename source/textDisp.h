@@ -130,6 +130,7 @@ typedef struct _textDisp {
     textCursor *multicursor;
     size_t mcursorAlloc;
     size_t mcursorSize;
+    size_t mcursorSizeReal;
     int cursorOn;
     /*int cursorX, cursorY;*/		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
