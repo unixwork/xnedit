@@ -274,6 +274,7 @@ void TextDChangeCursors(textDisp *textD, int startPos, int diff);
 int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
 void TextDRemoveCursor(textDisp *textD, int cursorIndex);
 int  TextDClearMultiCursor(textDisp *textD);
+void TextDCheckCursorDuplicates(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);

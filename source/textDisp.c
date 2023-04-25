@@ -1030,7 +1030,7 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     return -1;
 }
 
-void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
+void TextDRemoveCursor(textDisp *textD, int cursorIndex) { 
     if(textD->mcursorSize == 1) {
         return;
     } else if(textD->mcursorSize == 2) {
@@ -1040,11 +1040,17 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
     if(cursorIndex+1 == textD->mcursorSize) {
         textD->mcursorSize--;
         textD->mcursorSizeReal = textD->mcursorSize;
-        return;
+    } else {
+        memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, (textD->mcursorSize - cursorIndex - 1)*sizeof(textCursor));
+        textD->mcursorSize--;
     }
     
-    memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, (textD->mcursorSize - cursorIndex - 1)*sizeof(textCursor));
-    textD->mcursorSize--;
+    if(textD->highlightCursorLine) {
+        // redraw entire line
+        int cursorLine;
+        posToVisibleLineNum(textD, cursorIndex, &cursorLine);
+        redisplayLine(textD, cursorLine, 0, INT_MAX, 0, INT_MAX);
+    }
 }
 
 int TextDClearMultiCursor(textDisp *textD) {
@@ -1061,6 +1067,28 @@ int TextDClearMultiCursor(textDisp *textD) {
         return 1;
     }
     return 0;
+}
+
+void TextDCheckCursorDuplicates(textDisp *textD) {
+    size_t mcursorSize = textD->mcursorSize;
+    for(size_t i=1;i<textD->mcursorSize;i++) {
+        if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
+            TextDRemoveCursor(textD, i);
+            mcursorSize--;
+            i--;
+        }
+    }
+    textD->cursor = textD->multicursor;
+    
+    if(textD->highlightCursorLine) {
+        size_t lastPos = textD->multicursor[textD->mcursorSize-1].cursorPos;
+        int cursorLine;
+        posToVisibleLineNum(textD, lastPos, &cursorLine);
+        
+        if(cursorLine + 1 < textD->nVisibleLines) {
+            redisplayLine(textD, cursorLine + 1, 0, INT_MAX, 0, INT_MAX);
+        }
+    }
 }
 
 static void textDBlankCursorPos(textDisp *textD) {
@@ -2300,7 +2328,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int rbTabDist = TEXT_OF_TEXTD(textD).emulateTabs > 0 ?
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
     Boolean indentRainbow = textD->indentRainbow;
-
+    
     // TODO: use pointer to multicursor
     textCursorX singleCursor = { textD->cursor->cursorPos, 0 };
     textCursorX *cursorX = textD->mcursorSize == 1 ? &singleCursor : NEditCalloc(textD->mcursorSize, sizeof(textCursorX));

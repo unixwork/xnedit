@@ -3330,7 +3330,7 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int abs = hasKey("absolute", args, nArgs);
 
     cancelDrag(w);
-    
+       
     textDisp *textD = ((TextWidget)w)->text.textD;
     size_t mcursorSize = textD->mcursorSize;
     textD->mcursorSize = 1; // emulate single-cursor
@@ -3348,24 +3348,17 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         checkAutoShowInsertPos(w);
         callCursorMovementCBs(w, event);
         
-        if(notMoved) {
-            // if a cursor was not moved, we have to make sure, that another
-            // cursor doesn't have the same position
-            if(textD->multicursor[i].cursorPos == textD->multicursor[i-1].cursorPos) {
-                // because we simulate single-cursor mode, we have to set
-                // mcursorSize to the correct value here
-                textD->mcursorSize = mcursorSize;
-                TextDRemoveCursor(textD, i);
-                textD->mcursorSize = 1; // reactivate single-cursor simulation
-                mcursorSize--;
-                i--;
-            }
-        }
+        // unlike other process<> functions, we don't remove the possible
+        // cursor duplicates here and use TextDCheckCursorDuplicates later
+        // that function is a workaround for a redraw bug in combination
+        // with Highlight Cursor Line
     }
     textD->mcursorSize = mcursorSize;
-    
+    textD->mcursorSizeReal = textD->mcursorSize;
+       
     checkAutoShowInsertPos(w);
     if(notMoved) {
+        TextDCheckCursorDuplicates(((TextWidget)w)->text.textD);        
         ringIfNecessary(silent, w);
     }
 }
