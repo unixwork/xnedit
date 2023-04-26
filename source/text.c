@@ -2702,7 +2702,6 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
             i--;
         }
         prevPos = textD->cursor->cursorPos;
-        callCursorMovementCBs(w, event);
     }
     
     
