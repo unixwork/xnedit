@@ -1507,7 +1507,6 @@ void TextClearMultiCursors(Widget w)
     textDisp *textD = ((TextWidget)w)->text.textD;
     if(TextDClearMultiCursor(textD)) {
         TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
-        textD->cursor = textD->multicursor;
     }
 }
 

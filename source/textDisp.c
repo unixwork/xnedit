@@ -1064,6 +1064,7 @@ int TextDClearMultiCursor(textDisp *textD) {
             textD->mcursorAlloc = MCURSOR_ALLOC;
             textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
         }
+        textD->cursor = textD->multicursor;
         return 1;
     }
     return 0;
