@@ -4195,6 +4195,7 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
             simpleInsertAtCursorPos(w, textD, chars);
         } else {
             BufBeginModifyBatch(buf);
+            TextDBlankCursor(textD);
             
             int diff = 0;
             size_t mcursorSize = textD->mcursorSize;
@@ -4205,12 +4206,9 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
                 int prevPos = textD->cursor->cursorPos;
                 simpleInsertAtCursorPos(w, textD, chars);
                 diff += textD->cursor->cursorPos - prevPos;
-                //printf("cursor  %d  ->  %d\n", textD->multicursor[i].cursorPos, textD->cursorPos);
-                
-                callCursorMovementCBs(w, event);
             }
             //textD->mcursorSize = mcursorSize;
-            
+            callCursorMovementCBs(w, event); 
             BufEndModifyBatch(buf);
         }
     }

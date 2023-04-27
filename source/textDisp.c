@@ -2073,8 +2073,8 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     }
     
     /* If the changes caused scrolling, re-paint everything and we're done. */
-    // TODO: repainting with multiple cursors is only a workaround
-    if (scrolled  || textD->mcursorSize > 0) {
+    Bool isLastCursor = textD->cursor == textD->multicursor + textD->mcursorSize - 1;
+    if(scrolled && isLastCursor) {
     	blankCursorProtrusions(textD);
     	TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left,
 		textD->height);
@@ -2120,7 +2120,6 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
     	if (origCursorPos >= pos) {
-            printf("blankCursor\n");
             blankCursorProtrusions(textD);
         }
     	    
