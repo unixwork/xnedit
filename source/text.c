@@ -2799,7 +2799,6 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     int diff = 0;
     int notMoved = 0;
     for(int i=0;i<mcursorSize;i++) {
-        textD->multicursor[i].cursorPos += diff;
         textD->cursor = textD->multicursor + i;
         
         insertPos = textD->cursor->cursorPos;
