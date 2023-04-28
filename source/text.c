@@ -1500,6 +1500,7 @@ void TextChangeCursors(Widget w, int startPos, int diff)
 {
     TextDChangeCursors(((TextWidget)w)->text.textD, startPos, diff);
     callCursorMovementCBs(w, NULL);
+    TextDBlankCursor(((TextWidget)w)->text.textD);
 }
 
 void TextClearMultiCursors(Widget w)
