@@ -2693,8 +2693,10 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     	return;
     
     size_t mcursorSize = textD->mcursorSize;
+    Bool batch = False;
     if(mcursorSize > 1) {
         BufBeginModifyBatch(textD->buffer);
+        batch = True;
     }
     
     int diff = 0;
@@ -2707,13 +2709,14 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
             TextDRemoveCursor(textD, i);
             mcursorSize--;
             i--;
+        } else {
+            prevPos = textD->cursor->cursorPos;
         }
-        prevPos = textD->cursor->cursorPos;
     }
     
     
     checkAutoShowInsertPos(w);
-    if(mcursorSize > 1) {
+    if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
 }
@@ -2745,8 +2748,10 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
     int diff = 0;
     int prevPos = -1;
     size_t mcursorSize = textD->mcursorSize;
+    Bool batch = False;
     if(mcursorSize > 1) {
         BufBeginModifyBatch(textD->buffer);
+        batch = True;
     }
     
     for(int i=0;i<mcursorSize;i++) {
@@ -2757,14 +2762,15 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
             TextDRemoveCursor(textD, i);
             mcursorSize--;
             i--;
+        } else {
+            prevPos = textD->cursor->cursorPos;
         }
-        prevPos = textD->cursor->cursorPos;
         callCursorMovementCBs(w, event);
     }
     
     checkAutoShowInsertPos(w);
     
-    if(mcursorSize > 1) {
+    if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
 }
@@ -2791,8 +2797,10 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     }
 
     size_t mcursorSize = textD->mcursorSize;
+    Bool batch = False;
     if(mcursorSize > 1) {
         BufBeginModifyBatch(textD->buffer);
+        batch = True;
     }
     
     int diff = 0;
@@ -2829,7 +2837,7 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     }
 
     checkAutoShowInsertPos(w);
-    if(mcursorSize > 1) {
+    if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
     
@@ -2862,8 +2870,10 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     int diff = 0;
     int notMoved = 0;
     size_t mcursorSize = textD->mcursorSize;
+    Bool batch = False;
     if(mcursorSize > 1) {
         BufBeginModifyBatch(textD->buffer);
+        batch = True;
     }
     
     for(int i=0;i<mcursorSize;i++) {
@@ -2899,7 +2909,7 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     }
     
     checkAutoShowInsertPos(w);
-    if(mcursorSize > 1) {
+    if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
     
