@@ -273,6 +273,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos);
 void TextDChangeCursors(textDisp *textD, int startPos, int diff);
 int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
 void TextDRemoveCursor(textDisp *textD, int cursorIndex);
+void TextDSetCursors(textDisp *textD, size_t *cursors, size_t ncursors);
 int  TextDClearMultiCursor(textDisp *textD);
 void TextDCheckCursorDuplicates(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);

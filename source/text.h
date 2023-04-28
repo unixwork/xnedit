@@ -173,6 +173,7 @@ int TextPosToLineAndCol(Widget w, int pos, int *lineNum, int *column);
 int TextPosToXY(Widget w, int pos, int *x, int *y);
 int TextGetCursorPos(Widget w);
 void TextSetCursorPos(Widget w, int pos);
+void TextSetCursors(Widget w, size_t *cursors, size_t ncursors);
 int TextGetLastCursorPos(Widget w);
 void TextSetLastCursorPos(Widget w, int pos);
 void TextChangeCursors(Widget w, int startPos, int diff);

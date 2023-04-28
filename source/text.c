@@ -1476,6 +1476,13 @@ void TextSetCursorPos(Widget w, int pos)
 
 }
 
+// set multiple cursors
+void TextSetCursors(Widget w, size_t *cursors, size_t ncursors)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    TextDSetCursors(textD, cursors, ncursors);
+}
+
 int TextGetLastCursorPos(Widget w)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;

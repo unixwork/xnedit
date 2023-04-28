@@ -71,7 +71,7 @@ static void trimUndoList(WindowInfo *window, int maxLength);
 static int determineUndoType(int nInserted, int nDeleted);
 static void freeUndoRecord(UndoInfo *undo);
 
-static void doUndo(WindowInfo *window, int isBatch)
+static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorIndex)
 {
     UndoInfo *undo = window->undo;
     int restoredTextLength;
@@ -92,12 +92,21 @@ static void doUndo(WindowInfo *window, int isBatch)
     	    (undo->oldText != NULL ? undo->oldText : ""));
     
     restoredTextLength = undo->oldText != NULL ? strlen(undo->oldText) : 0;
+    int diff = restoredTextLength;
+    if(diff == 0) {
+        diff = undo->startPos - undo->endPos;
+    }
     if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
+        size_t newPos = undo->startPos + restoredTextLength;
         if(!isBatch) {
             /* position the cursor in the focus pane after the changed text
                to show the user where the undo was done */
-            TextSetCursorPos(window->lastFocus, undo->startPos + 
-                    restoredTextLength);
+            TextSetCursorPos(window->lastFocus, newPos);
+        } else {
+            cursors[cursorIndex] = newPos;
+            for(int i=cursorIndex-1;i>=0;i--) {
+                cursors[i] += diff;
+            }
         }
     }
     
@@ -134,14 +143,23 @@ void Undo(WindowInfo *window) {
         isBatch = 1;
     }
     
+    size_t *cursors = NULL;
+    int cursorIndex = 0;
     TextChangeCursors(window->lastFocus, 0, 0);
     if(!isBatch) {
         TextClearMultiCursors(window->lastFocus);
+    } else {
+        cursors = NEditCalloc(sizeof(size_t), numOp);
     }
     
     window->undo_op_batch_size = numOp;
     for(int i=0;i<undoCount;i++) {
-        doUndo(window, isBatch);
+        doUndo(window, isBatch, cursors, cursorIndex++);
+    }
+    
+    if(cursors) {
+        TextSetCursors(window->lastFocus, cursors, numOp);
+        NEditFree(cursors);
     }
 }
 
