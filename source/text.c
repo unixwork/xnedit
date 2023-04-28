@@ -2733,7 +2733,6 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);

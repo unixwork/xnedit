@@ -163,7 +163,7 @@ void Undo(WindowInfo *window) {
     }
 }
 
-static void doRedo(WindowInfo *window, int isBatch)
+static void doRedo(WindowInfo *window, int isBatch, size_t *cursors, int cursorIndex)
 {
     UndoInfo *redo = window->redo;
     int restoredTextLength;
@@ -186,10 +186,12 @@ static void doRedo(WindowInfo *window, int isBatch)
     if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
 	// position the cursor in the focus pane after the changed text
         // to show the user where the undo was done
+        int newpos = redo->startPos + restoredTextLength;
         if(!isBatch) {
-            TextSetCursorPos(window->lastFocus, redo->startPos + restoredTextLength);
-        } else if(redo->startPos == TextGetLastCursorPos(window->lastFocus)) {
-            TextSetLastCursorPos(window->lastFocus, redo->startPos + restoredTextLength);
+            TextSetCursorPos(window->lastFocus, newpos);
+        } else {
+            //TextSetLastCursorPos(window->lastFocus, redo->startPos + restoredTextLength);
+            cursors[cursorIndex] = redo->startPos + restoredTextLength;
         }
     }
     if (!isBatch && GetPrefUndoModifiesSelection()) {
@@ -226,14 +228,23 @@ void Redo(WindowInfo *window)
     int numOp = redo ? redo->numOp : 0;
     int redoCount = 1;
     int isBatch = 0;
+    size_t *cursors = NULL;
+    int cursorIndex = 0;
     if(numOp > 0) {
         redoCount = numOp;
         isBatch = 1;
+        cursors = NEditCalloc(sizeof(size_t), numOp);
     }
-      
+    
+    TextChangeCursors(window->lastFocus, 0, 0);
     window->undo_op_batch_size = numOp;
     for(int i=0;i<redoCount;i++) {
-        doRedo(window, isBatch);
+        doRedo(window, isBatch, cursors, cursorIndex++);
+    }
+    
+    if(cursors) {
+        TextSetCursors(window->lastFocus, cursors, numOp);
+        NEditFree(cursors);
     }
 }
 
