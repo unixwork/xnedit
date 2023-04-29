@@ -1037,13 +1037,11 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
         textD->mcursorOn = FALSE;
     }
     
-    if(cursorIndex+1 == textD->mcursorSize) {
-        textD->mcursorSize--;
-        textD->mcursorSizeReal = textD->mcursorSize;
-    } else {
+    if(cursorIndex+1 != textD->mcursorSize) {
         memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, (textD->mcursorSize - cursorIndex - 1)*sizeof(textCursor));
-        textD->mcursorSize--;
     }
+    textD->mcursorSize--;
+    textD->mcursorSizeReal = textD->mcursorSize;
     
     if(textD->highlightCursorLine) {
         // redraw entire line
