@@ -39,6 +39,8 @@
 
 #include <X11/Xft/Xft.h>
 
+#define TEXTWIDGET_XIM_LOOKUP_BUFSIZE 512
+
 enum dragStates {NOT_CLICKED, PRIMARY_CLICKED, SECONDARY_CLICKED,
 	CLICKED_IN_SELECTION,  PRIMARY_DRAG, PRIMARY_RECT_DRAG, SECONDARY_DRAG,
 	SECONDARY_RECT_DRAG, PRIMARY_BLOCK_DRAG, DRAG_CANCELED, MOUSE_PAN};
@@ -142,6 +144,17 @@ typedef struct _TextPart {
     
     XIM xim;
     XIC xic;
+    
+    /*
+     * XIM lookup cache
+     */
+    unsigned long last_keyevent_serial;
+    unsigned int last_keyevent_keycode;
+    Time last_keyevent_time;
+    char xim_lookup_cache[TEXTWIDGET_XIM_LOOKUP_BUFSIZE];
+    int xim_lookup_nchars;
+    Status xim_lookup_status;
+    KeySym xim_lookup_keysym;  
 } TextPart;
 
 typedef struct _TextRec {

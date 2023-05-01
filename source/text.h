@@ -200,6 +200,13 @@ void ShowHidePointer(TextWidget w, Boolean hidePointer);
 void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked);
 XftColor TextGetFGColor(Widget w);
 XftColor TextGetBGColor(Widget w);
+int TextLookupString(
+        Widget w,
+        XKeyPressedEvent *event,
+        char* buffer_return,
+        int bytes_buffer,
+        KeySym* keysym_return,
+        Status* status);
 
 /* void TextPrintXIMError(void); */
 

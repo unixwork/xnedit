@@ -979,6 +979,10 @@ static void initialize(TextWidget request, TextWidget new)
         XtAddEventHandler((Widget)new, NEDIT_HIDE_CURSOR_MASK, False, 
                 handleHidePointer, (Opaque)NULL);
     }
+    
+    new->text.last_keyevent_serial = 0;
+    new->text.last_keyevent_keycode = 0;
+    new->text.last_keyevent_time = 0;
 }
 
 /* Hide the pointer while the user is typing */
@@ -2463,34 +2467,19 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int status;
 #endif
     XKeyEvent *e = &event->xkey;
-    char chars[128];
+    char chars[512];
     KeySym keysym;
     int nChars;
     smartIndentCBStruct smartIndent;
     textDisp *textD = ((TextWidget)w)->text.textD;
     
-#ifdef NO_XMIM
-    nChars = XLookupString(&event->xkey, chars, 19, &keysym, &compose);
-    if (nChars == 0)
-    	return;
-#else
-    if(((TextWidget)w)->text.xic) {
-#ifdef X_HAVE_UTF8_STRING
-        nChars = Xutf8LookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
-                &status);
-#else
-        nChars = XmbLookupString(((TextWidget)w)->text.xic, &event->xkey, chars, 127, &keysym,
-               &status);
-#endif
-    } else {
-        nChars = XmImMbLookupString(w, &event->xkey, chars, 127, &keysym, &status);
+    nChars = TextLookupString(w, e, chars, 511, &keysym, &status);
+    if (nChars == 0 || status == XLookupNone ||
+     	status == XLookupKeySym || status == XBufferOverflow)
+    {
+        return;
     }
     
-    
-    if (nChars == 0 || status == XLookupNone ||
-     	   status == XLookupKeySym || status == XBufferOverflow)
-    	return;
-#endif
     cancelDrag(w);
     if (checkReadOnly(w))
 	return;
@@ -4931,6 +4920,68 @@ XftColor TextGetBGColor(Widget w)
     return textWidget->text.textD->bgPixel;
 }
 
+int TextLookupString(
+        Widget w,
+        XKeyPressedEvent *event,
+        char* buffer_return,
+        int bytes_buffer,
+        KeySym* keysym_return,
+        Status* status)
+{
+    TextWidget textWidget = (TextWidget)w;
+    
+    // maybe it is enough to just check event->serial
+    if (event->serial == textWidget->text.last_keyevent_serial &&
+        event->keycode == textWidget->text.last_keyevent_keycode &&
+        event->time == textWidget->text.last_keyevent_time)
+    {
+        // return cached values
+        if(textWidget->text.xim_lookup_nchars > bytes_buffer) {
+            *status = XBufferOverflow;
+            return 0;
+        }
+        
+        memcpy(buffer_return, textWidget->text.xim_lookup_cache, textWidget->text.xim_lookup_nchars);
+        *status = textWidget->text.xim_lookup_status;
+        *keysym_return = textWidget->text.xim_lookup_keysym;
+        return textWidget->text.xim_lookup_nchars;
+    }
+    
+    int nChars;
+    
+#ifdef NO_XMIM
+    static XComposeStatus compose = {NULL, 0};
+    nChars = XLookupString(event, buffer_return, bytes_buffer, keysym_return, &compose);
+    *status = 0;
+#else
+    if(textWidget->text.xic) {
+#ifdef X_HAVE_UTF8_STRING
+        nChars = Xutf8LookupString(textWidget->text.xic, event, buffer_return, bytes_buffer, keysym_return, status);
+#else
+        nChars = XmbLookupString(textWidget->text.xic, event, buffer_return, bytes_buffer, keysym_return, status);
+#endif
+    } else {
+        nChars = XmImMbLookupString(w, event, buffer_return, bytes_buffer, keysym_return, status);
+    }
+#endif
+    
+    // cache result
+    int n = nChars;
+    if(nChars > TEXTWIDGET_XIM_LOOKUP_BUFSIZE) {
+        fprintf(stderr, "%s", "Warning: XIM LookupString too large\n");
+        n = TEXTWIDGET_XIM_LOOKUP_BUFSIZE;
+    }
+    memcpy(textWidget->text.xim_lookup_cache, buffer_return, n);
+    textWidget->text.xim_lookup_keysym = *keysym_return;
+    textWidget->text.xim_lookup_status = *status;
+    textWidget->text.xim_lookup_nchars = n;
+    
+    textWidget->text.last_keyevent_serial = event->serial;
+    textWidget->text.last_keyevent_keycode = event->keycode;
+    textWidget->text.last_keyevent_time = event->time;
+    
+    return nChars;
+}
 
 /*
 ** look at an action procedure's arguments to see if argument "key" has been
