@@ -1169,10 +1169,10 @@ void TextDSetCursorStyle(textDisp *textD, int style)
 
 Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index) {
     *index = -1;
-    if(textD->mcursorSize == 1) {
+    if(textD->mcursorSizeReal == 1) {
         return pos == textD->cursor->cursorPos;
     } else {
-        for(int i=0;i<textD->mcursorSize;i++) {
+        for(int i=0;i<textD->mcursorSizeReal;i++) {
             int cursor = textD->multicursor[i].cursorPos;
             if(pos == cursor) {
                 *index = i;
@@ -2337,10 +2337,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     // TODO: use pointer to multicursor
     textCursorX singleCursor = { textD->cursor->cursorPos, 0 };
-    textCursorX *cursorX = textD->mcursorSize == 1 ? &singleCursor : NEditCalloc(textD->mcursorSize, sizeof(textCursorX));
+    textCursorX *cursorX = textD->mcursorSizeReal == 1 ? &singleCursor : NEditCalloc(textD->mcursorSizeReal, sizeof(textCursorX));
     int cursorNum = 0;
     int cursorIndex;
-    
+     
     /* If line is not displayed, skip it */
     if (visLineNum < 0 || visLineNum >= textD->nVisibleLines)
     	return;
@@ -2518,14 +2518,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if(textD->highlightCursorLine && TextDRangeHasCursor(textD, startOfLine, endOfLine)) {
         cursorLine = True;
     }
-     
-    // debug
-    if(textD->mcursorSize == 2) {
-        //printf("render %d - %d    cursor: %d, %d\n", startIndex, rightCharIndex-1, textD->multicursor[0].cursorPos, textD->multicursor[1].cursorPos);
-        if(startIndex <= textD->multicursor[0].cursorPos && rightCharIndex-1 >= textD->multicursor[1].cursorPos) {
-            //printf("");
-        }
-    }
     
     /* Scan character positions from the beginning of the clipping range, and
        draw parts whenever the style changes (also note if the cursor is on
@@ -2690,7 +2682,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     }
     
     // set the position where the input method might pop up
-    if(hasCursor && textD->mcursorSize == 1) {
+    if(hasCursor && textD->mcursorSizeReal == 1) {
         int cx = cursorX[0].cursorX;
         // xic position should the the cursor
         if(cx != textD->xic_x || y != textD->xic_y) {
@@ -2715,7 +2707,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         TextDRedrawCalltip(textD, 0);
     
     NEditFree(lineStr);
-    if(textD->mcursorSize > 1) NEditFree(cursorX);
+    if(textD->mcursorSizeReal > 1) NEditFree(cursorX);
 }
 
 /*

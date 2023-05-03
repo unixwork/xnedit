@@ -3003,7 +3003,7 @@ static void forwardCharacterAP(Widget w, XEvent *event, String *args,
         callCursorMovementCBs(w, event);
     }
     textD->mcursorSize = mcursorSize;
-    
+       
     checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
