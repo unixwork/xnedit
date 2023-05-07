@@ -4204,7 +4204,6 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
             
             int diff = 0;
             size_t mcursorSize = textD->mcursorSize;
-            //textD->mcursorSize = 1;
             for(int i=0;i<mcursorSize;i++) {
                 textD->multicursor[i].cursorPos += diff;
                 textD->cursor = textD->multicursor + i;
@@ -4212,12 +4211,11 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
                 simpleInsertAtCursorPos(w, textD, chars);
                 diff += textD->cursor->cursorPos - prevPos;
             }
-            //textD->mcursorSize = mcursorSize;
-            callCursorMovementCBs(w, event); 
             BufEndModifyBatch(buf);
         }
     }
-    	
+    
+    callCursorMovementCBs(w, event); 
     checkAutoShowInsertPos(w);
 }
 
