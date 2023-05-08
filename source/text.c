@@ -4211,6 +4211,8 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
                 simpleInsertAtCursorPos(w, textD, chars);
                 diff += textD->cursor->cursorPos - prevPos;
             }
+            
+            TextDUnblankCursor(textD);
             BufEndModifyBatch(buf);
         }
     }
