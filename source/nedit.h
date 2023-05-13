@@ -608,8 +608,6 @@ typedef struct _WindowInfo {
     Widget	replaceScopeSelToggle;	/* Scope for replace = selection */
     Widget	replaceScopeMultiToggle;/* Scope for replace = multiple files */
 #endif
-    char *cpyArgv[20];
-    int cpyArgc, x;
     UserMenuCache   *userMenuCache;     /* cache user menus: */
     UserBGMenuCache  userBGMenuCache;   /* shell & macro menu are shared over all
                                            "tabbed" documents, while each document
@@ -622,10 +620,7 @@ extern WindowInfo *WindowList;
 extern Display *TheDisplay;
 extern Widget TheAppShell;
 extern char *ArgV0;
-extern int oriArgc;
-extern char **oriArgv;
 extern Boolean IsServer;
-extern int tabbed;		/* tabbing state */
 
 char* GetAppName(void);
 
