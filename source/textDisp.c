@@ -2485,10 +2485,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	outIndex += charLen;
     }
     
-    if(rbCharIndex > 0) {
-        //printf("ok\n");
-    }
-    
     rbPixelIndex = rbCharIndex / rbTabDist;
     if(rbEnd < startIndex) {
         indentRainbow = 0;
@@ -2636,7 +2632,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     extendAnsiStyle(&ansi, &newAnsiStyle);
     
     /* Draw the remaining style segment */
-    //printf("final draw len: %d\n", outPtr - outStr);;
     drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine, &ansi);
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
@@ -2895,8 +2890,6 @@ static void drawCursor(textDisp *textD, int x, int y)
 {
     XSegment segs[5];
     int left, right, cursorWidth, midY;
-    //int fontWidth = textD->fontStruct->min_bounds.width, nSegs = 0;
-    //int fontWidth = FontDefault(textD->font)->max_advance_width; // TODO: get min width
     int fontWidth = textD->font->minWidth;
     int fontHeight = textD->ascent + textD->descent;
     int nSegs = 0;

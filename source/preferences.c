@@ -2507,6 +2507,8 @@ void RowColumnPrefDialog(Widget parent)
     Widget form, selBox, topLabel;
     Arg selBoxArgs[2];
     XmString s1;
+    
+    WindowInfo *window = WidgetToWindow(parent);
 
     XtSetArg(selBoxArgs[0], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL);
     XtSetArg(selBoxArgs[1], XmNautoUnmanage, False);
