@@ -1037,6 +1037,9 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
         textD->mcursorOn = FALSE;
     }
     
+    int cursorLine;
+    posToVisibleLineNum(textD, textD->multicursor[cursorIndex].cursorPos, &cursorLine);
+    
     if(cursorIndex+1 != textD->mcursorSize) {
         memmove(textD->multicursor + cursorIndex, textD->multicursor + cursorIndex + 1, (textD->mcursorSize - cursorIndex - 1)*sizeof(textCursor));
     }
@@ -1045,8 +1048,6 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
     
     if(textD->highlightCursorLine) {
         // redraw entire line
-        int cursorLine;
-        posToVisibleLineNum(textD, cursorIndex, &cursorLine);
         redisplayLine(textD, cursorLine, 0, INT_MAX, 0, INT_MAX);
     }
 }
