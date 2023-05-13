@@ -2508,7 +2508,61 @@ void RowColumnPrefDialog(Widget parent)
     Arg selBoxArgs[2];
     XmString s1;
     
+    // get current size in cols/rows
     WindowInfo *window = WidgetToWindow(parent);
+    Dimension twWidth, twHeight;
+    NFont *font;
+    int marginWidth, marginHeight, lineNumCols;
+    XtVaGetValues(
+            window->textArea,
+            XmNwidth, &twWidth,
+            XmNheight, &twHeight,
+            textNXftFont, &font,
+            textNmarginWidth, &marginWidth,
+            textNmarginHeight, &marginHeight,
+            textNlineNumCols, &lineNumCols,
+            NULL);
+    
+    if(window->nPanes > 0) {
+        int lastPaneHeight = 0;
+        
+        // get position of first text widget
+        Position transX, transY;
+        XtTranslateCoords(window->textArea, 0, 0, &transX, &transY);
+        int minY = transY;
+        int maxY = transY; 
+        
+        // get position of first text widget and position/height of the
+        // last text widget, to calculate the overall height
+        for(int i=0;i<window->nPanes;i++) {
+            int paneHeight;
+            XtVaGetValues(window->textPanes[i], XmNheight, &paneHeight, NULL);
+            
+            XtTranslateCoords(window->textPanes[i], 0, 0, &transX, &transY);
+            
+            if(transY < minY) {
+                minY = transY;
+            }
+            if(transY > maxY) {
+                maxY = transY;
+                lastPaneHeight = paneHeight;
+            }
+        }
+        
+        twHeight = maxY + lastPaneHeight - minY;
+    }
+    
+    
+    int charWidth = font->maxWidth;
+    XftFont *xfont = FontDefault(font);
+    
+    twWidth -= marginWidth*2 + (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
+    twHeight -= marginHeight * 2;
+    
+    int currentCols = twWidth / charWidth;
+    int currentRows = twHeight / (xfont->ascent + xfont->descent);
+    
+
 
     XtSetArg(selBoxArgs[0], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL);
     XtSetArg(selBoxArgs[1], XmNautoUnmanage, False);
@@ -2558,6 +2612,13 @@ void RowColumnPrefDialog(Widget parent)
     	    XmNleftPosition, 55,
     	    XmNrightPosition, 95, NULL);
     RemapDeleteKey(ColText);
+    
+    // set default values
+    char strbuf[20];
+    snprintf(strbuf, 20, "%d", currentCols);
+    XmTextSetString(ColText, strbuf);
+    snprintf(strbuf, 20, "%d", currentRows);
+    XmTextSetString(RowText, strbuf);
 
     /* put up dialog and wait for user to press ok or cancel */
     DoneWithSizeDialog = False;
