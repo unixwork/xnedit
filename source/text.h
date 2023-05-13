@@ -176,6 +176,7 @@ void TextSetCursorPos(Widget w, int pos);
 void TextSetCursors(Widget w, size_t *cursors, size_t ncursors);
 int TextGetLastCursorPos(Widget w);
 void TextSetLastCursorPos(Widget w, int pos);
+int TextNumCursors(Widget w);
 void TextChangeCursors(Widget w, int startPos, int diff);
 void TextClearMultiCursors(Widget w);
 void TextGetScroll(Widget w, int *topLineNum, int *horizOffset);

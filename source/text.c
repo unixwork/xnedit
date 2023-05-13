@@ -1485,6 +1485,7 @@ void TextSetCursors(Widget w, size_t *cursors, size_t ncursors)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     TextDSetCursors(textD, cursors, ncursors);
+    callCursorMovementCBs(w, NULL);
 }
 
 int TextGetLastCursorPos(Widget w)
@@ -1505,6 +1506,12 @@ void TextSetLastCursorPos(Widget w, int pos)
     
     // restore mcursor
     textD->mcursorSize = mcursorSize;
+}
+
+int TextNumCursors(Widget w)
+{
+    textDisp *textD = ((TextWidget)w)->text.textD;
+    return (int)textD->mcursorSizeReal;
 }
 
 void TextChangeCursors(Widget w, int startPos, int diff)
@@ -1832,6 +1839,7 @@ static void grabFocusAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 
 static void cancelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextClearMultiCursors(w);
+    callCursorMovementCBs(w, event);
 }
 
 static void moveDestinationAP(Widget w, XEvent *event, String *args,
@@ -1848,7 +1856,6 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
     if(*nArgs == 0) {
         TextDSetInsertPosition(textD, cursorPos);
         checkAutoShowInsertPos(w);
-        callCursorMovementCBs(w, event);
     } else if (!strcmp(args[0], "mc")) {
         int cursorIndex = TextDAddCursor(textD, cursorPos);
         if(cursorIndex >= 0) {
@@ -1856,6 +1863,7 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
             TextDRemoveCursor(textD, cursorIndex);
         }
     }
+    callCursorMovementCBs(w, event);
 }
 
 static void extendAdjustAP(Widget w, XEvent *event, String *args,
@@ -3464,6 +3472,8 @@ static void addCursorUpAP(Widget w, XEvent *event, String *args,
     if(moved) {
         TextDAddCursor(textD, oldPos);
     }
+    
+    callCursorMovementCBs(w, event);
 }
 
 static void addCursorDownAP(Widget w, XEvent *event, String *args,
@@ -3488,6 +3498,8 @@ static void addCursorDownAP(Widget w, XEvent *event, String *args,
     if(moved) {
         TextDAddCursor(textD, oldPos);
     }
+    
+    callCursorMovementCBs(w, event);
 }
 
 static void beginningOfLineAP(Widget w, XEvent *event, String *args,

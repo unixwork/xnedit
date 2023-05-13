@@ -3323,12 +3323,21 @@ void UpdateStatsLine(WindowInfo *window)
     string = (char*)NEditMalloc(strlen(window->filename) + strlen(window->path) + 45);
     format = window->fileFormat == DOS_FILE_FORMAT ? " DOS" :
             (window->fileFormat == MAC_FILE_FORMAT ? " Mac" : "");
+    int nCursors = TextNumCursors(window->lastFocus);
     if (!TextPosToLineAndCol(window->lastFocus, pos, &line, &colNum)) {
         sprintf(string, "%s%s%s %d bytes", window->path, window->filename,
                 format, window->buffer->length);
-        sprintf(slinecol, "L: ---  C: ---");
+        if(nCursors == 1) {
+            snprintf(slinecol, 32, "L: ---  C: ---");
+        } else {
+            snprintf(slinecol, 32, "%d cursors", nCursors);
+        }
     } else {
-        sprintf(slinecol, "L: %d  C: %d", line, colNum);
+        if(nCursors == 1) {
+            snprintf(slinecol, 32, "L: %d  C: %d", line, colNum);
+        } else {
+            snprintf(slinecol, 32, "%d cursors", nCursors);
+        }
         if (window->showLineNumbers)
             sprintf(string, "%s%s%s byte %d of %d", window->path,
                     window->filename, format, pos, 
