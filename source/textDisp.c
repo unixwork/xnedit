@@ -894,8 +894,9 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
         }
     }
     
+    Boolean redrawTextWidget = 0;
     if(TextDClearMultiCursor(textD)) {
-        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+        redrawTextWidget = True;
         textD->cursor = textD->multicursor;
     }
     
@@ -914,6 +915,12 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     /* draw it at its new position */
     textD->cursor->cursorPos = newPos;
     textD->cursorOn = True;
+    
+    if(redrawTextWidget) {
+        // redraw everything
+        TextDRedisplayRect(textD, 0, textD->top, textD->width + textD->left, textD->height);
+        return;
+    }
     
     int left, right;
     TextDCursorLR(textD, &left, &right);
