@@ -1862,6 +1862,7 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
             TextDBlankCursor(textD);
             TextDRemoveCursor(textD, cursorIndex);
         }
+        TextDUnblankCursor(textD);
     }
     callCursorMovementCBs(w, event);
 }
