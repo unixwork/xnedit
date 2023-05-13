@@ -3353,7 +3353,6 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         
         if (!TextDMoveUp(((TextWidget)w)->text.textD, abs)) {
             notMoved = 1;
-            continue;
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
@@ -3409,6 +3408,8 @@ static void processDownAP(Widget w, XEvent *event, String *args,
         
         if (!TextDMoveDown(((TextWidget)w)->text.textD, abs)) {
             notMoved = 1;
+            checkMoveSelectionChange(w, event, insertPos, args, nArgs);
+            callCursorMovementCBs(w, event);
             continue;
         }
         
