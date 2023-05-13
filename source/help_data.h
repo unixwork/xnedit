@@ -2,10 +2,10 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Sep 4, 2022 (Do NOT edit!)
+                 Generated on May 13, 2023 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2022 Mark Edel                                            *
+* Copyright (c) 1999-2023 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
@@ -5079,7 +5079,10 @@ static char * htxt_version [] = {
 "Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn, ",
 "Steve LoBasso and Alexander Mai. ",
 "\n\n",
-"XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt. ",
+"Additional NEdit patches by: Fredrik Jönsson. ",
+"\n\n",
+"XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt and ",
+"Per Grahn. ",
 "\n\n",
 "The regular expression matching routines used in XNEdit are adapted (with ",
 "permission) from original code written by Henry Spencer at the ",
@@ -5114,10 +5117,6 @@ static char * htxt_version [] = {
 "you may extend this exception to your version of the file, but you are ",
 "not obligated to do so. If you do not wish to do so, delete this ",
 "exception statement from your version. ",
-"\n\n",
-"The file dialog icons are from the Common Desktop Environment (CDE), ",
-"by The Open Group, released under the terms of the Creative Commons ",
-"Attribution Share Alike 3.0 license. ",
 "\n\n",
 "http://creativecommons.org/licenses/by-sa/3.0/ ",
 "\n\n",
@@ -5810,4 +5809,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit release of Sep.  4, 2022\n";
+static const char * NEditVersion = "XNEdit release of Mai 13, 2023\n";

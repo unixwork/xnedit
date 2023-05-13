@@ -5311,7 +5311,10 @@ Version
   Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn,
   Steve LoBasso and Alexander Mai.
   
-  XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt.
+  Additional NEdit patches by: Fredrik Jönsson.
+  
+  XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt and
+  Per Grahn.
   
   The regular expression matching routines used in XNEdit are adapted (with
   permission) from original code written by Henry Spencer at the
@@ -5346,10 +5349,6 @@ Version
   you may extend this exception to your version of the file, but you are
   not obligated to do so. If you do not wish to do so, delete this
   exception statement from your version.
-  
-  The file dialog icons are from the Common Desktop Environment (CDE),
-  by The Open Group, released under the terms of the Creative Commons
-  Attribution Share Alike 3.0 license.
   
   http://creativecommons.org/licenses/by-sa/3.0/
   

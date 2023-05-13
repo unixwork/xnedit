@@ -6,7 +6,7 @@
 OBJS = DialogF.o getfiles.o printUtils.o misc.o fileUtils.o textfield.o \
 	prefFile.o fontsel.o managedList.o utils.o clearcase.o motif.o \
 	rbTree.o refString.o nedit_malloc.o libxattr.o filedialog.o xdnd.o \
-        ec_glob.o colorchooser.o
+        ec_glob.o colorchooser.o dragAndDrop.o
 
 all: libNUtil.a
 

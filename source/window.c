@@ -60,6 +60,7 @@
 #include "../util/utils.h"
 #include "../util/fileUtils.h"
 #include "../util/DialogF.h"
+#include "../util/dragAndDrop.h"
 #include "../Xlt/BubbleButtonP.h"
 #include "../Microline/XmL/Folder.h"
 #include "../util/nedit_malloc.h"
@@ -2851,6 +2852,9 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
     XtAddCallback(text, textNdragEndCallback, (XtCallbackProc)dragEndCB,
             window);
     XtAddCallback(text, textNsmartIndentCallback, SmartIndentCB, window);
+    
+    /* legacy dnd support */
+    neditDropWidget(text);
             
     /* This makes sure the text area initially has a the insert point shown
        ... (check if still true with the nedit text widget, probably not) */

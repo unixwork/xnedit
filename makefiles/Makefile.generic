@@ -107,6 +107,9 @@ AR=ar
 # XNE_TEXTFIELD     Enable alternative text field widget for search/replace.
 #                   The new widget has improved unicode support.
 #
+# CDE               Enable drag'n'drop support for CDE. This requires
+#                   additional CDE CFLAGS/LDFLAGS.
+#
 # Some compilers need to be told to operate in ansi-standard mode, some have
 # different levels of optimization that you can select (optimization improves
 # syntax highlighting performance.   You will also often need to add locations
@@ -131,6 +134,10 @@ BIGGER_STRINGS=
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
 LIBS= -lpcre -lXm -lXt -lX11 -lm -lXrender `pkg-config --libs xft fontconfig`
+
+# Additional CDE Flags
+# CFLAGS+= -DCDE -I/usr/dt/include
+# LIBS+= -L/usr/dt/lib -R/usr/dt/lib -lDtSvc 
 
 # System independent part
 include Makefile.common
