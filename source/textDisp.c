@@ -898,11 +898,12 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     if(TextDClearMultiCursor(textD)) {
         redrawTextWidget = True;
         textD->cursor = textD->multicursor;
+    } else if (newPos == textD->cursor->cursorPos) {
+        /* do nothing if it hasn't changed */
+        return;
     }
     
-    /* make sure new position is ok, do nothing if it hasn't changed */
-    if (newPos == textD->cursor->cursorPos)
-    	return;
+    /* make sure new position is ok */
     if (newPos < 0) newPos = 0;
     if (newPos > textD->buffer->length) newPos = textD->buffer->length;
     
