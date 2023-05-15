@@ -1,5 +1,5 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021-2022 Valerio Messina GNU GPL v2+
+# xnedit_pkg: Copyright 2021-2023 Valerio Messina GNU GPL v2+
 # xnedit_pkg is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ pkg="/cygdrive/c/installer/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2022/01/18"
+ver="v0.04.0 2023/05/15"
 echo "xnedit_pkg $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -78,7 +78,7 @@ root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
-xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | sed 's/\\\n/ /' | awk '{print $1}'`
+xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | awk '{print $1,$2,$3,$4,$5}' | sed 's/\\\n/ /g' | sed 's/ *$//g' | sed 's/,//g' | sed 's/ /_/g'`
 
 echo "XNEdit script files: $scriptPath"
 echo "XNEdit binaries    : $bin"
@@ -262,7 +262,7 @@ if (test "$dbg" != "1") then
 fi
 
 # copy NSIS install script
-cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'$xnVer'/' > $tempname.nsi
+cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'_$xnVer'_/' > $tempname.nsi
 cat $tempname.nsi | sed 's/winXX_setup/win'$bit'_setup/' > "$pkg/xnedit.nsi"
 rm $tempname.nsi
 if (test "$bit" = "32") then
