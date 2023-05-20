@@ -55,6 +55,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "version.h"
+
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
@@ -266,9 +268,14 @@ static const char *getBuildInfo(void)
 
         bldInfoString = (char*)NEditMalloc(strlen(bldFormat) + strlen(warning) + 1024);
         locale = setlocale(LC_MESSAGES, "");
-
+        
+#if defined(XNEDIT_IS_RELEASE) || !defined(XNEDIT_GIT_REV)
+        const char *xneVersion = NEditVersion;
+#else
+        const char *xneVersion = XNEDIT_VERSION "\n";
+#endif
         sprintf(bldInfoString, bldFormat,
-             NEditVersion,
+             xneVersion,
              COMPILE_OS, COMPILE_MACHINE, COMPILE_COMPILER,
              linkdate, linktime,
              stabilities[stab], XmVERSION, XmREVISION, XmUPDATE_LEVEL,
