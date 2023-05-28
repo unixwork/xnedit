@@ -1199,7 +1199,7 @@ static void hscrollEH(TextWidget w, XtPointer client_data,
     
     int charWidth = 8;
     if(textD->font) {
-        charWidth = textD->font->fonts->font->max_advance_width;
+        charWidth = textD->font->maxWidth;
     }
     step = (button == 6 ? -1 : 1) * charWidth;
     
@@ -1966,11 +1966,11 @@ static void extendStartAP(Widget w, XEvent *event, String *args,
 
     /* Make the new selection */
     if (hasKey("rect", args, nArgs))
-	BufRectSelect(buf, BufStartOfLine(buf, min(anchor, newPos)),
-		BufEndOfLine(buf, max(anchor, newPos)),
-		min(rectAnchor, column), max(rectAnchor, column));
+        BufRectSelect(buf, BufStartOfLine(buf, min(anchor, newPos)),
+                      BufEndOfLine(buf, max(anchor, newPos)),
+                      min(rectAnchor, column), max(rectAnchor, column));
     else
-    	BufSelect(buf, min(anchor, newPos), max(anchor, newPos));
+        BufSelect(buf, min(anchor, newPos), max(anchor, newPos));
     
     /* Never mind the motion threshold, go right to dragging since
        extend-start is unambiguously the start of a selection */
@@ -4599,26 +4599,26 @@ static void adjustSelection(TextWidget tw, int x, int y)
     
     /* Adjust the selection */
     if (tw->text.dragState == PRIMARY_RECT_DRAG) {
-	TextDXYToUnconstrainedPosition(textD, x, y, &row, &col);
-    	col = TextDOffsetWrappedColumn(textD, row, col);
-	startCol = min(tw->text.rectAnchor, col);
-	endCol = max(tw->text.rectAnchor, col);
-	startPos = BufStartOfLine(buf, min(tw->text.anchor, newPos));
-	endPos = BufEndOfLine(buf, max(tw->text.anchor, newPos));
-	BufRectSelect(buf, startPos, endPos, startCol, endCol);
+        TextDXYToUnconstrainedPosition(textD, x, y, &row, &col);
+        col = TextDOffsetWrappedColumn(textD, row, col);
+        startCol = min(tw->text.rectAnchor, col);
+        endCol = max(tw->text.rectAnchor, col);
+        startPos = BufStartOfLine(buf, min(tw->text.anchor, newPos));
+        endPos = BufEndOfLine(buf, max(tw->text.anchor, newPos));
+        BufRectSelect(buf, startPos, endPos, startCol, endCol);
     } else if (tw->text.multiClickState == ONE_CLICK) {
-    	startPos = startOfWord(tw, min(tw->text.anchor, newPos));
-    	endPos = endOfWord(tw, max(tw->text.anchor, newPos));
-    	BufSelect(buf, startPos, endPos);
-    	newPos = newPos < tw->text.anchor ? startPos : endPos;
+        startPos = startOfWord(tw, min(tw->text.anchor, newPos));
+        endPos = endOfWord(tw, max(tw->text.anchor, newPos));
+        BufSelect(buf, startPos, endPos);
+        newPos = newPos < tw->text.anchor ? startPos : endPos;
     } else if (tw->text.multiClickState == TWO_CLICKS) {
         startPos = BufStartOfLine(buf, min(tw->text.anchor, newPos));
         endPos = BufEndOfLine(buf, max(tw->text.anchor, newPos));
         BufSelect(buf, startPos, min(endPos+1, buf->length));
         newPos = newPos < tw->text.anchor ? startPos : endPos;
     } else
-    	BufSelect(buf, tw->text.anchor, newPos);
-    
+        BufSelect(buf, tw->text.anchor, newPos);
+
     /* Move the cursor */
     TextDSetInsertPosition(textD, newPos);
     callCursorMovementCBs((Widget)tw, NULL);
@@ -4632,15 +4632,15 @@ static void adjustSecondarySelection(TextWidget tw, int x, int y)
     int newPos = TextDXYToPosition(textD, x, y);
 
     if (tw->text.dragState == SECONDARY_RECT_DRAG) {
-	TextDXYToUnconstrainedPosition(textD, x, y, &row, &col);
-    	col = TextDOffsetWrappedColumn(textD, row, col);
-	startCol = min(tw->text.rectAnchor, col);
-	endCol = max(tw->text.rectAnchor, col);
-	startPos = BufStartOfLine(buf, min(tw->text.anchor, newPos));
-	endPos = BufEndOfLine(buf, max(tw->text.anchor, newPos));
-	BufSecRectSelect(buf, startPos, endPos, startCol, endCol);
+    TextDXYToUnconstrainedPosition(textD, x, y, &row, &col);
+        col = TextDOffsetWrappedColumn(textD, row, col);
+        startCol = min(tw->text.rectAnchor, col);
+        endCol = max(tw->text.rectAnchor, col);
+        startPos = BufStartOfLine(buf, min(tw->text.anchor, newPos));
+        endPos = BufEndOfLine(buf, max(tw->text.anchor, newPos));
+        BufSecRectSelect(buf, startPos, endPos, startCol, endCol);
     } else
-    	BufSecondarySelect(textD->buffer, tw->text.anchor, newPos);
+        BufSecondarySelect(textD->buffer, tw->text.anchor, newPos);
 }
 
 /*

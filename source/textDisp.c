@@ -2394,7 +2394,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
        changes based on character position can still occur in this region due
        to rectangular selections).  stdCharWidth must be non-zero to prevent a
        potential infinite loop if x does not advance */
-    stdCharWidth = FontDefault(textD->font)->max_advance_width;
+    stdCharWidth = textD->font->maxWidth;
     if (stdCharWidth <= 0) {
     	fprintf(stderr, "xnedit: Internal Error, bad font measurement\n");
     	NEditFree(lineStr);
@@ -3179,7 +3179,7 @@ static void xyToUnconstrainedPos(textDisp *textD, int x, int y, int *row,
 	int *column, int posType)
 {
     int fontHeight = textD->ascent + textD->descent;
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth;
 
     /* Find the visible line number corresponding to the y coordinate */
     *row = (y - textD->top) / fontHeight;
@@ -3722,7 +3722,7 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     int y, line, visLine, nCols, lineStart;
     char lineNumString[12];
     int lineHeight = textD->ascent + textD->descent;
-    int charWidth = FontDefault(textD->font)->max_advance_width;
+    int charWidth = textD->font->maxWidth;
     XRectangle clipRect;
     
     /* Don't draw if lineNumWidth == 0 (line numbers are hidden), or widget is
