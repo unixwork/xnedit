@@ -92,6 +92,8 @@ static void handleShowPointer(Widget w, XtPointer unused,
 static void redisplay(TextWidget w, XEvent *event, Region region);
 static void redisplayGE(TextWidget w, XtPointer client_data,
                     XEvent *event, Boolean *continue_to_dispatch_return);
+static void hscrollEH(TextWidget w, XtPointer client_data,
+                    XEvent *event, Boolean *continue_to_dispatch_return);
 static void destroy(TextWidget w);
 static void resize(TextWidget w);
 static Boolean setValues(TextWidget current, TextWidget request,
@@ -959,6 +961,8 @@ static void initialize(TextWidget request, TextWidget new)
 
     XtAddEventHandler((Widget)new, GraphicsExpose, True,
             (XtEventHandler)redisplayGE, (Opaque)NULL);
+    XtAddEventHandler((Widget)new, ButtonPressMask , True,
+            (XtEventHandler)hscrollEH, (Opaque)NULL);
 
     if (new->text.hidePointer) {
         Display *theDisplay;
@@ -1180,6 +1184,28 @@ static void redisplayGE(TextWidget w, XtPointer client_data,
     if (event->type == GraphicsExpose || event->type == NoExpose) {
         HandleAllPendingGraphicsExposeNoExposeEvents(w, event);
     }
+}
+
+static void hscrollEH(TextWidget w, XtPointer client_data,
+                    XEvent *event, Boolean *continue_to_dispatch_return)
+{
+    int topLineNum, horizOffset, step;
+    int button = event->xbutton.button;
+    textDisp *textD = w->text.textD;
+    
+    if(button != 6 && button != 7) {
+        return;
+    }
+    
+    int charWidth = 8;
+    if(textD->font) {
+        charWidth = textD->font->fonts->font->max_advance_width;
+    }
+    step = (button == 6 ? -1 : 1) * charWidth;
+    
+    
+    TextDGetScroll(textD, &topLineNum, &horizOffset);
+    TextDSetScroll(textD, topLineNum, horizOffset + step);
 }
 
 void HandleAllPendingGraphicsExposeNoExposeEvents(TextWidget w, XEvent *event)
