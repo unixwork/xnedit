@@ -1101,8 +1101,14 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
         */
         
+        char *lockmsg = "";
+        if(1) {
+            lockmsg = ": file locked";
+            flags = flags | PREF_READ_ONLY;
+        }
+        
         char msgbuf[256];
-        snprintf(msgbuf, 256, "%d non-convertible characters skipped", skipped);
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped%s", skipped, lockmsg);
         
         show_infobar = TRUE;
         SetEncodingInfoBarLabel(window, msgbuf);
