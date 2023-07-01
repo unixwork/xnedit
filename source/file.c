@@ -1102,7 +1102,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         */
         
         char *lockmsg = "";
-        if(1) {
+        if(GetPrefLockEncodingError()) {
             lockmsg = ": file locked";
             flags = flags | PREF_READ_ONLY;
         }

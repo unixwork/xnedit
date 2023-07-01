@@ -414,6 +414,7 @@ static struct prefData {
     int fsbView;
     int fsbShowHidden;
     int editorConfig;
+    int lockEncodingError;
     char defaultCharset[MAX_ENCODING_LENGTH];
 } PrefData;
 
@@ -1141,7 +1142,9 @@ static PrefDescripRec PrefDescrip[] = {
         (void *)sizeof(PrefData.defaultCharset), True},
     {"iconSize", "IconSize", PREF_ALLOC_STRING,
       "small",
-      &PrefData.iconSize, NULL, True} 
+      &PrefData.iconSize, NULL, True} ,
+    {"lockEncodingError", "LockEncodingError", PREF_BOOLEAN, "True",
+            &PrefData.lockEncodingError, NULL, True},
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2356,6 +2359,16 @@ int GetPrefISrcFindIconSize(void)
 int GetPrefISrcClearIconSize(void)
 {
     return PrefData.isrcClearIconSize;
+}
+
+void SetPrefLockEncodingError(int state)
+{
+    PrefData.lockEncodingError = state;
+}
+
+int GetPrefLockEncodingError(void)
+{
+    return PrefData.lockEncodingError;
 }
 
 

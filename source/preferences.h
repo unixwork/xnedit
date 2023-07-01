@@ -236,6 +236,9 @@ int GetPrefCloseIconSize(void);
 int GetPrefISrcFindIconSize(void);
 int GetPrefISrcClearIconSize(void);
 
+void SetPrefLockEncodingError(int state);
+int GetPrefLockEncodingError(void);
+
 char* ChangeFontSize(const char *name, int newsize);
 
 char* ParseAnsiColorList(char **array, const char *str);
