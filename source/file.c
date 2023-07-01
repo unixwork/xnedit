@@ -580,7 +580,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     
     RemoveBackupFile(window);
     ClearUndoList(window);
-    openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
+    openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
     if (!doOpen(window, name, path, encoding, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
@@ -1085,8 +1085,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         iconv_close(ic);
     }
     
+    SET_ENCODING_LOCKED(window->lockReasons, FALSE);
+    
     int show_err = TRUE;
     int show_infobar = FALSE;
+    int lock_enc_error = FALSE;
     if(skipped > 0) {
         /*
         window->filenameSet = FALSE; // Temp. prevent check for changes.
@@ -1103,8 +1106,9 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         
         char *lockmsg = "";
         if(GetPrefLockEncodingError()) {
-            lockmsg = ": file locked";
+            lockmsg = ": file locked to prevent accidental changes";
             flags = flags | PREF_READ_ONLY;
+            lock_enc_error = TRUE;
         }
         
         char msgbuf[256];
@@ -1202,6 +1206,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {
         SET_USER_LOCKED(window->lockReasons, TRUE);
+        SET_ENCODING_LOCKED(window->lockReasons, lock_enc_error);
     }
     if (IS_PERM_LOCKED(window->lockReasons)) {
 	window->fileChanged = FALSE;

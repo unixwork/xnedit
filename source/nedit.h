@@ -141,6 +141,8 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 #define PERM_LOCKED_BIT     1
 #define TOO_MUCH_BINARY_DATA_LOCKED_BIT 2
 
+#define ENCODING_ERROR_LOCKED_BIT 7
+
 #define LOCKED_BIT_TO_MASK(bitNum) (1 << (bitNum))
 #define SET_LOCKED_BY_REASON(reasons, onOrOff, reasonBit) ((onOrOff) ? \
                     ((reasons) |= LOCKED_BIT_TO_MASK(reasonBit)) : \
@@ -153,8 +155,11 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 #define IS_TMBD_LOCKED(reasons) (((reasons) & LOCKED_BIT_TO_MASK(TOO_MUCH_BINARY_DATA_LOCKED_BIT)) != 0)
 #define SET_TMBD_LOCKED(reasons, onOrOff) SET_LOCKED_BY_REASON(reasons, onOrOff, TOO_MUCH_BINARY_DATA_LOCKED_BIT)
 
-#define IS_ANY_LOCKED_IGNORING_USER(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(USER_LOCKED_BIT)) != 0)
-#define IS_ANY_LOCKED_IGNORING_PERM(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(PERM_LOCKED_BIT)) != 0)
+#define IS_ENCODING_LOCKED(reasons) (((reasons) & LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
+#define SET_ENCODING_LOCKED(reasons, onOrOff) SET_LOCKED_BY_REASON(reasons, onOrOff, ENCODING_ERROR_LOCKED_BIT)
+
+#define IS_ANY_LOCKED_IGNORING_USER(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(USER_LOCKED_BIT) & ~LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
+#define IS_ANY_LOCKED_IGNORING_PERM(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(PERM_LOCKED_BIT) & ~LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
 #define IS_ANY_LOCKED(reasons) ((reasons) != 0)
 #define CLEAR_ALL_LOCKS(reasons) ((reasons) = 0)
 
