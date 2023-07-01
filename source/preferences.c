@@ -2363,7 +2363,7 @@ int GetPrefISrcClearIconSize(void)
 
 void SetPrefLockEncodingError(int state)
 {
-    PrefData.lockEncodingError = state;
+    setIntPref(&PrefData.lockEncodingError, state);
 }
 
 int GetPrefLockEncodingError(void)
