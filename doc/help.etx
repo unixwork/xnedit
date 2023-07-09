@@ -29,30 +29,31 @@ Table of Contents
     Getting_Started_
 
     Basic Operation                     Macro/Shell Extensions
-      Selecting_Text_                      Shell_Commands_and_Filters_
-      Finding_and_Replacing_Text_          Learn/Replay_
-      Cut_and_Paste_                       Macro_Language_
-      Using_the_Mouse_                     Macro_Subroutines_
-      Keyboard_Shortcuts_                  Highlighting_Information_
-      Shifting_and_Filling_                Rangesets_
-      Tabbed_Editing_                      Action_Routines_
-      File_Format_
-                                        Customizing
-    Features for Programming              Customizing_XNEdit_
-      Programming_with_XNEdit_              Preferences_
-      Tab_Stops/Emulated_Tab_Stops_        X_Resources_
-      Auto/Smart_Indent_                   Key_Binding_
-      Syntax_Highlighting_                 Highlighting_Patterns_
-      Finding_Declarations_(ctags)_        Smart_Indent_Macros_
-      Calltips_
+      Selecting_Text_                       Shell_Commands_and_Filters_
+      Finding_and_Replacing_Text_           Learn/Replay_
+      Cut_and_Paste_                        Macro_Language_
+      Using_the_Mouse_                      Macro_Subroutines_
+      Keyboard_Shortcuts_                   Highlighting_Information_
+      Shifting_and_Filling_                 Rangesets_
+      Multi-cursor_Editing_                 Action_Routines_
+      Tabbed_Editing_
+      File_Format_                       Customizing
+                                           Customizing_XNEdit_
+    Features for Programming               Preferences_
+      Programming_with_XNEdit_              X_Resources_
+      Tab_Stops/Emulated_Tab_Stops_         Key_Binding_
+      Auto/Smart_Indent_                    Highlighting_Patterns_
+      Syntax_Highlighting_                  Smart_Indent_Macros_
+      Finding_Declarations_(ctags)_         
+      Calltips_                          XNEdit_Command_Line_
+                                        Client/Server_Mode_
+    Regular Expressions                 Crash_Recovery_
+      Basic_Regular_Expression_Syntax_   Version_
+      Metacharacters_                    License_
+      Parenthetical_Constructs_          Support_
+      Advanced_Topics_                   Problems/Defects_
+      Example_Regular_Expressions_
 
-    Regular Expressions                 XNEdit_Command_Line_
-      Basic_Regular_Expression_Syntax_   Client/Server_Mode_
-      Metacharacters_                    Crash_Recovery_
-      Parenthetical_Constructs_          Version_
-      Advanced_Topics_                   License_
-      Example_Regular_Expressions_       Support_
-                                        Problems/Defects_
 
 .. ~ html
 Getting Started
@@ -789,6 +790,48 @@ Shifting and Filling
   as to exclude text to the left of the selection such as comment bars or other
   text columns.
    ----------------------------------------------------------------------
+
+Multi-cursor_Editing
+--------------------
+
+  XNEdit supports multi-cursor editing, which allows doing the same text editing
+  operation at multiple positions simultaneously.
+
+  To add a new cursor, press and hold Ctrl and left-click on the desired
+  position of the new cursor. You can remove a specific cursor with
+  Ctrl + left click on the existing cursor. To return to the normal single
+  cursor operation, press Escape or do a left click without Ctrl to any text
+  position.
+  
+  An alternative way to add cursors is Ctrl+Super+Up to add a cursor above
+  the most top cursor or Ctrl+Super+Down to add a cursor below the last
+  cursor.
+  
+  Most operations like inserting text, moving cursors by character, word or
+  paragraph and undo/redo support multi-cursor editing. Text Selection and
+  pasting text as column is unsupported.
+
+
+  The following actions support multiple cursors:
+  
+**delete_next_character()**
+**delete_previous_character()**
+**delete_next_word()**
+**delete_previous_word()**
+**forward_character()**
+**forward_paragraph()**
+**forward_word()**
+**backward_character()**
+**backward_word()**
+**backward_paragraph()**
+**insert_string()**
+**self_insert()**
+**newline()**
+**process_tab()**
+**process_up()**
+**process_down()**
+**beginning_of_line()**
+**end_of_line()**
 
 Tabbed Editing
 ----------------
@@ -5897,6 +5940,7 @@ Problems/Defects
 .. Menu:   Cut and Paste                    # clipboard
 .. Menu:   Using the Mouse                  # mouse
 .. Menu:   Keyboard Shortcuts               # keyboard
+.. Menu:   Multi-cursor Editing             # multicursor
 .. Menu:   S_h_ifting and Filling           # fill
 .. Menu:   Tabbed Editing                   # interface
 .. Menu:   F_i_le Format                    # format
