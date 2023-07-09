@@ -5392,8 +5392,6 @@ Version
   not obligated to do so. If you do not wish to do so, delete this
   exception statement from your version.
   
-  http://creativecommons.org/licenses/by-sa/3.0/
-  
   Some files from the EditorConfig C Library are used, which are distributed
   under the Simplified BSD license.
 
@@ -5709,12 +5707,6 @@ License
   Copyright (C) 2021, Red Hat, Inc.
   GPL-2.0-only
   
-
-  Some icons are from the Common Desktop Environment (CDE), by The Open Group,
-  released under the terms of the Creative Commons Attribution Share Alike 3.0
-  license.
-
-  http://creativecommons.org/licenses/by-sa/3.0/
 
   
   EditorConfig

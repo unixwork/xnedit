@@ -1,5 +1,5 @@
-XNEdit Version 1.4, January 2022
-================================
+XNEdit Version 1.5, July 2023
+=============================
 
 XNEdit is a multi-purpose text editor for the X Window System, which combines
 a standard, easy to use, graphical user interface with the thorough
@@ -46,7 +46,7 @@ Available configurations are:
  - freebsd
  - netbsd
  - openbsd
- - macosx
+ - macos
  - cygwin
  - generic
 
@@ -89,7 +89,7 @@ for more information.
 COMPATIBILITY WITH PREVIOUS VERSIONS
 ------------------------------------
 
-### Upgrading from NEdit 5.7 to XNEdit 1.0
+### Upgrading from NEdit 5.7 to XNEdit 
 
 XNEdit uses the same preferences format as NEdit 5.7. Also the X-Resources have
 the same appname `nedit`. Therefore NEdit's settings are compatible with
@@ -108,14 +108,6 @@ font settings, delete the following lines from the nedit.rc file:
     nedit.boldItalicHighlightFont: ...
 
 Or alternatively, adjust the fonts directly in XNEdit.
-
-### Upgrading from XNEdit 0.9 to 1.0
-
-XNEdit 0.9 uses `xnedit` as application name for X-Resources. Version 1.0
-switched back to `nedit` to improve compatibility with NEdit.
-
-To convert XNEdit 0.9 settings to the new version, you have to rename all
-resource strings in the `nedit.rc` file. Replace `xnedit` with `nedit`.
 
 DOCUMENTATION
 -------------
@@ -136,13 +128,17 @@ or contact me via email.
 AUTHORS
 -------
 
-XNEdit author: Olaf Wintermann
+XNEdit is based on NEdit 5.7 and developed by Olaf Wintermann. 
 
-NEdit was written by Mark Edel, Joy Kyriakopulos, Christopher Conrad,
-Jim Clark, Arnulfo Zepeda-Navratil, Suresh Ravoor, Tony Balinski, Max
-Vohlken, Yunliang Yu, Donna Reid, Arne Førlie, Eddy De Greef, Steve
-LoBasso, Alexander Mai, Scott Tringali, Thorsten Haude, Steve Haehn,
-Andrew Hood, Nathaniel Gray, and TK Soh.
+NEdit developers: Tony Balinski, Arne Førlie, Nathaniel Gray, Eddy De Greef,
+Thorsten Haude, Andrew Hood, Scott Tringali, TK Soh, Mark Edel,
+Joy Kyriakopulos, Christopher Conrad, Jim Clark, Arnulfo Zepeda-Navratil,
+Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn,
+Steve LoBasso and Alexander Mai.
+
+Additional NEdit patches by: Fredrik Jönsson, Per Grahn.
+
+XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt.
 
 The regular expression matching routines used in NEdit are adapted (with
 permission) from original code written by Henry Spencer at the University of
@@ -150,13 +146,13 @@ Toronto.
 
 The Microline widgets are inherited from the Mozilla project.
 
-Syntax highlighting patterns and smart indent macros were contributed
-by: Simon T. MacDonald,  Maurice Leysens, Matt Majka, Alfred Smeenk,
-Alain Fargues, Christopher Conrad, Scott Markinson, Konrad Bernloehr,
-Ivan Herman, Patrice Venant, Christian Denat, Philippe Couton, Max Vohlken, 
-Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp, Michael Turomsha, 
-John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, Mike Duigou, 
-Seak Teng-Fong, Joor Loohuis, Mark Jones, and Niek van den Berg.
+Syntax highlighting patterns and smart indent macros were contributed by
+Simon T. MacDonald,  Maurice Leysens, Matt Majka, Alfred Smeenk, Alain Fargues,
+Christopher Conrad, Scott Markinson, Konrad Bernloehr, Ivan Herman,
+Patrice Venant, Christian Denat, Philippe Couton, Max Vohlken,
+Markus Schwarzenberg, Himanshu Gohel, Steven C. Kapp, Michael Turomsha,
+John Fieber, Chris Ross, Nathaniel Gray, Joachim Lous, Mike Duigou,
+Seak Teng-Fong, Joor Loohuis, Mark Jones and Niek van den Berg. 
 
 LICENSE
 -------

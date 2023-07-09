@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+version 1.5.0 (2023-07-09)
+--------------------------
+ 
+ - added experimental support for multi-cursor editing
+ - added new setting Lock File on Encoding Error
+ - added horizontal scrolling via btn6/7
+ - added current window size as default values to Initial Window Size dialog
+ - added marking to iconified windows in the window menu
+ - added persistent search/replace history
+ - added CDE dnd integration
+ - updated macos makefile
+ - improved font width detection
+ - improved text rendering performance
+ - changed behavior when a file was opened with encoding errors (lock on error)
+ - removed file dialog icon view / removed libXpm dependency
+ - fixed macro recording of composed characters
+ - fixed xnc not detecting the correct virtual desktop of windows
+ - fixed new file name not always used in the save file dialog/detaiview
+ - fixed possible out-of-bounds read in primary selection
+ - fixed line number background clip rectangle
+ - fixed case insensitive search not working with non-ASCII characters
+ - fixed isrcFind icon size setting
+
 version 1.4.1 (2022-07-10)
 --------------------------
  

@@ -713,17 +713,20 @@ static char * htxt_multicursor [] = {
 "\01Bdelete_previous_character()\01A\n",
 "\01Bdelete_next_word()\01A\n",
 "\01Bdelete_previous_word()\01A\n",
-"\01Bdelete_to_start_of_line()\01A\n",
-"\01Bdelete_to_end_of_line()\01A\n",
 "\01Bforward_character()\01A\n",
 "\01Bforward_paragraph()\01A\n",
 "\01Bforward_word()\01A\n",
+"\01Bbackward_character()\01A\n",
+"\01Bbackward_word()\01A\n",
+"\01Bbackward_paragraph()\01A\n",
 "\01Binsert_string()\01A\n",
 "\01Bself_insert()\01A\n",
 "\01Bnewline()\01A\n",
 "\01Bprocess_tab()\01A\n",
 "\01Bprocess_up()\01A\n",
 "\01Bprocess_down()\01A\n",
+"\01Bbeginning_of_line()\01A\n",
+"\01Bend_of_line()\01A\n",
 NULL
 };
 
@@ -5156,8 +5159,6 @@ static char * htxt_version [] = {
 "not obligated to do so. If you do not wish to do so, delete this ",
 "exception statement from your version. ",
 "\n\n",
-"http://creativecommons.org/licenses/by-sa/3.0/ ",
-"\n\n",
 "Some files from the EditorConfig C Library are used, which are distributed ",
 "under the Simplified BSD license. ",
 "\n\n",
@@ -5468,12 +5469,6 @@ static char * htxt_distribution [] = {
 "\n\n",
 "Copyright (C) 2021, Red Hat, Inc. ",
 "GPL-2.0-only ",
-"\n\n",
-"Some icons are from the Common Desktop Environment (CDE), by The Open Group, ",
-"released under the terms of the Creative Commons Attribution Share Alike 3.0 ",
-"license. ",
-"\n\n",
-"http://creativecommons.org/licenses/by-sa/3.0/ ",
 "\n\n",
 "EditorConfig ",
 "\n\n",
@@ -5849,4 +5844,5 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev 972fd70 2023-07-01\n";
+static const char * NEditVersion = "XNEdit 1.5.0\nJul 9, 2023\n";
+#define XNEDIT_IS_RELEASE
