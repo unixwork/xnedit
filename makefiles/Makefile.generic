@@ -110,6 +110,9 @@ AR=ar
 # CDE               Enable drag'n'drop support for CDE. This requires
 #                   additional CDE CFLAGS/LDFLAGS.
 #
+# DISABLE_MULTICURSOR Disable multicursor support
+#
+#
 # Some compilers need to be told to operate in ansi-standard mode, some have
 # different levels of optimization that you can select (optimization improves
 # syntax highlighting performance.   You will also often need to add locations

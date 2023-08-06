@@ -220,10 +220,12 @@ static void focusOutAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
+#ifndef DISABLE_MULTICURSOR
 static void addCursorUpAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void addCursorDownAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
+#endif
 
 static void checkMoveSelectionChange(Widget w, XEvent *event, int startPos,
 	String *args, Cardinal *nArgs);
@@ -353,7 +355,9 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfRight: forward_character()\n"
 
     /* Up */
+#ifndef DISABLE_MULTICURSOR
     "Ctrl Super<KeyPress>osfUp: add_cursor_up()\n"
+#endif
     "Alt Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfUp: backward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfUp: process_shift_up(\"rect\")\n"
@@ -364,7 +368,9 @@ static char defaultTranslations[] =
     "~Alt~Shift~Ctrl~Meta<KeyPress>osfUp: process_up()\n"
 
     /* Down */
+#ifndef DISABLE_MULTICURSOR
     "Ctrl Super<KeyPress>osfDown: add_cursor_down()\n"
+#endif
     "Alt Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Meta Shift Ctrl<KeyPress>osfDown: forward_paragraph(\"extend\", \"rect\")\n"
     "Alt Shift<KeyPress>osfDown: process_shift_down(\"rect\")\n"
@@ -442,7 +448,9 @@ static char defaultTranslations[] =
     "Meta Ctrl<Btn1Down>: move_destination()\n"
     "Shift Ctrl<Btn1Down>: extend_start(\"rect\")\n"
     "Shift<Btn1Down>: extend_start()\n"
+#ifndef DISABLE_MULTICURSOR
     "Ctrl<Btn1Down>: grab_focus(\"mc\")\n"
+#endif
     "<Btn1Down>: grab_focus()\n"
     "Button1 Ctrl<MotionNotify>: extend_adjust(\"rect\")\n"
     "Button1~Ctrl<MotionNotify>: extend_adjust()\n"
@@ -617,10 +625,12 @@ static XtActionsRec actionsList[] = {
     {"mouse_pan", mousePanAP},
     {"zoom_in", zoomInAP},
     {"zoom_out", zoomOutAP},
+#ifndef DISABLE_MULTICURSOR
     {"add_cursor_up", addCursorUpAP},
     {"add-cursor-up", addCursorUpAP},
     {"add_cursor_down", addCursorDownAP},
     {"add-cursor-down", addCursorDownAP}
+#endif
 };
 
 /* The motif text widget defined a bunch of actions which the nedit text
@@ -3496,6 +3506,7 @@ static void processShiftDownAP(Widget w, XEvent *event, String *args,
     callCursorMovementCBs(w, event);
 }
 
+#ifndef DISABLE_MULTICURSOR
 static void addCursorUpAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
@@ -3547,6 +3558,7 @@ static void addCursorDownAP(Widget w, XEvent *event, String *args,
     
     callCursorMovementCBs(w, event);
 }
+#endif
 
 static void beginningOfLineAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
