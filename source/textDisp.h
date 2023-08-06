@@ -123,6 +123,7 @@ typedef struct _textDisp {
     XftDraw *d;
     int top, left, width, height, lineNumLeft, lineNumWidth;
     textCursor *cursor;
+    textCursor *newcursor;
     textCursor *multicursor;
     size_t mcursorAlloc;
     size_t mcursorSize;

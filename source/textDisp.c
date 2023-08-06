@@ -321,7 +321,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->multicursor[0].x = -100;
     textD->multicursor[0].y = -100;
     
-    textD->cursor = &textD->multicursor[0];
+    textD->cursor = textD->multicursor;
+    textD->newcursor = textD->multicursor;
     
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
@@ -1021,6 +1022,7 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     }
     textCursor newCursor = TextDPos2Cursor(textD, newMultiCursorPos);
     textD->multicursor[mcInsertPos] = newCursor;
+    textD->newcursor = &textD->multicursor[mcInsertPos];
     
     textD->cursor = textD->multicursor;
     
@@ -1053,11 +1055,13 @@ void TextDRemoveCursor(textDisp *textD, int cursorIndex) {
     }
     textD->mcursorSize--;
     textD->mcursorSizeReal = textD->mcursorSize;
-    
+     
     if(textD->highlightCursorLine) {
         // redraw entire line
         redisplayLine(textD, cursorLine, 0, INT_MAX, 0, INT_MAX);
     }
+    
+    textD->newcursor = textD->cursor;
 }
 
 void TextDSetCursors(textDisp *textD, size_t *cursors, size_t ncursors) {
@@ -1080,6 +1084,7 @@ int TextDClearMultiCursor(textDisp *textD) {
             textD->multicursor = NEditRealloc(textD->multicursor, MCURSOR_ALLOC * sizeof(textCursor));
         }
         textD->cursor = textD->multicursor;
+        textD->newcursor = textD->multicursor;
         return 1;
     }
     return 0;
@@ -1095,6 +1100,7 @@ void TextDCheckCursorDuplicates(textDisp *textD) {
         }
     }
     textD->cursor = textD->multicursor;
+    textD->newcursor = textD->multicursor;
     
     if(textD->highlightCursorLine) {
         size_t lastPos = textD->multicursor[textD->mcursorSize-1].cursorPos;

@@ -841,6 +841,15 @@ static Cursor empty_cursor = 0;
 
 #define FALLBACK_FONTNAME "Monospace:size=10"
 
+// workaround: clicking somewhere and pasting text with ctrl+v can accidentally
+// lead to ctrl+btn1, v which would add a new cursor and pasting text twice
+// to prevent this, we save the time of the last ctrl key press
+// and check this when pasting text
+// (works only with standard translations)
+static Time mod_ctrl_last_event = 0;
+static Time mod_ctrl_mc_last_event = 0;
+
+
 /*
  * must be called at program start
  */
@@ -1873,7 +1882,7 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
 {
     XButtonEvent *e = &event->xbutton;
     textDisp *textD = ((TextWidget)w)->text.textD;
- 
+    
     /* Get input focus */
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
 
@@ -1884,6 +1893,7 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
         checkAutoShowInsertPos(w);
     } else if (!strcmp(args[0], "mc")) {
         int cursorIndex = TextDAddCursor(textD, cursorPos);
+        mod_ctrl_mc_last_event = mod_ctrl_last_event;
         if(cursorIndex >= 0) {
             TextDBlankCursor(textD);
             TextDRemoveCursor(textD, cursorIndex);
@@ -2452,6 +2462,11 @@ static void mousePanAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void pasteClipboardAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
+    if(mod_ctrl_last_event == mod_ctrl_mc_last_event) {
+        textDisp *textD = ((TextWidget)w)->text.textD;
+        TextDSetInsertPosition(textD, textD->newcursor->cursorPos);
+    }
+    
     if (hasKey("rect", args, nArgs))
     	TextColPasteClipboard(w, event->xkey.time);
     else
@@ -2501,7 +2516,7 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 #else
     int status;
 #endif
-    XKeyEvent *e = &event->xkey;
+    XKeyEvent *e = &event->xkey;   
     char chars[512];
     KeySym keysym;
     int nChars;
@@ -2512,6 +2527,9 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (nChars == 0 || status == XLookupNone ||
      	status == XLookupKeySym || status == XBufferOverflow)
     {
+        if(keysym == XK_Control_L || keysym == XK_Control_R) {
+            mod_ctrl_last_event = e->time;
+        }
         return;
     }
     
