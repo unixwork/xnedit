@@ -17,7 +17,7 @@
 #
 # Syntax: $ makeAppDir.sh XNEdit source/xnedit resources/desktop Linux [32|64]
 #
-ver="2023-07-02"
+ver="2023-08-23"
 echo "makeAppDir.sh v.${ver}: generating the AppDir for a binary"
 flag=0 # check for common external dependancy compliance
 for extCmd in basename chmod cp getconf ls mkdir mv rm uname wget ; do
@@ -89,6 +89,7 @@ cp -a CHANGELOG LICENSE README.md ReleaseNotes ${DIR} # text files
 #cp -a ${RES}/${NAME}.desktop ${DIR} # freedesktop file
 cp -a ${BIN} ${DIR}/usr/bin # binaries
 cp -a source/xnc${EXT} ${DIR}/usr/bin # binaries
+date=`date -I`
 if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) then # skip on ARM&RISC-V
    echo "makeAppDir.sh: Generating the AppImage for $BIN ..."
    if (test "$BIT" = "64") then
@@ -96,36 +97,38 @@ if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) t
          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
          chmod +x linuxdeploy-x86_64.AppImage
       fi
-      linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop
+      linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage
+      linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
       echo ""
+      mv ${APP}-*x86_64.AppImage ${APP}-${date}-x86_64.AppImage
       ls -l ${APP}-*-x86_64.AppImage
       #mv ${APP}-*-x86_64.AppImage ../${APP}-x86_64.AppImage
       #rm linuxdeploy-x86_64.AppImage
-      echo "Done"
    fi
    if (test "$BIT" = "32") then
       if (! test -x linuxdeploy-i386.AppImage) then
          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage"
          chmod +x linuxdeploy-i386.AppImage
       fi
-      linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop
+      linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage
+      linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
       echo ""
+      mv ${APP}-*i386.AppImage ${APP}-${date}-i386.AppImage
       ls -l ${APP}-*-i386.AppImage
       #mv ${APP}-*-i386.AppImage ../${APP}-i386.AppImage
       #rm linuxdeploy-i386.AppImage
-      echo "Done"
    fi
+   #rm linuxDeployLog$date.txt
+   echo "Done"
 fi
 #rm -rf ${DIR}
