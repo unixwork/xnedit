@@ -5447,11 +5447,11 @@ Widget CreateBGMenu(WindowInfo *window)
        when it failed often in development, and certainly ignores the ~ syntax
        in translation event specifications. */
     
-    // setting XmNmenuPost seems to be unnecessary and the bg menu doesn't
+    // setting XmNmenuPost seems to be unnecessary and the bg menu doesn't work
     // if numlock is enabled
     // not setting XmNmenuPost will fix that
     //XtSetArg(args[0], XmNmenuPost, GetPrefBGMenuBtn());
-    return CreatePopupMenu(window->textArea, "bgMenu", args, 1);
+    return CreatePopupMenu(window->textArea, "bgMenu", args, 0);
 }
 
 /*
