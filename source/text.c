@@ -4302,7 +4302,16 @@ static int deletePendingSelection(Widget w, XEvent *event)
     textBuffer *buf = textD->buffer;
 
     if (((TextWidget)w)->text.textD->buffer->primary.selected) {
+        // get the starting position of the last selected line
+        int selectionEndLine = BufStartOfLine(textD->buffer, textD->buffer->primary.end);
+        selectionEndLine = textD->buffer->primary.end - textD->buffer->primary.start;
+        
 	BufRemoveSelected(buf);
+        // re-set cursor position to the previous selected line, to 
+        // make sure that TextDSetInsertPosition detects a change of the
+        // cursor line
+        textD->cursor->cursorPos = selectionEndLine;
+        
 	TextDSetInsertPosition(textD, buf->cursorPosHint);
     	checkAutoShowInsertPos(w);
     	callCursorMovementCBs(w, event);
