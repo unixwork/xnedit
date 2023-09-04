@@ -230,6 +230,9 @@ typedef struct _textDisp {
     Boolean highlightCursorLine;
     Boolean fixLeftClipAfterResize;     /* after resize, left clip could be
                                            in the middle of a glyph */
+    Boolean redrawCursorLine;           /* If true, redraw the complete in
+                                           line in some functions, when it
+                                           contains the cursor */
     graphicExposeTranslationEntry *graphicsExposeQueue;
 } textDisp;
 

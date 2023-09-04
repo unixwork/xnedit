@@ -301,6 +301,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->indentRainbowColors = NULL;
     textD->highlightCursorLine = highlightCursorLine;
     textD->ansiColorList = ansiColorList;
+    textD->redrawCursorLine = False;
     TextDSetAnsiColors(textD, ansiColors);
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
@@ -888,10 +889,11 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
     if(textD->highlightCursorLine) {
         oldLineStart = BufStartOfLine(textD->buffer, textD->cursor->cursorPos);
         newLineStart = BufStartOfLine(textD->buffer, newPos);
-        if(oldLineStart != newLineStart || textD->mcursorOn) {
+        if(oldLineStart != newLineStart || textD->mcursorOn || textD->redrawCursorLine) {
             hiline = True;
             oldLineEnd = BufEndOfLine(textD->buffer, textD->cursor->cursorPos);
             newLineEnd = BufEndOfLine(textD->buffer, newPos);
+            textD->cursor->cursorPos = -1;
         }
     }
     
