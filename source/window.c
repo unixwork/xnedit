@@ -2967,7 +2967,9 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
     SetWindowModified(window, TRUE);
 
     /* Update # of bytes, and line and col statistics */
-    UpdateStatsLine(window);
+    if(!window->undo_batch_begin) {
+        UpdateStatsLine(window);
+    }
     
     /* Check if external changes have been made to file and warn user */
     CheckForChangesToFile(window);
@@ -2990,6 +2992,7 @@ static void endModifyCB(void *cbArg) {
     }
     window->undo_batch_begin = NULL;
     window->undo_batch_count = 0;
+    UpdateStatsLine(window);
 }
 
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData) 
