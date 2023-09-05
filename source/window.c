@@ -3320,7 +3320,7 @@ void UpdateStatsLine(WindowInfo *window)
        affects overall editor perfomance.  Only update if the line is on. */ 
     if (!window->showStats)
         return;
-    
+     
     /* Compose the string to display. If line # isn't available, leave it off */
     pos = TextGetCursorPos(window->lastFocus);
     string = (char*)NEditMalloc(strlen(window->filename) + strlen(window->path) + 45);

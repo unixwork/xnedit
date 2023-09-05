@@ -3063,9 +3063,11 @@ static void forwardCharacterAP(Widget w, XEvent *event, String *args,
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
+        //callCursorMovementCBs(w, event);
     }
     textD->mcursorSize = mcursorSize;
+    // better to call this outside of the mcursor loop
+    callCursorMovementCBs(w, event);
        
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3104,9 +3106,9 @@ static void backwardCharacterAP(Widget w, XEvent *event, String *args,
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3162,7 +3164,6 @@ static void forwardWordAP(Widget w, XEvent *event, String *args,
         
         TextDSetInsertPosition(textD, pos);
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
         
         if(notMoved) {
             // if a cursor was not moved, we have to make sure, that another
@@ -3178,6 +3179,7 @@ static void forwardWordAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
 
     checkAutoShowInsertPos(w);
     
@@ -3219,7 +3221,7 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
         TextDSetInsertPosition(textD, pos);
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
         
-        callCursorMovementCBs(w, event);
+        //callCursorMovementCBs(w, event);
         
         if(notMoved) {
             // check for cursor dup
@@ -3235,6 +3237,7 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3279,7 +3282,7 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
         }
         TextDSetInsertPosition(textD, min(pos+1, buf->length));
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
+        //callCursorMovementCBs(w, event);
         
         if(notMoved) {
             // if a cursor was not moved, we have to make sure, that another
@@ -3295,6 +3298,7 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3341,7 +3345,7 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
         }
         TextDSetInsertPosition(textD, parStart);
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
+        //callCursorMovementCBs(w, event);
         
         if(notMoved) {
             // check for cursor dup
@@ -3357,6 +3361,7 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3411,7 +3416,6 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
         checkAutoShowInsertPos(w);
-        callCursorMovementCBs(w, event);
         
         // unlike other process<> functions, we don't remove the possible
         // cursor duplicates here and use TextDCheckCursorDuplicates later
@@ -3420,6 +3424,7 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     }
     textD->mcursorSize = mcursorSize;
     textD->mcursorSizeReal = textD->mcursorSize;
+    callCursorMovementCBs(w, event);
        
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3468,7 +3473,6 @@ static void processDownAP(Widget w, XEvent *event, String *args,
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
         
         if(notMoved) {
             // if a cursor was not moved, we have to make sure, that another
@@ -3484,6 +3488,7 @@ static void processDownAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
     if(notMoved) {
@@ -3581,10 +3586,10 @@ static void beginningOfLineAP(Widget w, XEvent *event, String *args,
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
         textD->cursor->cursorPreferredCol = 0;
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
 
     checkAutoShowInsertPos(w);
 }
@@ -3609,10 +3614,10 @@ static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         }
         
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
-        callCursorMovementCBs(w, event);
         textD->cursor->cursorPreferredCol = -1;
     }
     textD->mcursorSize = mcursorSize;
+    callCursorMovementCBs(w, event);
     
     checkAutoShowInsertPos(w);
 }
