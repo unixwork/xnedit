@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+version 1.5.1 (2023-09-06)
+--------------------------
+
+ - added DISABLE_MULTICURSOR compile option
+ - fixed potential crash caused by uninitialized memory access in CreateBGMenu
+ - fixed unnecessary stat line updates when using multiple cursors
+ - fixed cursor line highlighting bug when removing a selection
+
 version 1.5.0 (2023-07-09)
 --------------------------
  
