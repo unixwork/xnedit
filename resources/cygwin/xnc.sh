@@ -1,5 +1,5 @@
 #!/bin/sh
-# xnc.sh: Copyright 2021 Valerio Messina GNU GPL v2+
+# xnc.sh: Copyright 2021-2023 Valerio Messina GNU GPL v2+
 # xnc.sh is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 
 # xnc.sh: create the environment to run XNEdit out of Cygwin
 # Note: to start XNedit run 'xnedit.bat' instead of this
-ver="v0.02.0 2021/08/05"
+ver="v0.02.01 2023/09/07"
 echo "Starting 'xnc.sh' ..."
 echo "Bash par1:$1" # xnc.sh receive max one arg
 
@@ -51,7 +51,8 @@ echo "HOME=$HOME"
 # and `autoload.nm' (previous name `.neditmacro')
 #export XNEDIT_HOME="$ProgramFiles/xnedit_64bit"
 #export XNEDIT_HOME=/cygdrive/c/installer/xnedit_64bit
-export XNEDIT_HOME=$XNEditDir/.xnedit
+#export XNEDIT_HOME=$XNEditDir/.xnedit
+export XNEDIT_HOME=$HOME/.xnedit
 echo "XNEDIT_HOME=$XNEDIT_HOME"
 
 # to find the display
