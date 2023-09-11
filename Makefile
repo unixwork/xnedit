@@ -70,11 +70,11 @@ install: $(INSTALL_FILES)
 	sed s:%PREFIX%:$(PREFIX):g resources/desktop/xnedit.desktop.template > $(DESTDIR)$(PREFIX)/share/applications/xnedit.desktop
 
 
-# On Cygwin, you can customize 'bin' and 'pkg' than run 'xnedit_pkg'
+# On Cygwin, you can customize 'bin' and 'pkg' than run 'xneditPkg.sh'
 cygwin-install: $(INSTALL_FILES)
-	@echo "Cygwin: You can change installation path in 'resources/cygwin/xnedit_pkg:pkg'"
+	@echo "Cygwin: You can change installation path in 'resources/cygwin/xneditPkg.sh:pkg'"
 	@read -p "ENTER to continue"
-	@cd resources/cygwin; ./xnedit_pkg
+	@cd resources/cygwin; ./xneditPkg.sh
 
 #
 # The following is for creating binary packages of NEdit.
