@@ -138,7 +138,8 @@ Steve LoBasso and Alexander Mai.
 
 Additional NEdit patches by: Fredrik Jönsson, Per Grahn.
 
-XNEdit contributions: Laszlo Ersek, Mike Becker and Peter Mühlenpfordt.
+XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt and
+Valerio Messina.
 
 The regular expression matching routines used in NEdit are adapted (with
 permission) from original code written by Henry Spencer at the University of
