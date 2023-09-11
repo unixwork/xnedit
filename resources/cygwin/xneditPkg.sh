@@ -1,6 +1,6 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021-2023 Valerio Messina GNU GPL v2+
-# xnedit_pkg is part of XNEdit multi-purpose text editor:
+# xneditPkg.sh: Copyright 2021-2023 Valerio Messina GNU GPL v2+
+# xneditPkg.sh is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,19 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-# xnedit_pkg: create a Win portable package for XNEdit with all dependencies
+# xneditPkg.sh: create a Win portable package for XNEdit with all dependencies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
 # Note: if need a different installation path than $PROGRAMFILES change 'pkg'
 #       eg. "/cygdrive/c/installer/xnedit"
 # Note: default assume jut built binaries path is "../../source", to change
 # you can force the path filling 'bin', eg. bin="$HOME/c/xnedit/source"
 bin=""
-pkg="/cygdrive/c/installer/xnedit"
+pkg="/cygdrive/d/installer/xnedit"
+pkg="/cygdrive/d/ProgramFiles/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2023/05/15"
-echo "xnedit_pkg $ver create a Win package for XNEdit"
+ver="v0.04.01 2023/09/07"
+echo "xneditPkg.sh $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
 for extCmd in awk bash basename cat ctags cygstart dirname dos2unix grep mktemp realpath sed sleep strip test uname which ; do
@@ -86,6 +87,8 @@ echo "Dependencies from  : $root"
 echo "Package created in : $pkg"
 echo "Package created in : $pkgWin"
 echo "Debug is (1=active): $dbg"
+read -p "Press Return to start ..."
+echo ""
 echo "Packaging 'XNEdit' v$xnVer for Win$bit ..."
 cd "$bin"
 
