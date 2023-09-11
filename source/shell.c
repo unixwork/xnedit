@@ -194,7 +194,7 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
     int left, right, flags = 0;
     char *subsCommand, fullName[MAXPATHLEN];
     int pos, line, column;
-    char lineNumber[11];
+    char lineNumber[16];
 
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
@@ -213,9 +213,10 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
        for # in the shell command */
     strcpy(fullName, window->path);
     strcat(fullName, window->filename);
-    TextPosToLineAndCol(window->lastFocus, pos, &line, &column);
-    sprintf(lineNumber, "%d", line);
-    
+    if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
+        line = BufCountLines(window->buffer, 0, pos) + 1;
+    }
+    snprintf(lineNumber, 16, "%d", line);
     subsCommand = shellCommandSubstitutes(command, fullName, lineNumber);
     if (subsCommand == NULL)
     {
@@ -260,8 +261,8 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
     int left, right, insertPos;
     char *subsCommand, fullName[MAXPATHLEN];
     int pos, line, column;
-    char lineNumber[11];
-
+    char lineNumber[16];
+    
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
     	XBell(TheDisplay, 0);
@@ -287,8 +288,10 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
        for # in the shell command */
     strcpy(fullName, window->path);
     strcat(fullName, window->filename);
-    TextPosToLineAndCol(window->lastFocus, pos, &line, &column);
-    sprintf(lineNumber, "%d", line);
+    if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
+        line = BufCountLines(window->buffer, 0, pos) + 1;
+    }
+    snprintf(lineNumber, 16, "%d", line);
     
     subsCommand = shellCommandSubstitutes(cmdText, fullName, lineNumber);
     if (subsCommand == NULL)
@@ -321,7 +324,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     char *subsCommand, fullName[MAXPATHLEN];
     int left = 0, right = 0, textLen;
     int pos, line, column;
-    char lineNumber[11];
+    char lineNumber[16];
     WindowInfo *inWindow = window;
     Widget outWidget;
 
@@ -336,8 +339,10 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     strcpy(fullName, window->path);
     strcat(fullName, window->filename);
     pos = TextGetCursorPos(window->lastFocus);
-    TextPosToLineAndCol(window->lastFocus, pos, &line, &column);
-    sprintf(lineNumber, "%d", line);
+    if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
+        line = BufCountLines(window->buffer, 0, pos) + 1;
+    }
+    snprintf(lineNumber, 16, "%d", line);
     
     subsCommand = shellCommandSubstitutes(command, fullName, lineNumber);
     if (subsCommand == NULL)
@@ -724,7 +729,8 @@ static void bannerTimeoutProc(XtPointer clientData, XtIntervalId *id)
         message[MAX_TIMEOUT_MSG_LEN - 1] = '\0';
     } else
     {
-        sprintf(message,
+        snprintf(message,
+                MAX_TIMEOUT_MSG_LEN,
                 "Shell Command in Progress -- Press %s to Cancel",
                 cCancel);
     }
