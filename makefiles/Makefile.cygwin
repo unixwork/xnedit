@@ -5,10 +5,10 @@
 CC=cc
 AR=ar
 
-CFLAGS=-O -std=gnu99 -I/usr/X11R6/include -I/usr/include/X11 -DUSE_DIRENT -DUSE_LPR_PRINT_CMD $(shell pkg-config --cflags xft fontconfig)
+CFLAGS=-O -std=gnu99 -I/usr/X11R6/include -I/usr/include/X11 -DUSE_LPR_PRINT_CMD $(shell pkg-config --cflags xft fontconfig) -DXNE_TEXTFIELD
 
 ARFLAGS=-urs
 
-LIBS=-L/usr/X11R6/lib -liconv -lpcre -lpthread -lXm -lXt -lX11 -lXrender -lXpm -lm $(shell pkg-config --libs xft fontconfig)
+LIBS=-L/usr/X11R6/lib -liconv -lpcre -lpthread -lXm -lXt -lX11 -lXrender -lm $(shell pkg-config --libs xft fontconfig)
 
 include Makefile.common

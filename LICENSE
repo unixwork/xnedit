@@ -297,11 +297,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Some icons are from the Common Desktop Environment (CDE), by The Open Group,
-released under the terms of the Creative Commons Attribution Share Alike 3.0
-license.
 
-http://creativecommons.org/licenses/by-sa/3.0/
+#
+# OCaml Syntax Highlighting
+#
+Copyright (C) 2021, Red Hat, Inc.
+GPL-2.0-only
 
 #
 # EditorConfig

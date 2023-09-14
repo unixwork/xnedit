@@ -44,6 +44,7 @@
 #include "../util/DialogF.h"
 #include "../util/managedList.h"
 #include "../util/nedit_malloc.h"
+#include "../util/colorchooser.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -250,37 +251,49 @@ static char *DefaultPatternSets[] = {
     "C++:1:0{\n\
 	comment:\"/\\*\":\"\\*/\"::Comment::\n\
 	cplus comment:\"//\":\"(?<!\\\\)$\"::Comment::\n\
-	string:\"L?\"\"\":\"\"\"\":\"\\n\":String::\n\
+	string:\"(?:L|u|U|u8|R)?\"\"\":\"\"\"\":\"\\n\":String::\n\
 	preprocessor line:\"^\\s*#\\s*(?:include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma)>\":\"$\"::Preprocessor::\n\
 	string escape chars:\"\\\\(?:.|\\n)\":::String1:string:\n\
 	preprocessor esc chars:\"\\\\(?:.|\\n)\":::Preprocessor1:preprocessor line:\n\
 	preprocessor comment:\"/\\*\":\"\\*/\"::Comment:preprocessor line:\n\
 	preproc cplus comment:\"//\":\"$\"::Comment:preprocessor line:\n\
-    	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
-    	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
-	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__>\":::Preprocessor::\n\
-	preprocessor keywords c++11:\"<__func__|__STDC_HOSTED__|_Pragma>\":::Preprocessor::\n\
-	character constant:\"L?'\":\"'\":\"[^\\\\][^']\":Character Const::\n\
-	numeric constant:\"(?<!\\Y)(?:(?:0(?:x|X)[0-9a-fA-F]*)|(?:(?:[0-9]+\\.?[0-9]*)|(?:\\.[0-9]+))(?:(?:e|E)(?:\\+|-)?[0-9]+)?)(?:L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
-	storage keyword:\"<(?:class|typename|typeid|template|friend|virtual|inline|explicit|operator|public|private|protected|const|extern|auto|register|static|mutable|unsigned|signed|volatile|char|double|float|int|long|short|bool|wchar_t|void|typedef|struct|union|enum|asm|export)>\":::Storage Type::D\n\
-	storage keyword c++11:\"<(?:override|final|decltype|constexpr|noexcept)>\":::Storage Type::D\n\
-	keyword:\"<(?:new|delete|this|return|goto|if|else|case|default|switch|break|continue|while|do|for|try|catch|throw|sizeof|true|false|namespace|using|dynamic_cast|static_cast|reinterpret_cast|const_cast)>\":::Keyword::D\n\
-	keyword c++11:\"<(?:nullptr|static_assert|alignof)>\":::Keyword::D\n\
+	preprocessor string:\"(?:L|u|U|u8|R)?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
+	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
+	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC|STDC_HOSTED|func)__>\":::Preprocessor::\n\
+	numeric constant:\"(?<!\\Y)(?:(?:0b[0-1][0-1']*)|(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
+	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
+	keywords 1 - storage:\"<(?:register|static|extern|thread_local|mutable)>\":::Storage Type::D\n\
+	keywords 2 - declerations:\"<(?:class|typename|template|friend|virtual|inline|explicit|operator|public|private|protected|const|volatile|typedef|struct|union|enum|asm|override|final|decltype|constexpr|constinit|consteval|noexcept|export|import|module|using|namespace|concept|requires)>\":::Keyword::D\n\
+	keywords 3 - types:\"<(?:auto|unsigned|signed|char|double|float|int|long|short|bool|wchar_t|void|nullptr_t|char8_t|char16_t|char32_t)>\":::Storage Type::D\n\
+	keywords 4 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for|try|catch|throw)>\":::Keyword::D\n\
+	keywords 5 - misc:\"<(?:new|delete|this|sizeof|true|false|dynamic_cast|static_cast|reinterpret_cast|const_cast|nullptr|static_assert|alignof|alignas|typeid|default)>\":::Keyword::D\n\
+	keywords 6 - alternate operators:\"<(?:bitand|bitor|and|and_eq|compl|not|not_eq|or|or_eq|xor|xor_eq)>\":::Operator::D\n\
+	keywords 7 - co-routines:\"<co_(?:await|return|yield)>\":::Keyword::D\n\
 	braces:\"[{}]\":::Keyword::D}",
     "C:1:0 {\n\
     	comment:\"/\\*\":\"\\*/\"::Comment::\n\
-	string:\"L?\"\"\":\"\"\"\":\"\\n\":String::\n\
+        c99 comment:\"//\":\"(?<!\\\\)$\"::Comment::\n\
+	string:\"(?:L|u|U|u8)?\"\"\":\"\"\"\":\"\\n\":String::\n\
 	preprocessor line:\"^\\s*#\\s*(?:include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma)>\":\"$\"::Preprocessor::\n\
     	string escape chars:\"\\\\(?:.|\\n)\":::String1:string:\n\
     	preprocessor esc chars:\"\\\\(?:.|\\n)\":::Preprocessor1:preprocessor line:\n\
     	preprocessor comment:\"/\\*\":\"\\*/\"::Comment:preprocessor line:\n\
     	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
     	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
-	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__>\":::Preprocessor::\n\
-	character constant:\"L?'\":\"'\":\"[^\\\\][^']\":Character Const::\n\
-	numeric constant:\"(?<!\\Y)(?:(?:0(?:x|X)[0-9a-fA-F]*)|(?:(?:[0-9]+\\.?[0-9]*)|(?:\\.[0-9]+))(?:(?:e|E)(?:\\+|-)?[0-9]+)?)(?:L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
-    	storage keyword:\"<(?:const|extern|auto|register|static|unsigned|signed|volatile|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
-    	keyword:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for|sizeof)>\":::Keyword::D\n\
+	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__|_Pragma>\":::Preprocessor::\n\
+	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
+	numeric constant:\"(?<!\\Y)(?:(?:0b[0-1][0-1']*)|(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
+    	keywords 1 - storage:\"<(?:extern|auto|register|static|unsigned|signed|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
+    	keywords 2 - declerations:\"<(?:const|volatile|typedef|struct|union|enum|inline|restrict)>\":::Keyword::D\n\
+    	keywords 3 - types:\"<(?:unsigned|signed|char|double|float|int|long|short|void|wchar_t|char16_t|char32_t|char8_t)>\":::Storage Type::D\n\
+    	keywords 4 - starting underscore:\"<_(?:Alignas|Alignof|Atomic|Bool|Complex|Decimal128|Decimal32|Decimal64|Generic|Imaginary|Noreturn|Satic_assert|Thread_local)>\":::Keyword::D\n\
+    	keywords 5 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for)>\":::Keyword::D\n\
+    	keywords 6 - misc:\"<(?:sizeof|asm|fortran)>\":::Keyword::D\n\
+    	keywords 7 - convenience macros:\"<(?:alignas|alignof|noreturn|static_assert|thread_local)>\":::Keyword::D\n\
+    	keywords 8 - convenience type macros:\"<(?:bool|complex|imaginary)>\":::Storage Type::D\n\
+    	keywords 9 - atomic macros:\"<atomic_(?:[us]?char|double|float|[u]?int|u?l?long|u?short|bool)>\":::Storage Type::D\n\
+        keywords 10 - convenience posix types:\"<[a-zA-Z0-9_]*_t>\":::Storage Type::D\n\
+	keywords 11 - convenience constants:\"<[A-Z0-9_]*>\":::Preprocessor2::D\n\
     	braces:\"[{}]\":::Keyword::D}",
     "CSS:1:0{\n\
 	comment:\"/\\*\":\"\\*/\"::Comment::\n\
@@ -369,7 +382,9 @@ static char *DefaultPatternSets[] = {
 	long const:\"<(?i[\\d]+L)>\":::Numeric Const::\n\
 	decimal const:\"(?<!\\Y)(?i\\d+(?:\\.\\d*)?(?:E[+\\-]?\\d+)?[FD]?|\\.\\d+(?:E[+\\-]?\\d+)?[FD]?)(?!\\Y)\":::Numeric Const::\n\
 	include:\"<(?:import|package)>\":\";\":\"\\n\":Preprocessor::\n\
-	classdef:\"<(?:class|interface)>\\s*\\n?\\s*([\\l_]\\w*)\":::Keyword::\n\
+    modules decl:\"<(?:(?:open )?module)>\":::Preprocessor::\n\
+    modules def:\"<(?:exports|uses|requires|provides)>\":\";\":\"\\n\":Preprocessor::\n\
+	classdef:\"<(?:class|interface|record)>\\s*\\n?\\s*([\\l_]\\w*)\":::Keyword::\n\
 	classdef name:\"\\1\":\"\"::Storage Type:classdef:C\n\
 	extends:\"<(?:extends)>\":\"(?=(?:<implements>|[{;]))\"::Keyword::\n\
 	extends argument:\"<[\\l_][\\w\\.]*(?=\\s*(?:/\\*.*\\*/)?(?://.*)?\\n?\\s*(?:[,;{]|<implements>))\":::Storage Type:extends:\n\
@@ -401,7 +416,7 @@ static char *DefaultPatternSets[] = {
 	newarray type:\"\\1\":\"\"::Storage Type:newarray:C\n\
 	constructor def:\"<(abstract|final|native|private|protected|public|static|synchronized)\\s*[\\n|\\s]\\s*[\\l_]\\w*\\s*\\n?\\s*(?=\\()\":::Subroutine::\n\
 	constructor def modifier:\"\\1\":\"\"::Keyword:constructor def:C\n\
-	keyword - modifiers:\"<(?:abstract|final|native|private|protected|public|static|transient|synchronized|volatile)>\":::Keyword::\n\
+	keyword - modifiers:\"<(?:abstract|final|sealed|native|private|protected|public|static|transient|synchronized|volatile|var)>\":::Keyword::\n\
 	keyword - control flow:\"<(?:catch|do|else|finally|for|if|return|switch|throw|try|while)>\":::Keyword::\n\
 	keyword - calc value:\"<(?:new|super|this)>\":::Keyword::\n\
 	keyword - literal value:\"<(?:false|null|true)>\":::Numeric Const::\n\
@@ -490,6 +505,50 @@ static char *DefaultPatternSets[] = {
 	label:\"<goto>|(^[ \\t]*[A-Za-z_][A-Za-z0-9_]*[ \\t]*:)\":::Flag::D\n\
 	braces:\"[{}]\":::Keyword::D\n\
 	markers:\"(?<!\\Y)(%\\{|%\\}|%%)(?!\\Y)\":::Flag::D}",
+    "Lua:1:0{\n\
+	String:\"'\":\"'\":\"\\n\":String::\n\
+	String2:\"\"\"\":\"\"\"\":\"\\n\":String::\n\
+	LongString0:\"\\[\\[\":\"\\]\\]\"::String::\n\
+	LongString1:\"\\[=\\[\":\"\\]=\\]\"::String::\n\
+	LongString2:\"\\[==\\[\":\"\\]==\\]\"::String::\n\
+	LongString3:\"\\[===\\[\":\"\\]===\\]\"::String::\n\
+	LongString4:\"\\[====\\[\":\"\\]====\\]\"::String::\n\
+	LongString5:\"\\[=====\\[\":\"\\]=====\\]\"::String::\n\
+	LongString6:\"\\[======\\[\":\"\\]======\\]\"::String::\n\
+	LongString7:\"\\[=======\\[\":\"\\]=======\\]\"::String::\n\
+	LongString8:\"\\[========\\[\":\"\\]========\\]\"::String::\n\
+	LongString9:\"\\[=========\\[\":\"\\]=========\\]\"::String::\n\
+	Array delimitors:\"\\(\\.|\\.\\)|\\[|\\]\":::Character Const::D\n\
+	Parentheses:\"\\(|\\)\":::Keyword::D\n\
+	X Parentheses:\"\\{|\\}\":::Keyword::D\n\
+	Long Comment:\"\\-\\-\\[\\[\":\"\\]\\]\"::Comment::\n\
+	Comment:\"--\":\"(?<!\\\\)$\"::Comment::\n\
+	X Numeric Values:\"<([2-9]|[12]\\d|3[0-6])#[\\d\\l]+>\":::Text Key::D\n\
+	Numeric Values:\"<\\d+(\\.\\d+)?((e|E)(\\+|-)?\\d+)?>\":::Numeric Const::D\n\
+	Hexdecimal Values:\"0(?ix)[\\dA-Fa-z]+(\\.\[\\dA-Fa-z]+)?((e|E|p|P)(\\+|-)?\\d+)?\":::Numeric Const::D\n\
+	Reserved Words 1:\"<(?:end|do|else|elseif|function|return|for|if|repeat|then|until|while|break|goto)>\":::Keyword::D\n\
+	Reserved Words 2:\"<(?:local)>\":::Identifier::D\n\
+	Labels:\"^::[A-Za-z_][A-Z-a-z0-9_]*::$\":::Label::D\n\
+	Predefined Consts:\"<(?:false|nil|true)>\":::String1::D\n\
+	Predefined Func1:\"<(?:gettable_event|settable_event)>\":::Preprocessor::D\n\
+	Basic Functions:\"<(?:assert|collectgarbage|dofile|error|getmetatable|ipairs|load|loadfile|next|pairs|pcall|print|rawequal|rawget|rawlen|rawset|select|setmetatable|tonumber|tostring|type|xpcall)>\":::Text Arg2::D\n\
+	Coroutine Manipulation:\"coroutine\\.(create|resume|yield|wrap|running|status)\":::Text Arg2::D\n\
+	Modules:\"<(?:require|package\\.loadlib|package\\.searchpath)>\":::Text Arg2::D\n\
+	Package Variables:\"package\\.(config|cpath|loaded|path|preload|searchers)\":::Warning::D\n\
+	String Manipulation:\"string\\.(?:byte|char|dump|find|format|gmatch|gsub|len|lower|match|rep|reverse|sub|upper)\":::Text Arg2::D\n\
+	Table Manipulation:\"table\\.(?:concat|insert|pack|remove|sort|unpack)\":::Text Arg2::D\n\
+	Mathematical Functions:\"math\\.(?:abs|acos|asin|atan|atan2|ceil|cos|cosh|deg|exp|floor|fmod|frexp|ldexp|log|max|min|modf|pow|rad|random|randomseed|sin|sinh|sqrt|tan|tanh)\":::Text Arg2::D\n\
+	Mathematical Variables:\"math\\.(?:huge|pi)\":::Warning::D\n\
+	Bitwise Operations:\"bit32\\.(?:arshift|band|bnot|bor|btest|bxor|extract|replace|lrotate|lshift|rrotate|rshift)\":::Text Arg2::D\n\
+	Input and Output Facilities:\"io\\.(?:close|flush|input|lines|open|output|popen|read|tmpfile|type|write)\":::Text Arg2::D\n\
+	Operating System Facilities:\"os\\.(?:clock|date|difftime|execute|exit|getenv|remove|rename|setlocale|time|tmpname)\":::Text Arg2::D\n\
+	Debug Library:\"debug\\.(?:debug|gethook|getinfo|getlocal|getmetatable|getregistry|getupvalue|getuservalue|sethook|setlocal|setmetatable|setupvalue|setuservalue|traceback|upvalueid|upvaluejoin)\":::Text Arg2::D\n\
+	Internal Variables:\"_ENV|_G|_VERSION\":::Identifier::D\n\
+	Length Operator:\"#[A-Za-z][A-Za-z0-9]*\":::Identifier::D\n\
+	Assignment:\"=\":::Plain::D\n\
+	Metamethods:\"(?:__len|__concat|__tostring|__metatable|__ipairs|__pairs|__index|__add|__sub|__mul|__div|__mod|__pow|__unm|__eq|__lt|__le|__newindex|__call|__gc|__mode)\":::Warning::D\n\
+	Operators:\"<(?:and|in|not|or)>\":::Text Arg::D\n\
+	info:\"(?# version 0.1; based_on: Lua 5.2; author/maintainer: zeromacro, zeromacro@mailbox.org)\":::Plain::D}",
     "Makefile:8:0{\n\
 	Comment:\"#\":\"$\"::Comment::\n\
 	Comment Continuation:\"\\\\\\n\":::Keyword:Comment:\n\
@@ -577,6 +636,22 @@ static char *DefaultPatternSets[] = {
         Macro Definition:\"(?<=define)\\s+\\w+\":::Subroutine1::\n\
         Custom Macro:\"\\w+(?=\\s*(?:\\\\\\n)?\\s*[\\(])\":::Subroutine1::\n\
         Variables:\"\\w+\":::Identifier1::D}",
+    "OCaml:1:0{\n\
+        comment:\"\\(\\*\":\"\\*\\)\"::Comment::\n\
+        string-literal:\"(?<!\\\\)\"\"\":\"\"\"\":\"\\n\":String::\n\
+        string-escape:\"\\\\(?:(?:(?#esc-named)[\\\\\"\"'ntbr ])|(?:(?#esc-dec)[0-9]{3})|(?:(?#esc-hex)x[0-9a-fA-F]{2})|(?:(?#esc-oct)o[0-3][0-7]{2})|(?:(?#esc-uni)u\\{[0-9a-fA-F]+\\})|(?:(?#esc-nl)\\n[ \\t]*))\":::String2:string-literal:\n\
+        label:\"[?~](?:(?#lowercase-ident)[a-z_](?:(?#ident-char)[A-Za-z0-9_'])*):\":::Label::D\n\
+        char-literal:\"'(?:(?:(?#regular-char)[^'\\\\])|\\\\(?:(?:(?#esc-named)[\\\\\"\"'ntbr ])|(?:(?#esc-dec)[0-9]{3})|(?:(?#esc-hex)x[0-9a-fA-F]{2})|(?:(?#esc-oct)o[0-3][0-7]{2})))'\":::Character Const::D\n\
+        float-literal-frac:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*(?:(?#hex-frac)\\.[0-9a-fA-F_]*)(?:(?#hex-exp)[pP][-+]?[0-9][0-9_]*)?|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*(?:(?#dec-frac)\\.[0-9_]*)(?:(?#dec-exp)[eE][-+]?[0-9][0-9_]*)?)\":::Numeric Const::D\n\
+        float-literal-exp:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*(?:(?#hex-exp)[pP][-+]?[0-9][0-9_]*)|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*(?:(?#dec-exp)[eE][-+]?[0-9][0-9_]*))\":::Numeric Const::D\n\
+        integer-literal:\"-?(?:(?:(?#hex-prefix)0[xX])(?:(?#nibble)[0-9a-fA-F])(?:(?#nibble-underscore)[0-9a-fA-F_])*|(?:(?#oct-prefix)0[oO])(?:(?#three-bits)[0-7])(?:(?#three-bits-underscore)[0-7_])*|(?:(?#bin-prefix)0[bB])(?:(?#bit)[01])(?:(?#bit-underscore)[01_])*|(?:(?#digit)[0-9])(?:(?#digit-underscore)[0-9_])*)(?:(?#int-suffix)[lLn])?\":::Numeric Const::D\n\
+        keyword-op-no-look-ahead:\"(?:'|,|::|:=|:\\>|:|;;|;|\\(|\\)|\\.\\.|\\.~|\\.|\\>\\]|\\>\\}|\\[\\<|\\[\\>|\\[\\||\\[|\\]|\\{\\<|\\{|\\|\\]|\\}|_|`)\":::Keyword::D\n\
+        keyword-op-look-ahead:\"(?:!=|#|=|\\&\\&|\\&|\\*|\\+|\\-\\.|\\-\\>|\\-|\\<\\-|\\<|\\>|\\?|\\|\\||\\||~)(?#operator-char-does-not-follow)(?!(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.]))\":::Keyword::D\n\
+        infix-symbol:\"(?:(?:(?#core-operator-char)[$&*+\\-/=>@^|])|[%<])(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])*|#(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])+\":::Operator::D\n\
+        prefix-symbol:\"!(?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])*|[?~](?:(?#operator-char)[~!?$&*+\\-/=>@^|%<:.])+\":::Operator::D\n\
+        keyword:\"<(?:and|as|asr|assert|begin|class|constraint|do|done|downto|else|end|exception|external|false|for|fun|function|functor|if|in|include|inherit|initializer|land|lazy|let|lor|lsl|lsr|lxor|match|method|mod|module|mutable|new|nonrec|object|of|open|or|private|rec|sig|struct|then|to|true|try|type|val|virtual|when|while|with)>\":::Keyword::D\n\
+        capitalized-ident:\"[A-Z](?:(?#ident-char)[A-Za-z0-9_'])*\":::Identifier::D\n\
+        lowercase-ident:\"[a-z_](?:(?#ident-char)[A-Za-z0-9_'])*\":::Identifier1::D}",
     "Pascal:1:0{\n\
 	TP Directives:\"\\{\\$\":\"\\}\"::Comment::\n\
 	Comment:\"\\(\\*|\\{\":\"\\*\\)|\\}\"::Comment::\n\
@@ -1721,6 +1796,50 @@ static int styleError(const char *stringStart, const char *stoppedAt,
     return False;
 }
 
+
+static void updateCGchooser(Widget w, XtPointer clientData,
+      XtPointer callData)
+{
+    Widget button = clientData;
+    char *str = XmTextGetString(w);
+    int dummy;
+    SetParseColorError(0);
+    Pixel color = AllocColor(button, str, &dummy, &dummy, &dummy);
+    SetParseColorError(1);
+    XtVaSetValues(button, XmNbackground, color, NULL);
+    XtFree(str);
+}
+
+static void selectColorCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    Colormap cm;
+    Pixel bg;
+    Widget textfield = NULL;
+    XtVaGetValues(w, XtNcolormap, &cm, XmNbackground, &bg, XmNuserData, &textfield, NULL);
+    
+    if(!textfield) return;
+    
+    XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
+    xcolor.pixel = bg;
+    XQueryColor(XtDisplay(w), cm, &xcolor);
+    
+    int r = xcolor.red;
+    int g = xcolor.green;
+    int b = xcolor.blue;
+    if(ColorChooser(XtParent(w), &r, &g, &b)) {
+        r /= 257;
+        g /= 257;
+        b /= 257;
+        char buf[32];
+        snprintf(buf, 32, "#%02x%02x%02x", r, g, b);
+        // alternative format
+        //snprintf(buf, 32, "rgb:%02x/%02x/%02x", r, g, b);
+        XmTextSetString(textfield, buf);
+    }
+
+}
+
 /*
 ** Present a dialog for editing highlight style information
 */
@@ -1811,16 +1930,41 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNtopOffset, HS_H_MARGIN,
 	    XmNtopWidget, HSDialog.nameW, NULL);
     XmStringFree(s1);
- 
+    
+    Widget fgColorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, form,
+            XmNrightAttachment, XmATTACH_POSITION,
+	    XmNrightPosition, HS_RIGHT_MARGIN_POS,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorLbl,
+            XmNhighlightThickness, 2,
+            XmNshadowThickness, 0,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(fgColorChooserButton, XmNactivateCallback, selectColorCB, NULL);
+    
     HSDialog.colorW = XtVaCreateManagedWidget("color", xmTextWidgetClass, form,
 	    XmNleftAttachment, XmATTACH_POSITION,
 	    XmNleftPosition, HS_LIST_RIGHT,
 	    XmNtopAttachment, XmATTACH_WIDGET,
 	    XmNtopWidget, colorLbl,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, HS_RIGHT_MARGIN_POS, NULL);
+	    XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, fgColorChooserButton, NULL);
     RemapDeleteKey(HSDialog.colorW);
     XtVaSetValues(colorLbl, XmNuserData, HSDialog.colorW, NULL);
+    XtAddCallback(HSDialog.colorW, XmNvalueChangedCallback,
+          updateCGchooser, fgColorChooserButton);
+    
+    //Dimension shadowThickness = 1;
+    //XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
+    XtVaSetValues(fgColorChooserButton,
+#if XmVersion > 2001
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, HSDialog.colorW,
+#endif
+            //XmNshadowThickness, shadowThickness,
+            XmNuserData, HSDialog.colorW, NULL);
     
     bgColorLbl = XtVaCreateManagedWidget("bgColorLbl", xmLabelGadgetClass, form,
     	    XmNlabelString,
@@ -1833,6 +1977,19 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNtopOffset, HS_H_MARGIN,
 	    XmNtopWidget, HSDialog.colorW, NULL);
     XmStringFree(s1);
+    
+    Widget bgColorChooserButton = XtVaCreateManagedWidget("colorChooser", xmPushButtonWidgetClass, form,
+            XmNrightAttachment, XmATTACH_POSITION,
+	    XmNrightPosition, HS_RIGHT_MARGIN_POS,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, bgColorLbl,
+            XmNhighlightThickness, 2,
+            XmNshadowThickness, 0,
+            XmNbackground, 0,
+            XmNlabelString, s1 = XmStringCreateSimple("    "),
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(bgColorChooserButton, XmNactivateCallback, selectColorCB, NULL);
  
     HSDialog.bgColorW = XtVaCreateManagedWidget("bgColor",
             xmTextWidgetClass, form,
@@ -1840,10 +1997,20 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNleftPosition, HS_LIST_RIGHT,
 	    XmNtopAttachment, XmATTACH_WIDGET,
 	    XmNtopWidget, bgColorLbl,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, HS_RIGHT_MARGIN_POS, NULL);
+	    XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, bgColorChooserButton, NULL);
     RemapDeleteKey(HSDialog.bgColorW);
     XtVaSetValues(bgColorLbl, XmNuserData, HSDialog.bgColorW, NULL);
+    XtAddCallback(HSDialog.bgColorW, XmNvalueChangedCallback,
+          updateCGchooser, bgColorChooserButton);
+    
+    XtVaSetValues(bgColorChooserButton,
+#if XmVersion > 2001
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, HSDialog.bgColorW,
+#endif
+            //XmNshadowThickness, shadowThickness,
+            XmNuserData, HSDialog.bgColorW, NULL);
     
     fontLbl = XtVaCreateManagedWidget("fontLbl", xmLabelGadgetClass, form,
     	    XmNlabelString, s1=XmStringCreateSimple("Font:"),

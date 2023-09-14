@@ -2,10 +2,10 @@
 *                                                                              *
 * help_topic.h --  Nirvana Editor help display                                 *
 *                                                                              *
-                 Generated on Aug 18, 2021 (Do NOT edit!)
+                 Generated on Sep 11, 2023 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2021 Mark Edel                                            *
+* Copyright (c) 1999-2023 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
@@ -54,6 +54,7 @@ enum HelpTopic {
     HELP_CLIPBOARD,
     HELP_MOUSE,
     HELP_KEYBOARD,
+    HELP_MULTICURSOR,
     HELP_FILL,
     HELP_INTERFACE,
     HELP_FORMAT,

@@ -1,6 +1,6 @@
 #!/bin/bash
-# xnedit_pkg: Copyright 2021 Valerio Messina GNU GPL v2+
-# xnedit_pkg is part of XNEdit multi-purpose text editor:
+# xneditPkg.sh: Copyright 2021-2023 Valerio Messina GNU GPL v2+
+# xneditPkg.sh is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,19 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with XNEdit. If not, see <http://www.gnu.org/licenses/>.
 
-# xnedit_pkg: create a Win portable package for XNEdit with all dependencies
+# xneditPkg.sh: create a Win portable package for XNEdit with all dependencies
 # Note: must be run in Cygwin, does not work in MinGw/MSYS2/Unix
 # Note: if need a different installation path than $PROGRAMFILES change 'pkg'
 #       eg. "/cygdrive/c/installer/xnedit"
 # Note: default assume jut built binaries path is "../../source", to change
 # you can force the path filling 'bin', eg. bin="$HOME/c/xnedit/source"
 bin=""
-pkg="/cygdrive/c/installer/xnedit"
+pkg="/cygdrive/d/installer/xnedit"
+pkg="/cygdrive/d/ProgramFiles/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.0 2021/08/23"
-echo "xnedit_pkg $ver create a Win package for XNEdit"
+ver="v0.04.01 2023/09/07"
+echo "xneditPkg.sh $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
 for extCmd in awk bash basename cat ctags cygstart dirname dos2unix grep mktemp realpath sed sleep strip test uname which ; do
@@ -44,20 +45,16 @@ if (test "$flag" = 1) then
 fi
 
 # check the running env
-if (test "" != "$MSYSTEM") then
-   echo "ERROR: You are on MinGw/MSYS2/Unix"
-   exit
-fi
 os=`uname -o`
 if (test "$os" != "Cygwin") then
    echo "ERROR: You are not on Cygwin"
    exit
 fi
-os=`uname`
-if (test "$os" = "CYGWIN_NT-10.0") then
+cpu=`uname -m`
+if (test "$cpu" = "x86_64") then
    bit=64
 fi
-if (test "$os" = "CYGWIN_NT-10.0-WOW") then 
+if (test "$cpu" = "i686") then 
    bit=32
 fi
 
@@ -82,7 +79,7 @@ root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
-xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | sed 's/\\\n/ /' | awk '{print $1}'`
+xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | awk '{print $1,$2,$3,$4,$5}' | sed 's/\\\n/ /g' | sed 's/ *$//g' | sed 's/,//g' | sed 's/ /_/g'`
 
 echo "XNEdit script files: $scriptPath"
 echo "XNEdit binaries    : $bin"
@@ -90,6 +87,8 @@ echo "Dependencies from  : $root"
 echo "Package created in : $pkg"
 echo "Package created in : $pkgWin"
 echo "Debug is (1=active): $dbg"
+read -p "Press Return to start ..."
+echo ""
 echo "Packaging 'XNEdit' v$xnVer for Win$bit ..."
 cd "$bin"
 
@@ -126,7 +125,10 @@ if (test "$dbg" != "1") then
 fi
 
 # direct dependencies of xnedit and xnc
+cygver=`uname -s`
 for file in cygX11-6.dll cygwin1.dll cygxcb-1.dll cygXau-6.dll cygXdmcp-6.dll cygXft-2.dll cygfontconfig-1.dll cygexpat-1.dll cygfreetype-6.dll cygbrotlidec-1.dll cygbrotlicommon-1.dll cygbz2-1.dll cygpng16-16.dll cygz.dll cygintl-8.dll cygiconv-2.dll cyguuid-1.dll cygXrender-1.dll cygXm-4.dll cygjpeg-8.dll cygXext-6.dll cygXmu-6.dll cygXt-6.dll cygICE-6.dll cygSM-6.dll cygXpm-4.dll cygpcre-1.dll ; do
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlidec-1.dll") then continue ; fi
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlicommon-1.dll") then continue ; fi
    cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$file" = "cygwin1.dll") then continue ; fi
    if (test "$dbg" != "1") then
@@ -175,6 +177,7 @@ mkdir -p "$pkg/cygroot/tmp" # avoid "bash.exe: warning: could not find /tmp, ple
 
 # files needed to run Shell menu commands:
 for file in cygmpfr-6.dll cyggmp-10.dll; do
+   if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygmpfr-6.dll") then continue ; fi
    cp "$root/bin/$file" "$pkg/cygroot/bin"
    if (test "$dbg" != "1") then
       strip "$pkg/cygroot/bin/$file"
@@ -236,12 +239,11 @@ fi
 echo ":End"                              >> "$pkg/xnedit.bat"
 #echo "pause"                            >> "$pkg/xnedit.bat"
 unix2dos -q "$pkg/xnedit.bat"
-icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
 cp "$scriptPath/xnc.sh" "$pkg" # run script
 
 # copy text files
 cd "$src"
-cp LICENSE README ReleaseNotes CHANGELOG "$pkg"
+cp LICENSE README.md ReleaseNotes CHANGELOG "$pkg"
 
 # create the Windows shortcut in $pkgWin
 cd "$scriptPath"
@@ -263,7 +265,7 @@ if (test "$dbg" != "1") then
 fi
 
 # copy NSIS install script
-cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'$xnVer'/' > $tempname.nsi
+cat xnedit.nsi | sed 's/XNEditM\.m\.d/XNEdit'_$xnVer'_/' > $tempname.nsi
 cat $tempname.nsi | sed 's/winXX_setup/win'$bit'_setup/' > "$pkg/xnedit.nsi"
 rm $tempname.nsi
 if (test "$bit" = "32") then
@@ -271,5 +273,15 @@ if (test "$bit" = "32") then
    mv $tempname.nsi "$pkg/xnedit.nsi"
 fi
 unix2dos -q "$pkg/xnedit.nsi"
+
+if (test "$cygver" != "CYGWIN_NT-5.1") then
+   icacls "$pkgWin\\xnedit.bat" /reset /q > /dev/null # fix Cygwin file permissions
+else # we are on WinXP
+   echo "Setting ACL for files ..."
+   ##echo y| cacls "$pkgWin\\xnedit.bat" /t /c /p everyone:f # do not work on localizations
+   #subinacl /file "$pkgWin" /setowner=$USER > /dev/null
+   #subinacl /noverbose /subdirectories "$pkgWin\*" /setowner=$USER > /dev/null
+   #cscript XCACLS.vbs "$pkgWin" /q /f /s /t /p everyone:f > /dev/null
+fi
 
 echo Done

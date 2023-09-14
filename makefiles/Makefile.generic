@@ -41,12 +41,6 @@ AR=ar
 #		    to expand wildcards in the "Open Selected" command (which
 #		    is no huge loss).
 #
-# USE_DIRENT	    Some Unix systems call the structure used by the readdir
-#   	    	    subroutine dirent, rather than direct.  Add -DUSE_DIRENT
-#		    to CFLAGS if your C compiler complains about the line:
-#
-#		       struct direct *DirEntryPtr;
-#
 # USE_LPR_PRINT_CMD NEdit considers the standard Unix print command to be "lp"
 #   	    	    unless told otherwise.  If the standard command on your
 #		    system type is "lpr", define this.  (This is just the last
@@ -113,6 +107,12 @@ AR=ar
 # XNE_TEXTFIELD     Enable alternative text field widget for search/replace.
 #                   The new widget has improved unicode support.
 #
+# CDE               Enable drag'n'drop support for CDE. This requires
+#                   additional CDE CFLAGS/LDFLAGS.
+#
+# DISABLE_MULTICURSOR Disable multicursor support
+#
+#
 # Some compilers need to be told to operate in ansi-standard mode, some have
 # different levels of optimization that you can select (optimization improves
 # syntax highlighting performance.   You will also often need to add locations
@@ -136,7 +136,11 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -lpcre -lpthread -lXm -lXt -lX11 -lm -lXpm -lXrender `pkg-config --libs xft fontconfig`
+LIBS= -lpcre -lpthread -lXm -lXt -lX11 -lm -lXrender `pkg-config --libs xft fontconfig`
+
+# Additional CDE Flags
+# CFLAGS+= -DCDE -I/usr/dt/include
+# LIBS+= -L/usr/dt/lib -R/usr/dt/lib -lDtSvc 
 
 # System independent part
 include Makefile.common

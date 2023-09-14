@@ -77,7 +77,6 @@
 #include <Xm/Xm.h>
 #include <Xm/XmAll.h>
 
-#include <X11/xpm.h>
 #include "utils.h"
 #include "fileUtils.h"
 
@@ -765,6 +764,15 @@ static void createErrorDialog(Widget parent)
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             NULL);
     XmStringFree(buttonString);
+}
+
+int OverrideFileDialog(Widget parent, const char *filename)
+{
+    createYesNoDialog(parent);
+    int ret = doYesNoDialog(filename);
+    XtDestroyWidget(YesNoDialog);
+    YesNoDialog = NULL;
+    return ret;
 }
 
 static int doYesNoDialog(const char *filename)

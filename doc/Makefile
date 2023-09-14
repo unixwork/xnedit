@@ -39,7 +39,7 @@ instructions:
 	
 .version:
 	@ if [ "$(VERSION)" = "" ]; then \
-	      echo "XNEdit release of `date +'%b %e, %Y'`" > .version; \
+	      ./generate_version.sh > .version; \
 	  else \
 	      echo "$(VERSION)" > .version; \
 	  fi
@@ -50,6 +50,9 @@ help: ../source/help_topic.h ../source/help_data.h setext
 	@ ./setext -m -v version="`cat .version`" help.etx
 	@ mv -f help_topic.h ../source
 	@ mv -f help_data.h ../source
+	@ if [ ! -z "$(VERSION)" ]; then \
+		echo "#define XNEDIT_IS_RELEASE" >> ../source/help_data.h ; \
+	  fi
 
 xnedit.html: .version help.etx setext
 	@ echo "Creating XNEdit HTML documentation..."

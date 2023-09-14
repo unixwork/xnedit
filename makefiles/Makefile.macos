@@ -41,12 +41,6 @@ AR=libtool
 #		    to expand wildcards in the "Open Selected" command (which
 #		    is no huge loss).
 #
-# USE_DIRENT	    Some Unix systems call the structure used by the readdir
-#   	    	    subroutine dirent, rather than direct.  Add -DUSE_DIRENT
-#		    to CFLAGS if your C compiler complains about the line:
-#
-#		       struct direct *DirEntryPtr;
-#
 # USE_LPR_PRINT_CMD NEdit considers the standard Unix print command to be "lp"
 #   	    	    unless told otherwise.  If the standard command on your
 #		    system type is "lpr", define this.  (This is just the last
@@ -115,7 +109,7 @@ AR=libtool
 # syntax highlighting performance.   You will also often need to add locations
 # of X and/or Motif include files if they are not in the compiler's standard
 # search path.
-CFLAGS=-O2 -I/opt/X11/include -I/opt/X11/include/X11 -I/opt/X11/include/freetype2
+CFLAGS=-O2 -I/usr/x11/include -I/usr/x11/include/freetype2 -I`brew --prefix`/include/
 
 # Flags for the library (archive) tool.  These are pretty much standard
 # across all Unix systems, but if your system is having trouble building or
@@ -133,7 +127,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -L/opt/X11/lib -lpthread -lpcre -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXpm -lXrender -ljpeg -lpng -liconv
+LIBS= -L`brew --prefix`/lib -lpcre -lpthread -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv
 
 # System independent part
 include Makefile.common

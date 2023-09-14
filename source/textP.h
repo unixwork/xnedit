@@ -37,7 +37,9 @@
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
 
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
+
+#define TEXTWIDGET_XIM_LOOKUP_BUFSIZE 512
 
 enum dragStates {NOT_CLICKED, PRIMARY_CLICKED, SECONDARY_CLICKED,
 	CLICKED_IN_SELECTION,  PRIMARY_DRAG, PRIMARY_RECT_DRAG, SECONDARY_DRAG,
@@ -61,6 +63,9 @@ typedef struct _TextPart {
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
     Pixel cursorFGPixel, lineNumFGPixel, lineNumBGPixel, calltipFGPixel, calltipBGPixel, lineHighlightBGPixel;
     NFont *font2;
+    NFont *boldFont;
+    NFont *italicFont;
+    NFont *boldItalicFont;
     Boolean pendingDelete;
     Boolean autoShowInsertPos;
     Boolean autoWrap;
@@ -134,8 +139,22 @@ typedef struct _TextPart {
     Boolean indentRainbow;              /* indent rainbow enabled? */
     char *indentRainbowColors;          /* rainbow color list */
     
+    Boolean ansiColors;
+    XftColor *ansiColorList;
+    
     XIM xim;
     XIC xic;
+    
+    /*
+     * XIM lookup cache
+     */
+    unsigned long last_keyevent_serial;
+    unsigned int last_keyevent_keycode;
+    Time last_keyevent_time;
+    char xim_lookup_cache[TEXTWIDGET_XIM_LOOKUP_BUFSIZE];
+    int xim_lookup_nchars;
+    Status xim_lookup_status;
+    KeySym xim_lookup_keysym;  
 } TextPart;
 
 typedef struct _TextRec {

@@ -61,6 +61,7 @@
 #include "../util/utils.h"
 #include "../util/fileUtils.h"
 #include "../util/DialogF.h"
+#include "../util/dragAndDrop.h"
 #include "../Xlt/BubbleButtonP.h"
 #include "../Microline/XmL/Folder.h"
 #include "../util/nedit_malloc.h"
@@ -110,6 +111,13 @@
 #include <Xm/PrimitiveP.h>
 #include <Xm/Frame.h>
 #include <Xm/CascadeB.h>
+
+#ifndef __sun
+#include <Xm/DropDown.h>
+#else
+Widget XmCreateDropDown(Widget parent, String name, ArgList args, Cardinal argcount);
+#endif
+
 #ifdef EDITRES
 #include <X11/Xmu/Editres.h>
 /* extern void _XEditResCheckMessages(); */
@@ -231,6 +239,8 @@ static void removeFromWindowList(WindowInfo *window);
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData);
 static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
         const char *deletedText, void *cbArg);
+static void beginModifyCB(void *cbArg);
+static void endModifyCB(void *cbArg);
 static void movedCB(Widget w, WindowInfo *window, XtPointer callData);
 static void dragStartCB(Widget w, WindowInfo *window, XtPointer callData);
 static void dragEndCB(Widget w, WindowInfo *window, dragEndCBStruct *callData);
@@ -262,7 +272,13 @@ static void cancelTimeOut(XtIntervalId *timer);
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 
 static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
+static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb);
 static void reloadCB(Widget w, Widget mainWin, void *callData);
+static void windowStructureNotifyEventEH(
+        Widget widget,
+        XtPointer data,
+        XEvent *event,
+        Boolean *dispatch);
 
 /* From Xt, Shell.c, "BIGSIZE" */
 static const Dimension XT_IGNORE_PPOSITION = 32767;
@@ -297,7 +313,6 @@ static char *default_encodings[] = {
     "ISO8859-16",
     NULL
 };
-
 
 /*
 ** Create a new editor window
@@ -359,6 +374,10 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->fileMissing = True;
     strcpy(window->filename, name);
     
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
+    
     window->encoding[0] = '\0';
     const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
@@ -371,6 +390,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->bom = FALSE;
     window->undo = NULL;
     window->redo = NULL;
+    window->undo_batch_begin = NULL;
+    window->undo_batch_count = 0;
+    window->undo_op_batch_size = 0;
     window->nPanes = 0;
     window->autoSaveCharCount = 0;
     window->autoSaveOpCount = 0;
@@ -392,6 +414,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
+    window->ansiColors = GetPrefAnsiColors();
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -518,6 +541,13 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 #ifndef SGI_CUSTOM
     addWindowIcon(winShell);
 #endif
+    
+    XtAddEventHandler(
+            winShell,
+            StructureNotifyMask,
+            False,
+            (XtEventHandler)windowStructureNotifyEventEH,
+            window);
 
     /* Create a MainWindow to manage the menubar and text area, set the
        userData resource to be used by WidgetToWindow to recover the
@@ -887,6 +917,24 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNbottomWidget, window->encInfoBarList,
             NULL);
     
+    // error dropdown
+    ac = 0;
+    XtSetArg(al[ac], XmNcolumns, 15); ac++;
+    XtSetArg(al[ac], XmNleftAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNbottomAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(al[ac], XmNhighlightThickness, 1); ac++;
+    XtSetArg(al[ac], XmNvalue, "Errors"); ac++;
+    window->encInfoErrorList = XmCreateDropDownList(
+            window->encodingInfoBar,
+            "combobox",
+            al,
+            ac);
+    // don't manage encInfoErrorList here
+
+
+    XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
+                 (XtCallbackProc)jumpToEncErrorCB, window);
+    
     Widget btnClose = XtVaCreateManagedWidget(
             "ibarbutton",
             xmPushButtonWidgetClass,
@@ -963,6 +1011,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(LINENO_BG_COLOR), 
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    SetAnsiColorList(window, GetPrefAnsiColorList());
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -984,6 +1033,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Attach the buffer to the text widget, and add callbacks for modify */
     TextSetBuffer(text, window->buffer);
     BufAddModifyCB(window->buffer, modifiedCB, window);
+    BufAddBeginModifyCB(window->buffer, beginModifyCB, window);
+    BufAddEndModifyCB(window->buffer, endModifyCB, window);
     
     /* Designate the permanent text area as the owner for selections */
     HandleXSelections(text);
@@ -1055,18 +1106,67 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     return window;
 }
 
+static Widget evTab;
+
+static int motion_x;
+static int motion_y;
+static int pressed_x;
+static int pressed_y;
+static int drag_enabled = 0;
+
 /*
 ** ButtonPress event handler for tabs.
 */
-static void tabClickEH(Widget w, XtPointer clientData, XEvent *event)
+static void tabClickEH(Widget w, XtPointer clientData, XEvent *event, Boolean *dispatch)
 {
-    /* hide the tooltip when user clicks with any button. */
-    if (BubbleButton_Timer(w)) {
-    	XtRemoveTimeOut(BubbleButton_Timer(w));
-    	BubbleButton_Timer(w) = (XtIntervalId)NULL;
-    }
-    else {
-        hideTooltip(w);
+    if(event->type == MotionNotify) {
+        motion_x = event->xmotion.x;
+        motion_y = event->xmotion.y;
+        
+        if(pressed_x != 0 && abs(pressed_x - motion_x) > 10) {
+            drag_enabled = 1;
+        }
+        
+        if(drag_enabled) {
+            int tx, ty;
+            Window tw;
+            XTranslateCoordinates(XtDisplay(w), XtWindow(w), XtWindow(XtParent(w)), motion_x, pressed_y, &tx, &ty, &tw);
+            
+            Widget switchTab = XtWindowToWidget(XtDisplay(w), tw);
+            
+            if((evTab != switchTab) && switchTab) {
+                SwitchTabs(evTab, switchTab);
+                evTab = switchTab;
+            }
+        }
+    } else if(event->type == ButtonRelease) {
+        drag_enabled = 0;
+        pressed_x = 0;
+        pressed_y = 0;
+        if(event->xbutton.button == 2) {
+            WindowInfo *window = TabToWindow(w);
+            CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
+            *dispatch = False;
+            return;
+        }
+    } else if(event->type == ButtonPress) {
+        evTab = w;
+        pressed_x = motion_x;
+        pressed_y = motion_y;
+        drag_enabled = 0;
+        
+        if(event->xbutton.button == 2) {
+            *dispatch = False;
+        }
+        
+        // hide the tooltip when user clicks with any button.
+        if (BubbleButton_Timer(w)) {
+            XtRemoveTimeOut(BubbleButton_Timer(w));
+            BubbleButton_Timer(w) = (XtIntervalId)NULL;
+        }
+        else {
+            hideTooltip(w);
+        }
     }
 }
 
@@ -1095,7 +1195,7 @@ static Widget addTab(Widget folder, const char *string)
     XmStringFree(s1);
 
     /* there's things to do as user click on the tab */
-    XtAddEventHandler(tab, ButtonPressMask, False, 
+    XtAddEventHandler(tab, PointerMotionMask|ButtonPressMask|ButtonReleaseMask|EnterWindowMask|LeaveWindowMask, False, 
             (XtEventHandler)tabClickEH, (XtPointer)0);
 
     /* BubbleButton simply use reversed video for tooltips,
@@ -1181,6 +1281,48 @@ void SortTabBar(WindowInfo *window)
     }
     
     NEditFree(windows);
+}
+
+/*
+ * Switch document tabs
+ */
+void SwitchTabs(Widget from, Widget to)
+{
+    WindowInfo *winFrom = NULL;
+    WindowInfo *winTo = NULL;
+    WidgetList tabList;
+    int tabCount;
+      
+    for(WindowInfo *w=WindowList;w;w=w->next) {
+        if(w->tab == from) {
+            winFrom = w;
+        }
+        if(w->tab == to) {
+            winTo = w;
+        }
+    }
+    
+    winTo->tab = from;
+    winFrom->tab = to;
+    RefreshTabState(winTo);
+    RefreshTabState(winFrom);
+    
+    XtVaGetValues(winFrom->tabBar, XmNtabWidgetList, &tabList,
+                  XmNtabCount, &tabCount, NULL);
+    
+    for(int i=0;i<tabCount;i++) {
+        if(tabList[i]->core.being_destroyed) {
+            continue;
+        }
+        
+        // we are moving the active tab to a new position, therefore
+        // set "to" to active
+        if(tabList[i] == to) {
+            XmLFolderSetActiveTab(winFrom->tabBar, i, False);
+        }
+    }
+    
+    RaiseDocument(winFrom);
 }
 
 /* 
@@ -1368,6 +1510,10 @@ void CloseWindow(WindowInfo *window)
     FontUnref(window->boldFont);
     FontUnref(window->italicFont);
     FontUnref(window->boldItalicFont);
+    
+    if(window->encErrors) {
+        NEditFree(window->encErrors);
+    }
 
     /* deallocate the window data structure */
     NEditFree(window);
@@ -1492,13 +1638,13 @@ void SplitPane(WindowInfo *window)
     textD = ((TextWidget)window->textArea)->text.textD;
     newTextD = ((TextWidget)text)->text.textD;
     XtVaSetValues(text,
-                XmNforeground, textD->fgPixel,
-                XmNbackground, textD->bgPixel,
+                XmNforeground, textD->fgPixel.pixel,
+                XmNbackground, textD->bgPixel.pixel,
                 NULL);
-    TextDSetColors( newTextD, textD->fgPixel, textD->bgPixel, 
-            textD->selectFGPixel, textD->selectBGPixel, textD->highlightFGPixel,
-            textD->highlightBGPixel, textD->lineNumFGPixel, textD->lineNumBGPixel,
-            textD->cursorFGPixel, textD->lineHighlightBGPixel);
+    TextDSetColors( newTextD, &textD->fgPixel, &textD->bgPixel, 
+            &textD->selectFGPixel, &textD->selectBGPixel, &textD->highlightFGPixel,
+            &textD->highlightBGPixel, &textD->lineNumFGPixel, &textD->lineNumBGPixel,
+            &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2159,8 +2305,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     }
     borderWidth = oldWindowWidth - oldTextWidth;
     borderHeight = oldWindowHeight - oldTextHeight;
-    XftFont *oldXftFont = FontDefault(oldFont);
-    oldFontWidth = oldXftFont->max_advance_width;
+    oldFontWidth = oldFont->maxWidth;
     oldFontHeight = textD->ascent + textD->descent;
     
         
@@ -2213,9 +2358,17 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     if (primaryChanged) {
         //font = GetDefaultFontStruct(TheDisplay, window->fontList);
         font = window->font;
-        XtVaSetValues(window->textArea, textNXftFont, font, NULL);
+        XtVaSetValues(window->textArea,
+                textNXftFont, font,
+                textNXftBoldFont, window->boldFont,
+                textNXftItalicFont, window->italicFont,
+                textNXftBoldItalicFont, window->boldItalicFont, NULL);
         for (i=0; i<window->nPanes; i++) {
-            XtVaSetValues(window->textPanes[i], textNXftFont, font, NULL);
+            XtVaSetValues(window->textPanes[i],
+                textNXftFont, font,
+                textNXftBoldFont, window->boldFont,
+                textNXftItalicFont, window->italicFont,
+                textNXftBoldItalicFont, window->boldItalicFont, NULL);
         }
     }
     
@@ -2241,7 +2394,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
             size appropriate for the new font, but only do so if there's only
             _one_ document in the window, in order to avoid growing-window bug */
         if (NDocuments(window) == 1) {
-            fontWidth = window->font->fonts->font->max_advance_width;
+            fontWidth = window->font->maxWidth;
             fontHeight = textD->ascent + textD->descent;
             newWindowWidth = (oldTextWidth*fontWidth) / oldFontWidth + borderWidth;
             newWindowHeight = (oldTextHeight*fontHeight) / oldFontHeight + 
@@ -2259,7 +2412,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
         const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
         const char *cursorFg, const char *lineHiBg)
-{
+{ 
     int i, dummy;
     Pixel   textFgPix   = AllocColor( window->textArea, textFg, 
                     &dummy, &dummy, &dummy),
@@ -2282,16 +2435,28 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             lineHiBgPix = AllocColor( window->textArea, lineHiBg, 
                     &dummy, &dummy, &dummy);
     textDisp *textD;
-
+    
+    XftColor textFgC = PixelToColor(window->textArea, textFgPix);
+    XftColor textBgC = PixelToColor(window->textArea, textBgPix);
+    XftColor selectFgC = PixelToColor(window->textArea, selectFgPix);
+    XftColor selectBgC = PixelToColor(window->textArea, selectBgPix);
+    XftColor hiliteFgC = PixelToColor(window->textArea, hiliteFgPix);
+    XftColor hiliteBgC = PixelToColor(window->textArea, hiliteBgPix);
+    XftColor lineNoFgC = PixelToColor(window->textArea, lineNoFgPix);
+    XftColor lineNoBgC = PixelToColor(window->textArea, lineNoBgPix);
+    XftColor cursorFgC = PixelToColor(window->textArea, cursorFgPix);
+    XftColor lineHiBgC = PixelToColor(window->textArea, lineHiBgPix);
+    
+    
     /* Update the main pane */
     XtVaSetValues(window->textArea,
             XmNforeground, textFgPix,
             XmNbackground, textBgPix,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
-    TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-            hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
-            cursorFgPix, lineHiBgPix );
+    TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+            &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
+            &cursorFgC, &lineHiBgC );
     /* Update any additional panes */
     for (i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i],
@@ -2299,9 +2464,9 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 XmNbackground, textBgPix,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
-        TextDSetColors( textD, textFgPix, textBgPix, selectFgPix, selectBgPix, 
-                hiliteFgPix, hiliteBgPix, lineNoFgPix, lineNoBgPix,
-                cursorFgPix, lineHiBgPix);
+        TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+                &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
+                &cursorFgC, &lineHiBgC );
     }
     
     /* Redo any syntax highlighting */
@@ -2421,6 +2586,28 @@ void SetWindowModified(WindowInfo *window, int modified)
     }
 }
 
+static int utf8TitleAtomsInit = 0;
+static Atom utf8_string;
+static Atom net_wm_name;
+
+static void setUtf8Title(Widget shell, const char *title) {
+    Display *dp = XtDisplay(shell);
+    if(!utf8TitleAtomsInit) {
+        utf8_string = XInternAtom(dp, "UTF8_STRING", False);
+        net_wm_name = XInternAtom(dp, "_NET_WM_NAME", False);
+        utf8TitleAtomsInit = 1;
+    }
+    XChangeProperty(
+            dp, 
+            XtWindow(shell), 
+            net_wm_name,
+            utf8_string,
+            8,
+            PropModeReplace,
+            (unsigned char*)title,
+            strlen(title));
+}
+
 /*
 ** Update the window title to reflect the filename, read-only, and modified
 ** status of the window data structure
@@ -2446,8 +2633,12 @@ void UpdateWindowTitle(const WindowInfo *window)
     iconTitle = (char*)NEditMalloc(strlen(window->filename) + 2); /* strlen("*")+1 */
 
     strcpy(iconTitle, window->filename);
-    if (window->fileChanged)
+    if (window->fileChanged) {
         strcat(iconTitle, "*");
+    }
+    if(XNEditDefaultCharsetIsUTF8()) {
+        setUtf8Title(window->shell, title);
+    }
     XtVaSetValues(window->shell, XmNtitle, title, XmNiconName, iconTitle, NULL);
     
     /* If there's a find or replace dialog up in "Keep Up" mode, with a
@@ -2629,10 +2820,14 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNhighlightCursorLine, window->highlightCursorLine,
             textNindentRainbow, window->indentRainbow,
             textNindentRainbowColors, window->indentRainbowColors,
+            textNansiColors, window->ansiColors,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
             textNemulateTabs, emTabDist,
             textNXftFont, window->font,
+            textNXftBoldFont, window->boldFont,
+            textNXftItalicFont, window->italicFont,
+            textNXftBoldItalicFont, window->boldItalicFont,
             textNhScrollBar, hScrollBar, textNvScrollBar, vScrollBar,
             textNreadOnly, IS_ANY_LOCKED(window->lockReasons),
             textNwordDelimiters, delimiters,
@@ -2658,6 +2853,9 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
     XtAddCallback(text, textNdragEndCallback, (XtCallbackProc)dragEndCB,
             window);
     XtAddCallback(text, textNsmartIndentCallback, SmartIndentCB, window);
+    
+    /* legacy dnd support */
+    neditDropWidget(text);
             
     /* This makes sure the text area initially has a the insert point shown
        ... (check if still true with the nedit text widget, probably not) */
@@ -2770,10 +2968,32 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
     SetWindowModified(window, TRUE);
 
     /* Update # of bytes, and line and col statistics */
-    UpdateStatsLine(window);
+    if(!window->undo_batch_begin) {
+        UpdateStatsLine(window);
+    }
     
     /* Check if external changes have been made to file and warn user */
     CheckForChangesToFile(window);
+    
+    /* count modify operations per modification batch
+     * this is only relevant if window->undo_batch_begin != NULL */
+    window->undo_batch_count++;
+}
+
+static void beginModifyCB(void *cbArg) {
+    WindowInfo *window = cbArg;
+    window->undo_batch_begin = window->undo;
+    window->undo_batch_count = 0;
+}
+
+static void endModifyCB(void *cbArg) {
+    WindowInfo *window = cbArg;
+    if(window->undo_batch_begin && window->undo_batch_count > 1) {
+        window->undo->numOp = window->undo_batch_count;
+    }
+    window->undo_batch_begin = NULL;
+    window->undo_batch_count = 0;
+    UpdateStatsLine(window);
 }
 
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData) 
@@ -3101,18 +3321,27 @@ void UpdateStatsLine(WindowInfo *window)
        affects overall editor perfomance.  Only update if the line is on. */ 
     if (!window->showStats)
         return;
-    
+     
     /* Compose the string to display. If line # isn't available, leave it off */
     pos = TextGetCursorPos(window->lastFocus);
     string = (char*)NEditMalloc(strlen(window->filename) + strlen(window->path) + 45);
     format = window->fileFormat == DOS_FILE_FORMAT ? " DOS" :
             (window->fileFormat == MAC_FILE_FORMAT ? " Mac" : "");
+    int nCursors = TextNumCursors(window->lastFocus);
     if (!TextPosToLineAndCol(window->lastFocus, pos, &line, &colNum)) {
         sprintf(string, "%s%s%s %d bytes", window->path, window->filename,
                 format, window->buffer->length);
-        sprintf(slinecol, "L: ---  C: ---");
+        if(nCursors == 1) {
+            snprintf(slinecol, 32, "L: ---  C: ---");
+        } else {
+            snprintf(slinecol, 32, "%d cursors", nCursors);
+        }
     } else {
-        sprintf(slinecol, "L: %d  C: %d", line, colNum);
+        if(nCursors == 1) {
+            snprintf(slinecol, 32, "L: %d  C: %d", line, colNum);
+        } else {
+            snprintf(slinecol, 32, "%d cursors", nCursors);
+        }
         if (window->showLineNumbers)
             sprintf(string, "%s%s%s byte %d of %d", window->path,
                     window->filename, format, pos, 
@@ -3520,6 +3749,36 @@ void SetIndentRainbow(WindowInfo *window, Boolean state)
     }
 }
 
+void SetAnsiColors(WindowInfo *window, Boolean state)
+{
+    window->ansiColors = state;
+    
+    XtVaSetValues(window->textArea,
+          textNansiColors, state, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColors, state, NULL);
+    }
+}
+
+void SetAnsiColorList(WindowInfo *window, const char *colorList)
+{
+    memset(window->ansiColorList, 0, sizeof(window->ansiColorList));
+    
+    char *colors[16];
+    char *str = ParseAnsiColorList(colors, colorList);
+    for(int i=0;i<16;i++) {
+        window->ansiColorList[i] = AllocXftColor(window->textArea, colors[i]);
+    }
+    
+    NEditFree(str);
+    
+    XtVaSetValues(window->textArea,
+          textNansiColorList, window->ansiColorList, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
+    }
+}
+
 /*
 ** Set the backlight character class string
 */
@@ -3714,7 +3973,9 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
 #endif
     
     window->showInfoBar = FALSE;
-
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
     window->multiFileReplSelected = FALSE;
     window->multiFileBusy = FALSE;
     window->writableWindows = NULL;
@@ -3745,6 +4006,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->autoSaveOpCount = 0;
     window->undoOpCount = 0;
     window->undoMemUsed = 0;
+    window->undo_op_batch_size = 0;
     CLEAR_ALL_LOCKS(window->lockReasons);
     window->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
     window->autoSave = GetPrefAutoSave();
@@ -3757,6 +4019,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
+    window->ansiColors = GetPrefAnsiColors();
     window->backlightCharTypes = NULL;
     window->backlightChars = GetPrefBacklightChars();
     if (window->backlightChars) {
@@ -3858,6 +4121,11 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(LINENO_BG_COLOR),
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    XtVaSetValues(window->textArea,
+          textNansiColorList, window->ansiColorList, NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
+    }
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -4652,6 +4920,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XmToggleButtonSetState(window->backlightCharsItem, window->backlightChars, False);
     XmToggleButtonSetState(window->highlightCursorLineItem, window->highlightCursorLine, False);
     XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
+    XmToggleButtonSetState(window->ansiColorsItem, window->ansiColors, False);
 #ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
 #endif
@@ -5142,13 +5411,14 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
-            XtVaSetValues(text, XmNforeground, textD->fgPixel,
-                    XmNbackground, textD->bgPixel, NULL);
-            TextDSetColors(newTextD, textD->fgPixel, textD->bgPixel, 
-                    textD->selectFGPixel, textD->selectBGPixel,
-                    textD->highlightFGPixel,textD->highlightBGPixel,
-                    textD->lineNumFGPixel, textD->lineNumBGPixel,
-                    textD->cursorFGPixel, textD->lineHighlightBGPixel);
+            XtVaSetValues(text, XmNforeground, textD->fgPixel.pixel,
+                    XmNbackground, textD->bgPixel.pixel, 
+                    textNansiColorList, window->ansiColorList, NULL);
+            TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
+                    &textD->selectFGPixel, &textD->selectBGPixel,
+                    &textD->highlightFGPixel, &textD->highlightBGPixel,
+                    &textD->lineNumFGPixel, &textD->lineNumBGPixel,
+                    &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
 	}
         
 	/* Set the minimum pane height in the new pane */
@@ -5235,6 +5505,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
     SetIndentRainbowColors(window, orgWin->indentRainbowColors);
+    SetAnsiColors(window, orgWin->ansiColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
     /* Clone rangeset info.
@@ -5312,6 +5583,11 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     /* copy undo & redo list */
     window->undo = cloneUndoItems(orgWin->undo);
     window->redo = cloneUndoItems(orgWin->redo);
+    
+    /* don't copy enc error list */
+    window->encErrors = NULL;
+    window->numEncErrors = 0;
+    window->posEncErrors = 0;
 
     /* copy bookmarks */
     window->nMarks = orgWin->nMarks;
@@ -5774,6 +6050,44 @@ void SetZoom(WindowInfo *window, int step)
     NEditFree(bolditalic);
 }
 
+/*
+ * set the encoding error list
+ * note: this will not copy the array, so don't free the pointer outside
+ *       of the window
+ */
+void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors)
+{
+    window->encErrors = errors;
+    window->numEncErrors = numErrors;
+    
+    if(numErrors == 0) {
+        XtVaSetValues(window->encInfoErrorList, XmNitemCount, 0, XmNitems, NULL, NULL);
+        XtUnmanageChild(window->encInfoErrorList);
+        return;
+    }
+    char buf[256];
+    
+    XmStringTable strErrors = NEditCalloc(numErrors, sizeof(XmString));
+    for(size_t i=0;i<numErrors;i++) {
+        snprintf(buf, 256, "0x%02X", errors[i].c);
+        strErrors[i] = XmStringCreateSimple(buf);
+    }
+    
+    XtVaSetValues(
+            window->encInfoErrorList,
+            XmNitemCount, numErrors,
+            XmNitems, strErrors,
+            NULL);
+    
+    // cleanup
+    for(size_t i=0;i<numErrors;i++) {
+        XmStringFree(strErrors[i]);
+    }
+    NEditFree(strErrors);
+    
+    XtManageChild(window->encInfoErrorList);
+}
+
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d)
 {
     window->opened = True;
@@ -5795,6 +6109,19 @@ static void closeInfoBarCB(Widget w, Widget mainWin, void *callData)
     window->showInfoBar = FALSE;
     XtUnmanageChild(window->encodingInfoBar);
     showStatsForm(window);
+}
+
+static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb)
+{
+    if(cb->item_position >= window->numEncErrors) {
+        return;
+    }
+    
+    EncError e = window->encErrors[cb->item_position];
+    // +3 because the unicode replacement char is encoded with 3 bytes in utf8
+    BufSelect(window->buffer, e.pos, e.pos+3);
+    MakeSelectionVisible(window, window->lastFocus);
+    TextSetCursorPos(window->lastFocus, e.pos);
 }
 
 static void reloadCB(Widget w, Widget mainWin, void *callData)
@@ -5832,4 +6159,28 @@ static void reloadCB(Widget w, Widget mainWin, void *callData)
     // cleanup
     XmStringFree(item);
     XtFree(encoding);
+}
+
+static void updateWindowMapStatus(Widget widget, Boolean status) {
+    for (WindowInfo *w=WindowList; w!=NULL; w=w->next) {
+    	if(w->shell == widget) {
+            w->mapped = status;
+        }
+    }
+}
+
+static void windowStructureNotifyEventEH(
+        Widget widget,
+        XtPointer data,
+        XEvent *event,
+        Boolean *dispatch)
+{
+    WindowInfo *window = data;
+    if(event->type == UnmapNotify) {
+        updateWindowMapStatus(widget, False);
+        InvalidateWindowMenus();
+    } else if(event->type == MapNotify) {
+        updateWindowMapStatus(widget, True);
+        InvalidateWindowMenus();
+    }
 }

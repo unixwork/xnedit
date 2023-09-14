@@ -1563,7 +1563,7 @@ static void lastActionHook(Widget w, XtPointer clientData, String actionName,
 static char *actionToString(Widget w, char *actionName, XEvent *event,
 	String *params, Cardinal numParams)
 {
-    char chars[20], *charList[1], *outStr, *outPtr;
+    char chars[512], *charList[1], *outStr, *outPtr;
     KeySym keysym;
     int i, nChars, nParams, length, nameLength;
 #ifndef NO_XMIM
@@ -1578,18 +1578,12 @@ static char *actionToString(Widget w, char *actionName, XEvent *event,
     if (!strcmp(actionName, "self_insert") ||
     	    !strcmp(actionName, "self-insert")) {
     	actionName = "insert_string";
-#ifdef NO_XMIM
-	nChars = XLookupString((XKeyEvent *)event, chars, 19, &keysym, NULL);
-	if (nChars == 0)
-	    return NULL;
-#else
 
-	nChars = XmImMbLookupString(w, (XKeyEvent *)event,
-				    chars, 19, &keysym, &status);
+	nChars = TextLookupString(w, (XKeyEvent *)event, chars, 511, &keysym, &status);        
 	if (nChars == 0 || status == XLookupNone ||
 		status == XLookupKeySym || status == XBufferOverflow)
 	    return NULL;
-#endif
+
     	chars[nChars] = '\0';
     	charList[0] = chars;
     	params = charList;

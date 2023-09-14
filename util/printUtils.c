@@ -48,26 +48,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
-#ifdef VMS
-#include "vmsparam.h"
-#include <ssdef.h>
-#include <lib$routines.h>
-#include <descrip.h>
-#include <starlet.h>
-#include <lnmdef.h>
-#include <clidef.h>
-#else
-#ifdef USE_DIRENT
 #include <dirent.h>
-#else
-#include <sys/dir.h>
-#endif /* USE_DIRENT */
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif /*VMS*/
 #include <sys/stat.h>
-
 #include <X11/StringDefs.h>
 #include <X11/Intrinsic.h>
 #include <X11/Shell.h>
@@ -134,12 +117,8 @@ static void getLprQueueDefault(char *defqueue);
 static void getLpQueueDefault(char *defqueue);
 #endif
 static void setHostLabelText(void);
-#ifdef VMS
-static void getVmsQueueDefault(char *defqueue);
-#else
 static void getFlprHostDefault(char *defhost);
 static void getFlprQueueDefault(char *defqueue);
-#endif
 
 /* Module Global Variables */
 static Boolean  DoneWithDialog;
@@ -166,9 +145,6 @@ static char Host[MAX_HOST_STR] = "";	/* host name last entered by user */
 static char CmdText[MAX_CMD_STR] = "";	/* print command last entered by user */
 static int  CmdFieldModified = False;	/* user last changed the print command
 					   field, so don't trust the rest */
-#ifdef VMS
-static int DeleteFile;			/* append /DELETE to VMS print command*/
-#endif /*VMS*/
 
 static struct printPrefDescrip PrintPrefDescrip = {
     {"printCommand", "PrintCommand", PREF_STRING, NULL,
@@ -198,11 +174,7 @@ static struct printPrefDescrip PrintPrefDescrip = {
 **			and not revealed to the user)
 **	jobName		Title for the print banner page
 */
-#ifdef VMS
-void PrintFile(Widget parent, const char *printFile, const char *jobName, int delete)
-#else
 void PrintFile(Widget parent, const char *printFile, const char *jobName)
-#endif /*VMS*/
 {
     /* In case the program hasn't called LoadPrintPreferences, set up the
        default values for the print preferences */
@@ -212,9 +184,6 @@ void PrintFile(Widget parent, const char *printFile, const char *jobName)
     /* Make the PrintFile information available to the callback routines */
     PrintFileName = printFile;
     PrintJobName = jobName;
-#ifdef VMS
-    DeleteFile = delete;
-#endif /*VMS*/
 
     /* Create and display the print dialog */
     DoneWithDialog = False;
@@ -251,18 +220,6 @@ void LoadPrintPreferences(XrmDatabase prefDB, const char *appName,
 {
     static char defaultQueue[MAX_QUEUE_STR], defaultHost[MAX_HOST_STR];
 
-#ifdef VMS
-    /* VMS built-in print command */
-    getVmsQueueDefault(defaultQueue);
-    PrintPrefDescrip.printCommand.defaultString = "print";
-    PrintPrefDescrip.copiesOption.defaultString = "/copies=";
-    PrintPrefDescrip.queueOption.defaultString = "/queue=";
-    PrintPrefDescrip.nameOption.defaultString = "/name=";
-    PrintPrefDescrip.hostOption.defaultString = "";
-    PrintPrefDescrip.defaultQueue.defaultString = defaultQueue;
-    PrintPrefDescrip.defaultHost.defaultString = "";
-#else
-
     /* check if flpr is installed, and otherwise choose appropriate
        printer per system type */
     if (lookForFlpr && flprPresent()) {
@@ -296,7 +253,7 @@ void LoadPrintPreferences(XrmDatabase prefDB, const char *appName,
     	PrintPrefDescrip.defaultHost.defaultString = "";
 #endif
     }
-#endif
+
     
     /* Read in the preferences from the X database using the mechanism from
        prefFile.c (this allows LoadPrintPreferences to work before any
@@ -585,11 +542,7 @@ static void noSpaceOrPunct(Widget widget, caddr_t client_data,
 			      XmTextVerifyCallbackStruct *call_data)
 {
     int i, j, textInserted, nInserted;
-#ifndef VMS
     static char prohibited[] = " \t,;|<>()[]{}!@?";
-#else
-    static char prohibited[] = " \t,;|@+";
-#endif
 
     nInserted = call_data->text->length;
     textInserted = (nInserted > 0);
@@ -613,9 +566,6 @@ static void updatePrintCmd(Widget w, caddr_t client_data, caddr_t call_data)
     char queueArg[MAX_OPT_STR+MAX_QUEUE_STR];
     char *str;
     int nCopies;
-#ifdef VMS
-    char printJobName[VMS_MAX_JOB_NAME_STR+1];
-#endif /*VMS*/
 
     /* read each text field in the dialog and generate the corresponding
        command argument */
@@ -657,14 +607,7 @@ static void updatePrintCmd(Widget w, caddr_t client_data, caddr_t call_data)
     if (NameOption[0] == '\0')
     	jobArg[0] = '\0';
     else {
-#ifdef VMS
-    /* truncate job name on VMS systems or it will cause problems */
-        strncpy(printJobName,PrintJobName,VMS_MAX_JOB_NAME_STR);
-        printJobName[VMS_MAX_JOB_NAME_STR] = '\0';
-        sprintf(jobArg, " %s\"%s\"", NameOption, printJobName);
-#else
         sprintf(jobArg, " %s\"%s\"", NameOption, PrintJobName);
-#endif
     }
 
     /* Compose the command from the options determined above */
@@ -690,38 +633,6 @@ static void printCmdModified(Widget w, caddr_t client_data, caddr_t call_data)
 static void printButtonCB(Widget widget, caddr_t client_data, caddr_t call_data)
 {
     char *str, command[MAX_CMD_STR];
-#ifdef VMS
-    int spawn_sts;
-    int spawnFlags=CLI$M_NOCLISYM;
-    struct dsc$descriptor cmdDesc;
-
-    /* get the print command from the command text area */
-    str = XmTextGetString(Text4);
-
-    /* add the file name to the print command */
-    sprintf(command, "%s %s", str, PrintFileName);
-
-    NEditFree(str);
-
-    /* append /DELETE to print command if requested */
-    if (DeleteFile)
-	strcat(command, "/DELETE");
-
-    /* spawn the print command */
-    cmdDesc.dsc$w_length  = strlen(command);
-    cmdDesc.dsc$b_dtype   = DSC$K_DTYPE_T;
-    cmdDesc.dsc$b_class   = DSC$K_CLASS_S;
-    cmdDesc.dsc$a_pointer = command;
-    spawn_sts = lib$spawn(&cmdDesc,0,0,&spawnFlags,0,0,0,0,0,0,0,0);
-
-    if (spawn_sts != SS$_NORMAL)
-    {
-        DialogF(DF_WARN, widget, 1, "Print Error",
-                "Unable to Print:\n%d - %s\n  spawnFlags = %d\n", "OK",
-                spawn_sts, strerror(EVMSERR, spawn_sts), spawnFlags);
-        return;
-    }
-#else
     int nRead;
     FILE *pipe;
     char errorString[MAX_PRINT_ERROR_LENGTH], discarded[1024];
@@ -761,7 +672,6 @@ static void printButtonCB(Widget widget, caddr_t client_data, caddr_t call_data)
                 "OK", errorString);
         return;
     }
-#endif /*(VMS)*/
     
     /* Print command succeeded, so retain the current print parameters */
     if (CopiesOption[0] != '\0') {
@@ -794,7 +704,6 @@ static void cancelButtonCB(Widget widget, caddr_t client_data, caddr_t call_data
     CmdFieldModified = False;
 }
 
-#ifndef VMS
 /*
 ** Is the filename file in the directory dirpath
 ** and does it have at least some of the mode_flags enabled ?
@@ -802,11 +711,7 @@ static void cancelButtonCB(Widget widget, caddr_t client_data, caddr_t call_data
 static int fileInDir(const char *filename, const char *dirpath, unsigned short mode_flags)
 {
     DIR           *dfile;
-#ifdef USE_DIRENT
     struct dirent *DirEntryPtr;
-#else
-    struct direct *DirEntryPtr;
-#endif
     struct stat   statbuf;
     char          fullname[MAXPATHLEN];
 
@@ -938,62 +843,6 @@ static void getLpQueueDefault(char *defqueue)
         defqueue[0] = '\0';
 }
 #endif
-#endif
 
-#ifdef VMS
-static void getVmsQueueDefault(char *defqueue)
-{
-    int translate_sts;
-    short ret_len;
-    char logicl[12], tabl[15];
-    struct itemList {
-        short bufL;
-        short itemCode;
-        char *queName;
-        short *lngth;
-        int end_entry;
-    } translStruct;
-    struct dsc$descriptor tabName;
-    struct dsc$descriptor logName;
 
-    sprintf(tabl, "LNM$FILE_DEV");
 
-    tabName.dsc$w_length  = strlen(tabl);
-    tabName.dsc$b_dtype   = DSC$K_DTYPE_T;
-    tabName.dsc$b_class   = DSC$K_CLASS_S;
-    tabName.dsc$a_pointer = tabl;
-
-    sprintf(logicl, "SYS$PRINT");
-
-    logName.dsc$w_length  = strlen(logicl);
-    logName.dsc$b_dtype   = DSC$K_DTYPE_T;
-    logName.dsc$b_class   = DSC$K_CLASS_S;
-    logName.dsc$a_pointer = logicl;
-
-    translStruct.itemCode = LNM$_STRING;
-    translStruct.lngth = &ret_len;
-    translStruct.bufL = 99;
-    translStruct.end_entry = 0;
-    translStruct.queName = defqueue;
-    translate_sts = sys$trnlnm(0,&tabName,&logName,0,&translStruct);
-
-    if (translate_sts != SS$_NORMAL && translate_sts != SS$_NOLOGNAM){
-       fprintf(stderr, "Error return from sys$trnlnm: %d\n", translate_sts);
-       DialogF(DF_WARN, Label2, 1, "Error", "Error translating SYS$PRINT",
-               "OK");
-       defqueue[0] = '\0';
-    } else
-    {
-/*    printf("return status from sys$trnlnm = %d\n", translate_sts); */
-        if (translate_sts == SS$_NOLOGNAM)
-        {
-            defqueue[0] = '\0';
-        } else
-        {
-            strncpy(defqueue, translStruct.queName, ret_len);
-            defqueue[ret_len] = '\0';
-/*  printf("defqueue = %s, length = %d\n", defqueue, ret_len); */
-        }
-    }   
-}
-#endif /*(VMS)*/

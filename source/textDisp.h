@@ -33,7 +33,7 @@
 #include <X11/Xlib.h>
 #include <Xm/Xm.h>
 
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 
 enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
 	HEAVY_CURSOR};
@@ -59,6 +59,8 @@ struct NFont {
     Display *display;
     FcPattern *pattern;
     double size;
+    int minWidth;
+    int maxWidth;
     unsigned int ref;
 };
 
@@ -68,17 +70,11 @@ typedef struct {
     char *colorName;
     char isBold;
     char isItalic;
-    unsigned short red;
-    unsigned short green;
-    unsigned short blue;
     XftColor color;
     Boolean underline;
     NFont *font;
     char *bgColorName;      /* background style coloring (name may be NULL) */
-    unsigned short bgRed;
-    unsigned short bgGreen;
-    unsigned short bgBlue;
-    Pixel bgColor;
+    XftColor bgColor;
 } styleTableEntry;
 
 typedef struct graphicExposeTranslationEntry {
@@ -86,6 +82,19 @@ typedef struct graphicExposeTranslationEntry {
     int vertical;
     struct graphicExposeTranslationEntry *next;
 } graphicExposeTranslationEntry;
+
+typedef struct ansiStyle {
+    short fg;
+    short bg;
+    short bold;
+    short italic;
+    short fg_r;
+    short fg_g;
+    short fg_b;
+    short bg_r;
+    short bg_g;
+    short bg_b;
+} ansiStyle;
 
 typedef void (*unfinishedStyleCBProc)();
 
@@ -99,16 +108,28 @@ typedef struct _calltipStruct {
     int alignMode;          /* Strict or sloppy alignment */
 } calltipStruct;
 
-typedef struct _textDisp {
-    Widget w;
-    XftDraw *d;
-    int top, left, width, height, lineNumLeft, lineNumWidth;
+typedef struct _textCursor {
     int cursorPos;
     int cursorPosCache;
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
+    int cursorPreferredCol;
+    int x;
+    int y;
+} textCursor;
+
+typedef struct _textDisp {
+    Widget w;
+    XftDraw *d;
+    int top, left, width, height, lineNumLeft, lineNumWidth;
+    textCursor *cursor;
+    textCursor *newcursor;
+    textCursor *multicursor;
+    size_t mcursorAlloc;
+    size_t mcursorSize;
+    size_t mcursorSizeReal;
     int cursorOn;
-    int cursorX, cursorY;		/* X, Y pos. of last drawn cursor 
+    /*int cursorX, cursorY;*/		/* X, Y pos. of last drawn cursor 
                                             Note: these are used for *drawing*
                                             and are not generally reliable
                                             for finding the insert position's
@@ -117,7 +138,7 @@ typedef struct _textDisp {
     					   where to move the cursor, to reduce
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
-    int cursorPreferredCol;		/* Column for vert. cursor movement */
+    //int cursorPreferredCol;		/* Column for vert. cursor movement */
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */
@@ -153,37 +174,41 @@ typedef struct _textDisp {
     	    unfinishedHighlightCB;  	/*     regions */
     void *highlightCBArg;   	    	/* Arg to unfinishedHighlightCB */
     NFont *font;                        /* primary font */
+    NFont *boldFont;
+    NFont *italicFont;
+    NFont *boldItalicFont;
     int ascent, descent;		/* Composite ascent and descent for
     					   primary font + all-highlight fonts */
     int fixedFontWidth;			/* Font width if all current fonts are
     					   fixed and match in width, else -1 */
     Widget hScrollBar, vScrollBar;
-    GC gc, selectGC, highlightGC;	/* GCs for drawing text */
-    GC selectBGGC, highlightBGGC;	/* GCs for erasing text */
+    GC gc;
     GC cursorFGGC;			/* GC for drawing the cursor */
-    GC lineNumGC;   	    	    	/* GC for drawing line numbers */
-    GC lineHighlightBGGC;               /* GC for highlighted cursor line */
-    GC styleGC;     	    	    	/* GC with color and font unspecified
-    	    	    	    	    	   for drawing colored/styled text */
-    Pixel fgPixel, bgPixel;		/* Foreground/Background colors */
-    Pixel selectFGPixel,		/* Foreground select color */
+    
+    XftColor styleGC;
+    
+    XftColor fgPixel, bgPixel;		/* Foreground/Background colors */
+    XftColor selectFGPixel,		/* Foreground select color */
           selectBGPixel;   		/* Background select color */
-    Pixel highlightFGPixel,             /* Highlight colors are used when */
+    XftColor highlightFGPixel,             /* Highlight colors are used when */
           highlightBGPixel;             /*    flashing matching parens    */
-    Pixel lineNumFGPixel;   	    	/* Color for drawing line numbers */
-    Pixel lineNumBGPixel;               /* Background color for line numbers */
-    Pixel lineHighlightBGPixel;         /* BG for highlighted cursor line */
-    Pixel cursorFGPixel;
-    Pixel *bgClassPixel;		/* table of colors for each BG class */
+    XftColor lineNumFGPixel;   	    	/* Color for drawing line numbers */
+    XftColor lineNumBGPixel;               /* Background color for line numbers */
+    XftColor lineHighlightBGPixel;         /* BG for highlighted cursor line */
+    XftColor cursorFGPixel;
+    XftColor *bgClassPixel;		/* table of colors for each BG class */
+    
     XftColor fgColor;                   /* Foreground text color */
     XftColor selectFGColor;             /* Foreground color for selected text */
     XftColor highlightFGColor;          /* Foreground highlighted text color */
-    XftColor lineNumColor;
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Boolean indentRainbow;
-    Pixel *indentRainbowColors;
+    XftColor *indentRainbowColors;
     int numRainbowColors;
+    
+    Boolean ansiColors;
+    XftColor *ansiColorList;
     
     Widget calltipW;                    /* The Label widget for the calltip */
     Widget calltipShell;                /* The Shell that holds the calltip */
@@ -198,35 +223,43 @@ typedef struct _textDisp {
                                            suppressed) */
     int modifyingTabDist;		/* Whether tab distance is being
     					   modified */
+    Boolean mcursorOn;                  /* Is there more than one cursor */
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
     Boolean disableRedisplay;
     Boolean highlightCursorLine;
     Boolean fixLeftClipAfterResize;     /* after resize, left clip could be
                                            in the middle of a glyph */
+    Boolean redrawCursorLine;           /* If true, redraw the complete in
+                                           line in some functions, when it
+                                           contains the cursor */
     graphicExposeTranslationEntry *graphicsExposeQueue;
 } textDisp;
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        NFont *font, Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
+        NFont *font, NFont *bold, NFont *italic, NFont *boldItalic,
+        Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
         Pixel selectBGPixel, Pixel highlightFGPixel, Pixel highlightBGPixel,
         Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
         int continuousWrap, int wrapMargin, XmString bgClassString,
         Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, char *indentRainbowColors,
-        Boolean highlightCursorLine);
+        XftColor *ansiColorList, Boolean indentRainbow, char *indentRainbowColors,
+        Boolean highlightCursorLine, Boolean ansiColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
-void TextDSetColors(textDisp *textD, Pixel textFgP, Pixel textBgP,
-        Pixel selectFgP, Pixel selectBgP, Pixel hiliteFgP, Pixel hiliteBgP, 
-        Pixel lineNoFgP, Pixel lineNoBgP, Pixel cursorFgP, Pixel lineHiBgP);
+void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
+        XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
+        XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
+void TextDSetBoldFont(textDisp *textD, NFont *boldFont);
+void TextDSetItalicFont(textDisp *textD, NFont *boldFont);
+void TextDSetBoldItalicFont(textDisp *textD, NFont *boldFont);
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);
@@ -237,6 +270,12 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
 void TextDSetInsertPosition(textDisp *textD, int newPos);
+void TextDChangeCursors(textDisp *textD, int startPos, int diff);
+int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
+void TextDRemoveCursor(textDisp *textD, int cursorIndex);
+void TextDSetCursors(textDisp *textD, size_t *cursors, size_t ncursors);
+int  TextDClearMultiCursor(textDisp *textD);
+void TextDCheckCursorDuplicates(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);
@@ -256,6 +295,8 @@ int TextDMoveDown(textDisp *textD, int absolute);
 void TextDBlankCursor(textDisp *textD);
 void TextDUnblankCursor(textDisp *textD);
 void TextDSetCursorStyle(textDisp *textD, int style);
+Boolean TextDPosHasCursor(textDisp *textD, int pos, int *index);
+Boolean TextDRangeHasCursor(textDisp *textD, int start, int end);
 void TextDSetWrapMode(textDisp *textD, int wrap, int wrapMargin);
 int TextDEndOfLine(const textDisp* textD, int pos,
     Boolean startPosIsLineStart);
@@ -265,8 +306,8 @@ int TextDCountForwardNLines(const textDisp* textD, int startPos,
 int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines);
 int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart);
-void TextDSetupBGClasses(Widget w, XmString str, Pixel **pp_bgClassPixel,
-	unsigned char **pp_bgClass, Pixel bgPixelDefault);
+void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
+	unsigned char **pp_bgClass, XftColor bgPixelDefault);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
 	int textLeft);
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
@@ -276,6 +317,9 @@ void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
+textCursor TextDPos2Cursor(textDisp *textD, int pos);
+void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
+void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

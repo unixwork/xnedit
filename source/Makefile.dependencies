@@ -6,7 +6,8 @@ file.o: file.c file.h nedit.h textBuf.h text.h window.h preferences.h \
   ../util/utils.h
 help.o: help.c help.h help_topic.h textBuf.h text.h textP.h textDisp.h \
   textSel.h nedit.h search.h window.h preferences.h help_data.h file.h \
-  highlight.h ../util/misc.h ../util/DialogF.h ../util/system.h
+  highlight.h ../util/misc.h ../util/DialogF.h ../util/system.h \
+  version.h
 highlight.o: highlight.c highlight.h nedit.h textBuf.h textDisp.h text.h \
   textP.h regularExp.h highlightData.h preferences.h window.h \
   ../util/misc.h ../util/DialogF.h

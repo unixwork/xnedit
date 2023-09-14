@@ -80,6 +80,8 @@
 
 #include <inttypes.h>
 
+#define ENC_ERROR_LIST_LEN 8
+
 typedef struct Locale {
     char *locale;
     char *encoding;
@@ -606,7 +608,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     
     RemoveBackupFile(window);
     ClearUndoList(window);
-    openFlags |= IS_USER_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
+    openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
     if (!doOpen(window, name, path, encoding, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
@@ -1009,6 +1011,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
     }
     
+    EncError *encErrors = NEditCalloc(ENC_ERROR_LIST_LEN, sizeof(EncError));
+    size_t numEncErrors = 0;
+    size_t allocEncErrors = ENC_ERROR_LIST_LEN;
+    
     err = 0;
     int skipped = 0;
     size_t r = 0;
@@ -1028,14 +1034,39 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             
             if(rc == (size_t)-1) {
                 /* iconv wants more bytes */
+                int extendBuf = 0;
                 switch(errno) {
                     default: err = 1; break;
                     case EILSEQ: {
-                        if(inleft > 0) {    
-                            outStr[0] = '?'; // TODO: use unicode replacement char
-                            outStr++;
-                            outleft--;
-                            readLen++;
+                        if(inleft > 0) {
+                            // replace with unicode replacement char
+                            if(outleft < 3) {
+                                // jump to extendBuf
+                                // next strconv run will try to convert
+                                // the same character, but this time
+                                // we have the space to store the
+                                // unicode replacement character
+                                extendBuf = 1;
+                                break;
+                            }
+                            
+                            outStr[0] = 0xEF;
+                            outStr[1] = 0xBF;
+                            outStr[2] = 0xBD;
+                            
+                            // add unconvertible character to the error list
+                            if(numEncErrors >= allocEncErrors) {
+                                allocEncErrors += 16;
+                                encErrors = NEditRealloc(encErrors, allocEncErrors * sizeof(EncError));
+                            }
+                            encErrors[numEncErrors].c = (unsigned char)*str;
+                            encErrors[numEncErrors].pos = outStr - fileString;
+                            numEncErrors++;
+                            
+                            
+                            outStr += 3;
+                            outleft -= 3;
+                            readLen += 3;
                             
                             str++;
                             inleft--;
@@ -1051,17 +1082,24 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                         break;
                     }
                     case E2BIG: {
-                        strAlloc += 512;
-                        size_t outpos = outStr - fileString;
-                        fileString = realloc(fileString, strAlloc + 1);
-                        if(!fileString) {
-                            err = 1;
-                            break;
-                        }
-                        outStr = fileString + outpos;
-                        outleft = strAlloc - readLen;
+                        extendBuf = 1;
                         break;
                     }
+                }
+                
+                if(extendBuf) {
+                    // either strconv needs more space, or
+                    // the unicode replacement character couldn't be stored
+                    // -> extend buffer
+                    strAlloc += 512;
+                    size_t outpos = outStr - fileString;
+                    fileString = realloc(fileString, strAlloc + 1);
+                    if(!fileString) {
+                        err = 1;
+                        break;
+                    }
+                    outStr = fileString + outpos;
+                    outleft = strAlloc - readLen;
                 }
                 
                 if(err) {
@@ -1075,8 +1113,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         iconv_close(ic);
     }
     
+    SET_ENCODING_LOCKED(window->lockReasons, FALSE);
+    
     int show_err = TRUE;
     int show_infobar = FALSE;
+    int lock_enc_error = FALSE;
     if(skipped > 0) {
         /*
         window->filenameSet = FALSE; // Temp. prevent check for changes.
@@ -1091,13 +1132,23 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
         */
         
+        char *lockmsg = "";
+        if(GetPrefLockEncodingError()) {
+            lockmsg = ": file locked to prevent accidental changes";
+            flags = flags | PREF_READ_ONLY;
+            lock_enc_error = TRUE;
+        }
+        
         char msgbuf[256];
-        snprintf(msgbuf, 256, "%d non-convertible characters skipped", skipped);
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped%s", skipped, lockmsg);
         
         show_infobar = TRUE;
         SetEncodingInfoBarLabel(window, msgbuf);
+        SetEncErrors(window, encErrors, numEncErrors);
     } else {
         SetEncodingInfoBarLabel(window, "No conversion errors");
+        SetEncErrors(window, NULL, 0);
+        NEditFree(encErrors);
     }
     
     if (err || ferror(fp)) {
@@ -1183,6 +1234,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {
         SET_USER_LOCKED(window->lockReasons, TRUE);
+        SET_ENCODING_LOCKED(window->lockReasons, lock_enc_error);
     }
     if (IS_PERM_LOCKED(window->lockReasons)) {
 	window->fileChanged = FALSE;

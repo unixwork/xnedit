@@ -1,6 +1,67 @@
 CHANGELOG
 =========
 
+version 1.5.1 (2023-09-06)
+--------------------------
+
+ - added DISABLE_MULTICURSOR compile option
+ - fixed potential crash caused by uninitialized memory access in CreateBGMenu
+ - fixed unnecessary stat line updates when using multiple cursors
+ - fixed cursor line highlighting bug when removing a selection
+
+version 1.5.0 (2023-07-09)
+--------------------------
+ 
+ - added experimental support for multi-cursor editing
+ - added new setting Lock File on Encoding Error
+ - added horizontal scrolling via btn6/7
+ - added current window size as default values to Initial Window Size dialog
+ - added marking to iconified windows in the window menu
+ - added persistent search/replace history
+ - added CDE dnd integration
+ - updated macos makefile
+ - improved font width detection
+ - improved text rendering performance
+ - changed behavior when a file was opened with encoding errors (lock on error)
+ - removed file dialog icon view / removed libXpm dependency
+ - fixed macro recording of composed characters
+ - fixed xnc not detecting the correct virtual desktop of windows
+ - fixed new file name not always used in the save file dialog/detaiview
+ - fixed possible out-of-bounds read in primary selection
+ - fixed line number background clip rectangle
+ - fixed case insensitive search not working with non-ASCII characters
+ - fixed isrcFind icon size setting
+
+version 1.4.1 (2022-07-10)
+--------------------------
+ 
+ - changed initial focus to New File Name textfield in the Save File dialog
+ - added _NET_WM_NAME window property for improved support of utf8 window titles
+ - improved primary selection compatibility
+ - fixed return key not working in the Save File dialog
+ - fixed color dialog not working with older motif versions
+ - fixed build on Solaris
+ - fixed EditorConfig unset
+ - fixed uninitialized memory read in drawString()
+ - fixed LDFLAGS not used when linking binaries
+
+version 1.4.0 (2022-01-09)
+--------------------------
+ 
+ - updated C, C++ and Java syntax highlighting
+ - added Lua syntax highlighting
+ - added OCaml syntax highlighting
+ - added support for DESTDIR parameter in the make install target
+ - added ansi escape sequence color rendering
+ - added color chooser
+ - added warning before overriding existing files
+ - added encoding error list
+ - added possibility to close tabs with middle mouse button
+ - tab position can be changed with dnd in the same window now
+ - improved file dialog(Ctrl+L shortcut, support for absolute file names)
+ - fixed Edit Lower-case/Upper-case with non-ASCII characters
+ - removed "Cannot get X Input Manager" error message
+
 version 1.3.3 (2021-08-18)
 --------------------------
  

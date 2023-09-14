@@ -386,8 +386,15 @@ static int ec_isroot(ECFile *ecf) {
 static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
     ECKeyValue *v = sec->values;
     while(v) {
+        int unset_value = 0;
+        if(!strcmp(v->value, "unset")) {
+            unset_value = 1;
+        }
+        
         if(!strcmp(v->name, "indent_style")) {
-            if(!strcmp(v->value, "space")) {
+            if(unset_value) {
+                config->indent_style = EC_INDENT_STYLE_UNSET;
+            } else if(!strcmp(v->value, "space")) {
                 config->indent_style = EC_SPACE;
             } else if(!strcmp(v->value, "tab")) {
                 config->indent_style = EC_TAB;
@@ -403,7 +410,9 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
                 config->tab_width = val;
             }
         } else if(EC_EOL_UNSET && !strcmp(v->name, "end_of_line")) {
-            if(!strcmp(v->value, "lf")) {
+            if(unset_value) {
+                config->end_of_line = EC_EOL_UNSET;
+            } else if(!strcmp(v->value, "lf")) {
                 config->end_of_line = EC_LF;
             } else if(!strcmp(v->value, "cr")) {
                 config->end_of_line = EC_CR;
@@ -413,12 +422,13 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
         } else if(!strcmp(v->name, "charset")) {
             if(config->charset) {
                 free(config->charset);
+                config->charset = NULL;
             }
             
             if(!strcmp(v->value, "utf-8-bom")) {
                 config->charset = strdup("utf-8");
                 config->bom = EC_BOM;
-            } else {
+            } else if(!unset_value) {
                 config->charset = strdup(v->value);
                 size_t vlen = strlen(v->value);
                 if(vlen >= 6 && (!memcmp(v->value, "utf-16", 6) || !memcmp(v->value, "utf-32", 6))) {

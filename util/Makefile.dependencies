@@ -16,3 +16,4 @@ filedialog.o: filedialog.c filedialog.h
 xdnd.o: xdnd.c xdnd.h
 textfield.o: textfield.c textfield.h
 ec_glob.o: ec_glob.c ec_glob.h utarray.h
+colorchooser.o: colorchooser.c colorchooser.h

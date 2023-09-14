@@ -66,6 +66,8 @@ void SetPrefWrap(WrapStyle state);
 WrapStyle GetPrefWrap(int langMode);
 void SetPrefWrapMargin(int margin);
 int GetPrefWrapMargin(void);
+void SetPrefSaveSearchHistory(int state);
+int GetPrefSaveSearchHistory(void);
 void SetPrefSearchDlogs(int state);
 int GetPrefSearchDlogs(void);
 void SetPrefKeepSearchDlogs(int state);
@@ -127,6 +129,10 @@ void SetPrefHighlightCursorLine(int state);
 int GetPrefHighlightCursorLine(void);
 void SetPrefIndentRainbowColors(const char *colorList);
 char *GetPrefIndentRainbowColors(void);
+void SetPrefAnsiColorList(const char *colorList);
+char *GetPrefAnsiColorList(void);
+void SetPrefAnsiColors(int state);
+Boolean GetPrefAnsiColors(void);
 void SetPrefBacklightChars(int state);
 int GetPrefBacklightChars(void);
 char *GetPrefBacklightCharTypes(void);
@@ -177,7 +183,6 @@ char *GetPrefDelimiters(void);
 int GetPrefMaxPrevOpenFiles(void);
 int GetPrefTypingHidesPointer(void);
 int GetEditorConfig(void);
-void SetEditorConfig(int state);
 #ifdef SGI_CUSTOM
 void SetPrefShortMenus(int state);
 int GetPrefShortMenus(void);
@@ -186,7 +191,6 @@ void SelectShellDialog(Widget parent, WindowInfo* forWindow);
 void EditLanguageModes(void);
 void ChooseFonts(WindowInfo *window, int forWindow);
 void ChooseColors(WindowInfo *window);
-void ChooseIndentRainbowColors(WindowInfo *window);
 char *LanguageModeName(int mode);
 char *GetWindowDelimiters(const WindowInfo *window);
 int ReadNumericField(char **inPtr, int *value);
@@ -240,7 +244,12 @@ int GetPrefCloseIconSize(void);
 int GetPrefISrcFindIconSize(void);
 int GetPrefISrcClearIconSize(void);
 
+void SetPrefLockEncodingError(int state);
+int GetPrefLockEncodingError(void);
+
 char* ChangeFontSize(const char *name, int newsize);
+
+char* ParseAnsiColorList(char **array, const char *str);
 
 void SessionsPref(WindowInfo *window);
 

@@ -1,4 +1,4 @@
-          Release Notes for XNEdit Version 1.3.0, May 2021
+          Release Notes for XNEdit Version 1.5.0, Jul 2023
 
 
 This file contains last minute notes to users about the release, which are not
@@ -7,10 +7,23 @@ kits.  It also contains change information, for users who are interested in
 what bugs have been fixed, and what features have been added in the current
 version.
 
+
+XNEdit 1.5.0 Experimental Multi-cursor Support
+----------------------------------------------
+
+Additional cursors can be added with Ctrl+Btn1 or Ctrl+Supper+Up/Down.
+Inserting/deleting text and moving cursors works like single-cursor operations.
+
+Multiple text selections is unsupported.
+
+The multi-cursor feature is still experimental and can change in the future.
+
+
 XNEdit 1.3.0 EditorConfig Support
 ---------------------------------
 
-XNEdit supports reading file settings from .editorconfig files (See https://editorconfig.org/ for details).
+XNEdit supports reading file settings from .editorconfig files
+(See https://editorconfig.org/ for details).
 
 
 New XNEdit 1.3.0 preferences
@@ -25,7 +38,8 @@ small
 medium
 large
 
-It is also possible to specify the size for individual buttons (close, isrcFind, isrcClear):
+It is also possible to specify the size for individual buttons
+(close, isrcFind, isrcClear):
 
 nedit.iconSize: close=medium,isrcFind=large,isrcClear=large
 
@@ -33,14 +47,19 @@ nedit.iconSize: close=medium,isrcFind=large,isrcClear=large
 New XNEdit 1.2.1 alternative Textfield Widget
 ---------------------------------------------
 
-An alternative text field widget with improved unicode support can be used in the Search/Replace dialogs. This solves the folloing problems:
+An alternative text field widget with improved unicode support can be used in
+the Search/Replace dialogs. This solves the folloing problems:
 
 1. With some locales (non-UTF-8), only ASCII input works
-2. Motif's XmTextField does not support fallback fonts with Xft text rendering, which limits the variety of characters that could be displayed
+2. Motif's XmTextField does not support fallback fonts with Xft text rendering,
+   which limits the variety of characters that could be displayed
 
-To use the new alternative text field widget, add -DXNE_TEXTFIELD to the CFLAGS variable in the platform specific Makefile.
+To use the new alternative text field widget, add -DXNE_TEXTFIELD to the CFLAGS
+variable in the platform specific Makefile.
 
-The alternative widget uses 'XmTextField' as widget class, which means many styling options (X resources) of Motif's XmTextField can be used. The font of the new widget can be changed via the 'XftFont' resource. For example:
+The alternative widget uses 'XmTextField' as widget class, which means many
+styling options (X resources) of Motif's XmTextField can be used. The font of
+the new widget can be changed via the 'XftFont' resource. For example:
 
 *XmTextField.XftFont: Monospace:size=10
 
@@ -48,9 +67,11 @@ The alternative widget uses 'XmTextField' as widget class, which means many styl
 New XNEdit 1.2 "Insert Unicode" menu entry
 ------------------------------------------
 
-The new "Insert Unicode" replaces the "Insert Ctrl Code" menu entry, which wasn't fully functional in XNEdit.
+The new "Insert Unicode" replaces the "Insert Ctrl Code" menu entry,
+which wasn't fully functional in XNEdit.
 
-The Insert Unicode dialog allows specifying an Unicode Codepoint in a variety of formats:
+The Insert Unicode dialog allows specifying an Unicode Codepoint in a variety
+of formats:
 
 Decimal number, for example: 122
 Possible Hex formats (case insensitive):
@@ -63,15 +84,19 @@ U007A
 New XNEdit 1.1 preferences
 --------------------------
 
-XNEdit 1.1 introduces some new preferences, that can be set in the nedit.rc file (~/.xnedit/nedit.rc). Currently there is no way to set these via GUI.
+XNEdit 1.1 introduces some new preferences, that can be set in the nedit.rc
+file (~/.xnedit/nedit.rc). Currently there is no way to set these via GUI.
 
 1. nedit.zoomStep: <int>
 
-Configures how much the zoom-shortcuts Ctrl++ and Ctrl+- change the font size. Default value is 1.
+Configures how much the zoom-shortcuts Ctrl++ and Ctrl+- change the font size.
+Default value is 1.
 
 2. nedit.autoEnableXattr: <boolean>
 
-If true, changing the encoding in the file save dialog to a non-unicode encoding will activate the "Store encoding in extended attribute" automatically. Default value is True.
+If true, changing the encoding in the file save dialog to a non-unicode
+encoding will activate the "Store encoding in extended attribute" automatically.
+Default value is True.
 
 3. nedit.fsbView: <int>
 
@@ -83,18 +108,22 @@ Default value is 1.
 
 4. nedit.fsbShowHidden: <boolean>
 
-Configures the default value of the "Show hidden files" togglebutton in the file dialog. Default value is False.
+Configures the default value of the "Show hidden files" togglebutton in the
+file dialog. Default value is False.
 
 5. nedit.windowDarkTheme: <boolean>
 
-This feature is only available on Gnome 3 and similar desktops. If it is set to true, 
-the gtk theme variant of the window is set to "dark". This will only affect the window decoration and not the content.
+This feature is only available on Gnome 3 and similar desktops. If it is set
+to true, the gtk theme variant of the window is set to "dark". This will only
+affect the window decoration and not the content.
 
 
 New feature: "New folder" button
 --------------------------------
 
-The file dialog has a new button for creating directories. By default, the button has an icon and no label. To show the label and no icon, set the following X resource:
+The file dialog has a new button for creating directories. By default,
+the button has an icon and no label. To show the label and no icon, set the
+following X resource:
 
 nedit*newFolder.labelType: XmSTRING
 
@@ -102,7 +131,9 @@ nedit*newFolder.labelType: XmSTRING
 Beta feature: detail file view
 ------------------------------
 
-Additionally to the icon view and list view, the file dialog supports a detail view, which shows the size and modification date of each file. This feature is disabled by default. To enable it, add -DFSB_ENABLE_DETAIL to the CFLAGS.
+Additionally to the icon view and list view, the file dialog supports a detail
+view, which shows the size and modification date of each file. This feature is
+disabled by default. To enable it, add -DFSB_ENABLE_DETAIL to the CFLAGS.
 
 
 Known issues

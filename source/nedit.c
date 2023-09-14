@@ -44,6 +44,7 @@
 #include "tags.h"
 #include "menu.h"
 #include "macro.h"
+#include "search.h"
 #include "server.h"
 #include "interpret.h"
 #include "parse.h"
@@ -66,6 +67,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <langinfo.h>
 
 #ifndef NO_XMIM
 #include <X11/Xlocale.h>
@@ -104,7 +106,6 @@ static void unmaskArgvKeywords(int argc, char **argv, const char **maskArgs);
 static void fixupBrokenXKeysymDB(void);
 static void patchResourcesForVisual(void);
 static void patchResourcesForKDEbug(void);
-static void patchLocaleForMotif(void);
 static unsigned char* sanitizeVirtualKeyBindings(void);
 static int sortAlphabetical(const void* k1, const void* k2);
 static int virtKeyBindingsAreInvalid(const unsigned char* bindings);
@@ -211,6 +212,8 @@ static char *fallbackResources[] = {
     
     "*pbbutton.shadowThickness: 1",
     "*pbbutton.highlightThickness: 1",
+    
+    "*tabButton.shadowThickness: 1",
        
     "*XmContainer.outlineIndentation:	30",
     "*XmContainer.outlineColumnWidth:	6cm",
@@ -657,7 +660,11 @@ int main(int argc, char **argv)
     if(GetPrefSessionRestore()) {
         sessionFile = LoadSessionsAndGetLatestFile();
     }
-    
+
+    /* Read database of search/replace history. It's called here
+       for enabling the Find/Replace Again menu items. */
+    ReadSearchHistory();
+
     /* Process -import command line argument before others which might
        open windows (loading preferences doesn't update menu settings,
        which would then be out of sync with the real preference settings) */
@@ -1125,49 +1132,15 @@ static void patchResourcesForKDEbug(void)
     }
 }
 
-/*
-** It seems OSF Motif cannot handle locales with UTF-8 at the end, crashing
-** in various places.  The easiest one to find is to open the File Open
-** dialog box.  So we lop off UTF-8 if it's there and continue.  Newer 
-** versions of Linux distros (e.g., RedHat 8) set the default language to
-** to have "UTF-8" at the end, so users were seeing these crashes.
-**
-** LessTif and OpenMotif 2.3 don't appear to have this problem.
-**
-** Some versions OpenMotif 2.2.3 don't have this problem, but there's
-** no way to tell which.
-*/
-
-static void patchLocaleForMotif(void)
+int XNEditDefaultCharsetIsUTF8(void)
 {
-#if !(defined(LESSTIF_VERSION) || XmVersion >= 2003)
-    const char *ctype;
-    char ctypebuf[1024];
-    char *utf_start;
-    
-    /* We have to check LC_CTYPE specifically here, because the system
-       might specify different locales for different categories (why
-       anyone would want to do this is beyond me).  As far as I can
-       tell, only LC_CTYPE causes OSF Motif to crash.  If it turns out
-       others do, we'll have to iterate over a list of locale cateogries
-       and patch every one of them. */
-       
-    ctype = setlocale(LC_CTYPE, NULL);
-    
-    if (!ctype)
-        return;
-
-    strncpy(ctypebuf, ctype, sizeof ctypebuf);
-
-    if ((utf_start = strstr(ctypebuf, ".utf8")) || 
-        (utf_start = strstr(ctypebuf, ".UTF-8")))
-    {
-        *utf_start = '\0'; /* Samurai chop */
-        setlocale(LC_CTYPE, ctypebuf);
+    static int defaultCharsetIsUtf8 = -1;
+    if(defaultCharsetIsUtf8 == -1) {
+        char *l = nl_langinfo(CODESET);
+        defaultCharsetIsUtf8 = !strcmp(l, "UTF-8") ? 1 : 0;
     }
-#endif
+    return defaultCharsetIsUtf8;
 }
-
 
 /*
 ** Same as the default X language procedure, except we check if Motif can
@@ -1193,7 +1166,7 @@ static String neditLanguageProc(Display *dpy, String xnl, XtPointer closure)
     }
     if (! XSetLocaleModifiers(""))
         XtWarning("X locale modifiers not supported, using default");
-
+    
     return setlocale(LC_ALL, NULL); /* re-query in case overwritten */
 }
 

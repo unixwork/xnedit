@@ -88,6 +88,8 @@ typedef struct {
 typedef struct {
     char *utf8String;
     char *string;
+    size_t utf8slen;
+    size_t slen;
     int isColFlag;
     int cbCount;
 } stringSelection;
@@ -243,6 +245,8 @@ void InsertPrimarySelection(Widget w, Time time, int isColumnar)
     stringSelection *sel = NEditMalloc(sizeof(stringSelection));
     sel->utf8String = NULL;
     sel->string = NULL;
+    sel->utf8slen = 0;
+    sel->slen = 0;
     sel->cbCount = 0;
     sel->isColFlag = isColumnar;
     
@@ -251,12 +255,8 @@ void InsertPrimarySelection(Widget w, Time time, int isColumnar)
     
     selectionTime = time;
     
-#ifdef __APPLE__
     XtGetSelectionValue(w, XA_PRIMARY, targets[1], getSelectionCB, sel, time);
     XtGetSelectionValue(w, XA_PRIMARY, targets[0], getSelectionCB, sel, time);
-#else
-    XtGetSelectionValues(w, XA_PRIMARY, targets, 2, getSelectionCB, data, time);
-#endif
 }
 
 /*
@@ -558,19 +558,29 @@ static void selectionSetValue(
         
         if(type == XA_STRING) {
             selection->string = string;
+            selection->slen = length;
         } else {
             selection->utf8String = string;
+            selection->utf8slen = length;
         }
     }
     
     XtFree(value);
     
     if(selection->cbCount == 2) {
-        char *insertStr = selection->utf8String ? selection->utf8String : selection->string;  
+        char *insertStr;
+        size_t insertStrLen;
+        if(selection->utf8String) {
+            insertStr = selection->utf8String;
+            insertStrLen = selection->utf8slen;
+        } else {
+            insertStr = selection->string;
+            insertStrLen = selection->slen;
+        }
         if(insertStr) {
             textDisp *textD = ((TextWidget)w)->text.textD;
 
-            if (!BufSubstituteNullChars(insertStr, length, textD->buffer)) {
+            if (!BufSubstituteNullChars(insertStr, insertStrLen, textD->buffer)) {
                 fprintf(stderr, "Too much binary data, giving up\n");
             } if (selection->isColFlag) {
                 /* Insert it in the text widget */

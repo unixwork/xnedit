@@ -34,7 +34,7 @@
 #include <X11/Intrinsic.h>
 #include <Xm/Xm.h>
 #include <Xm/XmStrDefs.h>
-#include <Xft/Xft.h>
+#include <X11/Xft/Xft.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -143,6 +143,8 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 #define PERM_LOCKED_BIT     1
 #define TOO_MUCH_BINARY_DATA_LOCKED_BIT 2
 
+#define ENCODING_ERROR_LOCKED_BIT 7
+
 #define LOCKED_BIT_TO_MASK(bitNum) (1 << (bitNum))
 #define SET_LOCKED_BY_REASON(reasons, onOrOff, reasonBit) ((onOrOff) ? \
                     ((reasons) |= LOCKED_BIT_TO_MASK(reasonBit)) : \
@@ -155,8 +157,11 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 #define IS_TMBD_LOCKED(reasons) (((reasons) & LOCKED_BIT_TO_MASK(TOO_MUCH_BINARY_DATA_LOCKED_BIT)) != 0)
 #define SET_TMBD_LOCKED(reasons, onOrOff) SET_LOCKED_BY_REASON(reasons, onOrOff, TOO_MUCH_BINARY_DATA_LOCKED_BIT)
 
-#define IS_ANY_LOCKED_IGNORING_USER(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(USER_LOCKED_BIT)) != 0)
-#define IS_ANY_LOCKED_IGNORING_PERM(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(PERM_LOCKED_BIT)) != 0)
+#define IS_ENCODING_LOCKED(reasons) (((reasons) & LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
+#define SET_ENCODING_LOCKED(reasons, onOrOff) SET_LOCKED_BY_REASON(reasons, onOrOff, ENCODING_ERROR_LOCKED_BIT)
+
+#define IS_ANY_LOCKED_IGNORING_USER(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(USER_LOCKED_BIT) & ~LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
+#define IS_ANY_LOCKED_IGNORING_PERM(reasons) (((reasons) & ~LOCKED_BIT_TO_MASK(PERM_LOCKED_BIT) & ~LOCKED_BIT_TO_MASK(ENCODING_ERROR_LOCKED_BIT)) != 0)
 #define IS_ANY_LOCKED(reasons) ((reasons) != 0)
 #define CLEAR_ALL_LOCKS(reasons) ((reasons) = 0)
 
@@ -174,6 +179,9 @@ typedef struct _UndoInfo {
     int		endPos;
     int 	oldLen;
     char	*oldText;
+    short       numOp;                  /* Number of undo records for this
+                                           for this operation.
+                                           */
     char	inUndo;			/* flag to indicate undo command on
     					   this record in progress.  Redirects
     					   SaveUndoInfo to save the next mod-
@@ -265,6 +273,14 @@ typedef struct _UserBGMenuCache {
     UserMenuList ubmcMenuList;        /* list of all background menu items */
 } UserBGMenuCache;
 
+/*
+ * Encoding Error
+ */
+typedef struct _EncError {
+    size_t pos;
+    int    c;
+} EncError;
+
 /* The WindowInfo structure holds the information on a Document. A number
    of 'tabbed' documents may reside within a shell window, hence some of 
    its members are of 'shell-level'; namely the find/replace dialogs, the
@@ -302,6 +318,7 @@ typedef struct _WindowInfo {
     Widget  	iSearchRevToggle;
     Widget      encodingInfoBar;
     Widget      encInfoBarLabel;
+    Widget      encInfoErrorList;
     Widget      encInfoBarList;
     Widget	menuBar;    	    	/* the main menu bar */
     Widget	tabBar;			/* tab bar for tabbed window */
@@ -408,13 +425,16 @@ typedef struct _WindowInfo {
     Widget	highlightDefItem;
     Widget      highlightCursorLineItem;
     Widget	indentRainbowItem;
+    Widget      ansiColorsItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
     Widget      highlightCursorLineDefItem;
     Widget      indentRainbowDefItem;
+    Widget      ansiColorsDefItem;
     Widget	searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
     Widget	keepSearchDlogsDefItem;
+    Widget      saveSearchHistoryDefItem;
     Widget	searchWrapsDefItem;
     Widget      appendLFItem;
     Widget	sortOpenPrevDefItem;
@@ -423,6 +443,7 @@ typedef struct _WindowInfo {
     Widget	reposDlogsDefItem;
     Widget      autoScrollDefItem;
     Widget      editorConfigDefItem;
+    Widget      lockEncodingErrorDefItem;
     Widget	openInTabDefItem;
     Widget	tabBarDefItem;
     Widget	tabBarHideDefItem;
@@ -489,6 +510,9 @@ typedef struct _WindowInfo {
     ino_t       inode;                  /*  file's inode  */
     UndoInfo	*undo;			/* info for undoing last operation */
     UndoInfo	*redo;			/* info for redoing last undone op */
+    UndoInfo    *undo_batch_begin;      /* last undo item at batch-begin */
+    int         undo_batch_count;       /* undo items per batch */
+    int         undo_op_batch_size;     /* batch size of undo operation */
     textBuffer	*buffer;		/* holds the text being edited */
     int		nPanes;			/* number of additional text editing
     					   areas, created by splitWindow */
@@ -511,6 +535,10 @@ typedef struct _WindowInfo {
     NFont       *boldItalicFont;
     
     Boolean     resizeOnFontChange;
+    
+    EncError    *encErrors;
+    size_t      numEncErrors;
+    size_t      posEncErrors;
        
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-
@@ -543,6 +571,9 @@ typedef struct _WindowInfo {
     char	*backlightCharTypes;	/* what backlighting to use */
     Boolean     indentRainbow;          /* is indentation highlight turned onß*/
     char        *indentRainbowColors;   /* indent rainbow color lists */
+    Boolean     ansiColors;             /* is ansi coloring enabled? */
+    XftColor    ansiColorList[16];      /* 16 ANSI Colors */
+    
     Boolean	modeMessageDisplayed;	/* special stats line banner for learn
     					   and shell command executing modes */
     char	*modeMessage;		/* stats line banner content for learn
@@ -593,6 +624,7 @@ typedef struct _WindowInfo {
                                            "tabbed" documents, while each document
                                            has its own background menu. */
     Boolean opened;                     /* Set to true when the window is opened */
+    Boolean mapped;
 } WindowInfo;
 
 extern WindowInfo *WindowList;
@@ -602,5 +634,7 @@ extern char *ArgV0;
 extern Boolean IsServer;
 
 char* GetAppName(void);
+
+int XNEditDefaultCharsetIsUTF8(void);
 
 #endif /* NEDIT_NEDIT_H_INCLUDED */

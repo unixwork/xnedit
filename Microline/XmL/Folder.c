@@ -2098,7 +2098,7 @@ DrawTabShadowArcTopBottom(XmLFolderWidget f,
   XArc arc;
   int tCount, bCount;
   int i, st, cd, botOff;
-
+  
   dpy = XtDisplay(f);
   win = XtWindow(f);
   fc = (XmLFolderConstraintRec *)(w->core.constraints);
@@ -3588,7 +3588,7 @@ Activate(Widget w,
   XRectangle rect;
   Widget tab;
   int i;
-
+  
   f = (XmLFolderWidget)w;
   if (!event || event->type != ButtonPress)
     return;

@@ -104,9 +104,12 @@ void RefreshWindowStates(WindowInfo *window);
 void AllWindowsBusy(const char* message);
 void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
+void SwitchTabs(Widget from, Widget to);
 void SetHighlightCursorLine(WindowInfo *window, Boolean state);
 void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
+void SetAnsiColors(WindowInfo *window, Boolean state);
+void SetAnsiColorList(WindowInfo *window, const char *colorList);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);
@@ -114,4 +117,5 @@ void SetSensitive(WindowInfo *window, Widget w, Boolean sensitive);
 void CleanUpTabBarExposeQueue(WindowInfo *window);
 void SetEncoding(WindowInfo *window, const char *encoding);
 void SetZoom(WindowInfo *window, int step);
+void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors);
 #endif /* NEDIT_WINDOW_H_INCLUDED */

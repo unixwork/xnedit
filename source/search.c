@@ -48,6 +48,7 @@
 #endif
 #include "../util/DialogF.h"
 #include "../util/misc.h"
+#include "../util/utils.h"
 #include "../util/nedit_malloc.h"
 
 #include "../util/textfield.h"
@@ -56,6 +57,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <wctype.h>
+#include <wchar.h>
+#include <errno.h>
+#include <sys/stat.h>
 #ifdef VMS
 #include "../util/VMSparam.h"
 #else
@@ -89,6 +94,7 @@
 
 
 int NHist = 0;
+time_t lastSearchdbModTime = 0;
 
 typedef struct _SelectionInfo {
     int done;
@@ -221,6 +227,7 @@ static int findMatchingChar(WindowInfo *window, char toMatch,
 static Boolean replaceUsingRE(const char* searchStr, const char* replaceStr,
         const char* sourceStr, int beginPos, char* destStr, int maxDestLen,
         int prevChar, const char* delimiters, int defaultFlags);
+static void enableFindAgainCmds(void);
 static void saveSearchHistory(const char *searchString,
         const char *replaceString, int searchType, int isIncremental);
 static int historyIndex(int nCycles);
@@ -247,6 +254,16 @@ static void iSearchRecordLastBeginPos(WindowInfo *window, int direction,
 	int initPos); 
 static Boolean prefOrUserCancelsSubst(const Widget parent,
         const Display* display);
+
+static int translateEscPos(EscSeqArray *array, int pos);
+static void translatePosAndRestoreBuf(
+        textBuffer *buf,
+        EscSeqArray *array,
+        int found,
+        int *begin,
+        int *end,
+        int *extentBW,
+        int *extentFW);
 
 typedef struct _charMatchTable {
     char c;
@@ -522,6 +539,10 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
     
     UpdateReplaceActionButtons(window);
     
+    /* Refresh search/replace history where two sessions overwrite each
+       other's changes in the history file. */
+    ReadSearchHistory();
+
     /* Start the search history mechanism at the current history item */
     window->rHistIndex = 0;
     
@@ -624,6 +645,10 @@ void DoFindDlog(WindowInfo *window, int direction, int keepDialogs,
     
     /* Set the state of the Find button */
     fUpdateActionButtons(window);
+
+    /* Refresh search/replace history where two sessions overwrite each
+       other's changes in the history file. */
+    ReadSearchHistory();
 
     /* start the search history mechanism at the current history item */
     window->fHistIndex = 0;
@@ -2905,6 +2930,10 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
 */
 void BeginISearch(WindowInfo *window, int direction)
 {
+    /* Refresh search/replace history where two sessions overwrite each
+       other's changes in the history file. */
+    ReadSearchHistory();
+
     window->iSearchStartPos = -1;
     XNETextSetString(window->iSearchText, "");
     XmToggleButtonSetState(window->iSearchRevToggle,
@@ -4151,7 +4180,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
     	return FALSE;
 
     /* get the entire text buffer from the text area widget */
-    fileString = BufAsString(window->buffer);
+    EscSeqArray *esc;
+    fileString = BufAsStringCleaned(window->buffer, &esc);
 
     /* If we're already outside the boundaries, we must consider wrapping
        immediately (Note: fileEnd+1 is a valid starting position. Consider
@@ -4190,6 +4220,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 				"Continue search from\nbeginning of file?", 
                                 "Continue", "Cancel");
 			if (resp == 2) {
+                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
 			    return False;
 			}
 		    }
@@ -4204,6 +4235,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 				"Continue search\nfrom end of file?", "Continue",
 				"Cancel");
 			if (resp == 2) {
+                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
 			    return False;
 			}
 		    }
@@ -4212,6 +4244,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 			extentFW, GetWindowDelimiters(window));
 		}
 	    }
+            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+            esc = NULL;
             if (!found) {
 		if (GetPrefSearchDlogs()) {
 		    DialogF(DF_INF, window->shell, 1, "String not found",
@@ -4236,7 +4270,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 	} else
 	    XBell(TheDisplay, 0);
     }
-
+    
+    translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
     return found;
 }
 
@@ -4614,13 +4649,52 @@ static int backwardRegexSearch(const char *string, const char *searchString, int
     return FALSE;
 }
 
+static int check_len(const char *in, int len) {
+    for(int i=0;i<len;i++) {
+        if(in[i] == 0) return i;
+    }
+    return len;
+}
+
+static void changeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_len) {
+    mbstate_t state;
+    memset(&state, 0, sizeof(mbstate_t));
+    wchar_t w = 0;
+    
+    int len = Utf8CharLen((const unsigned char*)in);
+    len = check_len(in, len);
+    *in_len = len;
+    
+    mbrtowc(&w, in, len, &state);
+    wchar_t wc = makeUpper ? towupper(w) : towlower(w);
+    if(wc == 0) wc = w;
+    char bufChar[8];
+    const char *src_buf = bufChar;
+    int clen = wctomb(bufChar, wc);
+    if(clen > len) {
+        clen = len;
+        src_buf = in;
+    }
+    *out_len = clen;
+    
+    memcpy(out, src_buf, clen);
+}
+
 static void upCaseString(char *outString, const char *inString)
 {
     char *outPtr;
     const char *inPtr;
     
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	*outPtr = toupper((unsigned char)*inPtr);
+        if(*inPtr >= 0) {
+            *outPtr = toupper((unsigned char)*inPtr);
+        } else {
+            int in_len, out_len;
+            changeCase(inPtr, outPtr, True, &in_len, &out_len);
+            inPtr += in_len - 1;
+            outPtr += out_len - 1;
+        }
+    	
     }
     *outPtr = 0;
 }
@@ -4631,7 +4705,14 @@ static void downCaseString(char *outString, const char *inString)
     const char *inPtr;
     
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	*outPtr = tolower((unsigned char)*inPtr);
+    	if(*inPtr >= 0) {
+            *outPtr = tolower((unsigned char)*inPtr);
+        } else {
+            int in_len, out_len;
+            changeCase(inPtr, outPtr, False, &in_len, &out_len);
+            inPtr += in_len - 1;
+            outPtr += out_len - 1;
+        }
     }
     *outPtr = 0;
 }
@@ -4759,6 +4840,205 @@ static Boolean replaceUsingRE(const char* searchStr, const char* replaceStr,
 }
 
 /*
+** Enable commands for repeating the last search/replace
+*/
+static void enableFindAgainCmds(void)
+{
+    WindowInfo *w;
+
+    for (w=WindowList; w!=NULL; w=w->next) {
+        if (!IsTopDocument(w))
+            continue;
+        XtSetSensitive(w->findAgainItem, True);
+        XtSetSensitive(w->replaceFindAgainItem, True);
+        XtSetSensitive(w->replaceAgainItem, True);
+    }
+}
+
+/*
+** Write dynamic database of search/replace history.
+**
+** Format:
+** type:search-len:replace-len\nsearch-string\nreplace-string\n
+**
+** type ............ search flags (int as string)
+** search-len ...... length of search-string (int as string)
+** replace-len ..... length of replace-string (int as string)
+** search-string ... binary data of search string
+** replace-string .. binary data of replace string
+**
+*/
+void WriteSearchHistory(void)
+{
+    const char *fullName = GetRCFileName(SEARCH_HISTORY);
+    const char *searchStr, *replaceStr;
+    struct stat attribute;
+    FILE *fp;
+    int i;
+
+    /* If the Save Search-History option is disabled, just return */
+    if (!GetPrefSaveSearchHistory())
+        return;
+
+    /* open the file */
+    if ((fp = fopen(fullName, "w")) == NULL) {
+#ifdef VMS
+        /* When the version number, ";1" is specified as part of the file
+           name, fopen(fullName, "w"), will only open for writing if the
+           file does not exist. Using, fopen(fullName, "r+"), opens an
+           existing file for "update" - read/write pointer is placed at
+           the beginning of file.
+           By calling ftruncate(), we discard the old contents and avoid
+           trailing garbage in the file if the new contents is shorter. */
+        if ((fp = fopen(fullName, "r+")) == NULL)
+            return;
+        if (ftruncate(fileno(fp), 0) != 0) {
+            fclose(fp);
+            return;
+        }
+#else
+        return;
+#endif
+    }
+
+    /* Write list of search-/replace-strings and types to the file */
+    for (i = NHist; i >= 1; i--) {
+        searchStr = SearchHistory[historyIndex(i)];
+        replaceStr = ReplaceHistory[historyIndex(i)];
+        fprintf(fp, "%d:%u:%u\n%s\n%s\n",
+            SearchTypeHistory[historyIndex(i)],
+            (unsigned)strlen(searchStr), (unsigned)strlen(replaceStr),
+            searchStr, replaceStr);
+    }
+    fclose(fp);
+
+    /* Stat history file to store our own write time. */
+    if (0 == stat(fullName, &attribute)) {
+        /* Memorize modtime to compare to next time. */
+        lastSearchdbModTime = attribute.st_mtime;
+    }
+}
+
+/*
+** Read database of search/replace history.
+**
+** For more information see WriteSearchHistory().
+**
+*/
+void ReadSearchHistory(void)
+{
+    const char *fullName = GetRCFileName(SEARCH_HISTORY);
+    struct stat attribute;
+    char line[16];
+    size_t lineLen;
+    int type;
+    unsigned srchLen, replLen;
+    FILE *fp;
+
+    /* If the save search history option is disabled, just return */
+    if (!GetPrefSaveSearchHistory())
+        return;
+
+    /* Stat history file to see whether someone touched it after this
+       session last changed it. */
+    if (0 == stat(fullName, &attribute)) {
+        if (lastSearchdbModTime >= attribute.st_mtime) {
+            /* Do nothing, history file is unchanged. */
+            return;
+        } else {
+            /* Memorize modtime to compare to next time. */
+            lastSearchdbModTime = attribute.st_mtime;
+        }
+    } else {
+        /* stat() failed, probably for non-exiting history database. */
+        if (ENOENT != errno)
+            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+                fullName, strerror(errno));
+        return;
+    }
+
+    /* open the file */
+    if ((fp = fopen(fullName, "r")) == NULL)
+        return;
+
+    /*  Clear previous list */
+    while (0 != NHist) {
+        XtFree(SearchHistory[historyIndex(NHist)]);
+        XtFree(ReplaceHistory[historyIndex(NHist)]);
+        NHist--;
+    }
+    HistStart = 0;
+
+    /* read lines of the file */
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        lineLen = strlen(line);
+        if (lineLen == 0 || line[0] == '\n' || line[0] == '#') {
+            /* blank line or comment */
+            continue;
+        }
+        if (line[lineLen - 1] != '\n') {
+            /* no newline, probably truncated */
+            fprintf(stderr, "NEdit: Line too long in file %s\n", fullName);
+            break;
+        }
+        line[--lineLen] = '\0';
+
+        if (sscanf(line, "%d:%u:%u", &type, &srchLen, &replLen) != 3) {
+            fprintf(stderr, "NEdit: Invalid line in file %s\n", fullName);
+            break;
+        }
+
+        SearchTypeHistory[HistStart]=type;
+        if (type < 0 || type >= N_SEARCH_TYPES
+        || srchLen > SEARCHMAX || replLen > SEARCHMAX) {
+            fprintf(stderr, "NEdit: Invalid values in file %s\n", fullName);
+            break;
+        }
+
+        /* If there are more than MAX_SEARCH_HISTORY strings saved, recycle
+           some space, free the entry that's about to be overwritten */
+        if (NHist == MAX_SEARCH_HISTORY) {
+            XtFree(SearchHistory[HistStart]);
+            XtFree(ReplaceHistory[HistStart]);
+        } else
+            NHist++;
+
+        /* read and store search-string */
+        SearchHistory[HistStart] = XtMalloc(srchLen+1);
+        if (fread(SearchHistory[HistStart], 1, srchLen + 1, fp) != srchLen + 1
+        || SearchHistory[HistStart][srchLen] != '\n') {
+            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+                fullName, strerror(errno));
+            XtFree(SearchHistory[HistStart]);
+            NHist--;
+            break;
+        }
+        SearchHistory[HistStart][srchLen]='\0';
+
+        /* read and store replace-string */
+        ReplaceHistory[HistStart] = XtMalloc(replLen+1);
+        if (fread(ReplaceHistory[HistStart], 1, replLen + 1, fp) != replLen + 1
+        || ReplaceHistory[HistStart][replLen] != '\n') {
+            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+                fullName, strerror(errno));
+            XtFree(SearchHistory[HistStart]);
+            XtFree(ReplaceHistory[HistStart]);
+            NHist--;
+            break;
+        }
+        ReplaceHistory[HistStart][replLen]='\0';
+
+        if (++HistStart >= MAX_SEARCH_HISTORY)
+            HistStart = 0;
+    }
+    fclose(fp);
+
+    /* If there are history items, enable Find/Replace Again commands */
+    if (NHist)
+        enableFindAgainCmds();
+}
+
+/*
 ** Store the search and replace strings, and search type for later recall.
 ** If replaceString is NULL, duplicate the last replaceString used.
 ** Contiguous incremental searches share the same history entry (each new
@@ -4771,7 +5051,6 @@ static void saveSearchHistory(const char *searchString,
 {
     char *sStr, *rStr;
     static int currentItemIsIncremental = FALSE;
-    WindowInfo *w;
     
     /* Cancel accumulation of contiguous incremental searches (even if the
        information is not worthy of saving) if search is not incremental */
@@ -4800,19 +5079,20 @@ static void saveSearchHistory(const char *searchString,
     	NEditFree(SearchHistory[historyIndex(1)]);
     	SearchHistory[historyIndex(1)] = NEditStrdup(searchString);
 	SearchTypeHistory[historyIndex(1)] = searchType;
+
+        /* Save history to file */
+        WriteSearchHistory();
 	return;
     }
     currentItemIsIncremental = isIncremental;
     
-    if (NHist==0) {
-    	for (w=WindowList; w!=NULL; w=w->next) {
-    	    if (!IsTopDocument(w))
-		continue;
-	    XtSetSensitive(w->findAgainItem, True);
-	    XtSetSensitive(w->replaceFindAgainItem, True);
-	    XtSetSensitive(w->replaceAgainItem, True);
-    	}
-    }
+    /* Enable Find/Replace Again commands on first call */
+    if (NHist == 0)
+        enableFindAgainCmds();
+
+    /* Refresh search/replace history where two sessions overwrite each
+       other's changes in the history file. */
+    ReadSearchHistory();
 
     /* If there are more than MAX_SEARCH_HISTORY strings saved, recycle
        some space, free the entry that's about to be overwritten */
@@ -4832,6 +5112,9 @@ static void saveSearchHistory(const char *searchString,
     HistStart++;
     if (HistStart >= MAX_SEARCH_HISTORY)
     	HistStart = 0;
+
+    /* Save history to file */
+    WriteSearchHistory();
 }
 
 /*
@@ -5033,4 +5316,36 @@ static void iSearchCaseToggleCB(Widget w, XtPointer clientData, XtPointer callDa
     	window->iSearchLastRegexCase = searchCaseSense;
     else
 	window->iSearchLastLiteralCase = searchCaseSense;
+}
+
+
+static int translateEscPos(EscSeqArray *array, int pos)
+{
+    int p = pos;
+    for(size_t i=0;i<array->num_esc;i++) {
+        EscSeqStr e = array->esc[i];
+        if(e.off_trans < pos)
+            p += e.len;
+        else
+            break;
+    }
+    return p;
+}
+
+static void translatePosAndRestoreBuf(
+        textBuffer *buf,
+        EscSeqArray *array,
+        int found,
+        int *begin,
+        int *end,
+        int *extentBW,
+        int *extentFW)
+{
+    if(found && array) {
+        if(begin) *begin = translateEscPos(array, *begin);
+        if(end) *end = translateEscPos(array, *end);
+        if(extentBW) *extentBW = translateEscPos(array, *extentBW);
+        if(extentFW) *extentFW = translateEscPos(array, *extentFW);
+    }
+    BufReintegrateEscSeq(buf, array);
 }

@@ -130,6 +130,7 @@ static void resetZoomCB(Widget w, XtPointer clientData, XtPointer callData);
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightCursorLineCB(Widget w, WindowInfo *window, caddr_t callData);
 static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData);
+static void ansiColorsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData);
 static void showMatchingDelimitCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -167,7 +168,7 @@ static void highlightDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData);
-static void indentRainbowColorsDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void ansiColorsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void colorDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void smartTagsDefCB(Widget parent, XtPointer client_data, XtPointer call_data);
@@ -183,6 +184,7 @@ static void searchDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void beepOnSearchWrapDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void keepSearchDlogsDefCB(Widget w, WindowInfo *window,
 	caddr_t callData);
+static void saveSearchHistoryDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void searchWrapsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void appendLFCB(Widget w, WindowInfo* window, caddr_t callData);
 static void sortOpenPrevDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -190,6 +192,7 @@ static void reposDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void sessionsDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -928,6 +931,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->keepSearchDlogsDefItem = createMenuToggle(subSubPane,
     	    "keepDialogsUp", "Keep Dialogs Up", 'K',
     	    keepSearchDlogsDefCB, window, GetPrefKeepSearchDlogs(), SHORT);
+    window->saveSearchHistoryDefItem = createMenuToggle(subSubPane,
+            "saveSearchHistory", "Save History", 'S',
+            saveSearchHistoryDefCB, window, GetPrefSaveSearchHistory(), SHORT);
     subSubSubPane = createMenu(subSubPane, "defaultSearchStyle",
     	    "Default Search Style", 'D', NULL, FULL);
     XtVaSetValues(subSubSubPane, XmNradioBehavior, True, NULL); 
@@ -980,16 +986,16 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
           "backlightChars", "Apply Backlighting", 'g', backlightCharsDefCB,
           window, GetPrefBacklightChars(), FULL);
 
-    /* Cursor Line Highlighting and Indent Rainbow */
+    /* Cursor Line Highlighting, Indent Rainbow, ANSI Colors */
     window->highlightCursorLineDefItem = createMenuToggle(subPane,
           "highlightCursorLine", "Highlight Cursor Line", 'e', highlightCursorLineDefCB,
           window, GetPrefHighlightCursorLine(), FULL);
     window->indentRainbowDefItem = createMenuToggle(subPane,
           "indentRainbow", "Indent Rainbow", 'R', indentRainbowDefCB,
           window, GetPrefIndentRainbow(), FULL);
-    createMenuItem(subPane,
-          "indentRainbowColors", "Indent Rainbow Colors...", 'r', indentRainbowColorsDefCB,
-          window, FULL);
+    window->ansiColorsDefItem = createMenuToggle(subPane,
+          "ansiColors", "ANSI Colors", 'I', ansiColorsDefCB,
+          window, GetPrefAnsiColors(), FULL);
     
     /* tabbed editing sub menu */
     subSubPane = createMenu(subPane, "tabbedEditMenu", "Tabbed Editing", 0,
@@ -1061,10 +1067,11 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->editorConfigDefItem = createMenuToggle(subPane, "editorConfig",
     	    "Load Settings from .editorconfig", 0, editorConfigDefCB, window,
     	    GetPrefEditorConfig(), FULL);
-    
+    window->lockEncodingErrorDefItem = createMenuToggle(subPane, "lockEncodingError",
+    	    "Lock File On Encoding Error", 0, lockEncodingErrorDefCB, window,
+    	    GetPrefLockEncodingError(), FULL);
     createMenuItem(subPane, "sessions", "Sessions...", 'S', sessionsDefCB, window,
     	    FULL);
-    
     subSubPane = createMenu(subPane, "warnings", "Warnings", 'r', NULL, FULL);
     window->modWarnDefItem = createMenuToggle(subSubPane,
 	    "filesModifiedExternally", "Files Modified Externally", 'F',
@@ -1160,6 +1167,9 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->indentRainbowItem = createMenuToggle(menuPane, "indentRainbow",
           "Indent Rainbow", 'R', indentRainbowCB, window,
           window->indentRainbow, FULL);
+    window->ansiColorsItem = createMenuToggle(menuPane, "ansiColors",
+          "ANSI Colors", 'S', ansiColorsCB, window,
+          window->ansiColors, FULL);
     
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
     	    "Make Backup Copy (*.bck)", 'e', preserveCB, window,
@@ -1311,7 +1321,7 @@ static void helpCB( Widget menuItem, XtPointer clientData, XtPointer callData )
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(menuItem))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     XtVaGetValues( menuItem, XmNuserData, &userData, NULL );
-    topic = (enum HelpTopic)(intptr_t)userData;
+    topic = (enum HelpTopic)(long long)userData;
     
     Help(topic);
 }
@@ -1626,9 +1636,9 @@ static void autoSaveCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_incremental_backup",
+    XtCallActionProc(window->lastFocus, "set_incremental_backup",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1644,9 +1654,9 @@ static void preserveCB(Widget w, WindowInfo *window, caddr_t callData)
         SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_make_backup_copy",
+    XtCallActionProc(window->lastFocus, "set_make_backup_copy",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1663,9 +1673,9 @@ static void showMatchingOffCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1682,9 +1692,9 @@ static void showMatchingDelimitCB(Widget w, WindowInfo *window, caddr_t callData
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1701,9 +1711,9 @@ static void showMatchingRangeCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_show_matching",
+    XtCallActionProc(window->lastFocus, "set_show_matching",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1719,9 +1729,9 @@ static void matchSyntaxBasedCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_match_syntax_based",
+    XtCallActionProc(window->lastFocus, "set_match_syntax_based",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -1751,9 +1761,9 @@ static void noWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1770,9 +1780,9 @@ static void newlineWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1789,9 +1799,9 @@ static void continuousWrapCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(menu)->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_wrap_text",
+    XtCallActionProc(window->lastFocus, "set_wrap_text",
     	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
 }
 
@@ -1799,7 +1809,7 @@ static void wrapMarginCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(MENU_WIDGET(w));
 
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     WrapMarginDialog(window->shell, window);
 }
@@ -1818,6 +1828,13 @@ static void indentRainbowCB(Widget w, WindowInfo *window, caddr_t callData)
     SetIndentRainbow(window, indentRainbow);
 }
 
+static void ansiColorsCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    int state = XmToggleButtonGetState(w);
+    window = WidgetToWindow(MENU_WIDGET(w));
+    SetAnsiColors(window, state);
+}
+
 static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     int applyBacklight = XmToggleButtonGetState(w);
@@ -1828,8 +1845,8 @@ static void backlightCharsCB(Widget w, WindowInfo *window, caddr_t callData)
 static void tabsCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(MENU_WIDGET(w));
-
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     TabsPrefDialog(window->shell, window);
 }
@@ -1846,9 +1863,9 @@ static void statsCB(Widget w, WindowInfo *window, caddr_t callData)
 	SaveNEditPrefs(window->shell, GetPrefShortMenus());
     }
 #endif
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+    HidePointerOnKeyedEvent(window->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
-    XtCallActionProc(WidgetToWindow(menu)->lastFocus, "set_statistics_line",
+    XtCallActionProc(window->lastFocus, "set_statistics_line",
     	    ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
 }
 
@@ -2127,11 +2144,17 @@ static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData)
     }
 }
 
-static void indentRainbowColorsDefCB(Widget w, WindowInfo *window, caddr_t callData)
+static void ansiColorsDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
-    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
-            ((XmAnyCallbackStruct *)callData)->event);
-    ChooseIndentRainbowColors(WidgetToWindow(MENU_WIDGET(w)));
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefAnsiColors(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+	    XmToggleButtonSetState(win->ansiColorsDefItem, state, False);
+    }
 }
 
 static void highlightOffDefCB(Widget w, WindowInfo *window, caddr_t callData)
@@ -2259,6 +2282,19 @@ static void keepSearchDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData)
     }
 }
 
+static void saveSearchHistoryDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefSaveSearchHistory(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+        if (IsTopDocument(win))
+            XmToggleButtonSetState(win->saveSearchHistoryDefItem, state, False);
+    }
+}
+
 static void searchWrapsDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     WindowInfo *win;
@@ -2344,6 +2380,19 @@ static void sessionsDefCB(Widget w, WindowInfo *window, caddr_t callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     SessionsPref(WidgetToWindow(MENU_WIDGET(w)));
+}
+
+static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+    
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefLockEncodingError(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+    	    XmToggleButtonSetState(win->lockEncodingErrorDefItem, state, False);
+    }
 }
 
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData)
@@ -3832,7 +3881,6 @@ static void unicodeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     WindowInfo *window = WidgetToWindow(w);
-    unsigned char charCodeString[2];
     char codePointText[DF_MAX_PROMPT_LENGTH], str[8];
     char *params[1];
     int response;
@@ -4821,17 +4869,33 @@ void AddToPrevOpenMenu(const char *filename)
     WriteNEditDB();
 }
 
+#define MAX_WINDOW_TITLE_LEN MAXPATHLEN * 2 + 3 + 2 + 1
 static char* getWindowsMenuEntry(const WindowInfo* window)
 {
-    static char fullTitle[MAXPATHLEN * 2 + 3+ 1];
+    static char fullTitle[MAX_WINDOW_TITLE_LEN];
 
-    sprintf(fullTitle, "%s%s", window->filename, 
-	  window->fileChanged? "*" : "");
-
-    if (GetPrefShowPathInWindowsMenu() && window->filenameSet)
-    {
-       strcat(fullTitle, " - ");
-       strcat(fullTitle, window->path);
+    char *parenthese_open = "";
+    char *parenthese_close = "";
+    if(!window->mapped) {
+        parenthese_open = "(";
+        parenthese_close = ")";
+    }
+    if (GetPrefShowPathInWindowsMenu() && window->filenameSet) {
+        snprintf(
+                fullTitle,
+                MAX_WINDOW_TITLE_LEN,
+                "%s%s%s - %s%s",
+                parenthese_open,
+                window->filename, window->fileChanged? "*" : "", window->path,
+                parenthese_close);
+    } else {
+        snprintf(
+                fullTitle,
+                MAX_WINDOW_TITLE_LEN,
+                "%s%s%s%s",
+                parenthese_open,
+                window->filename, window->fileChanged? "*" : "",
+                parenthese_close);
     }
     
     return(fullTitle);
@@ -5498,8 +5562,12 @@ Widget CreateBGMenu(WindowInfo *window)
        with modifiers.  I don't entirely understand why it works properly now
        when it failed often in development, and certainly ignores the ~ syntax
        in translation event specifications. */
-    XtSetArg(args[0], XmNmenuPost, GetPrefBGMenuBtn());
-    return CreatePopupMenu(window->textArea, "bgMenu", args, 1);
+    
+    // setting XmNmenuPost seems to be unnecessary and the bg menu doesn't work
+    // if numlock is enabled
+    // not setting XmNmenuPost will fix that
+    //XtSetArg(args[0], XmNmenuPost, GetPrefBGMenuBtn());
+    return CreatePopupMenu(window->textArea, "bgMenu", args, 0);
 }
 
 /*
@@ -5538,7 +5606,7 @@ void AddBGMenuAction(Widget widget)
 
     if (table == NULL) {
 	char translations[MAX_ACCEL_LEN + 25];
-	sprintf(translations, "%s: post_window_bg_menu()\n",GetPrefBGMenuBtn());
+	snprintf(translations, MAX_ACCEL_LEN + 25, "%s: post_window_bg_menu()\n",GetPrefBGMenuBtn());
     	table = XtParseTranslationTable(translations);
     }
     XtOverrideTranslations(widget, table);
