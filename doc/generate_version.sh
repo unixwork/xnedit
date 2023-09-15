@@ -22,9 +22,11 @@
 #
 
 
-export LANG=C
+LANG=C
+export LANG
 
-XNEDIT_VERSION=$(echo "XNEdit release of `date +'%b %e, %Y'`")
+XNEDIT_RELEASE_DATE=`date +'%b %e, %Y'`
+XNEDIT_VERSION="XNEdit release of $XNEDIT_RELEASE_DATE"
 XNEDIT_GIT_DEF=
 
 # release tarballs usually don't contain the git repository
@@ -40,14 +42,14 @@ if [ -d "../.git" ]; then
         fi
         
         # get current revision
-        REV_SHORT=$(git rev-parse --short HEAD)
+        REV_SHORT=`git rev-parse --short HEAD`
         if [ $? -ne 0 ]; then
             break
         fi
-        REV_LONG=$(git rev-parse HEAD)
+        REV_LONG=`git rev-parse HEAD`
         
         # get revision date
-        REV_DATE=$(git show -s --format=%cs $REV_LONG)
+        REV_DATE=`git show -s --format=%cs $REV_LONG`
         
         if [ -z "$REV_SHORT" ]; then
             break;
