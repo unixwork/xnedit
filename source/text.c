@@ -67,6 +67,10 @@
 #include <Xm/PrimitiveP.h>
 #endif
 
+#ifndef XK_Control_L
+#include <X11/keysym.h>
+#endif
+
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
 #endif
