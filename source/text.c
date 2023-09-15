@@ -922,6 +922,10 @@ static void initialize(TextWidget request, TextWidget new)
     	new->text.selectFGPixel = white;
     }
     
+    new->text.xim = NULL;
+    new->text.xic = NULL;
+
+    
     /* Create the initial text buffer for the widget to display (which can
        be replaced later with TextSetBuffer) */
     buf = BufCreate();
@@ -974,7 +978,7 @@ static void initialize(TextWidget request, TextWidget new)
     new->text.selectionOwner = False;
     new->text.motifDestOwner = False;
     new->text.emTabsBeforeCursor = 0;
-
+    
 #if !defined(NO_XMIM) && defined(LESSTIF_VERSION)
     /* Register the widget to the input manager */
     XmImRegister((Widget)new, 0);
