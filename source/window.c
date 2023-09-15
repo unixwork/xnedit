@@ -1377,6 +1377,9 @@ void CloseWindow(WindowInfo *window)
        widget is gone. */
     cancelTimeOut(&window->flashTimeoutID);
     cancelTimeOut(&window->markTimeoutID);
+    
+    if(window->sessionpath) NEditFree(window->sessionpath);
+    window->sessionpath = NULL;
 
     /* if this is the last window, or must be kept alive temporarily because
        it's running the macro calling us, don't close it, make it Untitled */
@@ -1419,8 +1422,6 @@ void CloseWindow(WindowInfo *window)
         return;
     }
     
-        
-    if(window->sessionpath) NEditFree(window->sessionpath);
     
     /* Free syntax highlighting patterns, if any. w/o redisplaying */
     FreeHighlightingData(window);
@@ -4842,10 +4843,10 @@ int CloseAllDocumentInWindow(WindowInfo *window)
         win->sessionpath = NULL;
         
         topDocument = GetTopDocument(winShell);
-
+        
         /* close all non-top documents belong to this window */
         for (win = WindowList; win; ) {
-            if (win->shell == winShell && win != topDocument) {
+            if (win->shell == winShell && win != topDocument) {     
                 WindowInfo *next = win->next;
                 if (!CloseFileAndWindow(win, preResponse))
                     return False;
