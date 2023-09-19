@@ -355,6 +355,8 @@ static void FileSelect(FileDialogData *fsb, const char *item);
 
 static void select_view(FileDialogData *data);
 
+static void filedialog_update_dir(FileDialogData *data, char *path);
+
 static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d);
 
 /*
@@ -1020,6 +1022,8 @@ struct FileDialogData {
     WidgetList gadgets;
     int numGadgets;
     
+    int gridRealized;
+    
     char *currentPath;
     char *selectedPath;
     int selIsDir;
@@ -1403,6 +1407,19 @@ static void cleanupGrid(FileDialogData *data)
     Cardinal rows = 0;
     XtVaGetValues(data->grid, XmNrows, &rows, NULL);
     XmLGridDeleteRows(data->grid, XmCONTENT, 0, rows);
+}
+
+
+static void gridExposeEH(Widget widget, XtPointer userdata, XEvent *event, Boolean *dispatch)
+{
+    FileDialogData *data = userdata;
+    if(data->gridRealized) {
+        return;
+    }
+    data->gridRealized = True;
+    
+    // after the grid is realized, reload everything to adjust the column width
+    filedialog_update_dir(data, NULL);
 }
 
 static void free_files(FileElm *ls, int count)
@@ -2010,7 +2027,7 @@ static void select_listview(Widget w, FileDialogData *data, XtPointer u)
 
 static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
 {
-    XmLGridSetSort(data->grid, 0, XmSORT_ASCENDING);
+    //XmLGridSetSort(data->grid, 0, XmSORT_ASCENDING);
     
     unselect_view(data);
     data->selectedview = 2;
@@ -2603,8 +2620,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
     XmLGridSetIgnoreModifyVerify(data.grid, True);
     int sort_type = file_cmp_order == 1 ? XmSORT_ASCENDING : XmSORT_DESCENDING;
-    XmLGridSetSort(data.grid, file_cmp_field, sort_type);
+    XmLGridSetSort(data.grid, file_cmp_field, sort_type);  
     XtManageChild(data.grid);
+    
+    XtAddEventHandler(data.grid, ExposureMask , False,
+    	    (XtEventHandler)gridExposeEH, &data); 
     
     XtVaSetValues(
             data.grid,
