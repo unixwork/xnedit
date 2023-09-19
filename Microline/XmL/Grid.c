@@ -341,7 +341,7 @@ static int _XmLGridCellGetHeight(XmLGridCell cell, Widget w,XmLGridRow row);
 static int _XmLGridCellGetWidth(XmLGridCell cell, Widget w,XmLGridColumn col);
 static void _XmLGridCellFreeValue(XmLGridCell cell);
 
-/*Xfe Additions*/
+/*Xne Additions*/
 static Boolean XmLGridCellDrawSort(XmLGridCell cell);
 static Boolean XmLGridCellSortAscending(XmLGridCell cell);
 static void XmLGridCellSetDrawSort(XmLGridCell cell, Boolean drawSort);
