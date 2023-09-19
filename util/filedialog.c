@@ -2602,6 +2602,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     data.grid = XmLCreateGrid(data.gridcontainer, "grid", args, n);
     XmLGridSetIgnoreModifyVerify(data.grid, True);
+    int sort_type = file_cmp_order == 1 ? XmSORT_ASCENDING : XmSORT_DESCENDING;
+    XmLGridSetSort(data.grid, file_cmp_field, sort_type);
     XtManageChild(data.grid);
     
     XtVaSetValues(
