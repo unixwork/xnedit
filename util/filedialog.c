@@ -1410,18 +1410,6 @@ static void cleanupGrid(FileDialogData *data)
 }
 
 
-static void gridExposeEH(Widget widget, XtPointer userdata, XEvent *event, Boolean *dispatch)
-{
-    FileDialogData *data = userdata;
-    if(data->gridRealized) {
-        return;
-    }
-    data->gridRealized = True;
-    
-    // after the grid is realized, reload everything to adjust the column width
-    filedialog_update_dir(data, NULL);
-}
-
 static void free_files(FileElm *ls, int count)
 {
     for(int i=0;i<count;i++) {
@@ -2622,9 +2610,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     int sort_type = file_cmp_order == 1 ? XmSORT_ASCENDING : XmSORT_DESCENDING;
     XmLGridSetSort(data.grid, file_cmp_field, sort_type);  
     XtManageChild(data.grid);
-    
-    //XtAddEventHandler(data.grid, ExposureMask , False,
-    //	    (XtEventHandler)gridExposeEH, &data); 
     
     XtVaSetValues(
             data.grid,
