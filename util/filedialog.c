@@ -2645,9 +2645,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNleftWidget, data.dirlist); n++;
     XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, data.filelist); n++;
-    XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, lsDirLabel); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNlabelString, str); n++;
     Widget lsFileLabel = XmCreateLabel(data.listform, "label", args, n);
