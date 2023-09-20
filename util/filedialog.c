@@ -2623,8 +2623,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XmLGridSetSort(data.grid, file_cmp_field, sort_type);  
     XtManageChild(data.grid);
     
-    XtAddEventHandler(data.grid, ExposureMask , False,
-    	    (XtEventHandler)gridExposeEH, &data); 
+    //XtAddEventHandler(data.grid, ExposureMask , False,
+    //	    (XtEventHandler)gridExposeEH, &data); 
     
     XtVaSetValues(
             data.grid,
@@ -2679,7 +2679,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     }
     
     //init_container_size(&data);
-    
+     
     /* event loop */
     keycodeL = XKeysymToKeycode(XtDisplay(dialog), XStringToKeysym("L"));
     XtGrabKey(
