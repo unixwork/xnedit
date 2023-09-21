@@ -4388,6 +4388,10 @@ static void setLockedAP(Widget w, XEvent *event, String *args,
     ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, IS_USER_LOCKED(window->lockReasons), "set_locked");
     
     SET_USER_LOCKED(window->lockReasons, newState);
+    if(!newState) {
+        SET_ENCODING_LOCKED(window->lockReasons, 0);
+    }
+    
     if (IsTopDocument(window))
     	XmToggleButtonSetState(window->readOnlyItem, IS_ANY_LOCKED(window->lockReasons), False);
     UpdateWindowTitle(window);
