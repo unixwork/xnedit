@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+version 1.5.2 (2023-10-05)
+--------------------------
+
+ - fixed disabling Read Only doesn't disable encoding error locks
+ - fixed filedialog not showing the sort indicator sometimes
+ - fixed potential buffer overflow in ExecShellCommand/ExecCursorLine
+ - fixed build on Solaris 10
+
 version 1.5.1 (2023-09-06)
 --------------------------
 
