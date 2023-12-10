@@ -302,7 +302,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->highlightCursorLine = highlightCursorLine;
     textD->ansiColorList = ansiColorList;
     textD->redrawCursorLine = False;
-    TextDSetAnsiColors(textD, ansiColors);
     
     TextDSetIndentRainbowColors(textD, indentRainbowColors);
     
@@ -324,6 +323,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     
     textD->cursor = textD->multicursor;
     textD->newcursor = textD->multicursor;
+    
+    TextDSetAnsiColors(textD, ansiColors);
     
     /* Attach an event handler to the widget so we can know the visibility
        (used for choosing the fastest drawing method) */
