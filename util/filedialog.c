@@ -72,6 +72,7 @@ static Pixmap newFolderIcon32;
 static XColor bgColor;
 
 static int LastView = -1; // 0: icon   1: list   2: grid
+static char *LastFilter;
 
 #define FSB_ENABLE_DETAIL
 
@@ -2302,9 +2303,15 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
     data.filter = XmCreateTextField(filterform, "filedialog_filter_textfield", args, n);
     XtManageChild(data.filter);
-    XmTextFieldSetString(data.filter, "*");
     XtAddCallback(data.filter, XmNactivateCallback,
                  (XtCallbackProc)filedialog_filter, &data);
+    if(LastFilter) {
+        XmTextFieldSetString(data.filter, LastFilter);
+        XtFree(LastFilter);
+        LastFilter = NULL;
+    } else {
+        XmTextFieldSetString(data.filter, "*");
+    }
     
     /* lower part */
     n = 0;
@@ -2689,6 +2696,15 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     if(data.selectedPath && !data.selIsDir && data.status == FILEDIALOG_OK) {
         file->path = data.selectedPath;
         data.selectedPath = NULL;
+        
+        // remember filter string
+        LastFilter = XmTextFieldGetString(data.filter);
+        if(LastFilter) {
+            if(strlen(LastFilter) == 0) {
+                XtFree(LastFilter);
+                LastFilter = NULL;
+            }
+        }
         
         if(file->setenc) {
             int encPos;
