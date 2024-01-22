@@ -51,67 +51,67 @@
 
 #define ANSI_ESC_BLOCKSZ 32
 
-static void histogramCharacters(const char *string, int length, char hist[256],
+static void histogramCharacters(const char *string, ssize_t length, char hist[256],
 	int init);
-static void subsChars(char *string, int length, char fromChar, char toChar);
+static void subsChars(char *string, ssize_t length, char fromChar, char toChar);
 static char chooseNullSubsChar(char hist[256]);
-static int insert(textBuffer *buf, int pos, const char *text);
-static void delete(textBuffer *buf, int start, int end);
-static void deleteRect(textBuffer *buf, int start, int end, int rectStart,
-	int rectEnd, int *replaceLen, int *endPos);
-static void insertCol(textBuffer *buf, int column, int startPos, const char *insText,
-	int *nDeleted, int *nInserted, int *endPos);
-static void overlayRect(textBuffer *buf, int startPos, int rectStart,
-    	int rectEnd, const char *insText, int *nDeleted, int *nInserted, int *endPos);
+static ssize_t insert(textBuffer *buf, ssize_t pos, const char *text);
+static void delete(textBuffer *buf, ssize_t start, ssize_t end);
+static void deleteRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
+	int rectEnd, ssize_t *replaceLen, ssize_t *endPos);
+static void insertCol(textBuffer *buf, ssize_t column, ssize_t startPos, const char *insText,
+    ssize_t *nDeleted, ssize_t *nInserted, ssize_t *endPos);
+static void overlayRect(textBuffer *buf, ssize_t startPos, int rectStart,
+    	int rectEnd, const char *insText, ssize_t *nDeleted, ssize_t *nInserted, ssize_t *endPos);
 static void insertColInLine(const char *line, const char *insLine, int column, int insWidth,
-	int tabDist, int useTabs, char nullSubsChar, char *outStr, int *outLen,
-	int *endOffset);
+	int tabDist, int useTabs, char nullSubsChar, char *outStr, ssize_t *outLen,
+    ssize_t *endOffset);
 static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
-	int tabDist, int useTabs, char nullSubsChar, char *outStr, int *outLen,
-	int *endOffset);
+	int tabDist, int useTabs, char nullSubsChar, char *outStr, ssize_t *outLen,
+    ssize_t *endOffset);
 static void overlayRectInLine(const char *line, const char *insLine, int rectStart,
     	int rectEnd, int tabDist, int useTabs, char nullSubsChar, char *outStr,
-    	int *outLen, int *endOffset);
-static void callPreDeleteCBs(textBuffer *buf, int pos, int nDeleted);
-static void callModifyCBs(textBuffer *buf, int pos, int nDeleted,
-	int nInserted, int nRestyled, const char *deletedText);
+        ssize_t *outLen, ssize_t *endOffset);
+static void callPreDeleteCBs(textBuffer *buf, ssize_t pos, ssize_t nDeleted);
+static void callModifyCBs(textBuffer *buf, ssize_t pos, ssize_t nDeleted,
+    ssize_t nInserted, ssize_t nRestyled, const char *deletedText);
 static void callBeginModifyCBs(textBuffer *buf);
 static void callEndModifyCBs(textBuffer *buf);
 static void redisplaySelection(textBuffer *buf, selection *oldSelection,
 	selection *newSelection);
-static void moveGap(textBuffer *buf, int pos);
-static void reallocateBuf(textBuffer *buf, int newGapStart, int newGapLen);
-static void setSelection(selection *sel, int start, int end);
-static void setRectSelect(selection *sel, int start, int end,
+static void moveGap(textBuffer *buf, ssize_t pos);
+static void reallocateBuf(textBuffer *buf, ssize_t newGapStart, ssize_t newGapLen);
+static void setSelection(selection *sel, ssize_t start, ssize_t end);
+static void setRectSelect(selection *sel, ssize_t start, ssize_t end,
 	int rectStart, int rectEnd);
-static void updateSelections(textBuffer *buf, int pos, int nDeleted,
-	int nInserted);
-static void updateSelection(selection *sel, int pos, int nDeleted,
-	int nInserted);
-static int getSelectionPos(selection *sel, int *start, int *end,
+static void updateSelections(textBuffer *buf, ssize_t pos, ssize_t nDeleted,
+    ssize_t nInserted);
+static void updateSelection(selection *sel, ssize_t pos, ssize_t nDeleted,
+    ssize_t nInserted);
+static int getSelectionPos(selection *sel, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd);
 static char *getSelectionText(textBuffer *buf, selection *sel);
 static void removeSelected(textBuffer *buf, selection *sel);
 static void replaceSelected(textBuffer *buf, selection *sel, const char *text);
 static void addPadding(char *string, int startIndent, int toIndent,
-	int tabDist, int useTabs, char nullSubsChar, int *charsAdded);
-static int searchForward(textBuffer *buf, int startPos, char searchChar,
-	int *foundPos);
-static int searchBackward(textBuffer *buf, int startPos, char searchChar,
-	int *foundPos);
-static char *copyLine(const char *text, int *lineLen);
-static int countLines(const char *string);
-static int textWidth(const char *text, int tabDist, char nullSubsChar);
-static void findRectSelBoundariesForCopy(textBuffer *buf, int lineStartPos,
-	int rectStart, int rectEnd, int *selStart, int *selEnd);
+	int tabDist, int useTabs, char nullSubsChar, ssize_t *charsAdded);
+static int searchForward(textBuffer *buf, ssize_t startPos, char searchChar,
+	ssize_t *foundPos);
+static int searchBackward(textBuffer *buf, ssize_t startPos, char searchChar,
+    ssize_t *foundPos);
+static char *copyLine(const char *text, ssize_t *lineLen);
+static ssize_t countLines(const char *string);
+static ssize_t textWidth(const char *text, int tabDist, char nullSubsChar);
+static void findRectSelBoundariesForCopy(textBuffer *buf, ssize_t lineStartPos,
+	int rectStart, int rectEnd, ssize_t *selStart, ssize_t *selEnd);
 static char *realignTabs(const char *text, int origIndent, int newIndent,
-	int tabDist, int useTabs, char nullSubsChar, int *newLength);
+	int tabDist, int useTabs, char nullSubsChar, ssize_t *newLength);
 static char *expandTabs(const char *text, int startIndent, int tabDist,
-	char nullSubsChar, int *newLen);
+	char nullSubsChar, ssize_t *newLen);
 static char *unexpandTabs(const char *text, int startIndent, int tabDist,
-	char nullSubsChar, int *newLen);
-static int max(int i1, int i2);
-static int min(int i1, int i2);
+	char nullSubsChar, ssize_t *newLen);
+static ssize_t max(ssize_t i1, ssize_t i2);
+static ssize_t min(ssize_t i1, ssize_t i2);
 
 #ifdef __MVS__
 static const char *ControlCodeTable[64] = {
@@ -361,7 +361,7 @@ void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq)
 */
 void BufSetAll(textBuffer *buf, const char *text)
 {
-    int length, deletedLength;
+    size_t length, deletedLength;
     char *deletedText;
     length = strlen(text);
 
@@ -397,10 +397,10 @@ void BufSetAll(textBuffer *buf, const char *text)
 ** from text buffer "buf".  Positions start at 0, and the range does not
 ** include the character pointed to by "end"
 */
-char* BufGetRange(const textBuffer* buf, int start, int end)
+char* BufGetRange(const textBuffer* buf, ssize_t start, ssize_t end)
 {
     char *text;
-    int length, part1Length;
+    ssize_t length, part1Length;
     
     /* Make sure start and end are ok, and allocate memory for returned string.
        If start is bad, return "", if end is bad, adjust it. */
@@ -436,7 +436,7 @@ char* BufGetRange(const textBuffer* buf, int start, int end)
 /*
 ** Return the character at buffer position "pos".  Positions start at 0.
 */
-char BufGetCharacter(const textBuffer* buf, int pos)
+char BufGetCharacter(const textBuffer* buf, ssize_t pos)
 {
     if (pos < 0 || pos >= buf->length)
         return '\0';
@@ -466,10 +466,10 @@ static int BufGetCharacterBytes(const textBuffer *buf, int pos, char *buffer)
     return len;
 }
 
-wchar_t BufGetCharacterW(const textBuffer *buf, int pos)
+wchar_t BufGetCharacterW(const textBuffer *buf, ssize_t pos)
 {
     char utf8[4];
-    int len = BufGetCharacterBytes(buf, pos, utf8);
+    ssize_t len = BufGetCharacterBytes(buf, pos, utf8);
     
     mbstate_t state;
     memset(&state, 0, sizeof(mbstate_t));
@@ -482,7 +482,7 @@ wchar_t BufGetCharacterW(const textBuffer *buf, int pos)
 /*
  * Return the UCS-4 character at buffer position "pos". Positions start at 0.
  */
-FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen)
+FcChar32 BufGetCharacter32(const textBuffer* buf, ssize_t pos, int *charlen)
 {
     FcChar32 result = 0;
     char c = BufGetCharacter(buf, pos);
@@ -519,9 +519,9 @@ void BufEndModifyBatch(textBuffer *buf) {
 /*
 ** Insert null-terminated string "text" at position "pos" in "buf"
 */
-void BufInsert(textBuffer *buf, int pos, const char *text)
+void BufInsert(textBuffer *buf, ssize_t pos, const char *text)
 {
-    int nInserted;
+    ssize_t nInserted;
     
     /* if pos is not contiguous to existing text, make it */
     if (pos > buf->length) pos = buf->length;
@@ -540,10 +540,10 @@ void BufInsert(textBuffer *buf, int pos, const char *text)
 ** Delete the characters between "start" and "end", and insert the
 ** null-terminated string "text" in their place in in "buf"
 */
-void BufReplace(textBuffer *buf, int start, int end, const char *text)
+void BufReplace(textBuffer *buf, ssize_t start, ssize_t end, const char *text)
 {
     char *deletedText;
-    int nInserted = strlen(text);
+    ssize_t nInserted = strlen(text);
     
     callPreDeleteCBs(buf, start, end-start);
     deletedText = BufGetRange(buf, start, end);
@@ -554,7 +554,7 @@ void BufReplace(textBuffer *buf, int start, int end, const char *text)
     NEditFree(deletedText);
 }
 
-void BufRemove(textBuffer *buf, int start, int end)
+void BufRemove(textBuffer *buf, ssize_t start, ssize_t end)
 {
     char *deletedText;
     
@@ -578,11 +578,11 @@ void BufRemove(textBuffer *buf, int start, int end)
     NEditFree(deletedText);
 }
 
-void BufCopyFromBuf(textBuffer *fromBuf, textBuffer *toBuf, int fromStart,
-    	int fromEnd, int toPos)
+void BufCopyFromBuf(textBuffer *fromBuf, textBuffer *toBuf, ssize_t fromStart,
+    ssize_t fromEnd, ssize_t toPos)
 {
-    int length = fromEnd - fromStart;
-    int part1Length;
+    ssize_t length = fromEnd - fromStart;
+    ssize_t part1Length;
 
     /* Prepare the buffer to receive the new text.  If the new text fits in
        the current buffer, just move the gap (if necessary) to where
@@ -620,10 +620,10 @@ void BufCopyFromBuf(textBuffer *fromBuf, textBuffer *toBuf, int fromStart,
 ** number of characters inserted and deleted in the operation (beginning
 ** at startPos) are returned in these arguments
 */
-void BufInsertCol(textBuffer *buf, int column, int startPos, const char *text,
-    	int *charsInserted, int *charsDeleted)
+void BufInsertCol(textBuffer *buf, int column, ssize_t startPos, const char *text,
+    ssize_t *charsInserted, ssize_t *charsDeleted)
 {
-    int nLines, lineStartPos, nDeleted, insertDeleted, nInserted;
+    ssize_t nLines, lineStartPos, nDeleted, insertDeleted, nInserted;
     char *deletedText;
     
     nLines = countLines(text);
@@ -651,10 +651,10 @@ void BufInsertCol(textBuffer *buf, int column, int startPos, const char *text,
 ** in the operation (beginning at startPos) are returned in these arguments.
 ** If rectEnd equals -1, the width of the inserted text is measured first.
 */
-void BufOverlayRect(textBuffer *buf, int startPos, int rectStart,
-    	int rectEnd, const char *text, int *charsInserted, int *charsDeleted)
+void BufOverlayRect(textBuffer *buf, ssize_t startPos, int rectStart,
+    	int rectEnd, const char *text, ssize_t *charsInserted, ssize_t *charsDeleted)
 {
-    int nLines, lineStartPos, nDeleted, insertDeleted, nInserted;
+    ssize_t nLines, lineStartPos, nDeleted, insertDeleted, nInserted;
     char *deletedText;
     
     nLines = countLines(text);
@@ -683,14 +683,14 @@ void BufOverlayRect(textBuffer *buf, int startPos, int rectStart,
 ** and "rectEnd", with "text".  If "text" is vertically longer than the
 ** rectangle, add extra lines to make room for it.
 */
-void BufReplaceRect(textBuffer *buf, int start, int end, int rectStart,
+void BufReplaceRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd, const char *text)
 {
     char *deletedText;
     char *insText=NULL;
-    int i, nInsertedLines, nDeletedLines, insLen, hint;
-    int insertDeleted, insertInserted, deleteInserted;
-    int linesPadded = 0;
+    ssize_t i, nInsertedLines, nDeletedLines, insLen, hint;
+    ssize_t insertDeleted, insertInserted, deleteInserted;
+    ssize_t linesPadded = 0;
     
     /* Make sure start and end refer to complete lines, since the
        columnar delete and insert operations will replace whole lines */
@@ -749,11 +749,11 @@ void BufReplaceRect(textBuffer *buf, int start, int end, int rectStart,
 ** Remove a rectangular swath of characters between character positions start
 ** and end and horizontal displayed-character offsets rectStart and rectEnd.
 */
-void BufRemoveRect(textBuffer *buf, int start, int end, int rectStart,
+void BufRemoveRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd)
 {
     char *deletedText;
-    int nInserted;
+    ssize_t nInserted;
     
     start = BufStartOfLine(buf, start);
     end = BufEndOfLine(buf, end);
@@ -770,10 +770,10 @@ void BufRemoveRect(textBuffer *buf, int start, int end, int rectStart,
 ** start and end and horizontal displayed-character offsets rectStart and
 ** rectEnd.
 */
-void BufClearRect(textBuffer *buf, int start, int end, int rectStart,
+void BufClearRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd)
 {
-    int i, nLines;
+    ssize_t i, nLines;
     char *newlineString;
     
     nLines = BufCountLines(buf, start, end);
@@ -786,10 +786,10 @@ void BufClearRect(textBuffer *buf, int start, int end, int rectStart,
     NEditFree(newlineString);
 }
 
-char *BufGetTextInRect(textBuffer *buf, int start, int end,
+char *BufGetTextInRect(textBuffer *buf, ssize_t start, ssize_t end,
 	int rectStart, int rectEnd)
 {
-    int lineStart, selLeft, selRight, len;
+    ssize_t lineStart, selLeft, selRight, len;
     char *textOut, *textIn, *outPtr, *retabbedStr;
    
     start = BufStartOfLine(buf, start);
@@ -849,13 +849,13 @@ void BufSetTabDistance(textBuffer *buf, int tabDist)
     callModifyCBs(buf, 0, buf->length, buf->length, 0, deletedText);
 }
 
-void BufCheckDisplay(textBuffer *buf, int start, int end)
+void BufCheckDisplay(textBuffer *buf, ssize_t start, ssize_t end)
 {
     /* just to make sure colors in the selected region are up to date */
     callModifyCBs(buf, start, 0, 0, end-start, NULL);
 }
 
-void BufSelect(textBuffer *buf, int start, int end)
+void BufSelect(textBuffer *buf, ssize_t start, ssize_t end)
 {
     selection oldSelection = buf->primary;
 
@@ -872,7 +872,7 @@ void BufUnselect(textBuffer *buf)
     redisplaySelection(buf, &oldSelection, &buf->primary);
 }
 
-void BufRectSelect(textBuffer *buf, int start, int end, int rectStart,
+void BufRectSelect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
         int rectEnd)
 {
     selection oldSelection = buf->primary;
@@ -881,7 +881,7 @@ void BufRectSelect(textBuffer *buf, int start, int end, int rectStart,
     redisplaySelection(buf, &oldSelection, &buf->primary);
 }
 
-int BufGetSelectionPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetSelectionPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd)
 {
     return getSelectionPos(&buf->primary, start, end, isRect, rectStart,
@@ -889,7 +889,7 @@ int BufGetSelectionPos(textBuffer *buf, int *start, int *end,
 }
 
 /* Same as above, but also returns TRUE for empty selections */
-int BufGetEmptySelectionPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetEmptySelectionPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd)
 {
     return getSelectionPos(&buf->primary, start, end, isRect, rectStart,
@@ -911,7 +911,7 @@ void BufReplaceSelected(textBuffer *buf, const char *text)
     replaceSelected(buf, &buf->primary, text);
 }
 
-void BufSecondarySelect(textBuffer *buf, int start, int end)
+void BufSecondarySelect(textBuffer *buf, ssize_t start, ssize_t end)
 {
     selection oldSelection = buf->secondary;
 
@@ -928,7 +928,7 @@ void BufSecondaryUnselect(textBuffer *buf)
     redisplaySelection(buf, &oldSelection, &buf->secondary);
 }
 
-void BufSecRectSelect(textBuffer *buf, int start, int end,
+void BufSecRectSelect(textBuffer *buf, ssize_t start, ssize_t end,
         int rectStart, int rectEnd)
 {
     selection oldSelection = buf->secondary;
@@ -937,7 +937,7 @@ void BufSecRectSelect(textBuffer *buf, int start, int end,
     redisplaySelection(buf, &oldSelection, &buf->secondary);
 }
 
-int BufGetSecSelectPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetSecSelectPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd)
 {
     return getSelectionPos(&buf->secondary, start, end, isRect, rectStart,
@@ -959,7 +959,7 @@ void BufReplaceSecSelect(textBuffer *buf, const char *text)
     replaceSelected(buf, &buf->secondary, text);
 }
 
-void BufHighlight(textBuffer *buf, int start, int end)
+void BufHighlight(textBuffer *buf, ssize_t start, ssize_t end)
 {
     selection oldSelection = buf->highlight;
 
@@ -976,7 +976,7 @@ void BufUnhighlight(textBuffer *buf)
     redisplaySelection(buf, &oldSelection, &buf->highlight);
 }
 
-void BufRectHighlight(textBuffer *buf, int start, int end,
+void BufRectHighlight(textBuffer *buf, ssize_t start, ssize_t end,
         int rectStart, int rectEnd)
 {
     selection oldSelection = buf->highlight;
@@ -985,7 +985,7 @@ void BufRectHighlight(textBuffer *buf, int start, int end,
     redisplaySelection(buf, &oldSelection, &buf->highlight);
 }
 
-int BufGetHighlightPos(textBuffer *buf, int *start, int *end,
+int BufGetHighlightPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd)
 {
     return getSelectionPos(&buf->highlight, start, end, isRect, rectStart,
@@ -1329,9 +1329,9 @@ void BufRemoveEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc
 /*
 ** Find the position of the start of the line containing position "pos"
 */
-int BufStartOfLine(textBuffer *buf, int pos)
+ssize_t BufStartOfLine(textBuffer *buf, ssize_t pos)
 {
-    int startPos;
+    ssize_t startPos;
     
     if (!searchBackward(buf, pos, '\n', &startPos))
     	return 0;
@@ -1344,7 +1344,7 @@ int BufStartOfLine(textBuffer *buf, int pos)
 ** (which is either a pointer to the newline character ending the line,
 ** or a pointer to one character beyond the end of the buffer)
 */
-int BufEndOfLine(textBuffer *buf, int pos)
+ssize_t BufEndOfLine(textBuffer *buf, ssize_t pos)
 {
     int endPos;
     
@@ -1361,7 +1361,7 @@ int BufEndOfLine(textBuffer *buf, int pos)
 ** for figuring tabs.  Output string is guranteed to be shorter or
 ** equal in length to MAX_EXP_CHAR_LEN
 */
-int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
+ssize_t BufGetExpandedChar(const textBuffer* buf, ssize_t pos, int indent,
         char* outStr)
 {
     char utf8[4];
@@ -1386,7 +1386,7 @@ int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
 ** for figuring tabs.  Output string is guranteed to be shorter or
 ** equal in length to MAX_EXP_CHAR_LEN
 */
-int BufExpandCharacter(const char *cp, int clen, int indent, char *outStr,
+ssize_t BufExpandCharacter(const char *cp, int clen, int indent, char *outStr,
         int tabDist, char nullSubsChar, int *isMB)
 {
     int c = *cp;
@@ -1527,10 +1527,10 @@ int BufCharWidth(char c, int indent, int tabDist, char nullSubsChar)
 ** shown on the screen to represent characters in the buffer, where tabs and
 ** control characters are expanded)
 */
-int BufCountDispChars(const textBuffer* buf, int lineStartPos,
-        int targetPos)
+ssize_t BufCountDispChars(const textBuffer* buf, ssize_t lineStartPos,
+    ssize_t targetPos)
 {
-    int pos, len, ulen, charCount = 0;
+    ssize_t pos, len, ulen, charCount = 0;
     char expandedChar[MAX_EXP_CHAR_LEN];
     
     pos = lineStartPos;
@@ -1553,9 +1553,10 @@ int BufCountDispChars(const textBuffer* buf, int lineStartPos,
 ** (displayed characters are the characters shown on the screen to represent
 ** characters in the buffer, where tabs and control characters are expanded)
 */
-int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars)
+ssize_t BufCountForwardDispChars(textBuffer *buf, ssize_t lineStartPos, ssize_t nChars)
 {
-    int pos, len, charCount = 0;
+    ssize_t pos, charCount = 0;
+    int len;
     char c;
     
     pos = lineStartPos;
@@ -1574,10 +1575,10 @@ int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars)
 ** Count the number of newlines between startPos and endPos in buffer "buf".
 ** The character at position "endPos" is not counted.
 */
-int BufCountLines(textBuffer *buf, int startPos, int endPos)
+ssize_t BufCountLines(textBuffer *buf, ssize_t startPos, ssize_t endPos)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
-    int lineCount = 0;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t lineCount = 0;
     
     pos = startPos;
     while (pos < buf->gapStart) {
@@ -1599,11 +1600,11 @@ int BufCountLines(textBuffer *buf, int startPos, int endPos)
 ** Find the first character of the line "nLines" forward from "startPos"
 ** in "buf" and return its position
 */
-int BufCountForwardNLines(const textBuffer* buf, int startPos,
-        unsigned nLines)
+ssize_t BufCountForwardNLines(const textBuffer* buf, ssize_t startPos,
+        ssize_t nLines)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
-    int lineCount = 0;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t lineCount = 0;
     
     if (nLines == 0)
     	return startPos;
@@ -1632,10 +1633,10 @@ int BufCountForwardNLines(const textBuffer* buf, int startPos,
 ** that is a newline) in "buf".  nLines == 0 means find the beginning of
 ** the line
 */
-int BufCountBackwardNLines(textBuffer *buf, int startPos, int nLines)
+ssize_t BufCountBackwardNLines(textBuffer *buf, ssize_t startPos, ssize_t nLines)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
-    int lineCount = -1;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t lineCount = -1;
     
     pos = startPos - 1;
     if (pos <= 0)
@@ -1663,10 +1664,10 @@ int BufCountBackwardNLines(textBuffer *buf, int startPos, int nLines)
 ** with the character "startPos", and returning the result in "foundPos"
 ** returns True if found, False if not.
 */
-int BufSearchForward(textBuffer *buf, int startPos, const char *searchChars,
-	int *foundPos)
+int BufSearchForward(textBuffer *buf, ssize_t startPos, const char *searchChars,
+        ssize_t *foundPos)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
     const char *c;
     
     pos = startPos;
@@ -1697,10 +1698,10 @@ int BufSearchForward(textBuffer *buf, int startPos, const char *searchChars,
 ** with the character BEFORE "startPos", returning the result in "foundPos"
 ** returns True if found, False if not.
 */
-int BufSearchBackward(textBuffer *buf, int startPos, const char *searchChars,
-	int *foundPos)
+int BufSearchBackward(textBuffer *buf, ssize_t startPos, const char *searchChars,
+    ssize_t *foundPos)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
     const char *c;
     
     if (startPos == 0) {
@@ -1750,7 +1751,7 @@ int BufSearchBackward(textBuffer *buf, int startPos, const char *searchChars,
 ** substitution.  Returns False, if substitution is no longer possible
 ** because all non-printable characters are already in use.
 */
-int BufSubstituteNullChars(char *string, int length, textBuffer *buf)
+int BufSubstituteNullChars(char *string, ssize_t length, textBuffer *buf)
 {
     char histogram[256];
 
@@ -1806,7 +1807,7 @@ void BufUnsubstituteNullChars(char *string, textBuffer *buf)
 ** != 0 otherwise.
 **
 */
-int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText)
+int BufCmp(textBuffer * buf, ssize_t pos, ssize_t len, const char *cmpText)
 {
     int     posEnd;
     int     part1Length;
@@ -1842,7 +1843,7 @@ int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText)
 ** with a 1).  If init is true, initialize the histogram before acumulating.
 ** if not, add the new data to an existing histogram.
 */
-static void histogramCharacters(const char *string, int length, char hist[256],
+static void histogramCharacters(const char *string, ssize_t length, char hist[256],
 	int init)
 {
     int i;
@@ -1858,7 +1859,7 @@ static void histogramCharacters(const char *string, int length, char hist[256],
 /*
 ** Substitute fromChar with toChar in string.
 */
-static void subsChars(char *string, int length, char fromChar, char toChar)
+static void subsChars(char *string, ssize_t length, char fromChar, char toChar)
 {
     char *c;
     
@@ -1891,9 +1892,9 @@ static char chooseNullSubsChar(char hist[256])
 ** on to call redisplay).  pos must be contiguous with the existing text in
 ** the buffer (i.e. not past the end).
 */
-static int insert(textBuffer *buf, int pos, const char *text)
+static ssize_t insert(textBuffer *buf, ssize_t pos, const char *text)
 {
-    int length = strlen(text);
+    ssize_t length = strlen(text);
 
     /* Prepare the buffer to receive the new text.  If the new text fits in
        the current buffer, just move the gap (if necessary) to where
@@ -1919,7 +1920,7 @@ static int insert(textBuffer *buf, int pos, const char *text)
 ** of the buffer between start and end (and moves the gap to the site of
 ** the delete).
 */
-static void delete(textBuffer *buf, int start, int end)
+static void delete(textBuffer *buf, ssize_t start, ssize_t end)
 {
     /* if the gap is not contiguous to the area to remove, move it there */
     if (start > buf->gapStart)
@@ -1947,11 +1948,11 @@ static void delete(textBuffer *buf, int start, int end)
 ** position of the lower left edge of the inserted column (as a hint for
 ** routines which need to set a cursor position).
 */
-static void insertCol(textBuffer *buf, int column, int startPos,
-        const char *insText, int *nDeleted, int *nInserted, int *endPos)
+static void insertCol(textBuffer *buf, ssize_t column, ssize_t startPos,
+        const char *insText, ssize_t *nDeleted, ssize_t *nInserted, ssize_t *endPos)
 {
-    int nLines, start, end, insWidth, lineStart, lineEnd;
-    int expReplLen, expInsLen, len, endOffset;
+    ssize_t nLines, start, end, insWidth, lineStart, lineEnd;
+    ssize_t expReplLen, expInsLen, len, endOffset;
     char *outStr, *outPtr, *line, *replText, *expText, *insLine;
     const char *insPtr;
 
@@ -2035,10 +2036,10 @@ static void insertCol(textBuffer *buf, int column, int startPos,
 ** of the point in the last line where the text was removed (as a hint for
 ** routines which need to position the cursor after a delete operation)
 */
-static void deleteRect(textBuffer *buf, int start, int end, int rectStart,
-	int rectEnd, int *replaceLen, int *endPos)
+static void deleteRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
+	int rectEnd, ssize_t *replaceLen, ssize_t *endPos)
 {
-    int nLines, lineStart, lineEnd, len, endOffset;
+    ssize_t nLines, lineStart, lineEnd, len, endOffset;
     char *outStr, *outPtr, *line, *text, *expText;
     
     /* allocate a buffer for the replacement string large enough to hold 
@@ -2087,12 +2088,12 @@ static void deleteRect(textBuffer *buf, int start, int end, int rectStart,
 ** "endPos" returns buffer position of the lower left edge of the inserted
 ** column (as a hint for routines which need to set a cursor position).
 */
-static void overlayRect(textBuffer *buf, int startPos, int rectStart,
+static void overlayRect(textBuffer *buf, ssize_t startPos, int rectStart,
     	int rectEnd, const char *insText,
-	int *nDeleted, int *nInserted, int *endPos)
+        ssize_t *nDeleted, ssize_t *nInserted, ssize_t *endPos)
 {
-    int nLines, start, end, lineStart, lineEnd;
-    int expInsLen, len, endOffset;
+    ssize_t nLines, start, end, lineStart, lineEnd;
+    ssize_t expInsLen, len, endOffset;
     char *c, *outStr, *outPtr, *line, *expText, *insLine;
     const char *insPtr;
 
@@ -2162,12 +2163,13 @@ static void overlayRect(textBuffer *buf, int startPos, int rectStart,
 */
 static void insertColInLine(const char *line, const char *insLine,
         int column, int insWidth, int tabDist, int useTabs, char nullSubsChar,
-	char *outStr, int *outLen, int *endOffset)
+	char *outStr, ssize_t *outLen, ssize_t *endOffset)
 {
     char *c, *outPtr, *retabbedStr;
     const char *linePtr;
-    int indent, toIndent, len, postColIndent;
+    int indent, toIndent, postColIndent;
     int inc;
+    ssize_t len;
           
     /* copy the line up to "column" */ 
     outPtr = outStr;
@@ -2259,8 +2261,8 @@ static void insertColInLine(const char *line, const char *insLine,
 ** deleted (as a hint for routines which need to position the cursor).
 */
 static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
-	int tabDist, int useTabs, char nullSubsChar, char *outStr, int *outLen,
-	int *endOffset)
+	int tabDist, int useTabs, char nullSubsChar, char *outStr, ssize_t *outLen,
+    ssize_t *endOffset)
 {
     int indent, preRectIndent, postRectIndent, len, inc;
     const char *c;
@@ -2327,7 +2329,7 @@ static void deleteRectFromLine(const char *line, int rectStart, int rectEnd,
 */
 static void overlayRectInLine(const char *line, const char *insLine,
         int rectStart, int rectEnd, int tabDist, int useTabs,
-	char nullSubsChar, char *outStr, int *outLen, int *endOffset)
+	char nullSubsChar, char *outStr, ssize_t *outLen, ssize_t *endOffset)
 {
     char *c, *outPtr, *retabbedStr;
     const char *linePtr;
@@ -2418,7 +2420,7 @@ static void overlayRectInLine(const char *line, const char *insLine,
     *outLen = (outPtr - outStr) + strlen(linePtr);
 }
 
-static void setSelection(selection *sel, int start, int end)
+static void setSelection(selection *sel, ssize_t start, ssize_t end)
 {
     sel->selected = start != end;
     sel->zeroWidth = (start == end) ? 1 : 0;
@@ -2427,7 +2429,7 @@ static void setSelection(selection *sel, int start, int end)
     sel->end = max(start, end);
 }
 
-static void setRectSelect(selection *sel, int start, int end,
+static void setRectSelect(selection *sel, ssize_t start, ssize_t end,
 	int rectStart, int rectEnd)
 {
     sel->selected = rectStart < rectEnd;
@@ -2439,7 +2441,7 @@ static void setRectSelect(selection *sel, int start, int end,
     sel->rectEnd = rectEnd;
 }
 
-static int getSelectionPos(selection *sel, int *start, int *end,
+static int getSelectionPos(selection *sel, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd)
 {
     /* Always fill in the parameters (zero-width can be requested too). */
@@ -2455,7 +2457,8 @@ static int getSelectionPos(selection *sel, int *start, int *end,
 
 static char *getSelectionText(textBuffer *buf, selection *sel)
 {
-    int start, end, isRect, rectStart, rectEnd;
+    ssize_t start, end;
+    int isRect, rectStart, rectEnd;
     char *text;
     
     /* If there's no selection, return an allocated empty string */
@@ -2474,7 +2477,7 @@ static char *getSelectionText(textBuffer *buf, selection *sel)
 
 static void removeSelected(textBuffer *buf, selection *sel)
 {
-    int start, end;
+    ssize_t start, end;
     int isRect, rectStart, rectEnd;
     
     if (!getSelectionPos(sel, &start, &end, &isRect, &rectStart, &rectEnd))
@@ -2507,7 +2510,7 @@ static void replaceSelected(textBuffer *buf, selection *sel, const char *text)
 }
 
 static void addPadding(char *string, int startIndent, int toIndent,
-	int tabDist, int useTabs, char nullSubsChar, int *charsAdded)
+	int tabDist, int useTabs, char nullSubsChar, ssize_t *charsAdded)
 {
     char *outPtr;
     int len, indent;
@@ -2538,8 +2541,8 @@ static void addPadding(char *string, int startIndent, int toIndent,
 ** Call the stored modify callback procedure(s) for this buffer to update the
 ** changed area(s) on the screen and any other listeners.
 */
-static void callModifyCBs(textBuffer *buf, int pos, int nDeleted,
-	int nInserted, int nRestyled, const char *deletedText)
+static void callModifyCBs(textBuffer *buf, ssize_t pos, ssize_t nDeleted,
+     ssize_t nInserted, ssize_t nRestyled, const char *deletedText)
 {
     int i;
     
@@ -2569,7 +2572,7 @@ static void callEndModifyCBs(textBuffer *buf) {
 ** Call the stored pre-delete callback procedure(s) for this buffer to update 
 ** the changed area(s) on the screen and any other listeners.
 */
-static void callPreDeleteCBs(textBuffer *buf, int pos, int nDeleted)
+static void callPreDeleteCBs(textBuffer *buf, ssize_t pos, ssize_t nDeleted)
 {
     int i;
     
@@ -2644,9 +2647,9 @@ static void redisplaySelection(textBuffer *buf, selection *oldSelection,
     	callModifyCBs(buf, ch2Start, 0, 0, ch2End-ch2Start, NULL);
 }
 
-static void moveGap(textBuffer *buf, int pos)
+static void moveGap(textBuffer *buf, ssize_t pos)
 {
-    int gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t gapLen = buf->gapEnd - buf->gapStart;
     
     if (pos > buf->gapStart)
     	memmove(&buf->buf[buf->gapStart], &buf->buf[buf->gapEnd],
@@ -2661,7 +2664,7 @@ static void moveGap(textBuffer *buf, int pos)
 ** reallocate the text storage in "buf" to have a gap starting at "newGapStart"
 ** and a gap size of "newGapLen", preserving the buffer's current contents.
 */
-static void reallocateBuf(textBuffer *buf, int newGapStart, int newGapLen)
+static void reallocateBuf(textBuffer *buf, ssize_t newGapStart, ssize_t newGapLen)
 {
     char *newBuf;
     int newGapEnd;
@@ -2695,8 +2698,8 @@ static void reallocateBuf(textBuffer *buf, int newGapStart, int newGapLen)
 /*
 ** Update all of the selections in "buf" for changes in the buffer's text
 */
-static void updateSelections(textBuffer *buf, int pos, int nDeleted,
-	int nInserted)
+static void updateSelections(textBuffer *buf, ssize_t pos, ssize_t nDeleted,
+    ssize_t nInserted)
 {
     updateSelection(&buf->primary, pos, nDeleted, nInserted);
     updateSelection(&buf->secondary, pos, nDeleted, nInserted);
@@ -2706,8 +2709,8 @@ static void updateSelections(textBuffer *buf, int pos, int nDeleted,
 /*
 ** Update an individual selection for changes in the corresponding text
 */
-static void updateSelection(selection *sel, int pos, int nDeleted,
-	int nInserted)
+static void updateSelection(selection *sel, ssize_t pos, ssize_t nDeleted,
+          ssize_t nInserted)
 {
     if ((!sel->selected && !sel->zeroWidth) || pos > sel->end)
     	return;
@@ -2737,10 +2740,10 @@ static void updateSelection(selection *sel, int pos, int nDeleted,
 ** overall performance of the text widget is dependent on its ability to
 ** count lines quickly, hence searching for a single character: newline)
 */
-static int searchForward(textBuffer *buf, int startPos, char searchChar,
-	int *foundPos)
+static int searchForward(textBuffer *buf, ssize_t startPos, char searchChar,
+    ssize_t *foundPos)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
     
     pos = startPos;
     while (pos < buf->gapStart) {
@@ -2769,10 +2772,10 @@ static int searchForward(textBuffer *buf, int startPos, char searchChar,
 ** overall performance of the text widget is dependent on its ability to
 ** count lines quickly, hence searching for a single character: newline)
 */
-static int searchBackward(textBuffer *buf, int startPos, char searchChar,
-	int *foundPos)
+static int searchBackward(textBuffer *buf, ssize_t startPos, char searchChar,
+    ssize_t *foundPos)
 {
-    int pos, gapLen = buf->gapEnd - buf->gapStart;
+    ssize_t pos, gapLen = buf->gapEnd - buf->gapStart;
     
     if (startPos == 0) {
     	*foundPos = 0;
@@ -2802,9 +2805,9 @@ static int searchBackward(textBuffer *buf, int startPos, char searchChar,
 ** and return the copy as the function value, and the length of the line in
 ** "lineLen"
 */
-static char *copyLine(const char *text, int *lineLen)
+static char *copyLine(const char *text, ssize_t *lineLen)
 {
-    int len = 0;
+    ssize_t len = 0;
     const char *c;
     char *outStr;
     
@@ -2820,10 +2823,10 @@ static char *copyLine(const char *text, int *lineLen)
 /*
 ** Count the number of newlines in a null-terminated text string;
 */
-static int countLines(const char *string)
+static ssize_t countLines(const char *string)
 {
     const char *c;
-    int lineCount = 0;
+    ssize_t lineCount = 0;
     
     for (c=string; *c!='\0'; c++)
     	if (*c == '\n') lineCount++;
@@ -2833,7 +2836,7 @@ static int countLines(const char *string)
 /*
 ** Measure the width in displayed characters of string "text"
 */
-static int textWidth(const char *text, int tabDist, char nullSubsChar)
+static ssize_t textWidth(const char *text, int tabDist, char nullSubsChar)
 {
     int width = 0, maxWidth = 0;
     int charWidth = 1;
@@ -2867,10 +2870,10 @@ static int textWidth(const char *text, int tabDist, char nullSubsChar)
 ** that there are other characters in the selection to establish the right
 ** margin for subsequent columnar pastes of this data.
 */
-static void findRectSelBoundariesForCopy(textBuffer *buf, int lineStartPos,
-	int rectStart, int rectEnd, int *selStart, int *selEnd)
+static void findRectSelBoundariesForCopy(textBuffer *buf, ssize_t lineStartPos,
+	int rectStart, int rectEnd, ssize_t *selStart, ssize_t *selEnd)
 {
-    int pos, width, indent = 0;
+    ssize_t pos, width, indent = 0;
     int inc;
     char c;
     
@@ -2916,10 +2919,10 @@ static void findRectSelBoundariesForCopy(textBuffer *buf, int lineStartPos,
 ** which must be freed by the caller with NEditFree.
 */
 static char *realignTabs(const char *text, int origIndent, int newIndent,
-	int tabDist, int useTabs, char nullSubsChar, int *newLength)
+	int tabDist, int useTabs, char nullSubsChar, ssize_t *newLength)
 {
     char *expStr, *outStr;
-    int len;
+    ssize_t len;
     
     /* If the tabs settings are the same, retain original tabs */
     if (origIndent % tabDist == newIndent %tabDist) {
@@ -2948,12 +2951,13 @@ static char *realignTabs(const char *text, int origIndent, int newIndent,
 ** beginning at column "startIndent"
 */
 static char *expandTabs(const char *text, int startIndent, int tabDist,
-	char nullSubsChar, int *newLen)
+	char nullSubsChar, ssize_t *newLen)
 {
     char *outStr, *outPtr;
     const char *c;
     int isMB;
-    int indent, len, outLen = 0;
+    int indent, len;
+    ssize_t outLen = 0;
 
     /* rehearse the expansion to figure out length for output string */
     indent = startIndent;
@@ -3000,7 +3004,7 @@ static char *expandTabs(const char *text, int startIndent, int tabDist,
 ** converting double spaces after a period withing a block of text.
 */
 static char *unexpandTabs(const char *text, int startIndent, int tabDist,
-	char nullSubsChar, int *newLen)
+	char nullSubsChar, ssize_t *newLen)
 {
     char *outStr, *outPtr, expandedChar[MAX_EXP_CHAR_LEN];
     const char *c;
@@ -3238,7 +3242,7 @@ static int bufEscCharLen(const textBuffer *buf, int pos)
     return i; //+ BufCharLen(buf, i);
 }
 
-int BufCharLen(const textBuffer *buf, int pos)
+int BufCharLen(const textBuffer *buf, ssize_t pos)
 {
     char utf8[4];
     utf8[0] = BufGetCharacter(buf, pos);
@@ -3247,7 +3251,7 @@ int BufCharLen(const textBuffer *buf, int pos)
     return Utf8CharLen((unsigned char*)utf8);
 }
 
-int BufLeftPos(textBuffer *buf, int pos)
+int BufLeftPos(textBuffer *buf, ssize_t pos)
 {
     int cur = BufStartOfLine(buf, pos);
     if(cur == pos) {
@@ -3261,17 +3265,17 @@ int BufLeftPos(textBuffer *buf, int pos)
     return left;
 }
 
-int BufRightPos(textBuffer *buf, int pos)
+int BufRightPos(textBuffer *buf, ssize_t pos)
 {
     return pos + BufCharLen(buf, pos);
 }
 
-static int max(int i1, int i2)
+static ssize_t max(ssize_t i1, ssize_t i2)
 {
     return i1 >= i2 ? i1 : i2;
 }
 
-static int min(int i1, int i2)
+static ssize_t min(ssize_t i1, ssize_t i2)
 {
     return i1 <= i2 ? i1 : i2;
 }

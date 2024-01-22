@@ -42,27 +42,27 @@ typedef struct {
     char zeroWidth;         /* Width 0 selections aren't "real" selections, but
                                 they can be useful when creating rectangular
                                 selections from the keyboard. */
-    int start;              /* Pos. of start of selection, or if rectangular
+    ssize_t start;              /* Pos. of start of selection, or if rectangular
                                  start of line containing it. */
-    int end;                /* Pos. of end of selection, or if rectangular
+    ssize_t end;                /* Pos. of end of selection, or if rectangular
                                  end of line containing it. */
     int rectStart;          /* Indent of left edge of rect. selection */
     int rectEnd;            /* Indent of right edge of rect. selection */
 } selection;
 
-typedef void (*bufModifyCallbackProc)(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg);
-typedef void (*bufPreDeleteCallbackProc)(int pos, int nDeleted, void *cbArg);
+typedef void (*bufModifyCallbackProc)(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+    ssize_t nRestyled, const char *deletedText, void *cbArg);
+typedef void (*bufPreDeleteCallbackProc)(ssize_t pos, ssize_t nDeleted, void *cbArg);
 typedef void (*bufBeginModifyCallbackProc)(void *cbArg);
 typedef void (*bufEndModifyCallbackProc)(void *cbArg);
 
 typedef struct _textBuffer {
-    int length; 	        /* length of the text in the buffer (the length
+    ssize_t length; 	        /* length of the text in the buffer (the length
                                    of the buffer itself must be calculated:
                                    gapEnd - gapStart + length) */
     char *buf;                  /* allocated memory where the text is stored */
-    int gapStart;  	        /* points to the first character of the gap */
-    int gapEnd;                 /* points to the first char after the gap */
+    ssize_t gapStart;  	        /* points to the first character of the gap */
+    ssize_t gapEnd;                 /* points to the first char after the gap */
     selection primary;		/* highlighted areas */
     selection secondary;
     selection highlight;
@@ -85,7 +85,7 @@ typedef struct _textBuffer {
     bufEndModifyCallbackProc	/* procedure to call after a batch of  */
 	 *endModifyProcs;	/* modifications is done. */
     void **endModifyCbArgs;	/* caller args for end-modify proc above */
-    int cursorPosHint;		/* hint for reasonable cursor position after
+    ssize_t cursorPosHint;		/* hint for reasonable cursor position after
     				   a buffer modification operation */
     char nullSubsChar;	    	/* NEdit is based on C null-terminated strings,
     	    	    	    	   so ascii-nul characters must be substituted
@@ -120,57 +120,57 @@ const char *BufAsString(textBuffer *buf);
 const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc);
 void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq);
 void BufSetAll(textBuffer *buf, const char *text);
-char* BufGetRange(const textBuffer* buf, int start, int end);
-char BufGetCharacter(const textBuffer* buf, int pos);
-wchar_t BufGetCharacterW(const textBuffer *buf, int pos);
-FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen);
-char *BufGetTextInRect(textBuffer *buf, int start, int end,
+char* BufGetRange(const textBuffer* buf, ssize_t start, ssize_t end);
+char BufGetCharacter(const textBuffer* buf, ssize_t pos);
+wchar_t BufGetCharacterW(const textBuffer *buf, ssize_t pos);
+FcChar32 BufGetCharacter32(const textBuffer* buf, ssize_t pos, int *charlen);
+char *BufGetTextInRect(textBuffer *buf, ssize_t start, ssize_t end,
 	int rectStart, int rectEnd);
 void BufBeginModifyBatch(textBuffer *buf);
 void BufEndModifyBatch(textBuffer *buf);
-void BufInsert(textBuffer *buf, int pos, const char *text);
-void BufRemove(textBuffer *buf, int start, int end);
-void BufReplace(textBuffer *buf, int start, int end, const char *text);
-void BufCopyFromBuf(textBuffer *fromBuf, textBuffer *toBuf, int fromStart,
-    	int fromEnd, int toPos);
-void BufInsertCol(textBuffer *buf, int column, int startPos, const char *text,
-    	int *charsInserted, int *charsDeleted);
-void BufReplaceRect(textBuffer *buf, int start, int end, int rectStart,
+void BufInsert(textBuffer *buf, ssize_t pos, const char *text);
+void BufRemove(textBuffer *buf, ssize_t start, ssize_t end);
+void BufReplace(textBuffer *buf, ssize_t start, ssize_t end, const char *text);
+void BufCopyFromBuf(textBuffer *fromBuf, textBuffer *toBuf, ssize_t fromStart,
+        ssize_t fromEnd, ssize_t toPos);
+void BufInsertCol(textBuffer *buf, int column, ssize_t startPos, const char *text,
+        ssize_t *charsInserted, ssize_t *charsDeleted);
+void BufReplaceRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd, const char *text);
-void BufRemoveRect(textBuffer *buf, int start, int end, int rectStart,
+void BufRemoveRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd);
-void BufOverlayRect(textBuffer *buf, int startPos, int rectStart,
-    	int rectEnd, const char *text, int *charsInserted, int *charsDeleted);
-void BufClearRect(textBuffer *buf, int start, int end, int rectStart,
+void BufOverlayRect(textBuffer *buf, ssize_t startPos, int rectStart,
+    	int rectEnd, const char *text, ssize_t *charsInserted, ssize_t *charsDeleted);
+void BufClearRect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
 	int rectEnd);
 int BufGetTabDistance(textBuffer *buf);
 void BufSetTabDistance(textBuffer *buf, int tabDist);
-void BufCheckDisplay(textBuffer *buf, int start, int end);
-void BufSelect(textBuffer *buf, int start, int end);
+void BufCheckDisplay(textBuffer *buf, ssize_t start, ssize_t end);
+void BufSelect(textBuffer *buf, ssize_t start, ssize_t end);
 void BufUnselect(textBuffer *buf);
-void BufRectSelect(textBuffer *buf, int start, int end, int rectStart,
+void BufRectSelect(textBuffer *buf, ssize_t start, ssize_t end, int rectStart,
         int rectEnd);
-int BufGetSelectionPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetSelectionPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd);
-int BufGetEmptySelectionPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetEmptySelectionPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd);
 char *BufGetSelectionText(textBuffer *buf);
 void BufRemoveSelected(textBuffer *buf);
 void BufReplaceSelected(textBuffer *buf, const char *text);
-void BufSecondarySelect(textBuffer *buf, int start, int end);
+void BufSecondarySelect(textBuffer *buf, ssize_t start, ssize_t end);
 void BufSecondaryUnselect(textBuffer *buf);
-void BufSecRectSelect(textBuffer *buf, int start, int end,
+void BufSecRectSelect(textBuffer *buf, ssize_t start, ssize_t end,
         int rectStart, int rectEnd);
-int BufGetSecSelectPos(textBuffer *buf, int *start, int *end,
+ssize_t BufGetSecSelectPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd);
 char *BufGetSecSelectText(textBuffer *buf);
 void BufRemoveSecSelect(textBuffer *buf);
 void BufReplaceSecSelect(textBuffer *buf, const char *text);
-void BufHighlight(textBuffer *buf, int start, int end);
+void BufHighlight(textBuffer *buf, ssize_t start, ssize_t end);
 void BufUnhighlight(textBuffer *buf);
-void BufRectHighlight(textBuffer *buf, int start, int end,
+void BufRectHighlight(textBuffer *buf, ssize_t start, ssize_t end,
         int rectStart, int rectEnd);
-int BufGetHighlightPos(textBuffer *buf, int *start, int *end,
+int BufGetHighlightPos(textBuffer *buf, ssize_t *start, ssize_t *end,
         int *isRect, int *rectStart, int *rectEnd);
 void BufAddModifyCB(textBuffer *buf, bufModifyCallbackProc bufModifiedCB,
 	void *cbArg);
@@ -190,29 +190,29 @@ void BufAddEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc bufEndModifyCB,
 	void *cbArg);
 void BufRemoveEndModifyCB(textBuffer *buf, bufEndModifyCallbackProc 
 	bufEndModifyCB,	void *cbArg);
-int BufStartOfLine(textBuffer *buf, int pos);
-int BufEndOfLine(textBuffer *buf, int pos);
-int BufGetExpandedChar(const textBuffer* buf, int pos, int indent,
+ssize_t BufStartOfLine(textBuffer *buf, ssize_t pos);
+ssize_t BufEndOfLine(textBuffer *buf, ssize_t pos);
+ssize_t BufGetExpandedChar(const textBuffer* buf, ssize_t pos, int indent,
         char* outStr);
-int BufExpandCharacter(const char *c, int clen, int indent, char *outStr, int tabDist,
+ssize_t BufExpandCharacter(const char *c, int clen, int indent, char *outStr, int tabDist,
 	char nullSubsChar, int *isMB);
 int BufExpandCharacter4(char c, int indent, FcChar32 *outStr,
         int tabDist, char nullSubsChar);
 int BufCharWidth(char c, int indent, int tabDist, char nullSubsChar);
-int BufCountDispChars(const textBuffer* buf, int lineStartPos,
-        int targetPos);
-int BufCountForwardDispChars(textBuffer *buf, int lineStartPos, int nChars);
-int BufCountLines(textBuffer *buf, int startPos, int endPos);
-int BufCountForwardNLines(const textBuffer* buf, int startPos,
-        unsigned nLines);
-int BufCountBackwardNLines(textBuffer *buf, int startPos, int nLines);
-int BufSearchForward(textBuffer *buf, int startPos, const char *searchChars,
-	int *foundPos);
-int BufSearchBackward(textBuffer *buf, int startPos, const char *searchChars,
-	int *foundPos);
-int BufSubstituteNullChars(char *string, int length, textBuffer *buf);
+ssize_t BufCountDispChars(const textBuffer* buf, ssize_t lineStartPos,
+        ssize_t targetPos);
+ssize_t BufCountForwardDispChars(textBuffer *buf, ssize_t lineStartPos, ssize_t nChars);
+ssize_t BufCountLines(textBuffer *buf, ssize_t startPos, ssize_t endPos);
+ssize_t BufCountForwardNLines(const textBuffer* buf, ssize_t startPos,
+        ssize_t nLines);
+ssize_t BufCountBackwardNLines(textBuffer *buf, ssize_t startPos, ssize_t nLines);
+int BufSearchForward(textBuffer *buf, ssize_t startPos, const char *searchChars,
+        ssize_t *foundPos);
+int BufSearchBackward(textBuffer *buf, ssize_t startPos, const char *searchChars,
+        ssize_t *foundPos);
+int BufSubstituteNullChars(char *string, ssize_t length, textBuffer *buf);
 void BufUnsubstituteNullChars(char *string, textBuffer *buf);
-int BufCmp(textBuffer * buf, int pos, int len, const char *cmpText);
+int BufCmp(textBuffer * buf, ssize_t pos, ssize_t len, const char *cmpText);
 
 void BufEnableAnsiEsc(textBuffer *buf);
 void BufDisableAnsiEsc(textBuffer *buf);
@@ -225,9 +225,9 @@ int BufEscPos2Index(
         ssize_t *index,
         size_t *value);
 
-int BufCharLen(const textBuffer *buf, int pos);
-int BufLeftPos(textBuffer *buf, int pos);
-int BufRightPos(textBuffer *buf, int pos);
+int BufCharLen(const textBuffer *buf, ssize_t pos);
+int BufLeftPos(textBuffer *buf, ssize_t pos);
+int BufRightPos(textBuffer *buf, ssize_t pos);
 
 int Utf8ToUcs4(const char *src_orig, FcChar32 *dst, int len);
 int Ucs4ToUtf8(FcChar32 ucs4, char *dst);
