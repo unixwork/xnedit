@@ -247,8 +247,8 @@ static Widget YesNoDialog;		/* "Overwrite?" dialog widget	   */
 static int YesNoResult;			/* Result of overwrite dialog	   */
 static Widget ErrorDialog;		/* Dialog widget for error msgs	   */
 static int ErrorDone;			/* Flag to mark dialog completed   */
-static void (*OrigDirSearchProc)();	/* Built in Motif directory search */
-static void (*OrigFileSearchProc)();	/* Built in Motif file search proc */
+static void (*OrigDirSearchProc)(Widget w, XtPointer searchData);	/* Built in Motif directory search */
+static void (*OrigFileSearchProc)(Widget w, XtPointer searchData);	/* Built in Motif file search proc */
 
 /* 
  * Do the hard work of setting up a file selection dialog
