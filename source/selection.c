@@ -80,10 +80,10 @@ static void gotoMarkKeyCB(Widget w, XtPointer clientData, XEvent *event,
     	Boolean *continueDispatch);
 static void gotoMarkExtendKeyCB(Widget w, XtPointer clientData, XEvent *event,
     	Boolean *continueDispatch);
-static void maintainSelection(selection *sel, int pos, int nInserted,
-    	int nDeleted);
-static void maintainPosition(int *position, int modPos, int nInserted,
-    	int nDeleted);
+static void maintainSelection(selection *sel, ssize_t pos, ssize_t nInserted,
+                              ssize_t nDeleted);
+static void maintainPosition(ssize_t *position, ssize_t modPos, ssize_t nInserted,
+                             ssize_t nDeleted);
 
 /*
 ** Extract the line and column number from the text string.
@@ -645,8 +645,8 @@ void GotoMark(WindowInfo *window, Widget w, char label, int extendSel)
 ** Keep the marks in the windows book-mark table up to date across
 ** changes to the underlying buffer
 */
-void UpdateMarkTable(WindowInfo *window, int pos, int nInserted,
-    	int nDeleted)
+void UpdateMarkTable(WindowInfo *window, ssize_t pos, ssize_t nInserted,
+                     ssize_t nDeleted)
 {
     int i;
     
@@ -662,8 +662,8 @@ void UpdateMarkTable(WindowInfo *window, int pos, int nInserted,
 ** Update a selection across buffer modifications specified by
 ** "pos", "nDeleted", and "nInserted".
 */
-static void maintainSelection(selection *sel, int pos, int nInserted,
-	int nDeleted)
+static void maintainSelection(selection *sel, ssize_t pos, ssize_t nInserted,
+                              ssize_t nDeleted)
 {
     if (!sel->selected || pos > sel->end)
     	return;
@@ -677,8 +677,8 @@ static void maintainSelection(selection *sel, int pos, int nInserted,
 ** Update a position across buffer modifications specified by
 ** "modPos", "nDeleted", and "nInserted".
 */
-static void maintainPosition(int *position, int modPos, int nInserted,
-    	int nDeleted)
+static void maintainPosition(ssize_t *position, ssize_t modPos, ssize_t nInserted,
+                             ssize_t nDeleted)
 {
     if (modPos > *position)
     	return;

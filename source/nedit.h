@@ -193,7 +193,7 @@ typedef struct _UndoInfo {
 /* Element in bookmark table */
 typedef struct {
     char label;
-    int cursorPos;
+    ssize_t cursorPos;
     selection sel;
 } Bookmark;
 

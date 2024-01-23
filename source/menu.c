@@ -3966,7 +3966,8 @@ static void beginningOfSelectionAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textBuffer *buf = TextGetBuffer(w);
-    int start, end, isRect, rectStart, rectEnd;
+    ssize_t start, end;
+    int isRect, rectStart, rectEnd;
     
     if (!BufGetSelectionPos(buf, &start, &end, &isRect, &rectStart, &rectEnd))
     	return;
@@ -3981,7 +3982,8 @@ static void endOfSelectionAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textBuffer *buf = TextGetBuffer(w);
-    int start, end, isRect, rectStart, rectEnd;
+    ssize_t start, end;
+    int isRect, rectStart, rectEnd;
     
     if (!BufGetSelectionPos(buf, &start, &end, &isRect, &rectStart, &rectEnd))
     	return;

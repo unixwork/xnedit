@@ -41,8 +41,8 @@ char *GetAnySelection(WindowInfo *window);
 void BeginMarkCommand(WindowInfo *window);
 void BeginGotoMarkCommand(WindowInfo *window, int extend);
 void AddMark(WindowInfo *window, Widget widget, char label);
-void UpdateMarkTable(WindowInfo *window, int pos, int nInserted,
-   	int nDeleted);
+void UpdateMarkTable(WindowInfo *window, ssize_t pos, ssize_t nInserted,
+                     ssize_t nDeleted);
 void GotoMark(WindowInfo *window, Widget w, char label, int extendSel);
 void MarkDialog(WindowInfo *window);
 void GotoMarkDialog(WindowInfo *window, int extend);

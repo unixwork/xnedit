@@ -39,18 +39,18 @@
 typedef struct _Range Range;
 typedef struct _Rangeset Rangeset;
 
-void RangesetRefreshRange(Rangeset *rangeset, int start, int end);
+void RangesetRefreshRange(Rangeset *rangeset, ssize_t start, ssize_t end);
 void RangesetEmpty(Rangeset *rangeset);
 void RangesetInit(Rangeset *rangeset, int label, textBuffer *buf);
 int RangesetChangeModifyResponse(Rangeset *rangeset, char *name);
-int RangesetFindRangeNo(Rangeset *rangeset, int index, int *start, int *end);
-int RangesetFindRangeOfPos(Rangeset *rangeset, int pos, int incl_end);
-int RangesetCheckRangeOfPos(Rangeset *rangeset, int pos);
+int RangesetFindRangeNo(Rangeset *rangeset, int index, ssize_t *start, ssize_t *end);
+int RangesetFindRangeOfPos(Rangeset *rangeset, ssize_t pos, ssize_t incl_end);
+int RangesetCheckRangeOfPos(Rangeset *rangeset, ssize_t pos);
 int RangesetInverse(Rangeset *p);
 int RangesetAdd(Rangeset *origSet, Rangeset *plusSet);
-int RangesetAddBetween(Rangeset *rangeset, int start, int end);
+int RangesetAddBetween(Rangeset *rangeset, ssize_t start, ssize_t end);
 int RangesetRemove(Rangeset *origSet, Rangeset *minusSet);
-int RangesetRemoveBetween(Rangeset *rangeset, int start, int end);
+int RangesetRemoveBetween(Rangeset *rangeset, ssize_t start, ssize_t end);
 int RangesetGetNRanges(Rangeset *rangeset);
 void RangesetGetInfo(Rangeset *rangeset, int *defined, int *label, 
         int *count, char **color, char **name, char **mode);
@@ -65,10 +65,10 @@ int nRangesetsAvailable(RangesetTable *table);
 Rangeset *RangesetForget(RangesetTable *table, int label);
 Rangeset *RangesetFetch(RangesetTable *table, int label);
 unsigned char * RangesetGetList(RangesetTable *table);
-void RangesetTableUpdatePos(RangesetTable *table, int pos, int n_ins, int n_del);
-void RangesetBufModifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
+void RangesetTableUpdatePos(RangesetTable *table, ssize_t pos, ssize_t n_ins, ssize_t n_del);
+void RangesetBufModifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
 	const char *deletedText, void *cbArg);
-int RangesetIndex1ofPos(RangesetTable *table, int pos, int needs_color);
+int RangesetIndex1ofPos(RangesetTable *table, ssize_t pos, int needs_color);
 int RangesetAssignColorName(Rangeset *rangeset, char *color_name);
 int RangesetAssignColorPixel(Rangeset *rangeset, XftColor color, int ok);
 char *RangesetGetName(Rangeset *rangeset);

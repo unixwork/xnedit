@@ -236,7 +236,7 @@ static void showStatsForm(WindowInfo *window);
 static void addToWindowList(WindowInfo *window);
 static void removeFromWindowList(WindowInfo *window);
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData);
-static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
+static void modifiedCB(int pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
         const char *deletedText, void *cbArg);
 static void beginModifyCB(void *cbArg);
 static void endModifyCB(void *cbArg);
@@ -2902,7 +2902,7 @@ static void movedCB(Widget w, WindowInfo *window, XtPointer callData)
     }
 }
 
-static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
+static void modifiedCB(int pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
         const char *deletedText, void *cbArg) 
 {
     WindowInfo *window = (WindowInfo *)cbArg;

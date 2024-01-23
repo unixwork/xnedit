@@ -145,7 +145,7 @@ static void handleUnparsedRegion(const WindowInfo* win, textBuffer* styleBuf,
 static void handleUnparsedRegionCB(const textDisp* textD, int pos,
         const void* cbArg);
 static void incrementalReparse(windowHighlightData *highlightData,
-    	textBuffer *buf, int pos, int nInserted, const char *delimiters);
+    	textBuffer *buf, ssize_t pos, ssize_t nInserted, const char *delimiters);
 static int parseBufferRange(highlightDataRec *pass1Patterns,
     	highlightDataRec *pass2Patterns, textBuffer *buf, textBuffer *styleBuf,
         reparseContext *contextRequirements, int beginParse, int endParse,
@@ -204,8 +204,8 @@ static styleTableEntry *styleTableEntryOfCode(WindowInfo *window, int hCode);
 ** Note: This routine must be kept efficient.  It is called for every
 ** character typed.
 */
-void SyntaxHighlightModifyCB(int pos, int nInserted, int nDeleted,
-    	int nRestyled, const char *deletedText, void *cbArg) 
+void SyntaxHighlightModifyCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg)
 {    
     WindowInfo *window = (WindowInfo *)cbArg;
     windowHighlightData 
@@ -1353,7 +1353,7 @@ static void handleUnparsedRegionCB(const textDisp* textD, int pos,
 ** with the parsing result.
 */
 static void incrementalReparse(windowHighlightData *highlightData,
-    	textBuffer *buf, int pos, int nInserted, const char *delimiters)
+    	textBuffer *buf, ssize_t pos, ssize_t nInserted, const char *delimiters)
 {
     int beginParse, endParse, endAt, lastMod, parseInStyle, nPasses;
     textBuffer *styleBuf = highlightData->styleBuffer;

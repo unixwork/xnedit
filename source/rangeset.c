@@ -49,15 +49,15 @@
 /* -------------------------------------------------------------------------- */
 
 struct _Range {
-    int start, end;			/* range from [start-]end */
+    ssize_t start, end;			/* range from [start-]end */
 };
 
-typedef Rangeset *RangesetUpdateFn(Rangeset *p, int pos, int ins, int del);
+typedef Rangeset *RangesetUpdateFn(Rangeset *p, ssize_t pos, ssize_t ins, ssize_t del);
 
 struct _Rangeset {
     RangesetUpdateFn *update_fn;	/* modification update function */
     char *update_name;			/* update function name */
-    int maxpos;				/* text buffer maxpos */
+    ssize_t maxpos;				/* text buffer maxpos */
     int last_index;			/* a place to start looking */
     int n_ranges;			/* how many ranges in ranges */
     Range *ranges;			/* the ranges table */
@@ -188,7 +188,7 @@ static Range *RangesFree(Range *ranges)
 ** refresh the screen for the whole file.
 */
 
-void RangesetRefreshRange(Rangeset *rangeset, int start, int end)
+void RangesetRefreshRange(Rangeset *rangeset, ssize_t start, ssize_t end)
 {
     if (rangeset->buf != NULL)
 	BufCheckDisplay(rangeset->buf, start, end);
@@ -286,7 +286,7 @@ int RangesetChangeModifyResponse(Rangeset *rangeset, char *name)
 ** chosen appropriately.
 */
 
-static int at_or_before(int *table, int base, int len, int val)
+static int at_or_before(ssize_t *table, int base, ssize_t len, ssize_t val)
 {
     int lo, mid = 0, hi;
 
@@ -312,7 +312,7 @@ static int at_or_before(int *table, int base, int len, int val)
     return mid;
 }
 
-static int weighted_at_or_before(int *table, int base, int len, int val)
+static int weighted_at_or_before(ssize_t *table, ssize_t base, ssize_t len, ssize_t val)
 {
     int lo, mid = 0, hi;
     int min, max;
@@ -365,7 +365,7 @@ static int weighted_at_or_before(int *table, int base, int len, int val)
 ** Note: ranges are indexed from zero. 
 */
 
-int RangesetFindRangeNo(Rangeset *rangeset, int index, int *start, int *end)
+int RangesetFindRangeNo(Rangeset *rangeset, int index, ssize_t *start, ssize_t *end)
 {
     if (!rangeset || index < 0 || rangeset->n_ranges <= index || !rangeset->ranges)
 	return 0;
@@ -382,15 +382,15 @@ int RangesetFindRangeNo(Rangeset *rangeset, int index, int *start, int *end)
 ** Note: ranges are indexed from zero.
 */
 
-int RangesetFindRangeOfPos(Rangeset *rangeset, int pos, int incl_end)
+int RangesetFindRangeOfPos(Rangeset *rangeset, ssize_t pos, ssize_t incl_end)
 {
-    int *ranges;
-    int len, ind;
+    ssize_t *ranges;
+    ssize_t len, ind;
 
     if (!rangeset || !rangeset->n_ranges || !rangeset->ranges)
 	return -1;
 
-    ranges = (int *)rangeset->ranges;		/* { s1,e1, s2,e2, s3,e3,... } */
+    ranges = (ssize_t *)rangeset->ranges;		/* { s1,e1, s2,e2, s3,e3,... } */
     len = rangeset->n_ranges * 2;
     ind = at_or_before(ranges, 0, len, pos);
     
@@ -418,16 +418,16 @@ int RangesetFindRangeOfPos(Rangeset *rangeset, int pos, int incl_end)
 ** Returns the including range index, or -1 if not found.
 */
 
-int RangesetCheckRangeOfPos(Rangeset *rangeset, int pos)
+int RangesetCheckRangeOfPos(Rangeset *rangeset, ssize_t pos)
 {
-    int *ranges;
-    int len, index, last;
+    ssize_t *ranges;
+    ssize_t len, index, last;
 
     len = rangeset->n_ranges;
     if (len == 0)
 	return -1;			/* no ranges */
 
-    ranges = (int *)rangeset->ranges;		/* { s1,e1, s2,e2, s3,e3,... } */
+    ranges = (ssize_t *)rangeset->ranges;		/* { s1,e1, s2,e2, s3,e3,... } */
     last = rangeset->last_index;
 
     /* try to profit from the last lookup by using its index */
@@ -577,7 +577,7 @@ int RangesetAdd(Rangeset *origSet, Rangeset *plusSet)
 int RangesetRemove(Rangeset *origSet, Rangeset *minusSet)
 {
     Range *origRanges, *minusRanges, *newRanges, *oldRanges;
-    int nOrigRanges, nMinusRanges;
+    ssize_t nOrigRanges, nMinusRanges;
 
     origRanges = origSet->ranges;
     nOrigRanges = origSet->n_ranges;
@@ -1025,7 +1025,7 @@ unsigned char *RangesetGetList(RangesetTable *table)
 
 /* -------------------------------------------------------------------------- */
 
-void RangesetTableUpdatePos(RangesetTable *table, int pos, int ins, int del)
+void RangesetTableUpdatePos(RangesetTable *table, ssize_t pos, ssize_t ins, ssize_t del)
 {
     int i;
     Rangeset *p;
@@ -1039,7 +1039,7 @@ void RangesetTableUpdatePos(RangesetTable *table, int pos, int ins, int del)
     }
 }
 
-void RangesetBufModifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
+void RangesetBufModifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
 	const char *deletedText, void *cbArg)
 {
     RangesetTable *table = (RangesetTable *)cbArg;
@@ -1057,7 +1057,7 @@ void RangesetBufModifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
 ** will be skipped.
 */
 
-int RangesetIndex1ofPos(RangesetTable *table, int pos, int needs_color)
+int RangesetIndex1ofPos(RangesetTable *table, ssize_t pos, int needs_color)
 {
     int i;
     Rangeset *rangeset;
@@ -1221,7 +1221,7 @@ XftColor* RangesetGetColor(Rangeset *rangeset)
 
 static int rangesetWeightedAtOrBefore(Rangeset *rangeset, int pos)
 {
-    int i, last, n, *rangeTable = (int *)rangeset->ranges;
+    ssize_t i, last, n, *rangeTable = (ssize_t *)rangeset->ranges;
 
     n = rangeset->n_ranges;
     if (n == 0)
@@ -1249,9 +1249,9 @@ static int rangesetWeightedAtOrBefore(Rangeset *rangeset, int pos)
 ** Adjusts values in tab[] by an amount delta, perhaps moving them meanwhile.
 */
 
-static int rangesetShuffleToFrom(int *rangeTable, int to, int from, int n, int delta)
+static ssize_t rangesetShuffleToFrom(ssize_t *rangeTable, ssize_t to, ssize_t from, ssize_t n, ssize_t delta)
 {
-    int end, diff = from - to;
+    ssize_t end, diff = from - to;
 
     if (n <= 0)
 	return 0;
@@ -1295,10 +1295,10 @@ static int rangesetShuffleToFrom(int *rangeTable, int to, int from, int n, int d
 ** Insertions appear to occur before deletions. This will never add new ranges.
 */
 
-static Rangeset *rangesetInsDelMaintain(Rangeset *rangeset, int pos, int ins, int del)
+static Rangeset *rangesetInsDelMaintain(Rangeset *rangeset, ssize_t pos, ssize_t ins, ssize_t del)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
-    int end_del, movement;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
+    ssize_t end_del, movement;
 
     n = 2 * rangeset->n_ranges;
 
@@ -1346,10 +1346,10 @@ static Rangeset *rangesetInsDelMaintain(Rangeset *rangeset, int pos, int ins, in
 ** (Almost identical to rangesetInsDelMaintain().)
 */
 
-static Rangeset *rangesetInclMaintain(Rangeset *rangeset, int pos, int ins, int del)
+static Rangeset *rangesetInclMaintain(Rangeset *rangeset, ssize_t pos, ssize_t ins, ssize_t del)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
-    int end_del, movement;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
+    ssize_t end_del, movement;
 
     n = 2 * rangeset->n_ranges;
 
@@ -1404,10 +1404,10 @@ static Rangeset *rangesetInclMaintain(Rangeset *rangeset, int pos, int ins, int 
 ** ranges.
 */
 
-static Rangeset *rangesetDelInsMaintain(Rangeset *rangeset, int pos, int ins, int del)
+static Rangeset *rangesetDelInsMaintain(Rangeset *rangeset, ssize_t pos, ssize_t ins, ssize_t del)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
-    int end_del, movement;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
+    ssize_t end_del, movement;
 
     n = 2 * rangeset->n_ranges;
 
@@ -1458,10 +1458,10 @@ static Rangeset *rangesetDelInsMaintain(Rangeset *rangeset, int pos, int ins, in
 ** ranges. (Almost identical to rangesetDelInsMaintain().)
 */
 
-static Rangeset *rangesetExclMaintain(Rangeset *rangeset, int pos, int ins, int del)
+static Rangeset *rangesetExclMaintain(Rangeset *rangeset, ssize_t pos, ssize_t ins, ssize_t del)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
-    int end_del, movement;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
+    ssize_t end_del, movement;
 
     n = 2 * rangeset->n_ranges;
 
@@ -1516,10 +1516,10 @@ static Rangeset *rangesetExclMaintain(Rangeset *rangeset, int pos, int ins, int 
 ** end. Inserted text is never included in the range.
 */
 
-static Rangeset *rangesetBreakMaintain(Rangeset *rangeset, int pos, int ins, int del)
+static Rangeset *rangesetBreakMaintain(Rangeset *rangeset, ssize_t pos, ssize_t ins, ssize_t del)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
-    int end_del, movement, need_gap;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
+    ssize_t end_del, movement, need_gap;
 
     n = 2 * rangeset->n_ranges;
 
@@ -1598,18 +1598,18 @@ static Rangeset *rangesetBreakMaintain(Rangeset *rangeset, int pos, int ins, int
 
 int RangesetInverse(Rangeset *rangeset)
 {
-    int *rangeTable;
+    ssize_t *rangeTable;
     int n, has_zero, has_end;
 
     if (!rangeset)
 	return -1;
 
-    rangeTable = (int *)rangeset->ranges;
+    rangeTable = (ssize_t *)rangeset->ranges;
 
     if (rangeset->n_ranges == 0) {
         if (!rangeTable) {
             rangeset->ranges = RangesNew(1);
-            rangeTable = (int *)rangeset->ranges;
+            rangeTable = (ssize_t *)rangeset->ranges;
         }
 	rangeTable[0] = 0;
 	rangeTable[1] = rangeset->maxpos;
@@ -1656,9 +1656,10 @@ int RangesetInverse(Rangeset *rangeset)
 ** new number of ranges in the set.
 */
 
-int RangesetAddBetween(Rangeset *rangeset, int start, int end)
+int RangesetAddBetween(Rangeset *rangeset, ssize_t start, ssize_t end)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
+    ssize_t i, j, n;
+    ssize_t *rangeTable = (ssize_t *)rangeset->ranges;
 
     if (start > end) {
 	i = start;        /* quietly sort the positions */
@@ -1673,7 +1674,7 @@ int RangesetAddBetween(Rangeset *rangeset, int start, int end)
 
     if (n == 0) {			/* make sure we have space */
 	rangeset->ranges = RangesNew(1);
-	rangeTable = (int *)rangeset->ranges;
+	rangeTable = (ssize_t *)rangeset->ranges;
 	i = 0;
     }
     else
@@ -1729,9 +1730,9 @@ int RangesetAddBetween(Rangeset *rangeset, int start, int end)
 ** new number of ranges in the set.
 */
 
-int RangesetRemoveBetween(Rangeset *rangeset, int start, int end)
+int RangesetRemoveBetween(Rangeset *rangeset, ssize_t start, ssize_t end)
 {
-    int i, j, n, *rangeTable = (int *)rangeset->ranges;
+    ssize_t i, j, n, *rangeTable = (ssize_t *)rangeset->ranges;
 
     if (start > end) {
 	i = start;        /* quietly sort the positions */

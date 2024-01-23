@@ -60,8 +60,8 @@ typedef struct {
     highlightPattern *patterns;
 } patternSet;
 
-void SyntaxHighlightModifyCB(int pos, int nInserted, int nDeleted,
-    	int nRestyled, const char *deletedText, void *cbArg);
+void SyntaxHighlightModifyCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg);
 void StartHighlighting(WindowInfo *window, int warn);
 void StopHighlighting(WindowInfo *window);
 void AttachHighlightToWidget(Widget widget, WindowInfo *window);
