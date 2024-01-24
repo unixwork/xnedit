@@ -258,9 +258,10 @@ void ShellCmdToMacroString(WindowInfo *window, const char *command,
 void ExecCursorLine(WindowInfo *window, int fromMacro)
 {
     char *cmdText;
-    int left, right, insertPos;
+    ssize_t left, right, insertPos;
     char *subsCommand, fullName[MAXPATHLEN];
-    int pos, line, column;
+    ssize_t pos, line;
+    int column;
     char lineNumber[16];
     
     /* Can't do two shell commands at once in the same window */
@@ -322,8 +323,9 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     int flags = 0;
     char *text;
     char *subsCommand, fullName[MAXPATHLEN];
-    int left = 0, right = 0, textLen;
-    int pos, line, column;
+    ssize_t left = 0, right = 0, textLen;
+    ssize_t pos, line;
+    int column;
     char lineNumber[16];
     WindowInfo *inWindow = window;
     Widget outWidget;

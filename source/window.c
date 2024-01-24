@@ -236,7 +236,7 @@ static void showStatsForm(WindowInfo *window);
 static void addToWindowList(WindowInfo *window);
 static void removeFromWindowList(WindowInfo *window);
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData);
-static void modifiedCB(int pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
+static void modifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
         const char *deletedText, void *cbArg);
 static void beginModifyCB(void *cbArg);
 static void endModifyCB(void *cbArg);
@@ -2682,9 +2682,10 @@ void UpdateWindowReadOnly(WindowInfo *window)
 ** selection issues for older routines which use selections that won't
 ** span lines.
 */
-int GetSimpleSelection(textBuffer *buf, int *left, int *right)
+int GetSimpleSelection(textBuffer *buf, ssize_t *left, ssize_t *right)
 {
-    int selStart, selEnd, isRect, rectStart, rectEnd, lineStart;
+    ssize_t selStart, selEnd, lineStart;
+    int isRect, rectStart, rectEnd;
 
     /* get the character to match and its position from the selection, or
        the character before the insert point if nothing is selected.
@@ -2711,9 +2712,10 @@ int GetSimpleSelection(textBuffer *buf, int *left, int *right)
 */
 void MakeSelectionVisible(WindowInfo *window, Widget textPane)
 {
-    int left, right, isRect, rectStart, rectEnd, horizOffset;
+    ssize_t left, right, horizOffset;
+    int isRect, rectStart, rectEnd;
     int scrollOffset, leftX, rightX, y, rows, margin;
-    int topLineNum, lastLineNum, rightLineNum, leftLineNum, linesToScroll;
+    ssize_t topLineNum, lastLineNum, rightLineNum, leftLineNum, linesToScroll;
     textDisp *textD = ((TextWidget)textPane)->text.textD;
     int topChar = TextFirstVisiblePos(textPane);
     int lastChar = TextLastVisiblePos(textPane);
@@ -2902,7 +2904,7 @@ static void movedCB(Widget w, WindowInfo *window, XtPointer callData)
     }
 }
 
-static void modifiedCB(int pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
+static void modifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted, ssize_t nRestyled,
         const char *deletedText, void *cbArg) 
 {
     WindowInfo *window = (WindowInfo *)cbArg;
@@ -3305,7 +3307,8 @@ static int updateLineNumDisp(WindowInfo* window)
 */
 void UpdateStatsLine(WindowInfo *window)
 {
-    int line, pos, colNum;
+    ssize_t line, pos;
+    int colNum;
     char *string, *format, slinecol[32];
     Widget statW = window->statsLine;
     XmString xmslinecol;
@@ -3337,16 +3340,16 @@ void UpdateStatsLine(WindowInfo *window)
         }
     } else {
         if(nCursors == 1) {
-            snprintf(slinecol, 32, "L: %d  C: %d", line, colNum);
+            snprintf(slinecol, 32, "L: %zd  C: %d", line, colNum);
         } else {
             snprintf(slinecol, 32, "%d cursors", nCursors);
         }
         if (window->showLineNumbers)
-            sprintf(string, "%s%s%s byte %d of %d", window->path,
+            sprintf(string, "%s%s%s byte %zd of %zd", window->path,
                     window->filename, format, pos, 
                     window->buffer->length);
         else
-            sprintf(string, "%s%s%s %d bytes", window->path,
+            sprintf(string, "%s%s%s %zd bytes", window->path,
                     window->filename, format, window->buffer->length);
     }
     

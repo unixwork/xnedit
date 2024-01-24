@@ -61,11 +61,11 @@ int ReplaceAll(WindowInfo *window, const char *searchString, const char *replace
 void ReplaceInSelection(const WindowInfo* window, const char* searchString,
         const char* replaceString, int searchType);
 int SearchWindow(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap, int beginPos, int *startPos, int *endPos, 
-	int *extentBW, int* extentFW);
+	    int searchType, int searchWrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
+        ssize_t *extentBW, ssize_t* extentFW);
 int SearchString(const char *string, const char *searchString, int direction,
-       int searchType, int wrap, int beginPos, int *startPos, int *endPos,
-       int *searchExtentBW, int*searchExtentFW, const char *delimiters);
+       int searchType, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
+        ssize_t *searchExtentBW, ssize_t *searchExtentFW, const char *delimiters);
 char *ReplaceAllInString(const char *inString, const char *searchString,
 	const char *replaceString, int searchType, int *copyStart,
 	int *copyEnd, int *replacementLength, const char *delimiters);

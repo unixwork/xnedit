@@ -200,30 +200,30 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
 static void iSearchTextKeyEH(Widget w, WindowInfo *window,
 	XKeyEvent *event, Boolean *continueDispatch);
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos,
-	int *searchExtentBW, int *searchExtentFW);
+	    int direction, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
+        ssize_t *searchExtentBW, ssize_t *searchExtentFW);
 static int searchLiteralWord(const char *string, const char *searchString, int caseSense,
- 	int direction, int wrap, int beginPos, int *startPos, int *endPos, 
+        int direction, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
         const char * delimiters);
 static int searchRegex(const char *string, const char *searchString, int direction,
-	int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags);
+        int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags);
 static int forwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-        int *searchExtentFW, const char *delimiters, int defaultFlags);
+        ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags);
 static int backwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-        int *searchExtentFW, const char *delimiters, int defaultFlags);
+        ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags);
 static void upCaseString(char *outString, const char *inString);
 static void downCaseString(char *outString, const char *inString);
 static void resetFindTabGroup(WindowInfo *window);
 static void resetReplaceTabGroup(WindowInfo *window);
 static int searchMatchesSelection(WindowInfo *window, const char *searchString,
-	int searchType, int *left, int *right, int *searchExtentBW, 
-	int *searchExtentFW);
+        int searchType, ssize_t *left, ssize_t *right, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW);
 static int findMatchingChar(WindowInfo *window, char toMatch,
-	void *toMatchStyle, int charPos, int startLimit, int endLimit, 
-	int *matchPos);
+	    void *toMatchStyle, ssize_t charPos, ssize_t startLimit, ssize_t endLimit,
+        ssize_t *matchPos);
 static Boolean replaceUsingRE(const char* searchStr, const char* replaceStr,
         const char* sourceStr, int beginPos, char* destStr, int maxDestLen,
         int prevChar, const char* delimiters, int defaultFlags);
@@ -255,15 +255,15 @@ static void iSearchRecordLastBeginPos(WindowInfo *window, int direction,
 static Boolean prefOrUserCancelsSubst(const Widget parent,
         const Display* display);
 
-static int translateEscPos(EscSeqArray *array, int pos);
+static int translateEscPos(EscSeqArray *array, ssize_t pos);
 static void translatePosAndRestoreBuf(
         textBuffer *buf,
         EscSeqArray *array,
         int found,
-        int *begin,
-        int *end,
-        int *extentBW,
-        int *extentFW);
+        ssize_t *begin,
+        ssize_t *end,
+        ssize_t *extentBW,
+        ssize_t *extentFW);
 
 typedef struct _charMatchTable {
     char c;
@@ -2781,8 +2781,8 @@ int SearchAndSelectSame(WindowInfo *window, int direction, int searchWrap)
 int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
 	int searchType, int searchWrap)
 {
-    int startPos, endPos;
-    int beginPos, cursorPos, selStart, selEnd;
+    ssize_t startPos, endPos;
+    ssize_t beginPos, cursorPos, selStart, selEnd;
     int movedFwd = 0;
 
     /* Save a copy of searchString in the search history */
@@ -2992,7 +2992,7 @@ static void iSearchRecordLastBeginPos(WindowInfo *window, int direction,
 int SearchAndSelectIncremental(WindowInfo *window, int direction,
 	const char *searchString, int searchType, int searchWrap, int continued)
 {
-    int beginPos, startPos, endPos;
+    ssize_t beginPos, startPos, endPos;
 
     /* If there's a search in progress, start the search from the original
        starting position, otherwise search from the cursor position. */
@@ -3355,8 +3355,8 @@ void FlashMatching(WindowInfo *window, Widget textW)
 {
     char c;
     void *style;
-    int pos, matchIndex;
-    int startPos, endPos, searchPos, matchPos;
+    ssize_t pos, matchIndex;
+    ssize_t startPos, endPos, searchPos, matchPos;
     int constrain;
     
     /* if a marker is already drawn, erase it and cancel the timeout */
@@ -3432,8 +3432,8 @@ void FlashMatching(WindowInfo *window, Widget textW)
 
 void SelectToMatchingCharacter(WindowInfo *window)
 {
-    int selStart, selEnd;
-    int startPos, endPos, matchPos;
+    ssize_t selStart, selEnd;
+    ssize_t startPos, endPos, matchPos;
     textBuffer *buf = window->buffer;
 
     /* get the character to match and its position from the selection, or
@@ -3477,8 +3477,8 @@ void SelectToMatchingCharacter(WindowInfo *window)
 
 void GotoMatchingCharacter(WindowInfo *window)
 {
-    int selStart, selEnd;
-    int matchPos;
+    ssize_t selStart, selEnd;
+    ssize_t matchPos;
     textBuffer *buf = window->buffer;
 
     /* get the character to match and its position from the selection, or
@@ -3519,10 +3519,10 @@ void GotoMatchingCharacter(WindowInfo *window)
 }
 
 static int findMatchingChar(WindowInfo *window, char toMatch, 
-    void* styleToMatch, int charPos, int startLimit, int endLimit, 
-    int *matchPos)
+    void* styleToMatch, ssize_t charPos, ssize_t startLimit, ssize_t endLimit,
+        ssize_t *matchPos)
 {
-    int nestDepth, matchIndex, direction, beginPos, pos;
+    ssize_t nestDepth, matchIndex, direction, beginPos, pos;
     char matchChar, c;
     void *style = NULL;
     textBuffer *buf = window->buffer;
@@ -3641,8 +3641,8 @@ int ReplaceFindSame(WindowInfo *window, int direction, int searchWrap)
 int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString,
                      const char *replaceString, int searchType, int searchWrap)
 {
-    int startPos = 0, endPos = 0, replaceLen = 0;
-    int searchExtentBW, searchExtentFW;
+    ssize_t startPos = 0, endPos = 0, replaceLen = 0;
+    ssize_t searchExtentBW, searchExtentFW;
     int replaced;
 
     /* Save a copy of search and replace strings in the search history */
@@ -3693,9 +3693,9 @@ int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString
 int SearchAndReplace(WindowInfo *window, int direction, const char *searchString,
 	const char *replaceString, int searchType, int searchWrap)
 {
-    int startPos, endPos, replaceLen, searchExtentBW, searchExtentFW;
+    ssize_t startPos, endPos, replaceLen, searchExtentBW, searchExtentFW;
     int found;
-    int beginPos, cursorPos;
+    ssize_t beginPos, cursorPos;
     
     /* Save a copy of search and replace strings in the search history */
     saveSearchHistory(searchString, replaceString, searchType, FALSE);
@@ -3823,9 +3823,10 @@ static Boolean prefOrUserCancelsSubst(const Widget parent,
 void ReplaceInSelection(const WindowInfo* window, const char* searchString,
         const char* replaceString, int searchType)
 {
-    int selStart, selEnd, beginPos, startPos, endPos, realOffset, replaceLen;
-    int found, isRect, rectStart, rectEnd, lineStart, cursorPos;
-    int extentBW, extentFW;
+    ssize_t selStart, selEnd, beginPos, startPos, endPos, realOffset, replaceLen;
+    int found, isRect, rectStart, rectEnd;
+    ssize_t lineStart, cursorPos;
+    ssize_t extentBW, extentFW;
     char *fileString;
     textBuffer *tempBuf;
     Boolean substSuccess = False;
@@ -4046,10 +4047,10 @@ char *ReplaceAllInString(const char *inString, const char *searchString,
 	const char *replaceString, int searchType, int *copyStart,
 	int *copyEnd, int *replacementLength, const char *delimiters)
 {
-    int beginPos, startPos, endPos, lastEndPos;
+    ssize_t beginPos, startPos, endPos, lastEndPos;
     int found, nFound, removeLen, replaceLen, copyLen, addLen;
     char *outString, *fillPtr;
-    int searchExtentBW, searchExtentFW;
+    ssize_t searchExtentBW, searchExtentFW;
     
     /* reject empty string */
     if (*searchString == '\0')
@@ -4169,11 +4170,12 @@ static void iSearchTryBeepOnWrap(WindowInfo *window, int direction,
 ** Search the text in "window", attempting to match "searchString"
 */
 int SearchWindow(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap, int beginPos, int *startPos, 
-        int *endPos, int *extentBW, int *extentFW)
+	    int searchType, int searchWrap, ssize_t beginPos, ssize_t *startPos,
+        ssize_t *endPos, ssize_t *extentBW, ssize_t *extentFW)
 {
     const char *fileString;
-    int found, resp, fileEnd = window->buffer->length - 1, outsideBounds;
+    int found, resp;
+    ssize_t fileEnd = window->buffer->length - 1, outsideBounds;
     
     /* reject empty string */
     if (*searchString == '\0')
@@ -4286,8 +4288,8 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 ** characters, or simply passed as null for the default delimiter set.
 */
 int SearchString(const char *string, const char *searchString, int direction,
-       int searchType, int wrap, int beginPos, int *startPos, int *endPos,
-       int *searchExtentBW, int *searchExtentFW, const char *delimiters)
+       int searchType, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
+        ssize_t *searchExtentBW, ssize_t *searchExtentFW, const char *delimiters)
 {
     switch (searchType) {
       case SEARCH_CASE_SENSE_WORD:
@@ -4351,7 +4353,7 @@ int StringToSearchType(const char * string, int *searchType)
 **  
 */
 static int searchLiteralWord(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos, 
+	    int direction, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
         const char * delimiters)
 {
 /* This is critical code for the speed of searches.			    */
@@ -4450,8 +4452,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 
 
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos,
-	int *searchExtentBW, int *searchExtentFW)
+	    int direction, int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos,
+        ssize_t *searchExtentBW, ssize_t *searchExtentFW)
 {
 /* This is critical code for the speed of searches.			    */
 /* For efficiency, we define the macro DOSEARCH with the guts of the search */
@@ -4530,8 +4532,8 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
 }
 
 static int searchRegex(const char *string, const char *searchString, int direction,
-	int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags)
+	    int wrap, ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     if (direction == SEARCH_FORWARD)
 	return forwardRegexSearch(string, searchString, wrap, 
@@ -4544,8 +4546,8 @@ static int searchRegex(const char *string, const char *searchString, int directi
 }
 
 static int forwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-        int *searchExtentFW, const char *delimiters, int defaultFlags)
+        ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     regexp *compiledRE = NULL;
     char *compileMsg;
@@ -4595,12 +4597,12 @@ static int forwardRegexSearch(const char *string, const char *searchString, int 
 }
 
 static int backwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags)
+        ssize_t beginPos, ssize_t *startPos, ssize_t *endPos, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     regexp *compiledRE = NULL;
     char *compileMsg;
-    int length;
+    ssize_t length;
 
     /* compile the search string for searching with ExecRE */
     compiledRE = CompileRE(searchString, &compileMsg, defaultFlags);
@@ -4738,13 +4740,14 @@ static void resetReplaceTabGroup(WindowInfo *window)
 ** also return the position of the selection in "left" and "right".
 */
 static int searchMatchesSelection(WindowInfo *window, const char *searchString,
-	int searchType, int *left, int *right, int *searchExtentBW, 
-	int *searchExtentFW)
+        int searchType, ssize_t *left, ssize_t *right, ssize_t *searchExtentBW,
+        ssize_t *searchExtentFW)
 {
-    int selLen, selStart, selEnd, startPos, endPos, extentBW, extentFW, beginPos;
+    ssize_t selLen, selStart, selEnd, startPos, endPos, extentBW, extentFW, beginPos;
     int regexLookContext = isRegexType(searchType) ? 1000 : 0;
     char *string;
-    int found, isRect, rectStart, rectEnd, lineStart = 0;
+    int found, isRect, rectStart, rectEnd;
+    ssize_t lineStart = 0;
     
     /* find length of selection, give up on no selection or too long */
     if (!BufGetEmptySelectionPos(window->buffer, &selStart, &selEnd, &isRect,
@@ -5319,9 +5322,9 @@ static void iSearchCaseToggleCB(Widget w, XtPointer clientData, XtPointer callDa
 }
 
 
-static int translateEscPos(EscSeqArray *array, int pos)
+static int translateEscPos(EscSeqArray *array, ssize_t pos)
 {
-    int p = pos;
+    ssize_t p = pos;
     for(size_t i=0;i<array->num_esc;i++) {
         EscSeqStr e = array->esc[i];
         if(e.off_trans < pos)
@@ -5336,10 +5339,10 @@ static void translatePosAndRestoreBuf(
         textBuffer *buf,
         EscSeqArray *array,
         int found,
-        int *begin,
-        int *end,
-        int *extentBW,
-        int *extentFW)
+        ssize_t *begin,
+        ssize_t *end,
+        ssize_t *extentBW,
+        ssize_t *extentFW)
 {
     if(found && array) {
         if(begin) *begin = translateEscPos(array, *begin);

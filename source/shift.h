@@ -36,6 +36,6 @@ void UpcaseSelection(WindowInfo *window);
 void DowncaseSelection(WindowInfo *window);
 void FillSelection(WindowInfo *window);
 char *ShiftText(char *text, int direction, int tabsAllowed, int tabDist,
-	int nChars, int *newLen);
+        ssize_t nChars, ssize_t *newLen);
 
 #endif /* NEDIT_SHIFT_H_INCLUDED */

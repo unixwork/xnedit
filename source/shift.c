@@ -66,7 +66,7 @@ static char *shiftLineRight(char *line, int lineLen, int tabsAllowed,
 static char *shiftLineLeft(char *line, int lineLen, int tabDist, int nChars);
 static int findLeftMargin(char *text, int length, int tabDist);
 static char *fillParagraphs(char *text, int rightMargin, int tabDist,
-	int useTabs, char nullSubsChar, int *filledLen, int alignWithFirst);
+	int useTabs, char nullSubsChar, ssize_t *filledLen, int alignWithFirst);
 static char *fillParagraph(char *text, int leftMargin, int firstLineIndent,
 	int rightMargin, int tabDist, int allowTabs, char nullSubsChar,
 	int *filledLen);
@@ -84,8 +84,9 @@ static int findParagraphEnd(textBuffer *buf, int startPos);
 */
 void ShiftSelection(WindowInfo *window, int direction, int byTab)
 {
-    int selStart, selEnd, isRect, rectStart, rectEnd;
-    int shiftedLen, newEndPos, cursorPos, origLength, emTabDist, shiftDist;
+    ssize_t selStart, selEnd;
+    int isRect, rectStart, rectEnd;
+    ssize_t shiftedLen, newEndPos, cursorPos, origLength, emTabDist, shiftDist;
     char *text, *shiftedText;
     textBuffer *buf = window->buffer;
 
@@ -197,7 +198,8 @@ static void changeCase(WindowInfo *window, int makeUpper)
 {
     textBuffer *buf = window->buffer;
     char *text, *c;
-    int cursorPos, start, end, isRect, rectStart, rectEnd;
+    ssize_t cursorPos, start, end;
+    int isRect, rectStart, rectEnd;
     
     char *bak_locale = NULL;
     if(!XNEditDefaultCharsetIsUTF8()) {
@@ -298,9 +300,10 @@ void FillSelection(WindowInfo *window)
 {
     textBuffer *buf = window->buffer;
     char *text, *filledText;
-    int left, right, nCols, len, isRect, rectStart, rectEnd;
+    ssize_t left, right, nCols, len;
+    int isRect, rectStart, rectEnd;
     int rightMargin, wrapMargin;
-    int insertPos = TextGetCursorPos(window->lastFocus);
+    ssize_t insertPos = TextGetCursorPos(window->lastFocus);
     int hasSelection = window->buffer->primary.selected;
     
     /* Find the range of characters and get the text to fill.  If there is a
@@ -375,11 +378,11 @@ void FillSelection(WindowInfo *window)
 ** shifted text in memory that must be freed by the caller with NEditFree.
 */
 char *ShiftText(char *text, int direction, int tabsAllowed, int tabDist,
-	int nChars, int *newLen)
+        ssize_t nChars, ssize_t *newLen)
 {
     char *shiftedText, *shiftedLine;
     char *textPtr, *lineStartPtr, *shiftedPtr;
-    int bufLen;
+    ssize_t bufLen;
     
     /*
     ** Allocate memory for shifted string.  Shift left adds a maximum of
@@ -590,9 +593,9 @@ static int findLeftMargin(char *text, int length, int tabDist)
 ** previous versions which did all paragraphs together).
 */
 static char *fillParagraphs(char *text, int rightMargin, int tabDist,
-	int useTabs, char nullSubsChar, int *filledLen, int alignWithFirst)
+	int useTabs, char nullSubsChar, ssize_t *filledLen, int alignWithFirst)
 {
-    int paraStart, paraEnd, fillEnd;
+    ssize_t paraStart, paraEnd, fillEnd;
     char *c, ch, *secondLineStart, *paraText, *filledText;
     int firstLineLen, firstLineIndent, leftMargin, len;
     textBuffer *buf;

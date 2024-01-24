@@ -73,7 +73,7 @@ Pixel AllocateColor(Widget w, const char *colorName);
 void SetParseColorError(int value);
 Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b);
 XftColor AllocXftColor(Widget w, const char *colorName);
-void* GetHighlightInfo(WindowInfo *window, int pos);
+void* GetHighlightInfo(WindowInfo *window, ssize_t pos);
 highlightPattern *FindPatternOfWindow(WindowInfo *window, char *name);
 int HighlightCodeOfPos(WindowInfo *window, int pos);
 int HighlightLengthOfCodeFromPos(WindowInfo *window, int pos, int *checkCode);

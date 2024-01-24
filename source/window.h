@@ -44,7 +44,7 @@ void UpdateMinPaneHeights(WindowInfo *window);
 void UpdateNewOppositeMenu(WindowInfo *window, int openInTab);
 void SetWindowModified(WindowInfo *window, int modified);
 void MakeSelectionVisible(WindowInfo *window, Widget textPane);
-int GetSimpleSelection(textBuffer *buf, int *left, int *right);
+int GetSimpleSelection(textBuffer *buf, ssize_t *left, ssize_t *right);
 WindowInfo *FindWindowWithFile(const char *name, const char *path);
 void SetAutoIndent(WindowInfo *window, IndentStyle state);
 void SetShowMatching(WindowInfo *window, ShowMatchingStyle state);

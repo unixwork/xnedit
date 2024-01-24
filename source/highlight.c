@@ -491,7 +491,7 @@ int TestHighlightPatterns(patternSet *patSet)
 ** pointer is returned for two positions, the corresponding characters have
 ** the same highlight style.
 **/
-void* GetHighlightInfo(WindowInfo *window, int pos)
+void* GetHighlightInfo(WindowInfo *window, ssize_t pos)
 {
     int style;
     highlightDataRec *pattern = NULL;
