@@ -254,6 +254,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 
     char nameText[MAXPATHLEN], includeName[MAXPATHLEN];
     char filename[MAXPATHLEN], pathname[MAXPATHLEN];
+    nameText[MAXPATHLEN-1] = 0;
     char *inPtr, *outPtr;
 #ifdef VMS
 #ifndef __DECC
@@ -271,7 +272,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     	XBell(TheDisplay, 0);
 	return;
     }
-    if (*length > MAXPATHLEN || *length == 0) {
+    if (*length + 2 > MAXPATHLEN || *length == 0) {
     	XBell(TheDisplay, 0);
 	NEditFree(value);
 	return;
@@ -291,7 +292,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     if (sscanf(nameText, "#include \"%[^\"]\"", includeName) == 1)
     	strcpy(nameText, includeName);
     else if (sscanf(nameText, "#include <%[^<>]>", includeName) == 1)
-    	sprintf(nameText, "%s%s", includeDir, includeName);
+    	snprintf(nameText, MAXPATHLEN-1, "%s%s", includeDir, includeName);
     
     /* strip whitespace from name */
     for (inPtr=nameText, outPtr=nameText; *inPtr!='\0'; inPtr++)

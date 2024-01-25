@@ -324,10 +324,12 @@ const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc)
         movbegin[movlen] = '\0';
     }
     
+    /*
     for(int i=0;i<num_esc;i++) {
         EscSeqStr e = array->esc[i];
         char *s = text + e.off_trans;
     }
+    */
     
     array->text = text;
     *esc = array;

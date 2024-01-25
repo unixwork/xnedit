@@ -2008,7 +2008,9 @@ static int writeBckVersion(WindowInfo *window)
     if ((strlen(fullname) + 5) > (size_t) MAXPATHLEN) {
         return bckError(window, "file name too long", window->filename);
     }
-    sprintf(bckname, "%s.bck", fullname);
+    if(snprintf(bckname, MAXPATHLEN, "%s.bck", fullname) >= MAXPATHLEN) {
+        return FALSE;
+    }
 
     /* Delete the old backup file */
     /* Errors are ignored; we'll notice them later. */

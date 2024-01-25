@@ -265,6 +265,7 @@ char *FormatWindowTitle(const char* filename,
                         const char* titleFormat)
 {
     static char title[WINDOWTITLE_MAX_LEN];
+    title[WINDOWTITLE_MAX_LEN-1] = 0;
     char *titlePtr = title;
     char* titleEnd = title + WINDOWTITLE_MAX_LEN - 1;
     
@@ -430,7 +431,7 @@ char *FormatWindowTitle(const char* filename,
     
     if (title[0] == 0)
     {
-	sprintf(&title[0], "<empty>"); /* For preview purposes only */
+	snprintf(&title[0], WINDOWTITLE_MAX_LEN-1, "<empty>"); /* For preview purposes only */
     }
 
     if (etDialog.form)
@@ -464,8 +465,8 @@ char *FormatWindowTitle(const char* filename,
     	   if (noOfComponents >= 0)
 	   {
                char* value = XmTextGetString(etDialog.ndirW);
-               char buf[2];
-               sprintf(&buf[0], "%d", noOfComponents);
+               char buf[16];
+               snprintf(&buf[0], 16, "%d", noOfComponents);
                if (strcmp(&buf[0], value)) /* Don't overwrite unless diff. */
        	           SetIntText(etDialog.ndirW, noOfComponents);
                NEditFree(value);
@@ -860,22 +861,23 @@ static void toggleDirectoryCB(Widget w, XtPointer clientData, XtPointer callData
     if (XmToggleButtonGetState(etDialog.dirW))
     {
         char buf[20];
+        buf[19] = 0;
 	int maxComp;
         char *value = XmTextGetString(etDialog.ndirW);
 	if (*value)
 	{
 	   if (sscanf(value, "%d", &maxComp) > 0)
 	   {
-	      sprintf(&buf[0], " %%%dd ", maxComp);
+	      snprintf(&buf[0], 19, " %%%dd ", maxComp);
            }   
 	   else
 	   {
-   	      sprintf(&buf[0], " %%d "); /* Should not be necessary */
+   	      snprintf(&buf[0], 19, " %%d "); /* Should not be necessary */
  	   }
         }
 	else
 	{
-	   sprintf(&buf[0], " %%d ");
+	   snprintf(&buf[0], 19, " %%d ");
 	}
 	NEditFree(value);
         appendToFormat(buf);
@@ -887,7 +889,7 @@ static void toggleDirectoryCB(Widget w, XtPointer clientData, XtPointer callData
 	for (i=0; i<=9; ++i)
 	{
 	    char buf[20];
-	    sprintf(&buf[0], "%%%dd", i);
+	    snprintf(&buf[0], 19, "%%%dd", i);
 	    removeFromFormat(buf);
 	}
     }
@@ -946,7 +948,7 @@ static void enterMaxDirCB(Widget w, XtPointer clientData, XtPointer callData)
 	    for (i=0; i<=9; ++i)
 	    {
         	char buf[20];
-		sprintf(&buf[0], "%%%dd", i);
+		snprintf(&buf[0], 20, "%%%dd", i);
 		if (i != maxComp)
 		{
 		    pos = strstr(format, &buf[0]);
@@ -973,7 +975,7 @@ static void enterMaxDirCB(Widget w, XtPointer clientData, XtPointer callData)
 	    {
         	char buf[20];
 		char *pos;
-		sprintf(&buf[0], "%%%dd", i);
+		snprintf(&buf[0], 20, "%%%dd", i);
 		pos = strstr(format, &buf[0]);
 		if (pos)
 		{
