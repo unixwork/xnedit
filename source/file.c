@@ -2239,7 +2239,7 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
 int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     	int *fileFormat)
 {
-    int n, retVal;
+    int retVal;
     char *savedDefaultDir;
     
     *fileFormat = window->fileFormat;

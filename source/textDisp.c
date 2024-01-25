@@ -509,12 +509,8 @@ void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
 void TextDSetFont(textDisp *textD, NFont *font)
 {   
     XftFont *fontStruct = FontDefault(font);
-    Display *display = XtDisplay(textD->w);
     int i, maxAscent = fontStruct->ascent, maxDescent = fontStruct->descent;
     int width, height, fontWidth;
-    Pixel bgPixel, fgPixel, selectFGPixel, selectBGPixel;
-    Pixel highlightFGPixel, highlightBGPixel, lineNumFGPixel, lineNumBGPixel, lineHighlightBGPixel;
-    XGCValues values;
     XftFont *styleFont;
     NFont *styleFontList;
     
@@ -968,7 +964,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
  * Add diff to all cursors >= startPos
  */
 void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
-    int prevPos = -2;
+    //int prevPos = -2;
     size_t newMCursorSize = textD->mcursorSize;
     for(int i=textD->mcursorSize-1;i>=0;i--) {
         if(textD->multicursor[i].cursorPos < startPos) {
@@ -1033,8 +1029,8 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     textD->cursorOn = False;
     if(textD->highlightCursorLine) {
         // redraw entire line
+        //int newCursorLineStart = BufStartOfLine(textD->buffer, newMultiCursorPos);
         int newCursorLine;
-        int newCursorLineStart = BufStartOfLine(textD->buffer, newMultiCursorPos);
         posToVisibleLineNum(textD, newMultiCursorPos, &newCursorLine);
         redisplayLine(textD, newCursorLine, 0, INT_MAX, 0, INT_MAX);
     }
@@ -3859,7 +3855,7 @@ static int countLines(const char *string)
 static int measureVisLine(textDisp *textD, int visLineNum)
 {
     textBuffer *buf = textD->buffer;
-    int i, width = 0, len, style, lineLen = visLineLength(textD, visLineNum);
+    int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
     char *lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];

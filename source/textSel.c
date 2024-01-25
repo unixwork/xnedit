@@ -55,7 +55,6 @@
 #endif
 
 
-static int isColFlag = 0;
 static Time selectionTime = 0;
 
 #define N_SELECT_TARGETS 8
@@ -98,8 +97,6 @@ static void modifiedCB(int pos, int nInserted, int nDeleted,
 	int nRestyled, const char *deletedText, void *cbArg);
 static void sendSecondary(Widget w, Time time, Atom sel, int action,
 	char *actionText, int actionTextLen);
-static void getSelectionUtf8CB(Widget w, XtPointer clientData, Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
 	Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
@@ -251,7 +248,6 @@ void InsertPrimarySelection(Widget w, Time time, int isColumnar)
     sel->isColFlag = isColumnar;
     
     Atom targets[2] = {XA_STRING, getAtom(XtDisplay(w), A_UTF8_STRING)};
-    void *data[2] = { sel, sel };
     
     selectionTime = time;
     

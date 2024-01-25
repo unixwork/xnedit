@@ -1254,26 +1254,6 @@ static void colorDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void colorOkCB     (Widget w, XtPointer clientData, XtPointer callData);
 static void colorApplyCB  (Widget w, XtPointer clientData, XtPointer callData);
 static void colorCloseCB(Widget w, XtPointer clientData, XtPointer callData);
-static void textFgModifiedCB  (Widget w, XtPointer clientData,
-      XtPointer callData);
-static void textBgModifiedCB  (Widget w, XtPointer clientData,
-      XtPointer callData);
-static void selectFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void selectBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void hiliteFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void hiliteBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void lineNoFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void lineNoBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void cursorFgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
-static void cursorLineBgModifiedCB(Widget w, XtPointer clientData,
-        XtPointer callData);
 static void indentRainbowDialogLoadColors(colorDialog *cd);
 static void loadAnsiColors(colorDialog *cd);
 
@@ -6327,7 +6307,6 @@ static void irColorRemove(Widget w, XtPointer clientData, XtPointer callData)
         XtVaSetValues(n.down, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
         XtVaSetValues(n.textfield, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
         XtVaSetValues(n.colorchooser, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget, p.remove, XmNtopOffset, IR_BTN_MARGIN, NULL);
-        int len = cd->numIndentRainbowColors-i-1;
         memmove(cd->indentRainbowColors + i, cd->indentRainbowColors + i+1, (cd->numIndentRainbowColors-i-1)*sizeof(indentRainbowColor));
     }
     
@@ -6916,7 +6895,6 @@ char* ParseAnsiColorList(char **colorArray, const char *colorStr)
 static void loadAnsiColors(colorDialog *cd)
 {
     char *colors[16];
-    int ncolors = 0;
     
     char *colorList = GetPrefAnsiColorList();
     char *colorListStr = ParseAnsiColorList(colors, colorList);

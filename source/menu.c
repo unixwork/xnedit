@@ -2981,7 +2981,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    int response, addWrap, fileFormat;
+    int response, fileFormat;
     char *params[8];
     
     FileSelection file;

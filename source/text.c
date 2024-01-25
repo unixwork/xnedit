@@ -1108,7 +1108,7 @@ static void resize(TextWidget w)
     int lineNumAreaWidth = w->text.lineNumCols == 0 ? 0 : w->text.marginWidth +
 		font->maxWidth * w->text.lineNumCols;
 
-    int test_max_advance_width = fs->max_advance_width;
+    //int test_max_advance_width = fs->max_advance_width;
     w->text.columns = (width - marginWidth*2 - lineNumAreaWidth) /
     	    font->maxWidth /* fs->max_advance_width */;
     w->text.rows = (height - marginHeight*2) / (fs->ascent + fs->descent);
@@ -1262,7 +1262,6 @@ static Boolean setValues(TextWidget current, TextWidget request,
 	TextWidget new)
 {
     Boolean redraw = False, reconfigure = False;
-    XftFont *fs = FontDefault(new->text.font2);
     NFont *font = new->text.font2;
     
     if (new->text.overstrike != current->text.overstrike) {
@@ -3201,7 +3200,7 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int pos, insertPos; //TextDGetInsertPosition(textD);
+    int pos; //TextDGetInsertPosition(textD);
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -3257,7 +3256,7 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int pos, insertPos;
+    int pos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
@@ -3318,7 +3317,7 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int parStart, pos, insertPos;
+    int parStart, pos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
@@ -4273,7 +4272,6 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    char *c;
 
     if (allowPendingDelete && pendingSelection(w)) {
     	BufReplaceSelected(buf, chars);

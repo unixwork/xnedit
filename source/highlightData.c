@@ -3244,11 +3244,11 @@ static void restoreCB(Widget w, XtPointer clientData, XtPointer callData)
     
     /* Update the dialog */
     HighlightDialog.nPatterns = defaultPatSet->nPatterns;
-    for (i=0; i<defaultPatSet->nPatterns; i++)
-    	HighlightDialog.patterns[i] =
-    		copyPatternSrc(&defaultPatSet->patterns[i], NULL);
-    	SetIntText(HighlightDialog.lineContextW, defaultPatSet->lineContext);
-    	SetIntText(HighlightDialog.charContextW, defaultPatSet->charContext);
+    for (i=0; i<defaultPatSet->nPatterns; i++) {
+        HighlightDialog.patterns[i] = copyPatternSrc(&defaultPatSet->patterns[i], NULL);
+    }
+    SetIntText(HighlightDialog.lineContextW, defaultPatSet->lineContext);
+    SetIntText(HighlightDialog.charContextW, defaultPatSet->charContext);
     ChangeManagedListData(HighlightDialog.managedListW);
 }
 	

@@ -3367,7 +3367,6 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
         DataValue* result, char** errMsg)
 {
     char stringStorage[5][TYPE_INT_STR_SIZE(int)];
-    char filename[MAXPATHLEN + 1];
     char* title = "Choose Filename";
     char* mode = "exist";
     char* defaultPath = "";

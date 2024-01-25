@@ -5991,7 +5991,7 @@ static void windowStructureNotifyEventEH(
         XEvent *event,
         Boolean *dispatch)
 {
-    WindowInfo *window = data;
+    //WindowInfo *window = data;
     if(event->type == UnmapNotify) {
         updateWindowMapStatus(widget, False);
         InvalidateWindowMenus();

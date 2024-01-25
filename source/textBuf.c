@@ -327,7 +327,6 @@ const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc)
     for(int i=0;i<num_esc;i++) {
         EscSeqStr e = array->esc[i];
         char *s = text + e.off_trans;
-        char *x = s;
     }
     
     array->text = text;
