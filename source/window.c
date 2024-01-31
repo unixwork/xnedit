@@ -1587,7 +1587,7 @@ WindowInfo *FindWindowWithFile(const char *name, const char *path)
 void SplitPane(WindowInfo *window)
 {
     short paneHeights[MAX_PANES+1];
-    int insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
+    ssize_t insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
     int horizOffsets[MAX_PANES+1];
     int i, focusPane, emTabDist, wrapMargin, lineNumCols, totalHeight=0;
     char *delimiters;
@@ -1715,7 +1715,7 @@ int WidgetToPaneIndex(WindowInfo *window, Widget w)
 void ClosePane(WindowInfo *window)
 {
     short paneHeights[MAX_PANES+1];
-    int insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
+    ssize_t insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
     int horizOffsets[MAX_PANES+1];
     int i, focusPane;
     Widget text;
@@ -1927,8 +1927,8 @@ void SetEncodingInfoBarLabel(WindowInfo *window, char *message)
 void SetTabDist(WindowInfo *window, int tabDist)
 {
     if (window->buffer->tabDist != tabDist) {
-        int saveCursorPositions[MAX_PANES + 1];
-        int saveVScrollPositions[MAX_PANES + 1];
+        ssize_t saveCursorPositions[MAX_PANES + 1];
+        ssize_t saveVScrollPositions[MAX_PANES + 1];
         int saveHScrollPositions[MAX_PANES + 1];
         int paneIndex;
         
@@ -2712,7 +2712,8 @@ int GetSimpleSelection(textBuffer *buf, ssize_t *left, ssize_t *right)
 */
 void MakeSelectionVisible(WindowInfo *window, Widget textPane)
 {
-    ssize_t left, right, horizOffset;
+    ssize_t left, right;
+    int horizOffset;
     int isRect, rectStart, rectEnd;
     int scrollOffset, leftX, rightX, y, rows, margin;
     ssize_t topLineNum, lastLineNum, rightLineNum, leftLineNum, linesToScroll;
@@ -3331,7 +3332,7 @@ void UpdateStatsLine(WindowInfo *window)
             (window->fileFormat == MAC_FILE_FORMAT ? " Mac" : "");
     int nCursors = TextNumCursors(window->lastFocus);
     if (!TextPosToLineAndCol(window->lastFocus, pos, &line, &colNum)) {
-        sprintf(string, "%s%s%s %d bytes", window->path, window->filename,
+        sprintf(string, "%s%s%s %zd bytes", window->path, window->filename,
                 format, window->buffer->length);
         if(nCursors == 1) {
             snprintf(slinecol, 32, "L: ---  C: ---");
@@ -5163,7 +5164,7 @@ void RefreshWindowStates(WindowInfo *window)
 static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 {
     short paneHeights[MAX_PANES+1];
-    int insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
+    ssize_t insertPositions[MAX_PANES+1], topLines[MAX_PANES+1];
     int horizOffsets[MAX_PANES+1];
     int i, focusPane, emTabDist, wrapMargin, lineNumCols, totalHeight=0;
     char *delimiters;

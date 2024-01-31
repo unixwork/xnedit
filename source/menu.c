@@ -3527,7 +3527,9 @@ static void replaceFindSameAP(Widget w, XEvent *event, String *args,
 
 static void gotoAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
-    int lineNum, column, position, curCol;
+    ssize_t lineNum, position;
+    int64_t lineNum64;
+    int column, curCol;
     
     /* Accept various formats:
           [line]:[column]   (menu action)
@@ -3537,11 +3539,13 @@ static void gotoAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
             || (*nArgs == 1
                 && StringToLineAndCol(args[0], &lineNum, &column ) == -1)
             || (*nArgs == 2
-                && (!StringToNum(args[0], &lineNum)
+                && (!StringToNum64(args[0], &lineNum64)
                     || !StringToNum(args[1], &column)))) {
         fprintf(stderr,"xnedit: goto_line_number action requires line and/or column number\n");
         return;
     }
+
+    lineNum = lineNum64;
 
     /* User specified column, but not line number */
     if (lineNum == -1) {

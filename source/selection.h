@@ -32,7 +32,7 @@
 #include <X11/Intrinsic.h>
 #include <X11/X.h>
 
-int StringToLineAndCol(const char *text, int *lineNum, int *column );
+int StringToLineAndCol(const char *text, ssize_t *lineNum, int *column );
 void GotoSelectedLineNumber(WindowInfo *window, Time time);
 void GotoLineNumber(WindowInfo *window);
 void SelectNumberedLine(WindowInfo *window, int lineNum);

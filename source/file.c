@@ -544,7 +544,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     char name[MAXPATHLEN], path[MAXPATHLEN];
     char *encoding;
     int i;
-    int insertPositions[MAX_PANES], topLines[MAX_PANES];
+    ssize_t insertPositions[MAX_PANES], topLines[MAX_PANES];
     int horizOffsets[MAX_PANES];
     int openFlags = 0;
     Widget text;
@@ -2116,7 +2116,7 @@ void PrintWindow(WindowInfo *window, int selectedOnly)
     textBuffer *buf = window->buffer;
     selection *sel = &buf->primary;
     char *fileString = NULL;
-    int fileLen;
+    ssize_t fileLen;
     
     /* get the contents of the text buffer from the text area widget.  Add
        wrapping newlines if necessary to make it match the displayed text */
@@ -2740,13 +2740,13 @@ static void addWrapCB(Widget w, XtPointer clientData, XtPointer callData)
 */
 static void addWrapNewlines(WindowInfo *window)
 {
-    int fileLen, i, insertPositions[MAX_PANES], topLines[MAX_PANES];
+    ssize_t fileLen, insertPositions[MAX_PANES], topLines[MAX_PANES];
     int horizOffset;
     Widget text;
     char *fileString;
 	
     /* save the insert and scroll positions of each pane */
-    for (i=0; i<=window->nPanes; i++) {
+    for (int i=0; i<=window->nPanes; i++) {
     	text = i==0 ? window->textArea : window->textPanes[i-1];
     	insertPositions[i] = TextGetCursorPos(text);
     	TextGetScroll(text, &topLines[i], &horizOffset);
@@ -2759,7 +2759,7 @@ static void addWrapNewlines(WindowInfo *window)
     NEditFree(fileString);
 
     /* restore the insert and scroll positions of each pane */
-    for (i=0; i<=window->nPanes; i++) {
+    for (int i=0; i<=window->nPanes; i++) {
     	text = i==0 ? window->textArea : window->textPanes[i-1];
 	TextSetCursorPos(text, insertPositions[i]);
 	TextSetScroll(text, topLines[i], 0);

@@ -173,5 +173,6 @@ WindowInfo *MacroFocusWindow(void);
 void SetMacroFocusWindow(WindowInfo *window);
 /* function used for implicit conversion from string to number */
 int StringToNum(const char *string, int *number);
+int StringToNum64(const char *string, int64_t *number);
 
 #endif /* NEDIT_INTERPRET_H_INCLUDED */

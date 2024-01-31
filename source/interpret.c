@@ -56,6 +56,8 @@
 
 #include "window.h"
 
+#include <inttypes.h>
+
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
 #endif
@@ -2838,8 +2840,20 @@ static int execError(const char *s1, const char *s2)
 
 int StringToNum(const char *string, int *number)
 {
+    int64_t n;
+    int ret = StringToNum64(string, &n);
+    if(n < INT_MIN || n > INT_MAX) {
+        *number = 0;
+        return False;
+    }
+    *number = (int)n;
+    return ret;
+}
+
+int StringToNum64(const char *string, int64_t *number)
+{
     const char *c = string;
-    
+
     while (*c == ' ' || *c == '\t') {
         ++c;
     }
@@ -2857,9 +2871,9 @@ int StringToNum(const char *string, int *number)
         return False;
     }
     if (number) {
-        if (sscanf(string, "%d", number) != 1) {
+        if (sscanf(string, "%" SCNd64, number) != 1) {
             /* This case is here to support old behavior */
-    	    *number = 0;
+            *number = 0;
         }
     }
     return True;

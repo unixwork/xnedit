@@ -90,7 +90,7 @@ static void maintainPosition(ssize_t *position, ssize_t modPos, ssize_t nInserte
 ** Set the line and/or column number to -1 if not specified, and return -1 if
 ** both line and column numbers are not specified.
 */
-int StringToLineAndCol(const char *text, int *lineNum, int *column) {
+int StringToLineAndCol(const char *text, ssize_t *lineNum, int *column) {
     char *endptr;
     long  tempNum;
     int   textLen;
@@ -127,7 +127,8 @@ int StringToLineAndCol(const char *text, int *lineNum, int *column) {
 void GotoLineNumber(WindowInfo *window)
 {
     char lineNumText[DF_MAX_PROMPT_LENGTH], *params[1];
-    int lineNum, column, response;
+    ssize_t lineNum;
+    int column, response;
     
     response = DialogF(DF_PROMPT, window->shell, 2, "Goto Line Number",
             "Goto Line (and/or Column)  Number:", lineNumText, "OK", "Cancel");
@@ -195,7 +196,8 @@ static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
     
      /* two integers and some space in between */
     char lineText[(TYPE_INT_STR_SIZE(int) * 2) + 5];
-    int rc, lineNum, column, position, curCol;
+    int rc, column, curCol;
+    ssize_t lineNum, position;
     
     /* skip if we can't get the selection data, or it's obviously not a number */
     if (*type == XT_CONVERT_FAIL || value == NULL) {

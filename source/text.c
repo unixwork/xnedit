@@ -243,13 +243,13 @@ static int pendingSelection(Widget w);
 static int deletePendingSelection(Widget w, XEvent *event);
 static int deleteEmulatedTab(Widget w, XEvent *event);
 static void selectWord(Widget w, int pointerX);
-static int spanForward(textBuffer *buf, int startPos, char *searchChars,
-	int ignoreSpace, int *foundPos);
-static int spanBackward(textBuffer *buf, int startPos, char *searchChars, int
-    	ignoreSpace, int *foundPos);
+static int spanForward(textBuffer *buf, ssize_t startPos, char *searchChars,
+	int ignoreSpace, ssize_t *foundPos);
+static int spanBackward(textBuffer *buf, ssize_t startPos, char *searchChars, int
+    	ignoreSpace, ssize_t *foundPos);
 static void selectLine(Widget w);
-static int startOfWord(TextWidget w, int pos);
-static int endOfWord(TextWidget w, int pos);
+static ssize_t startOfWord(TextWidget w, ssize_t pos);
+static ssize_t endOfWord(TextWidget w, ssize_t pos);
 static void checkAutoScroll(TextWidget w, int x, int y);
 static void endDrag(Widget w);
 static void cancelDrag(Widget w);
@@ -257,13 +257,13 @@ static void callCursorMovementCBs(Widget w, XEvent *event);
 static void adjustSelection(TextWidget tw, int x, int y);
 static void adjustSecondarySelection(TextWidget tw, int x, int y);
 static void autoScrollTimerProc(XtPointer clientData, XtIntervalId *id);
-static char *wrapText(TextWidget tw, char *startLine, char *text, int bufOffset,
+static char *wrapText(TextWidget tw, char *startLine, char *text, ssize_t bufOffset,
     	int wrapMargin, int *breakBefore);
-static int wrapLine(TextWidget tw, textBuffer *buf, int bufOffset,
-    	int lineStartPos, int lineEndPos, int limitPos, int *breakAt,
-	int *charsAdded);
-static char *createIndentString(TextWidget tw, textBuffer *buf, int bufOffset,
-    	int lineStartPos, int lineEndPos, int *length, int *column);
+static int wrapLine(TextWidget tw, textBuffer *buf, ssize_t bufOffset,
+        ssize_t lineStartPos, ssize_t lineEndPos, ssize_t limitPos, ssize_t *breakAt,
+        int *charsAdded);
+static char *createIndentString(TextWidget tw, textBuffer *buf, ssize_t bufOffset,
+        ssize_t lineStartPos, ssize_t lineEndPos, ssize_t *length, int *column);
 static void cursorBlinkTimerProc(XtPointer clientData, XtIntervalId *id);
 static int hasKey(const char *key, const String *args, const Cardinal *nArgs);
 static int max(int i1, int i2);
@@ -1487,7 +1487,7 @@ textBuffer *TextGetBuffer(Widget w)
 /*
 ** Translate a line number and column into a position
 */
-int TextLineAndColToPos(Widget w, int lineNum, int column)
+int TextLineAndColToPos(Widget w, ssize_t lineNum, int column)
 {
     return TextDLineAndColToPos(((TextWidget)w)->text.textD, lineNum, column );
 }
@@ -1496,7 +1496,7 @@ int TextLineAndColToPos(Widget w, int lineNum, int column)
 ** Translate a position into a line number (if the position is visible,
 ** if it's not, return False
 */
-int TextPosToLineAndCol(Widget w, int pos, int *lineNum, int *column)
+int TextPosToLineAndCol(Widget w, ssize_t pos, ssize_t *lineNum, int *column)
 {
     return TextDPosToLineAndCol(((TextWidget)w)->text.textD, pos, lineNum,
     	    column);
@@ -1509,7 +1509,7 @@ int TextPosToLineAndCol(Widget w, int pos, int *lineNum, int *column)
 ** of view.  If the position is horizontally out of view, returns the
 ** x coordinate where the position would be if it were visible.
 */
-int TextPosToXY(Widget w, int pos, int *x, int *y)
+int TextPosToXY(Widget w, ssize_t pos, int *x, int *y)
 {
     return TextDPositionToXY(((TextWidget)w)->text.textD, pos, x, y);
 }
@@ -1517,7 +1517,7 @@ int TextPosToXY(Widget w, int pos, int *x, int *y)
 /*
 ** Return the cursor position
 */
-int TextGetCursorPos(Widget w)
+ssize_t TextGetCursorPos(Widget w)
 {
     return TextDGetInsertPosition(((TextWidget)w)->text.textD);
 }
@@ -1525,7 +1525,7 @@ int TextGetCursorPos(Widget w)
 /*
 ** Set the cursor position
 */
-void TextSetCursorPos(Widget w, int pos)
+void TextSetCursorPos(Widget w, ssize_t pos)
 {
     TextDSetInsertPosition(((TextWidget)w)->text.textD, pos);
     checkAutoShowInsertPos(w);
@@ -1541,13 +1541,13 @@ void TextSetCursors(Widget w, size_t *cursors, size_t ncursors)
     callCursorMovementCBs(w, NULL);
 }
 
-int TextGetLastCursorPos(Widget w)
+ssize_t TextGetLastCursorPos(Widget w)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     return textD->multicursor[textD->mcursorSize-1].cursorPos;
 }
 
-void TextSetLastCursorPos(Widget w, int pos)
+void TextSetLastCursorPos(Widget w, ssize_t pos)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     size_t mcursorSize = textD->mcursorSize;
@@ -1567,7 +1567,7 @@ int TextNumCursors(Widget w)
     return (int)textD->mcursorSizeReal;
 }
 
-void TextChangeCursors(Widget w, int startPos, int diff)
+void TextChangeCursors(Widget w, ssize_t startPos, ssize_t diff)
 {
     TextDChangeCursors(((TextWidget)w)->text.textD, startPos, diff);
     callCursorMovementCBs(w, NULL);
@@ -1585,7 +1585,7 @@ void TextClearMultiCursors(Widget w)
 /*
 ** Return the horizontal and vertical scroll positions of the widget
 */
-void TextGetScroll(Widget w, int *topLineNum, int *horizOffset)
+void TextGetScroll(Widget w, ssize_t *topLineNum, int *horizOffset)
 {
     TextDGetScroll(((TextWidget)w)->text.textD, topLineNum, horizOffset);
 }
@@ -1593,7 +1593,7 @@ void TextGetScroll(Widget w, int *topLineNum, int *horizOffset)
 /*
 ** Set the horizontal and vertical scroll positions of the widget
 */
-void TextSetScroll(Widget w, int topLineNum, int horizOffset)
+void TextSetScroll(Widget w, ssize_t topLineNum, int horizOffset)
 {
     TextDSetScroll(((TextWidget)w)->text.textD, topLineNum, horizOffset);
 }
@@ -1680,12 +1680,12 @@ int TextVisibleWidth(Widget w)
     return(((TextWidget)w)->text.textD->width);
 }
 
-int TextFirstVisiblePos(Widget w)
+ssize_t TextFirstVisiblePos(Widget w)
 {
     return ((TextWidget)w)->text.textD->firstChar;
 }
 
-int TextLastVisiblePos(Widget w)
+ssize_t TextLastVisiblePos(Widget w)
 {
     return ((TextWidget)w)->text.textD->lastChar;
 }
@@ -1702,7 +1702,8 @@ int TextLastVisiblePos(Widget w)
 void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
     	int allowPendingDelete, int allowWrap)
 {  
-    int wrapMargin, colNum, lineStartPos, cursorPos;
+    int wrapMargin, colNum;
+    ssize_t lineStartPos, cursorPos;
     char *c, *lineStartText, *wrappedText;
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
@@ -1775,12 +1776,12 @@ void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
 ** Fetch text from the widget's buffer, adding wrapping newlines to emulate
 ** effect acheived by wrapping in the text display in continuous wrap mode.
 */
-char *TextGetWrapped(Widget w, int startPos, int endPos, int *outLen)
+char *TextGetWrapped(Widget w, ssize_t startPos, ssize_t endPos, ssize_t *outLen)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     textBuffer *outBuf;
-    int fromPos, toPos, outPos;
+    ssize_t fromPos, toPos, outPos;
     char c, *outString;
     
     if (!((TextWidget)w)->text.continuousWrap || startPos == endPos) {
@@ -1905,7 +1906,7 @@ static void moveDestinationAP(Widget w, XEvent *event, String *args,
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
 
     /* Move the cursor */
-    int cursorPos = TextDXYToPosition(textD, e->x, e->y);
+    ssize_t cursorPos = TextDXYToPosition(textD, e->x, e->y);
     if(*nArgs == 0) {
         TextDSetInsertPosition(textD, cursorPos);
         checkAutoShowInsertPos(w);
@@ -1963,7 +1964,8 @@ static void extendStartAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     selection *sel = &buf->primary;
-    int anchor, rectAnchor, anchorLineStart, newPos, row, column;
+    ssize_t anchor, rectAnchor, anchorLineStart, newPos;
+    int row, column;
 
     /* Find the new anchor point for the rest of this drag operation */
     newPos = TextDXYToPosition(textD, e->x, e->y);
@@ -2046,7 +2048,8 @@ static void secondaryStartAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
     selection *sel = &buf->secondary;
-    int anchor, pos, row, column;
+    ssize_t anchor, pos;
+    int row, column;
 
     /* Find the new anchor point and make the new selection */
     pos = TextDXYToPosition(textD, e->x, e->y);
@@ -2175,7 +2178,8 @@ static void copyToAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     selection *secondary = &buf->secondary, *primary = &buf->primary;
     int rectangular = secondary->rectangular;
     char *textToCopy;
-    int insertPos, lineStart, column;
+    ssize_t insertPos, lineStart;
+    int column;
 
     endDrag(w);
     if (!((dragState == SECONDARY_DRAG && secondary->selected) ||
@@ -2242,8 +2246,9 @@ static void moveToAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int dragState = ((TextWidget)w)->text.dragState;
     textBuffer *buf = textD->buffer;
     selection *secondary = &buf->secondary, *primary = &buf->primary;
-    int insertPos, rectangular = secondary->rectangular;
-    int column, lineStart;
+    ssize_t insertPos, lineStart;
+    int rectangular = secondary->rectangular;
+    int column;
     char *textToCopy;
 
     endDrag(w);
@@ -2379,7 +2384,8 @@ static void copyPrimaryAP(Widget w, XEvent *event, String *args,
     selection *primary = &buf->primary;
     int rectangular = hasKey("rect", args, nArgs);
     char *textToCopy;
-    int insertPos, col;
+    ssize_t insertPos;
+    int col;
 
     cancelDrag(w);
     if (checkReadOnly(w))
@@ -2417,7 +2423,8 @@ static void cutPrimaryAP(Widget w, XEvent *event, String *args,
     selection *primary = &buf->primary;
     char *textToCopy;
     int rectangular = hasKey("rect", args, nArgs);
-    int insertPos, col;
+    ssize_t insertPos;
+    int col;
 
     cancelDrag(w);
     if (checkReadOnly(w))
@@ -2456,7 +2463,7 @@ static void mousePanAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
     int lineHeight = textD->ascent + textD->descent;
-    int topLineNum, horizOffset;
+    ssize_t topLineNum, horizOffset;
     static Cursor panCursor = 0;
     
     if (tw->text.dragState == MOUSE_PAN) {
@@ -2604,7 +2611,8 @@ static void newlineAndIndentAP(Widget w, XEvent *event, String *args,
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
     char *indentStr;
-    int cursorPos, lineStartPos, column;
+    ssize_t cursorPos, lineStartPos;
+    int column;
     
     if (checkReadOnly(w))
 	return;
@@ -2641,7 +2649,7 @@ static void processTabAP(Widget w, XEvent *event, String *args,
     selection *sel = &buf->primary;
     int emTabDist = ((TextWidget)w)->text.emulateTabs;
     int emTabsBeforeCursor = ((TextWidget)w)->text.emTabsBeforeCursor;
-    int insertPos, indent, startIndent, toIndent, lineStart, tabWidth;
+    ssize_t insertPos, indent, startIndent, toIndent, lineStart, tabWidth;
     char *outStr, *outPtr;
     
     if (checkReadOnly(w))
@@ -2712,7 +2720,7 @@ static void deleteSelectionAP(Widget w, XEvent *event, String *args,
     deletePendingSelection(w, event);
 }
 
-static int deletePreviousCharacter(Widget w, XEvent *event, textDisp *textD, int silent, int insertPos) {
+static int deletePreviousCharacter(Widget w, XEvent *event, textDisp *textD, int silent, ssize_t insertPos) {
     char c;
     
     if (insertPos == 0) {
@@ -2781,7 +2789,7 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     }
 }
 
-static int deleteNextCharacter(Widget w, textDisp *textD, int silent, int insertPos) {
+static int deleteNextCharacter(Widget w, textDisp *textD, int silent, ssize_t insertPos) {
     if (insertPos == textD->buffer->length) {
         ringIfNecessary(silent, w);
     	return 0;
@@ -2841,8 +2849,8 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buffer = textD->buffer;
-    int insertPos ;
-    int pos, lineStart;
+    ssize_t insertPos ;
+    ssize_t pos, lineStart;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2862,8 +2870,8 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
         BufBeginModifyBatch(textD->buffer);
         batch = True;
     }
-    
-    int diff = 0;
+
+    ssize_t diff = 0;
     int notMoved = 0;
     for(int i=0;i<mcursorSize;i++) {
         textD->cursor = textD->multicursor + i;
@@ -2912,8 +2920,8 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buffer = textD->buffer;
-    int insertPos;
-    int pos, lineEnd;
+    ssize_t insertPos;
+    ssize_t pos, lineEnd;
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -2926,8 +2934,8 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
     if (deletePendingSelection(w, event)) {
         return;
     }
-    
-    int diff = 0;
+
+    ssize_t diff = 0;
     int notMoved = 0;
     size_t mcursorSize = textD->mcursorSize;
     Bool batch = False;
@@ -2983,8 +2991,8 @@ static void deleteToEndOfLineAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int endOfLine;
+    ssize_t insertPos = TextDGetInsertPosition(textD);
+    ssize_t endOfLine;
     int silent = 0;
 
     silent = hasKey("nobell", args, nArgs);
@@ -3012,8 +3020,8 @@ static void deleteToStartOfLineAP(Widget w, XEvent *event, String *args,
 {
     XKeyEvent *e = &event->xkey;
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int startOfLine;
+    ssize_t insertPos = TextDGetInsertPosition(textD);
+    ssize_t startOfLine;
     int silent = 0;
 
     silent = hasKey("nobell", args, nArgs);
@@ -3129,7 +3137,7 @@ static void forwardWordAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int pos, insertPos; // = TextDGetInsertPosition(textD);
+    ssize_t pos, insertPos; // = TextDGetInsertPosition(textD);
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     int tail = hasKey("tail", args, nArgs);
@@ -3201,7 +3209,7 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int pos, insertPos; //TextDGetInsertPosition(textD);
+    ssize_t pos; //TextDGetInsertPosition(textD);
     char *delimiters = ((TextWidget)w)->text.delimiters;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -3214,7 +3222,7 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
     
     for(int i=0;i<mcursorSize;i++) {
         textD->cursor = textD->multicursor + i;
-        int insertPos = textD->cursor->cursorPos;
+        ssize_t insertPos = textD->cursor->cursorPos;
         
         if (insertPos == 0) {
             notMoved = 1;
@@ -3257,7 +3265,7 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int pos, insertPos;
+    ssize_t pos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
@@ -3271,7 +3279,7 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
     int notMoved = 0;
     for(int i=mcursorSize-1;i>=0;i--) {
         textD->cursor = textD->multicursor + i;
-        int insertPos = textD->cursor->cursorPos;
+        ssize_t insertPos = textD->cursor->cursorPos;
         
         if (insertPos == buf->length) {
             notMoved = 1;
@@ -3318,7 +3326,7 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int parStart, pos, insertPos;
+    ssize_t parStart, pos;
     textBuffer *buf = textD->buffer;
     char c;
     static char whiteChars[] = " \t";
@@ -3332,7 +3340,7 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
     int notMoved = 0;
     for(int i=0;i<mcursorSize;i++) {
         textD->cursor = textD->multicursor + i;
-        int insertPos = textD->cursor->cursorPos;
+        ssize_t insertPos = textD->cursor->cursorPos;
         
         if (insertPos == 0) {
             notMoved = 1;
@@ -3380,7 +3388,8 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
 static void keySelectAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int stat, insertPos = TextDGetInsertPosition(textD);
+    int stat;
+    ssize_t insertPos = TextDGetInsertPosition(textD);
     int silent = hasKey("nobell", args, nArgs);
     
     cancelDrag(w);
@@ -3404,7 +3413,7 @@ static void keySelectAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 
 static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    ssize_t insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
 
@@ -3444,7 +3453,7 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void processShiftUpAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    ssize_t insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
 
@@ -3459,7 +3468,7 @@ static void processShiftUpAP(Widget w, XEvent *event, String *args,
 static void processDownAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
-    int insertPos;
+    ssize_t insertPos;
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
     
@@ -3507,7 +3516,7 @@ static void processDownAP(Widget w, XEvent *event, String *args,
 static void processShiftDownAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    ssize_t insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
     int silent = hasKey("nobell", args, nArgs);
     int abs = hasKey("absolute", args, nArgs);
 
@@ -3633,7 +3642,7 @@ static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void beginningOfFileAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
-    int insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
+    ssize_t insertPos = TextDGetInsertPosition(((TextWidget)w)->text.textD);
 	textDisp *textD = ((TextWidget)w)->text.textD;
 
     cancelDrag(w);
@@ -3680,9 +3689,10 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     int lastTopLine = max(1, 
             textD->nBufferLines - (textD->nVisibleLines - 2) + 
             ((TextWidget)w)->text.cursorVPadding );
-    int insertPos = TextDGetInsertPosition(textD);
-    int column = 0, visLineNum, lineStartPos;
-    int pos, targetLine;
+    ssize_t insertPos = TextDGetInsertPosition(textD);
+    int column = 0, visLineNum;
+    ssize_t lineStartPos;
+    ssize_t pos, targetLine;
     int pageForwardCount = max(1, textD->nVisibleLines - 1);
     int maintainColumn = 0;
     int silent = hasKey("nobell", args, nArgs);
@@ -3774,9 +3784,10 @@ static void previousPageAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int insertPos = TextDGetInsertPosition(textD);
-    int column = 0, visLineNum, lineStartPos;
-    int pos, targetLine;
+    ssize_t insertPos = TextDGetInsertPosition(textD);
+    int column = 0;
+    ssize_t visLineNum, lineStartPos;
+    ssize_t pos, targetLine;
     int pageBackwardCount = max(1, textD->nVisibleLines - 1);
     int maintainColumn = 0;
     int silent = hasKey("nobell", args, nArgs);
@@ -3859,9 +3870,9 @@ static void pageLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int insertPos = TextDGetInsertPosition(textD);
+    ssize_t insertPos = TextDGetInsertPosition(textD);
     int maxCharWidth = textD->font->maxWidth;
-    int lineStartPos, indent, pos;
+    ssize_t lineStartPos, indent, pos;
     int horizOffset;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -3896,10 +3907,10 @@ static void pageRightAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int insertPos = TextDGetInsertPosition(textD);
+    ssize_t insertPos = TextDGetInsertPosition(textD);
     int maxCharWidth = textD->font->maxWidth;
     int oldHorizOffset = textD->horizOffset;
-    int lineStartPos, indent, pos;
+    ssize_t lineStartPos, indent, pos;
     int horizOffset, sliderSize, sliderMax;
     int silent = hasKey("nobell", args, nArgs);
     
@@ -3971,7 +3982,8 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int topLineNum, horizOffset, nLines;
+    ssize_t topLineNum;
+    int horizOffset, nLines;
     
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
     	return;
@@ -4026,7 +4038,7 @@ static void scrollToLineAP(Widget w, XEvent *event, String *args,
     	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    int topLineNum, horizOffset, lineNum;
+    ssize_t topLineNum, horizOffset, lineNum;
     
     if (*nArgs == 0 || sscanf(args[0], "%d", &lineNum) != 1)
     	return;
@@ -4168,9 +4180,10 @@ static void keyMoveExtendSelection(Widget w, XEvent *event, int origPos,
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
     selection *sel = &buf->primary;
-    int newPos = TextDGetInsertPosition(textD);
-    int startPos, endPos, startCol, endCol, newCol, origCol;
-    int anchor, rectAnchor, anchorLineStart;
+    ssize_t newPos = TextDGetInsertPosition(textD);
+    ssize_t startPos, endPos;
+    int startCol, endCol, newCol, origCol;
+    ssize_t anchor, rectAnchor, anchorLineStart;
 
     /* Moving the cursor does not take the Motif destination, but as soon as
        the user selects something, grab it (I'm not sure if this distinction
@@ -4356,8 +4369,8 @@ static int deleteEmulatedTab(Widget w, XEvent *event)
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     int emTabDist = ((TextWidget)w)->text.emulateTabs;
     int emTabsBeforeCursor = ((TextWidget)w)->text.emTabsBeforeCursor;
-    int startIndent, toIndent, insertPos, startPos, lineStart;
-    int pos, indent, startPosIndent;
+    ssize_t startIndent, toIndent, insertPos, startPos, lineStart;
+    ssize_t pos, indent, startPosIndent;
     char c, *spaceString;
     
     if (emTabDist <= 0 || emTabsBeforeCursor <= 0)
@@ -4428,7 +4441,8 @@ static void selectWord(Widget w, int pointerX)
 {
     TextWidget tw = (TextWidget)w;
     textBuffer *buf = tw->text.textD->buffer;
-    int x, y, insertPos = TextDGetInsertPosition(tw->text.textD);
+    int x, y;
+    ssize_t insertPos = TextDGetInsertPosition(tw->text.textD);
     
     TextPosToXY(w, insertPos, &x, &y);
     if (pointerX < x && insertPos > 0 && BufGetCharacter(buf, insertPos-1) != '\n')
@@ -4436,9 +4450,9 @@ static void selectWord(Widget w, int pointerX)
     BufSelect(buf, startOfWord(tw, insertPos), endOfWord(tw, insertPos));
 }
 
-static int startOfWord(TextWidget w, int pos)
+static ssize_t startOfWord(TextWidget w, ssize_t pos)
 {
-    int startPos;
+    ssize_t startPos;
     textBuffer *buf = w->text.textD->buffer;
     char *delimiters=w->text.delimiters;
     char c = BufGetCharacter(buf, pos);
@@ -4457,9 +4471,9 @@ static int startOfWord(TextWidget w, int pos)
                 
 }
 
-static int endOfWord(TextWidget w, int pos)
+static ssize_t endOfWord(TextWidget w, ssize_t pos)
 {
-    int endPos;
+    ssize_t endPos;
     textBuffer *buf = w->text.textD->buffer;
     char *delimiters=w->text.delimiters;
     char c = BufGetCharacter(buf, pos);
@@ -4483,10 +4497,10 @@ static int endOfWord(TextWidget w, int pos)
 ** result in "foundPos" returns True if found, False if not. If ignoreSpace
 ** is set, then Space, Tab, and Newlines are ignored in searchChars.
 */
-static int spanForward(textBuffer *buf, int startPos, char *searchChars,
-	int ignoreSpace, int *foundPos)
+static int spanForward(textBuffer *buf, ssize_t startPos, char *searchChars,
+	int ignoreSpace, ssize_t *foundPos)
 {
-    int pos;
+    ssize_t pos;
     char *c;
     
     pos = startPos;
@@ -4511,10 +4525,10 @@ static int spanForward(textBuffer *buf, int startPos, char *searchChars,
 ** result in "foundPos" returns True if found, False if not. If ignoreSpace is
 ** set, then Space, Tab, and Newlines are ignored in searchChars. 
 */
-static int spanBackward(textBuffer *buf, int startPos, char *searchChars, int
-    	ignoreSpace, int *foundPos)
+static int spanBackward(textBuffer *buf, ssize_t startPos, char *searchChars, int
+    	ignoreSpace, ssize_t *foundPos)
 {
-    int pos;
+    ssize_t pos;
     char *c;
     
     if (startPos == 0) {
@@ -4545,7 +4559,7 @@ static void selectLine(Widget w)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     int insertPos = TextDGetInsertPosition(textD);
-    int endPos, startPos;
+    ssize_t endPos, startPos;
    
     endPos = BufEndOfLine(textD->buffer, insertPos);
     startPos = BufStartOfLine(textD->buffer, insertPos);
@@ -4641,8 +4655,9 @@ static void adjustSelection(TextWidget tw, int x, int y)
 {
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int row, col, startCol, endCol, startPos, endPos;
-    int newPos = TextDXYToPosition(textD, x, y);
+    int row, col, startCol, endCol;
+    ssize_t startPos, endPos;
+    ssize_t newPos = TextDXYToPosition(textD, x, y);
     
     /* Adjust the selection */
     if (tw->text.dragState == PRIMARY_RECT_DRAG) {
@@ -4675,8 +4690,9 @@ static void adjustSecondarySelection(TextWidget tw, int x, int y)
 {
     textDisp *textD = tw->text.textD;
     textBuffer *buf = textD->buffer;
-    int row, col, startCol, endCol, startPos, endPos;
-    int newPos = TextDXYToPosition(textD, x, y);
+    int row, col, startCol, endCol;
+    ssize_t startPos, endPos;
+    ssize_t newPos = TextDXYToPosition(textD, x, y);
 
     if (tw->text.dragState == SECONDARY_RECT_DRAG) {
     TextDXYToUnconstrainedPosition(textD, x, y, &row, &col);
@@ -4702,7 +4718,7 @@ static void adjustSecondarySelection(TextWidget tw, int x, int y)
 ** smart indent (which can be triggered by wrapping) can search back farther
 ** in the buffer than just the text in startLine.
 */
-static char *wrapText(TextWidget tw, char *startLine, char *text, int bufOffset,
+static char *wrapText(TextWidget tw, char *startLine, char *text, ssize_t bufOffset,
     	int wrapMargin, int *breakBefore)
 {
     textBuffer *wrapBuf, *buf = tw->text.textD->buffer;
@@ -4775,11 +4791,11 @@ static char *wrapText(TextWidget tw, char *startLine, char *text, int bufOffset,
 ** used to decide whether auto-indent should be skipped because the indent
 ** string itself would exceed the wrap margin.
 */
-static int wrapLine(TextWidget tw, textBuffer *buf, int bufOffset,
-    	int lineStartPos, int lineEndPos, int limitPos, int *breakAt,
+static int wrapLine(TextWidget tw, textBuffer *buf, ssize_t bufOffset,
+        ssize_t lineStartPos, ssize_t lineEndPos, ssize_t limitPos, ssize_t *breakAt,
 	int *charsAdded)
 {
-    int p, length, column;
+    ssize_t p, length, column;
     char c, *indentStr;
     
     /* Scan backward for whitespace or BOL.  If BOL, return False, no
@@ -4824,11 +4840,11 @@ static int wrapLine(TextWidget tw, textBuffer *buf, int bufOffset,
 ** string length is returned in "length" (or "length" can be passed as NULL,
 ** and the indent column is returned in "column" (if non NULL).
 */
-static char *createIndentString(TextWidget tw, textBuffer *buf, int bufOffset,
-    	int lineStartPos, int lineEndPos, int *length, int *column)
+static char *createIndentString(TextWidget tw, textBuffer *buf, ssize_t bufOffset,
+        ssize_t lineStartPos, ssize_t lineEndPos, ssize_t *length, int *column)
 {
     textDisp *textD = tw->text.textD;
-    int pos, indent = -1, tabDist = textD->buffer->tabDist;
+    ssize_t pos, indent = -1, tabDist = textD->buffer->tabDist;
     int i, useTabs = textD->buffer->useTabs;
     char *indentPtr, *indentStr, c;
     smartIndentCBStruct smartIndent;
@@ -4894,7 +4910,8 @@ static void autoScrollTimerProc(XtPointer clientData, XtIntervalId *id)
     TextWidget w = (TextWidget)clientData;
     textDisp *textD = w->text.textD;
     XftFont *xftFont = FontDefault(textD->font);
-    int topLineNum, horizOffset, newPos, cursorX, y;
+    ssize_t topLineNum, newPos;
+    int horizOffset, cursorX, y;
     int fontWidth = textD->font->maxWidth;
     int fontHeight = xftFont->ascent + xftFont->descent;
 
