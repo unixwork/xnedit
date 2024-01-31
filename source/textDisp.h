@@ -39,7 +39,9 @@ enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
 	HEAVY_CURSOR};
 
 #define NO_HINT -1
-        
+
+typedef struct _textDisp textDisp;
+
 typedef struct NFont NFont;
 typedef struct NFontList NFontList;
 typedef struct NCharSetList NCharSetList;
@@ -96,7 +98,7 @@ typedef struct ansiStyle {
     short bg_b;
 } ansiStyle;
 
-typedef void (*unfinishedStyleCBProc)();
+typedef void (*unfinishedStyleCBProc)(const textDisp *textD, int pos, const void *highlightCBArg);
 
 typedef struct _calltipStruct {
     int ID;                 /* ID of displayed calltip.  Equals
@@ -118,7 +120,7 @@ typedef struct _textCursor {
     int y;
 } textCursor;
 
-typedef struct _textDisp {
+struct _textDisp {
     Widget w;
     XftDraw *d;
     int top, left, width, height, lineNumLeft, lineNumWidth;
@@ -234,7 +236,7 @@ typedef struct _textDisp {
                                            line in some functions, when it
                                            contains the cursor */
     graphicExposeTranslationEntry *graphicsExposeQueue;
-} textDisp;
+};
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
