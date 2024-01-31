@@ -88,7 +88,7 @@ typedef struct _tag {
     const char *name;
     const char *file;
     const char *searchString; /* see comment below */
-    int posInf;               /* see comment below */
+    ssize_t posInf;               /* see comment below */
     short language;
     short index;
 } tag;
@@ -106,16 +106,16 @@ static int loadTagsFile(const char *tagSpec, int index, int recLevel);
 static void findDefCB(Widget widget, XtPointer closure, Atom *sel,
         Atom *type, XtPointer value, unsigned long *length, int *format);
 static void setTag(tag *t, const char *name, const char *file,
-                   int language, const char *searchString, int posInf, 
+                   int language, const char *searchString, ssize_t posInf,
                    const char * tag);
 static int fakeRegExSearch(WindowInfo *window, char *buffer, 
-                        const char *searchString, int *startPos, int *endPos);
+                        const char *searchString, ssize_t *startPos, ssize_t *endPos);
 static void updateMenuItems(void);
 static int addTag(const char *name, const char *file, int lang, 
-                    const char *search, int posInf,  const  char *path, 
+                    const char *search, ssize_t posInf,  const  char *path,
                     int index);
 static int delTag(const char *name, const char *file, int lang, 
-                    const char *search, int posInf,  int index);
+                    const char *search, ssize_t posInf,  int index);
 static tag *getTag(const char *name, int search_type);
 static int findDef(WindowInfo *window, const char *value, int search_type);
 static int findAllMatches(WindowInfo *window, const char *string);
@@ -127,8 +127,8 @@ static void showMatchingCalltip( Widget parent, int i );
 
 static int searchLine(char *line, const char *regex);
 static void rstrip( char *dst, const char *src );
-static int nextTFBlock(FILE *fp, char *header, char **tiptext, int *lineAt, 
-        int *lineNo);
+static int nextTFBlock(FILE *fp, char *header, char **tiptext, ssize_t *lineAt,
+        ssize_t *lineNo);
 static int loadTipsFile(const char *tipsFile, int index, int recLevel);
 
 /* Hash table of tags, implemented as an array.  Each bin contains a 
@@ -149,9 +149,9 @@ static int searchMode = TAG;
 static const char *tagName;
 static char tagFiles[MAXDUPTAGS][MAXPATHLEN];
 static char tagSearch[MAXDUPTAGS][MAXPATHLEN];
-static int  tagPosInf[MAXDUPTAGS];
+static ssize_t  tagPosInf[MAXDUPTAGS];
 static Boolean globAnchored;
-static int globPos;
+static ssize_t globPos;
 static int globHAlign;
 static int globVAlign;
 static int globAlignMode;
@@ -228,7 +228,7 @@ static tag* matchTagRec(tag const* tpl, tag* bkt)
 **
 */
 static int addTag(const char *name, const char *file, int lang, 
-                    const char *search, int posInf, const char *path, int index)
+                    const char *search, ssize_t posInf, const char *path, int index)
 {
     char newfile[MAXPATHLEN];
     tag **table;
@@ -281,7 +281,7 @@ static int addTag(const char *name, const char *file, int lang,
      lang = -2 is also an invalid match)
  */
 static int delTag(const char *name, const char *file, int lang,
-                    const char *search, int posInf, int index)
+                    const char *search, ssize_t posInf, int index)
 {
     tag *t, *last;
     int start,finish,i,del=0;
@@ -859,7 +859,8 @@ static int findDef(WindowInfo *window, const char *value, int search_type) {
     static char tagText[MAX_TAG_LEN + 1];
     const char *p;
     char message[MAX_TAG_LEN+40];
-    int l, ml, status = 0;
+    int status = 0;
+    ssize_t l, ml;
     
     searchMode = search_type;
     l = strlen(value);
@@ -994,7 +995,7 @@ int ShowTipString(WindowInfo *window, char *text, Boolean anchored,
 
 /* store all of the info into a pre-allocated tags struct */
 static void setTag(tag *t, const char *name, const char *file, 
-        int language, const char *searchString, int posInf, 
+        int language, const char *searchString, ssize_t posInf,
         const char *path)
 {
     t->name         = RefStringDup(name);
@@ -1016,9 +1017,10 @@ static void setTag(tag *t, const char *name, const char *file,
 ** caller is responsible for freeing it.
 */
 static int fakeRegExSearch(WindowInfo *window, char *in_buffer, 
-        const char *searchString, int *startPos, int *endPos)
+        const char *searchString, ssize_t *startPos, ssize_t *endPos)
 {
-    int found, searchStartPos, dir, ctagsMode;
+    ssize_t searchStartPos;
+    int found, dir, ctagsMode;
     char searchSubs[3*MAXLINE+3], *outPtr;
     const char *fileString, *inPtr;
     
@@ -1209,13 +1211,13 @@ static int findAllMatches(WindowInfo *window, const char *string)
             if ((i<nMatches-1 && !strcmp(tagFiles[i],tagFiles[i+1])) ||
                     (i>0 && !strcmp(tagFiles[i],tagFiles[i-1]))) {
                 if(*(tagSearch[i]) && (tagPosInf[i] != -1)) { /* etags */
-                    sprintf(temp,"%2d. %s%s %8i %s", i+1, pathname, 
+                    sprintf(temp,"%2d. %s%s %8zi %s", i+1, pathname,
                             filename, tagPosInf[i], tagSearch[i]);
                 } else if (*(tagSearch[i])) { /* ctags search expr */
                     sprintf(temp,"%2d. %s%s          %s", i+1, pathname, 
                             filename, tagSearch[i]);
                 } else { /* line number only */
-                    sprintf(temp,"%2d. %s%s %8i", i+1, pathname, filename,
+                    sprintf(temp,"%2d. %s%s %8zi", i+1, pathname, filename,
                             tagPosInf[i]);
                 }
             } else {
@@ -1299,7 +1301,7 @@ static void findAllCloseCB(Widget parent, XtPointer client_data,
  * string is reached before n lines, return the number of lines advanced,
  * else normally return -1.
  */
-static int moveAheadNLines( char *str, int *pos, int n ) {
+static int moveAheadNLines( char *str, ssize_t *pos, ssize_t n ) {
     int i=n;
     while (str[*pos] != '\0' && n>0) {
         if (str[*pos] == '\n')
@@ -1319,8 +1321,8 @@ static int moveAheadNLines( char *str, int *pos, int n ) {
 */ 
 static void showMatchingCalltip( Widget parent, int i )
 {
-    int startPos=0, fileLen, readLen, tipLen;
-    int endPos=0;
+    ssize_t startPos=0, fileLen, readLen, tipLen;
+    ssize_t endPos=0;
     char *fileString;
     FILE *fp;
     struct stat statbuf;
@@ -1394,7 +1396,8 @@ static void showMatchingCalltip( Widget parent, int i )
     }
     
     if (searchMode == TIP) {
-        int dummy, found;
+        ssize_t dummy;
+        int found;
                 
         /* 4. Find the end of the calltip (delimited by an empty line) */
         endPos = startPos;
@@ -1441,7 +1444,7 @@ static void editTaggedLocation( Widget parent, int i )
 {
     /* Globals: tagSearch, tagPosInf, tagFiles, tagName, textNrows,
             WindowList */
-    int startPos, endPos, lineNum, rows;
+    ssize_t startPos, endPos, lineNum, rows;
     char filename[MAXPATHLEN], pathname[MAXPATHLEN];
     WindowInfo *windowToSearch;
     WindowInfo *parentWindow = WidgetToWindow(parent);
@@ -1536,7 +1539,7 @@ enum tftoken_types { TF_EOF, TF_BLOCK, TF_VERSION, TF_INCLUDE, TF_LANGUAGE,
 
 /* A wrapper for SearchString */
 static int searchLine(char *line, const char *regex) {
-    int dummy1, dummy2;
+    ssize_t dummy1, dummy2;
     return SearchString(line, regex, SEARCH_FORWARD, SEARCH_REGEX,
                              False, 0, &dummy1, &dummy2, NULL, NULL, NULL);
 }
@@ -1553,7 +1556,7 @@ static Boolean lineEmpty(const char *line) {
 
 /* Remove trailing whitespace from a line */
 static void rstrip( char *dst, const char *src ) {
-    int wsStart, dummy2;
+    ssize_t wsStart, dummy2;
     /* Strip trailing whitespace */
     if(SearchString(src, "\\s*\\n", SEARCH_FORWARD, SEARCH_REGEX,
                          False, 0, &wsStart, &dummy2, NULL, NULL, NULL)) {
@@ -1577,8 +1580,8 @@ static void rstrip( char *dst, const char *src ) {
 **                  after the "* xxxx *" line. 
 **      currLine:   Used to keep track of the current line in the file.
 */
-static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine, 
-        int *currLine) 
+static int nextTFBlock(FILE *fp, char *header, char **body, ssize_t *blkLine,
+        ssize_t *currLine)
 {
     /* These are the different kinds of tokens */
     const char *commenTF_regex = "^\\s*\\* comment \\*\\s*$";
@@ -1587,7 +1590,7 @@ static int nextTFBlock(FILE *fp, char *header, char **body, int *blkLine,
     const char *language_regex = "^\\s*\\* language \\*\\s*$";
     const char *alias_regex    = "^\\s*\\* alias \\*\\s*$";
     char line[MAXLINE], *status;
-    int dummy1;
+    ssize_t dummy1;
     int code;
     
     /* Skip blank lines and comments */
@@ -1806,7 +1809,7 @@ static int loadTipsFile(const char *tipsFile, int index, int recLevel)
     char tipPath[MAXPATHLEN];
     char resolvedTipsFile[MAXPATHLEN+1];
     int nTipsAdded=0, langMode = PLAIN_LANGUAGE_MODE, oldLangMode;
-    int currLine=0, code, blkLine;
+    ssize_t currLine=0, code, blkLine;
     tf_alias *aliases=NULL, *tmp_alias;
     
     if(recLevel > MAX_TAG_INCLUDE_RECURSION_LEVEL) {
