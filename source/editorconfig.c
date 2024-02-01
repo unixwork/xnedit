@@ -171,7 +171,7 @@ static ECSection* create_section(char *name, int len) {
         } else if(name[0] == '/') {
             sec->name = ec_strdup(name, len);
         } else {
-            // add **/
+            // add /
             int newlen = len+1;
             sec->name = malloc(newlen+1);
             sec->name[0] = '/';
