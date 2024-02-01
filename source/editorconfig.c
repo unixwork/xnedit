@@ -409,7 +409,7 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
             if(ec_getint(v->value, &val)) {
                 config->tab_width = val;
             }
-        } else if(EC_EOL_UNSET && !strcmp(v->name, "end_of_line")) {
+        } else if(!strcmp(v->name, "end_of_line")) {
             if(unset_value) {
                 config->end_of_line = EC_EOL_UNSET;
             } else if(!strcmp(v->value, "lf")) {
