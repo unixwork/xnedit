@@ -191,9 +191,11 @@ void FilterSelection(WindowInfo *window, const char *command, int fromMacro)
 */
 void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
 {
-    int left, right, flags = 0;
+    ssize_t left, right;
+    int  flags = 0;
     char *subsCommand, fullName[MAXPATHLEN];
-    int pos, line, column;
+    ssize_t pos, line;
+    int column;
     char lineNumber[16];
 
     /* Can't do two shell commands at once in the same window */
@@ -216,7 +218,7 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->buffer, 0, pos) + 1;
     }
-    snprintf(lineNumber, 16, "%d", line);
+    snprintf(lineNumber, 16, "%zd", line);
     subsCommand = shellCommandSubstitutes(command, fullName, lineNumber);
     if (subsCommand == NULL)
     {
@@ -292,7 +294,7 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->buffer, 0, pos) + 1;
     }
-    snprintf(lineNumber, 16, "%d", line);
+    snprintf(lineNumber, 16, "%zd", line);
     
     subsCommand = shellCommandSubstitutes(cmdText, fullName, lineNumber);
     if (subsCommand == NULL)
@@ -344,7 +346,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->buffer, 0, pos) + 1;
     }
-    snprintf(lineNumber, 16, "%d", line);
+    snprintf(lineNumber, 16, "%zd", line);
     
     subsCommand = shellCommandSubstitutes(command, fullName, lineNumber);
     if (subsCommand == NULL)
