@@ -348,6 +348,7 @@ static int wrongNArgsErr(char **errMsg);
 static int tooFewArgsErr(char **errMsg);
 static int strCaseCmp(char *str1, char *str2);
 static int readIntArg(DataValue dv, int *result, char **errMsg);
+static int readSSizeArg(DataValue dv, ssize_t *result, char **errMsg);
 static int readStringArg(DataValue dv, char **result, char *stringStorage,
     	char **errMsg);
 /* DISABLED FOR 5.4
@@ -2483,7 +2484,8 @@ static int searchMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int searchStringMS(WindowInfo *window, DataValue *argList, int nArgs,
     	DataValue *result, char **errMsg)
 {
-    int beginPos, wrap, direction, found = False, foundStart, foundEnd, type;
+    ssize_t beginPos, foundStart, foundEnd;
+    int wrap, direction, found = False, type;
     int skipSearch = False, len;
     char stringStorage[2][TYPE_INT_STR_SIZE(int)], *string, *searchStr;
     
@@ -2494,7 +2496,7 @@ static int searchStringMS(WindowInfo *window, DataValue *argList, int nArgs,
     	return False;
     if (!readStringArg(argList[1], &searchStr, stringStorage[1], errMsg))
     	return False;
-    if (!readIntArg(argList[2], &beginPos, errMsg))
+    if (!readSSizeArg(argList[2], &beginPos, errMsg))
     	return False;
     if (!readSearchArgs(&argList[3], nArgs-3, &direction, &type, &wrap, errMsg))
     	return False;
@@ -3868,8 +3870,10 @@ static int splitMS(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char stringStorage[3][TYPE_INT_STR_SIZE(int)];
     char *sourceStr, *splitStr, *typeSplitStr;
-    int searchType, beginPos, foundStart, foundEnd, strLength, lastEnd;
-    int found, elementEnd, indexNum;
+    int searchType;
+    ssize_t beginPos, foundStart, foundEnd, strLength, lastEnd;
+    ssize_t found, elementEnd;
+    int indexNum;
     char indexStr[TYPE_INT_STR_SIZE(int)], *allocIndexStr;
     DataValue element;
     int elementLen;
@@ -4054,7 +4058,8 @@ static int cursorMV(WindowInfo *window, DataValue *argList, int nArgs,
 static int lineMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
-    int line, cursorPos, colNum;
+    ssize_t line, cursorPos;
+    int colNum;
 
     result->tag = INT_TAG;
     cursorPos = TextGetCursorPos(window->lastFocus);
@@ -4068,7 +4073,7 @@ static int columnMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     textBuffer *buf = window->buffer;
-    int cursorPos;
+    ssize_t cursorPos;
 
     result->tag = INT_TAG;
     cursorPos = TextGetCursorPos(window->lastFocus);
@@ -4768,7 +4773,8 @@ static int rangesetAddMS(WindowInfo *window, DataValue *argList, int nArgs,
     textBuffer *buffer = window->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *targetRangeset, *sourceRangeset;
-    int start, end, isRect, rectStart, rectEnd, maxpos, index;
+    ssize_t start, end, maxpos;
+    int isRect, rectStart, rectEnd, index;
     int label = 0;
 
     if (nArgs < 1 || nArgs > 3)
@@ -4819,10 +4825,10 @@ static int rangesetAddMS(WindowInfo *window, DataValue *argList, int nArgs,
     
     if (nArgs == 3) {
         /* add a range bounded by the start and end positions in $2, $3 */
-        if (!readIntArg(argList[1], &start, errMsg)) {
+        if (!readSSizeArg(argList[1], &start, errMsg)) {
             return False;
         }
-        if (!readIntArg(argList[2], &end, errMsg)) {
+        if (!readSSizeArg(argList[2], &end, errMsg)) {
             return False;
         }
 
@@ -4867,7 +4873,8 @@ static int rangesetSubtractMS(WindowInfo *window, DataValue *argList, int nArgs,
     textBuffer *buffer = window->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *targetRangeset, *sourceRangeset;
-    int start, end, isRect, rectStart, rectEnd, maxpos;
+    ssize_t start, end, maxpos;
+    int isRect, rectStart, rectEnd;
     int label = 0;
 
     if (nArgs < 1 || nArgs > 3) {
@@ -4913,9 +4920,9 @@ static int rangesetSubtractMS(WindowInfo *window, DataValue *argList, int nArgs,
     
     if (nArgs == 3) {
         /* remove a range bounded by the start and end positions in $2, $3 */
-        if (!readIntArg(argList[1], &start, errMsg))
+        if (!readSSizeArg(argList[1], &start, errMsg))
             return False;
-        if (!readIntArg(argList[2], &end, errMsg))
+        if (!readSSizeArg(argList[2], &end, errMsg))
             return False;
 
         /* make sure range is in order and fits buffer size */
@@ -5052,7 +5059,8 @@ static int rangesetRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
     textBuffer *buffer = window->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
-    int start, end, dummy, rangeIndex, ok;
+    ssize_t start, end, dummy;
+    int rangeIndex, ok;
     DataValue element;
     int label = 0;
 
@@ -5726,6 +5734,28 @@ static int readIntArg(DataValue dv, int *result, char **errMsg)
     }
     
 typeError:
+    *errMsg = "%s called with non-integer argument";
+    return False;
+}
+
+static int readSSizeArg(DataValue dv, ssize_t *result, char **errMsg)
+{
+    char *c;
+
+    if (dv.tag == INT_TAG) {
+        *result = dv.val.n;
+        return True;
+    } else if (dv.tag == STRING_TAG) {
+        for (c=dv.val.str.rep; *c != '\0'; c++) {
+            if (!(isdigit((unsigned char)*c) || *c == ' ' || *c == '\t')) {
+                goto typeError;
+            }
+        }
+        sscanf(dv.val.str.rep, "%zd", result);
+        return True;
+    }
+
+    typeError:
     *errMsg = "%s called with non-integer argument";
     return False;
 }
