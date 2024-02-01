@@ -4719,7 +4719,8 @@ static void reapplyLanguageMode(WindowInfo *window, int mode, int forceDefaults)
 static int matchLanguageMode(WindowInfo *window)
 {
     char *ext, *first200;
-    int i, j, fileNameLen, extLen, beginPos, endPos, start;
+    int i, j, fileNameLen, extLen;
+    ssize_t beginPos, endPos, start;
     const char *versionExtendedPath;
 
     /*... look for an explicit mode statement first */
@@ -5685,7 +5686,7 @@ static void migrateColorResources(XrmDatabase prefDB, XrmDatabase appDB)
 */
 static void spliceString(char **intoString, const char *insertString, const char *atExpr)
 {
-    int beginPos, endPos;
+    ssize_t beginPos, endPos;
     int intoLen = strlen(*intoString);
     int insertLen = strlen(insertString);
     char *newString = (char*)NEditMalloc(intoLen + insertLen + 2);
@@ -5714,7 +5715,7 @@ static void spliceString(char **intoString, const char *insertString, const char
 */
 static int regexFind(const char *inString, const char *expr)
 {
-    int beginPos, endPos;
+    ssize_t beginPos, endPos;
     return SearchString(inString, expr, SEARCH_FORWARD, SEARCH_REGEX, False,
 	    0, &beginPos, &endPos, NULL, NULL, NULL);
 }
@@ -5725,7 +5726,7 @@ static int regexFind(const char *inString, const char *expr)
 */
 static int caseFind(const char *inString, const char *expr)
 {
-    int beginPos, endPos;
+    ssize_t beginPos, endPos;
     return SearchString(inString, expr, SEARCH_FORWARD, SEARCH_CASE_SENSE,
             False, 0, &beginPos, &endPos, NULL, NULL, NULL);
 }
@@ -5737,7 +5738,7 @@ static int stringReplace(char **inString, const char *expr,
                          const char *replaceWith, int searchType,
 			 int replaceLen)
 {
-    int beginPos, endPos, newLen;
+    ssize_t beginPos, endPos, newLen;
     char *newString;
     int inLen = strlen(*inString);
     if (0 >= replaceLen) replaceLen = strlen(replaceWith);
