@@ -142,7 +142,7 @@ typedef struct _textDisp {
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
     int nVisibleLines;			/* # of visible (displayed) lines */
-    int nBufferLines;			/* # of newlines in the buffer */
+    size_t nBufferLines;			/* # of newlines in the buffer */
     textBuffer *buffer;     	    	/* Contains text to be displayed */
     textBuffer *styleBuffer;   	    	/* Optional parallel buffer containing
     	    	    	    	    	   color and font information */
@@ -265,27 +265,27 @@ int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);
 void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
 	int height);
-void TextDSetScroll(textDisp *textD, int topLineNum, int horizOffset);
-void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
+void TextDSetScroll(textDisp *textD, ssize_t topLineNum, int horizOffset);
+void TextDGetScroll(textDisp *textD, ssize_t *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);
 void TextDOverstrike(textDisp *textD, char *text);
-void TextDSetInsertPosition(textDisp *textD, int newPos);
-void TextDChangeCursors(textDisp *textD, int startPos, int diff);
-int  TextDAddCursor(textDisp *textD, int newMultiCursorPos);
-void TextDRemoveCursor(textDisp *textD, int cursorIndex);
+void TextDSetInsertPosition(textDisp *textD, size_t newPos);
+void TextDChangeCursors(textDisp *textD, size_t startPos, size_t diff);
+int  TextDAddCursor(textDisp *textD, size_t newMultiCursorPos);
+void TextDRemoveCursor(textDisp *textD, size_t cursorIndex);
 void TextDSetCursors(textDisp *textD, size_t *cursors, size_t ncursors);
 int  TextDClearMultiCursor(textDisp *textD);
 void TextDCheckCursorDuplicates(textDisp *textD);
 int TextDGetInsertPosition(textDisp *textD);
-int TextDXYToPosition(textDisp *textD, int x, int y);
-int TextDXYToCharPos(textDisp *textD, int x, int y);
+size_t TextDXYToPosition(textDisp *textD, int x, int y);
+size_t TextDXYToCharPos(textDisp *textD, int x, int y);
 void TextDXYToUnconstrainedPosition(textDisp *textD, int x, int y, int *row,
 	int *column);
 int TextDLineAndColToPos(textDisp *textD, int lineNum, int column);
 int TextDOffsetWrappedColumn(textDisp *textD, int row, int column);
 int TextDOffsetWrappedRow(textDisp *textD, int row);
-int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y);
-int TextDPosToLineAndCol(textDisp *textD, int pos, int *lineNum, int *column);
+int TextDPositionToXY(textDisp *textD, ssize_t pos, int *x, int *y);
+int TextDPosToLineAndCol(textDisp *textD, ssize_t pos, ssize_t *lineNum, int *column);
 int TextDInSelection(textDisp *textD, int x, int y);
 void TextDMakeInsertPosVisible(textDisp *textD);
 int TextDMoveRight(textDisp *textD);

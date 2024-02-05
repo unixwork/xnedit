@@ -94,8 +94,8 @@ typedef struct {
     int cbCount;
 } stringSelection;
 
-static void modifiedCB(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg);
+static void modifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg);
 static void sendSecondary(Widget w, Time time, Atom sel, int action,
 	char *actionText, int actionTextLen);
 static void getSelectionUtf8CB(Widget w, XtPointer clientData, Atom *selType,
@@ -461,8 +461,8 @@ void TakeMotifDestination(Widget w, Time time)
 ** (Being in the middle of a modify callback, this has a somewhat complicated
 ** result, since later callbacks will see the second modifications first).
 */
-static void modifiedCB(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg)
+static void modifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg)
 {
     TextWidget w = (TextWidget)cbArg;
     Time time = XtLastTimestampProcessed(XtDisplay((Widget)w));

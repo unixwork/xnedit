@@ -134,13 +134,13 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
 static NFont* styleFontList(const textDisp* textD, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
         int dispIndex);
-static int xyToPos(textDisp *textD, int x, int y, int posType);
+static size_t xyToPos(textDisp *textD, int x, int y, int posType);
 static void xyToUnconstrainedPos(textDisp *textD, int x, int y, int *row,
         int *column, int posType);
-static void bufPreDeleteCB(int pos, int nDeleted, void *cbArg);
-static void bufModifiedCB(int pos, int nInserted, int nDeleted,
-        int nRestyled, const char *deletedText, void *cbArg);
-static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
+static void bufPreDeleteCB(ssize_t pos, ssize_t nDeleted, void *cbArg);
+static void bufModifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg);
+static void setScroll(textDisp *textD, ssize_t topLineNum, int horizOffset,
         int updateVScrollBar, int updateHScrollBar);
 static void hScrollCB(Widget w, XtPointer clientData, XtPointer callData);
 static void vScrollCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -166,7 +166,7 @@ static GC allocateGC(Widget w, unsigned long valueMask,
 static void releaseGC(Widget w, GC gc);
 static void resetClipRectangles(textDisp *textD);
 static int visLineLength(textDisp *textD, int visLineNum);
-static void measureDeletedLines(textDisp *textD, int pos, int nDeleted);
+static void measureDeletedLines(textDisp *textD, ssize_t pos, ssize_t nDeleted);
 static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
         int nInserted, int nDeleted, int *modRangeStart, int *modRangeEnd,
         int *linesInserted, int *linesDeleted);
@@ -847,7 +847,7 @@ static void textDRedisplayRange(textDisp *textD, int start, int end)
 ** Set the scroll position of the text display vertically by line number and
 ** horizontally by pixel offset from the left margin
 */
-void TextDSetScroll(textDisp *textD, int topLineNum, int horizOffset)
+void TextDSetScroll(textDisp *textD, ssize_t topLineNum, int horizOffset)
 {
     int sliderSize, sliderMax;
     int vPadding = (int)(TEXT_OF_TEXTD(textD).cursorVPadding);
@@ -874,7 +874,7 @@ void TextDSetScroll(textDisp *textD, int topLineNum, int horizOffset)
 ** Get the current scroll position for the text display, in terms of line
 ** number of the top line and horizontal pixel offset from the left margin
 */
-void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
+void TextDGetScroll(textDisp *textD, ssize_t *topLineNum, int *horizOffset)
 {
     *topLineNum = textD->topLineNum;
     *horizOffset = textD->horizOffset;
@@ -883,7 +883,7 @@ void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset)
 /*
 ** Set the position of the text insertion cursor for text display "textD"
 */
-void TextDSetInsertPosition(textDisp *textD, int newPos)
+void TextDSetInsertPosition(textDisp *textD, size_t newPos)
 {
     int oldLineStart, newLineStart, oldLineEnd, newLineEnd;
     Boolean hiline = False;
@@ -967,7 +967,7 @@ void TextDSetInsertPosition(textDisp *textD, int newPos)
 /*
  * Add diff to all cursors >= startPos
  */
-void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
+void TextDChangeCursors(textDisp *textD, size_t startPos, size_t diff) {
     int prevPos = -2;
     size_t newMCursorSize = textD->mcursorSize;
     for(int i=textD->mcursorSize-1;i>=0;i--) {
@@ -989,7 +989,7 @@ void TextDChangeCursors(textDisp *textD, int startPos, int diff) {
     }
 }
 
-int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
+int TextDAddCursor(textDisp *textD, size_t newMultiCursorPos) {
     int mcInsertPos = 0;
     
     // make sure, there is not already a cursor for the new position
@@ -1043,7 +1043,7 @@ int TextDAddCursor(textDisp *textD, int newMultiCursorPos) {
     return -1;
 }
 
-void TextDRemoveCursor(textDisp *textD, int cursorIndex) { 
+void TextDRemoveCursor(textDisp *textD, size_t cursorIndex) {
     if(textD->mcursorSize == 1) {
         return;
     } else if(textD->mcursorSize == 2) {
@@ -1360,7 +1360,7 @@ XftColor RGBToColor(short r, short g, short b)
 /*
 ** Translate window coordinates to the nearest text cursor position.
 */
-int TextDXYToPosition(textDisp *textD, int x, int y)
+size_t TextDXYToPosition(textDisp *textD, int x, int y)
 {
     return xyToPos(textD, x, y, CURSOR_POS);
 }
@@ -1368,7 +1368,7 @@ int TextDXYToPosition(textDisp *textD, int x, int y)
 /*
 ** Translate window coordinates to the nearest character cell.
 */
-int TextDXYToCharPos(textDisp *textD, int x, int y)
+size_t TextDXYToCharPos(textDisp *textD, int x, int y)
 {
     return xyToPos(textD, x, y, CHARACTER_POS);
 }
@@ -1447,9 +1447,10 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 ** of view.  If the position is horizontally out of view, returns the
 ** x coordinate where the position would be if it were visible.
 */
-int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
+int TextDPositionToXY(textDisp *textD, ssize_t pos, int *x, int *y)
 {
-    int charIndex, lineStartPos, fontHeight, lineLen, isMB;
+    ssize_t charIndex, lineStartPos;
+    int fontHeight, lineLen, isMB;
     int visLineNum, charLen, outIndex, xStep, charStyle, inc;
     char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
@@ -1513,7 +1514,7 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 ** WORKS FOR DISPLAYED LINES AND, IN CONTINUOUS WRAP MODE, ONLY WHEN THE
 ** ABSOLUTE LINE NUMBER IS BEING MAINTAINED.  Otherwise, it returns False.
 */
-int TextDPosToLineAndCol(textDisp *textD, int pos, int *lineNum, int *column)
+int TextDPosToLineAndCol(textDisp *textD, ssize_t pos, ssize_t *lineNum, int *column)
 {
     textBuffer *buf = textD->buffer;
     
@@ -1999,7 +2000,7 @@ int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines)
 ** Callback attached to the text buffer to receive delete information before
 ** the modifications are actually made.
 */
-static void bufPreDeleteCB(int pos, int nDeleted, void *cbArg)
+static void bufPreDeleteCB(ssize_t pos, ssize_t nDeleted, void *cbArg)
 {
     textDisp *textD = (textDisp *)cbArg;
     if (textD->continuousWrap && 
@@ -2020,8 +2021,8 @@ static void bufPreDeleteCB(int pos, int nDeleted, void *cbArg)
 /*
 ** Callback attached to the text buffer to receive modification information
 */
-static void bufModifiedCB(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg)
+static void bufModifiedCB(ssize_t pos, ssize_t nInserted, ssize_t nDeleted,
+        ssize_t nRestyled, const char *deletedText, void *cbArg)
 {
     int linesInserted, linesDeleted, startDispPos, endDispPos;
     textDisp *textD = (textDisp *)cbArg;
@@ -3112,9 +3113,10 @@ static int inSelection(selection *sel, int pos, int lineStartPos, int dispIndex)
 ** position, and CHARACTER_POS means return the position of the character
 ** closest to (x, y).
 */
-static int xyToPos(textDisp *textD, int x, int y, int posType)
+static size_t xyToPos(textDisp *textD, int x, int y, int posType)
 {
-    int charIndex, lineStart, lineLen, fontHeight, isMB;
+    ssize_t charIndex, lineStart, lineLen;
+    int fontHeight, isMB;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
     char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
@@ -3537,7 +3539,7 @@ void TextDTranlateGraphicExposeQueue(textDisp *textD, int xOffset, int yOffset, 
     }
 }
 
-static void setScroll(textDisp *textD, int topLineNum, int horizOffset,
+static void setScroll(textDisp *textD, ssize_t topLineNum, int horizOffset,
         int updateVScrollBar, int updateHScrollBar)
 {
     int fontHeight = textD->ascent + textD->descent;
@@ -4231,7 +4233,7 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
 ** can still perform the calculation afterwards (possibly even more
 ** efficiently).
 */
-static void measureDeletedLines(textDisp *textD, int pos, int nDeleted)
+static void measureDeletedLines(textDisp *textD, ssize_t pos, ssize_t nDeleted)
 {
     int retPos, retLines, retLineStart, retLineEnd;
     textBuffer *buf = textD->buffer;

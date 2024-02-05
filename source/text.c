@@ -1216,7 +1216,8 @@ static void redisplayGE(TextWidget w, XtPointer client_data,
 static void hscrollEH(TextWidget w, XtPointer client_data,
                     XEvent *event, Boolean *continue_to_dispatch_return)
 {
-    int topLineNum, horizOffset, step;
+    ssize_t topLineNum;
+    int horizOffset, step;
     int button = event->xbutton.button;
     textDisp *textD = w->text.textD;
     
@@ -1979,7 +1980,7 @@ static void extendStartAP(Widget w, XEvent *event, String *args,
     	    	    (sel->end + sel->start) / 2 ? sel->end : sel->start);
     	    anchor = BufCountForwardDispChars(buf, anchorLineStart, rectAnchor);
     	} else {
-    	    if (abs(newPos - sel->start) < abs(newPos - sel->end))
+    	    if (labs(newPos - sel->start) < labs(newPos - sel->end))
     		anchor = sel->end;
     	    else
     		anchor = sel->start;
@@ -2054,7 +2055,7 @@ static void secondaryStartAP(Widget w, XEvent *event, String *args,
     /* Find the new anchor point and make the new selection */
     pos = TextDXYToPosition(textD, e->x, e->y);
     if (sel->selected) {
-    	if (abs(pos - sel->start) < abs(pos - sel->end))
+    	if (labs(pos - sel->start) < labs(pos - sel->end))
     	    anchor = sel->end;
     	else
     	    anchor = sel->start;
@@ -2463,7 +2464,9 @@ static void mousePanAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     TextWidget tw = (TextWidget)w;
     textDisp *textD = tw->text.textD;
     int lineHeight = textD->ascent + textD->descent;
-    ssize_t topLineNum, horizOffset;
+    ssize_t topLineNum;
+    int horizOffset;
+
     static Cursor panCursor = 0;
     
     if (tw->text.dragState == MOUSE_PAN) {
@@ -3686,7 +3689,8 @@ static void nextPageAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     textBuffer *buf = textD->buffer;
-    int lastTopLine = max(1, 
+    // TODO: use ssize_t for lastTopLine, a ssize_t variant of max is needed
+    int lastTopLine = max(1,
             textD->nBufferLines - (textD->nVisibleLines - 2) + 
             ((TextWidget)w)->text.cursorVPadding );
     ssize_t insertPos = TextDGetInsertPosition(textD);
@@ -4038,9 +4042,10 @@ static void scrollToLineAP(Widget w, XEvent *event, String *args,
     	Cardinal *nArgs)
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
-    ssize_t topLineNum, horizOffset, lineNum;
+    ssize_t topLineNum, lineNum;
+    int horizOffset;
     
-    if (*nArgs == 0 || sscanf(args[0], "%d", &lineNum) != 1)
+    if (*nArgs == 0 || sscanf(args[0], "%zd", &lineNum) != 1)
     	return;
     TextDGetScroll(textD, &topLineNum, &horizOffset);
     TextDSetScroll(textD, lineNum, horizOffset);
@@ -4182,7 +4187,7 @@ static void keyMoveExtendSelection(Widget w, XEvent *event, int origPos,
     selection *sel = &buf->primary;
     ssize_t newPos = TextDGetInsertPosition(textD);
     ssize_t startPos, endPos;
-    int startCol, endCol, newCol, origCol;
+    ssize_t startCol, endCol, newCol, origCol;
     ssize_t anchor, rectAnchor, anchorLineStart;
 
     /* Moving the cursor does not take the Motif destination, but as soon as
@@ -4201,7 +4206,7 @@ static void keyMoveExtendSelection(Widget w, XEvent *event, int origPos,
 	BufRectSelect(buf, startPos, endPos, startCol, endCol);
     } else if (sel->selected && rectangular) { /* plain -> rect */
         newCol = BufCountDispChars(buf, BufStartOfLine(buf, newPos), newPos);
-        if (abs(newPos - sel->start) < abs(newPos - sel->end))
+        if (labs(newPos - sel->start) < labs(newPos - sel->end))
             anchor = sel->end;
         else
             anchor = sel->start;
@@ -4217,13 +4222,13 @@ static void keyMoveExtendSelection(Widget w, XEvent *event, int origPos,
     		BufStartOfLine(buf, sel->start), sel->rectStart);
     	endPos = BufCountForwardDispChars(buf,
     		BufStartOfLine(buf, sel->end), sel->rectEnd);
-    	if (abs(origPos - startPos) < abs(origPos - endPos))
+    	if (labs(origPos - startPos) < labs(origPos - endPos))
     	    anchor = endPos;
     	else
     	    anchor = startPos;
     	BufSelect(buf, anchor, newPos);
     } else if (sel->selected) { /* plain -> plain */
-        if (abs(origPos - sel->start) < abs(origPos - sel->end))
+        if (labs(origPos - sel->start) < labs(origPos - sel->end))
     	    anchor = sel->end;
     	else
     	    anchor = sel->start;
@@ -4795,7 +4800,8 @@ static int wrapLine(TextWidget tw, textBuffer *buf, ssize_t bufOffset,
         ssize_t lineStartPos, ssize_t lineEndPos, ssize_t limitPos, ssize_t *breakAt,
 	int *charsAdded)
 {
-    ssize_t p, length, column;
+    ssize_t p, length;
+    int column;
     char c, *indentStr;
     
     /* Scan backward for whitespace or BOL.  If BOL, return False, no
