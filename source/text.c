@@ -4274,8 +4274,11 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
     textBuffer *buf = textD->buffer;
 
     if (allowPendingDelete && pendingSelection(w)) {
+        // force redraw of cursorline by TexDSetInsertPosition
+        textD->redrawCursorLine = True;
     	BufReplaceSelected(buf, chars);
     	TextDSetInsertPosition(textD, buf->cursorPosHint);
+        textD->redrawCursorLine = False;
     } else {
         if(textD->mcursorSize == 1) {
             simpleInsertAtCursorPos(w, textD, chars);
