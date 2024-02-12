@@ -2,10 +2,10 @@
 *                                                                              *
 * help_topic.h --  Nirvana Editor help display                                 *
 *                                                                              *
-                 Generated on Oct 5, 2023 (Do NOT edit!)
+                 Generated on Feb 12, 2024 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
-* Copyright (c) 1999-2023 Mark Edel                                            *
+* Copyright (c) 1999-2024 Mark Edel                                            *
 *                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
