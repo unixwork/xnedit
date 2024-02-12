@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+version 1.5.3 (2024-02-12)
+--------------------------
+
+ - changed file dialog to remember the filter setting
+ - fixed uninitialized memory access
+ - fixed editorconfig end_of_line setting was not applied
+ - fixed cursor line highlighting rendering
+
 version 1.5.2 (2023-10-05)
 --------------------------
 
