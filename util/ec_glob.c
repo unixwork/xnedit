@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2014 Hong Xu <hong AT topbug DOT net>
- * All rights reserved.
- * 
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+ *
+ * Copyright 2024 Mike Becker - All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
+ *
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,386 +24,395 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
-
-//include "global.h"
-
-#include <ctype.h>
-#include <string.h>
-#include <pcre.h>
-
-#define oom() { return -1; }
-#include "utarray.h"
-#include "misc.h"
+ */
 
 #include "ec_glob.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
-#if defined(__sun) && _POSIX_VERSION < 200809L
+#include <regex.h>
 
-#define strnlen ec_strnlen
-#define strndup ec_strndup
+struct numpair_s {
+    long min;
+    long max;
+};
 
-static size_t strnlen(const char *str, size_t maxlen) {
-    for(size_t i=0;i<=maxlen;i++) {
-        if(str[i] == '\0') return i;
-    }
-    return maxlen;
-}
+struct ec_glob_re {
+    char *str;
+    unsigned len;
+    unsigned capacity;
+};
 
-static char* strndup(const char *str, size_t maxlen) {
-    size_t len = strnlen(str, maxlen);
-    char *newstr = malloc(len+1);
-    if(!newstr) return NULL;
-    
-    memcpy(newstr, str, len);
-    newstr[len] = 0;
-    return newstr;
-}
-
+#ifndef EC_GLOB_STACK_CAPACITY
+#define EC_GLOB_STACK_CAPACITY 64
 #endif
 
-/* Special characters */
-const char ec_special_chars[] = "?[]\\*-{},";
+static void ec_glob_pattern_increase_capacity(struct ec_glob_re *re) {
+    unsigned newcap = re->capacity * 2;
+    char *newmem;
+    if (re->capacity == EC_GLOB_STACK_CAPACITY) {
+        newmem = malloc(newcap);
+        if (newmem == NULL) abort();
+        memcpy(newmem, re->str, re->len);
+    } else {
+        newmem = realloc(re->str, newcap);
+        if (newmem == NULL) abort();
+    }
+    re->capacity = newcap;
+    re->str = newmem;
+}
 
-typedef struct int_pair
-{
-    int     num1;
-    int     num2;
-} int_pair;
-static const UT_icd ut_int_pair_icd = {sizeof(int_pair),NULL,NULL,NULL};
+#define ec_glob_pattern_ensure_capacity(re, n) \
+    if (re.len + n > re.capacity) ec_glob_pattern_increase_capacity(&re)
 
-/* concatenate the string then move the pointer to the end */
-#define STRING_CAT(p, string, end)  do {    \
-    size_t string_len = strlen(string); \
-    if (p + string_len >= end) \
-        return -1; \
-    strcat(p, string); \
-    p += string_len; \
-} while(0)
+#define ec_glob_cats(re, s) \
+    ec_glob_pattern_ensure_capacity(re, sizeof(s) - 1); \
+    memcpy((re).str + (re).len, s, sizeof(s) - 1); (re).len += sizeof(s)-1
 
-#define PATTERN_MAX  4097
-/*
- * Whether the string matches the given glob pattern
- */
-EDITORCONFIG_LOCAL
-int ec_glob(const char *pattern, const char *string)
-{
-    size_t                    i;
-    int_pair *                p;
-    char *                    c;
-    char                      pcre_str[2 * PATTERN_MAX] = "^";
-    char *                    p_pcre;
-    char *                    pcre_str_end;
-    int                       brace_level = 0;
-    _Bool                     is_in_bracket = 0;
-    const char *              error_msg;
-    int                       erroffset;
-    pcre *                    re;
-    int                       rc;
-    int *                     pcre_result;
-    size_t                    pcre_result_len;
-    char                      l_pattern[2 * PATTERN_MAX];
-    _Bool                     are_brace_paired;
-    UT_array *                nums;     /* number ranges */
-    int                       ret = 0;
+#define ec_glob_catc(re, c) \
+    ec_glob_pattern_ensure_capacity(re, 1); (re).str[(re).len++] = (c)
 
-    strcpy(l_pattern, pattern);
-    p_pcre = pcre_str + 1;
-    pcre_str_end = pcre_str + 2 * PATTERN_MAX;
 
-    {
-        int     left_count = 0;
-        int     right_count = 0;
-        for (c = l_pattern; *c; ++ c)
-        {
-            if (*c == '\\' && *(c+1) != '\0')
-            {
-                ++ c;
+int ec_glob(const char *pattern, const char *string) {
+    char stack[EC_GLOB_STACK_CAPACITY];
+    struct ec_glob_re re_pattern = {
+            stack, 1, EC_GLOB_STACK_CAPACITY
+    };
+    re_pattern.str[0] = '^';
+
+    unsigned scanidx = 0;
+    unsigned inputlen = strlen(pattern);
+    char c;
+
+    // maintain information about braces
+    const unsigned brace_stack_size = 32;
+    char brace_stack[brace_stack_size];
+    int depth_brace = 0;
+    _Bool braces_valid = 1;
+
+    // first, check if braces are syntactically valid
+    for (unsigned i = 0 ; i < inputlen ; i++) {
+        // skip potentially escaped braces
+        if (pattern[i] == '\\') {
+            i++;
+        } else if (pattern[i] == '{') {
+            depth_brace++;
+        } else if (pattern[i] == '}') {
+            if (depth_brace > 0) {
+                depth_brace--;
+            } else {
+                braces_valid = 0;
+                break;
+            }
+        }
+    }
+    if (depth_brace > 0) {
+        braces_valid = 0;
+        depth_brace = 0;
+    }
+
+    // prepare what we think is more than enough memory for matches
+    const unsigned numrange_max = 32;
+    unsigned numrange_grp_count = 0;
+    unsigned numrange_grp_idx[numrange_max];
+    struct numpair_s numrange_pairs[numrange_max];
+    regmatch_t numrange_matches[numrange_max];
+
+    // initialize first group number with zero
+    // and increment whenever we create a new group
+    numrange_grp_idx[0] = 0;
+
+    // now translate the editorconfig pattern to a POSIX regular expression
+    while (scanidx < inputlen) {
+        c = pattern[scanidx++];
+
+        // escape
+        if (c == '\\') {
+            if (strchr("?{}[]*\\-,", pattern[scanidx]) != NULL) {
+                // also escape in regex when required
+                if (strchr("?{}[]*\\", pattern[scanidx]) != NULL) {
+                    ec_glob_catc(re_pattern, '\\');
+                }
+                c = pattern[scanidx++];
+                ec_glob_catc(re_pattern, c);
+            }
+            // otherwise, it's just a backslash
+            else {
+                ec_glob_cats(re_pattern, "\\\\");
+            }
+        }
+        // wildcard
+        else if (c == '*') {
+            // is double-wildcard?
+            if (pattern[scanidx] == '*') {
+                scanidx++;
+                // check for collapsible slashes
+                if (pattern[scanidx] == '/' && scanidx >= 3
+                    && pattern[scanidx - 3] == '/') {
+                    // the collapsible slash is simply discarded
+                    scanidx++;
+                }
+                ec_glob_cats(re_pattern, ".*");
+            } else {
+                ec_glob_cats(re_pattern, "[^/]*");
+            }
+        }
+        // arbitrary character
+        else if (c == '?') {
+            ec_glob_catc(re_pattern, '.');
+        }
+        // start of alternatives
+        else if (c == '{') {
+            // if braces are not syntactically valid, treat them as literals
+            if (!braces_valid) {
+                ec_glob_cats(re_pattern, "\\{");
                 continue;
             }
 
-            if (*c == '}')
-                ++ right_count;
-            if (*c == '{')
-                ++ left_count;
+            // check brace stack
+            depth_brace++;
+            if (depth_brace > brace_stack_size) {
+                // treat brace literally when stacked too many of them
+                ec_glob_cats(re_pattern, "\\{");
+                continue;
+            }
+
+            // check if {single} or {num1..num2}
+            _Bool single = 1;
+            _Bool dotdot = strchr("+-0123456789", pattern[scanidx]) != NULL;
+            _Bool dotdot_seen = 0;
+            for (unsigned fw = scanidx; fw < inputlen; fw++) {
+                if (pattern[fw] == ',') {
+                    single = 0;
+                    dotdot = 0;
+                    break;
+                }
+                else if (pattern[fw] == '}') {
+                    // check if this is a {num1..num2} pattern
+                    if (dotdot) {
+                        _Bool ok = 1;
+                        unsigned ngc = numrange_grp_count;
+                        char *chk;
+                        errno = 0;
+                        numrange_pairs[ngc].min = strtol(
+                                &pattern[scanidx], &chk, 10);
+                        ok &= *chk == '.' && 0 == errno;
+                        numrange_pairs[ngc].max = strtol(
+                                strrchr(&pattern[scanidx], '.')+1, &chk, 10);
+                        ok &= *chk == '}' && 0 == errno;
+                        if (ok) {
+                            // a dotdot is not a single
+                            single = 0;
+                            // skip this subpattern later on
+                            scanidx = fw+1;
+                        } else {
+                            // not ok, we could not parse the numbers
+                            dotdot = 0;
+                        }
+                    }
+                    break;
+                } else if (dotdot) {
+                    // check for dotdot separator
+                    if (pattern[fw] == '.') {
+                        if (!dotdot_seen &&
+                            fw + 2 < inputlen && pattern[fw + 1] == '.' &&
+                            strchr("+-0123456789", pattern[fw + 2]) != NULL) {
+                            fw += 2;
+                            dotdot_seen = 1;
+                        } else {
+                            dotdot = 0;
+                        }
+                    }
+                    // everything must be a digit, otherwise
+                    else if (!strchr("0123456789", pattern[fw])) {
+                        dotdot = 0;
+                    }
+                }
+            }
+
+            if (single) {
+                // push literal brace
+                ec_glob_cats(re_pattern, "\\{");
+                brace_stack[depth_brace-1] = '}';
+            } else {
+                // open choice and push parenthesis
+                ec_glob_catc(re_pattern, '(');
+
+                // increase the current group number
+                numrange_grp_idx[numrange_grp_count]++;
+
+                if (dotdot) {
+                    // add the number matching pattern
+                    ec_glob_cats(re_pattern, "[-+]?[0-9]+)");
+                    // increase group counter and initialize
+                    // next index with current group number
+                    numrange_grp_count++;
+                    if (numrange_grp_count < numrange_max) {
+                        numrange_grp_idx[numrange_grp_count] =
+                                numrange_grp_idx[numrange_grp_count - 1];
+                    }
+                    // we already took care of the closing brace
+                    depth_brace--;
+                } else {
+                    // remember that we need to close the choice eventually
+                    brace_stack[depth_brace - 1] = ')';
+                }
+            }
         }
-
-        are_brace_paired = (right_count == left_count);
-    }
-
-    /* used to search for {num1..num2} case */
-    re = pcre_compile("^\\{[\\+\\-]?\\d+\\.\\.[\\+\\-]?\\d+\\}$", 0,
-            &error_msg, &erroffset, NULL);
-    if (!re)        /* failed to compile */
-        return -1;
-
-    utarray_new(nums, &ut_int_pair_icd);
-
-    for (c = l_pattern; *c; ++ c)
-    {
-        switch (*c)
-        {
-        case '\\':      /* also skip the next one */
-            if (*(c+1) != '\0')
-            {
-                *(p_pcre ++) = *(c++);
-                *(p_pcre ++) = *c;
+        // end of alternatives
+        else if (depth_brace > 0 && c == '}') {
+            depth_brace--;
+            if (depth_brace < brace_stack_size
+                && brace_stack[depth_brace] == ')') {
+                ec_glob_catc(re_pattern, ')');
+            } else {
+                ec_glob_cats(re_pattern, "\\}");
             }
-            else
-                STRING_CAT(p_pcre, "\\\\", pcre_str_end);
-
-            break;
-        case '?':
-            *(p_pcre ++) = '.';
-            break;
-        case '*':
-            if (*(c+1) == '*')      /* case of ** */
-            {
-                STRING_CAT(p_pcre, ".*", pcre_str_end);
-                ++ c;
-            }
-            else                    /* case of * */
-                STRING_CAT(p_pcre, "[^\\/]*", pcre_str_end);
-
-            break;
-        case '[':
-            if (is_in_bracket)     /* inside brackets, we really mean bracket */
-            {
-                STRING_CAT(p_pcre, "\\[", pcre_str_end);
-                break;
+        }
+        // separator of alternatives
+        else if (depth_brace > 0 && c == ',') {
+            ec_glob_catc(re_pattern, '|');
+        }
+        // brackets
+        else if (c == '[') {
+            // check if we have a corresponding closing bracket
+            _Bool valid = 0;
+            _Bool closing_bracket_literal = 0;
+            unsigned newidx;
+            for (unsigned fw = scanidx ; fw < inputlen ; fw++) {
+                if (pattern[fw] == ']') {
+                    // only terminating if it's not the first char
+                    if (fw == scanidx) {
+                        // otherwise, auto-escaped
+                        closing_bracket_literal = 1;
+                    } else {
+                        valid = 1;
+                        newidx = fw+1;
+                        break;
+                    }
+                } else if (pattern[fw] == '/') {
+                    // special (undocumented) case: slash breaks
+                    // https://github.com/editorconfig/editorconfig/issues/499
+                    break;
+                } else if (pattern[fw] == '\\') {
+                    // skip escaped characters as usual
+                    fw++;
+                    closing_bracket_literal |= pattern[fw] == ']';
+                }
             }
 
-            {
-                /* check whether we have slash within the bracket */
-                _Bool           has_slash = 0;
-                char *          cc;
-                for (cc = c; *cc && *cc != ']'; ++ cc)
-                {
-                    if (*cc == '\\' && *(cc+1) != '\0')
-                    {
-                        ++ cc;
+
+            if (valid) {
+                // first of all, check, if the sequence is negated
+                if (pattern[scanidx] == '!') {
+                    scanidx++;
+                    ec_glob_cats(re_pattern, "[^");
+                } else {
+                    ec_glob_catc(re_pattern, '[');
+                }
+
+                // if we have a closing bracket as literal, it must appear first
+                if (closing_bracket_literal) {
+                    ec_glob_catc(re_pattern, ']');
+                    // but if the minus operator wanted to be there
+                    // we need to move it to the end
+                    if (pattern[scanidx] == '-') {
+                        scanidx++;
+                    }
+                }
+
+                // everything within brackets is treated as a literal character
+                // we have to parse them one by one, though, because we might
+                // need to escape regex-relevant stuff
+                for (unsigned fw = scanidx ;  ; fw++) {
+                    if (pattern[fw] == '\\') {
+                        // skip to next char
                         continue;
                     }
-
-                    if (*cc == '/')
-                    {
-                        has_slash = 1;
-                        break;
+                    // check for terminating bracket
+                    else if (pattern[fw] == ']') {
+                        if (fw > scanidx && pattern[fw-1] != '\\') {
+                            break;
+                        }
+                    }
+                    // include literal character
+                    else {
+                        if (strchr(".(){}[]", pattern[fw]) != NULL) {
+                            ec_glob_catc(re_pattern, '\\');
+                        }
+                        ec_glob_catc(re_pattern, pattern[fw]);
                     }
                 }
 
-                /* if we have slash in the brackets, just do it literally */
-                if (has_slash)
-                {
-                    char *           right_bracket = strchr(c, ']');
-
-                    if (!right_bracket)  /* The right bracket may not exist */
-                        right_bracket = c + strlen(c);
-
-                    strcat(p_pcre, "\\");
-                    strncat(p_pcre, c, right_bracket - c);
-                    if (*right_bracket)  /* right_bracket is a bracket */
-                        strcat(p_pcre, "\\]");
-                    p_pcre += strlen(p_pcre);
-                    c = right_bracket;
-                    if (!*c)
-                        /* end of string, meaning that right_bracket is not a
-                         * bracket. Then we go back one character to make the
-                         * parsing end normally for the counter in the "for"
-                         * loop. */
-                        c -= 1;
-                    break;
+                // did we promise the minus a seat in the last row?
+                if (pattern[scanidx-1] == '-') {
+                    ec_glob_cats(re_pattern, "-]");
+                } else {
+                    ec_glob_catc(re_pattern, ']');
                 }
+                scanidx = newidx;
+            } else {
+                // literal bracket
+                ec_glob_cats(re_pattern, "\\[");
             }
-
-            is_in_bracket = 1;
-            if (*(c+1) == '!')     /* case of [!...] */
-            {
-                STRING_CAT(p_pcre, "[^", pcre_str_end);
-                ++ c;
-            }
-            else
-                *(p_pcre ++) = '[';
-
-            break;
-
-        case ']':
-            is_in_bracket = 0;
-            *(p_pcre ++) = *c;
-            break;
-
-        case '-':
-            if (is_in_bracket)      /* in brackets, - indicates range */
-                *(p_pcre ++) = *c;
-            else
-                STRING_CAT(p_pcre, "\\-", pcre_str_end);
-
-            break;
-        case '{':
-            if (!are_brace_paired)
-            {
-                STRING_CAT(p_pcre, "\\{", pcre_str_end);
-                break;
-            }
-
-            /* Check the case of {single}, where single can be empty */
-            {
-                char *                   cc;
-                _Bool                    is_single = 1;
-
-                for (cc = c + 1; *cc != '\0' && *cc != '}'; ++ cc)
-                {
-                    if (*cc == '\\' && *(cc+1) != '\0')
-                    {
-                        ++ cc;
-                        continue;
-                    }
-
-                    if (*cc == ',')
-                    {
-                        is_single = 0;
-                        break;
-                    }
-                }
-
-                if (*cc == '\0')
-                    is_single = 0;
-
-                if (is_single)      /* escape the { and the corresponding } */
-                {
-                    const char *        double_dots;
-                    int_pair            pair;
-                    int                 pcre_res[3];
-
-                    /* Check the case of {num1..num2} */
-                    rc = pcre_exec(re, NULL, c, (int) (cc - c + 1), 0, 0,
-                            pcre_res, 3);
-
-                    if (rc < 0)    /* not {num1..num2} case */
-                    {
-                        STRING_CAT(p_pcre, "\\{", pcre_str_end);
-
-                        memmove(cc+1, cc, strlen(cc) + 1);
-                        *cc = '\\';
-
-                        break;
-                    }
-
-                    /* Get the range */
-                    double_dots = strstr(c, "..");
-                    pair.num1 = atoi(c + 1);
-                    pair.num2 = atoi(double_dots + 2);
-
-                    utarray_push_back(nums, &pair);
-
-                    STRING_CAT(p_pcre, "([\\+\\-]?\\d+)", pcre_str_end);
-                    c = cc;
-
-                    break;
-                }
-            }
-
-            ++ brace_level;
-            STRING_CAT(p_pcre, "(?:", pcre_str_end);
-            break;
-
-        case '}':
-            if (!are_brace_paired)
-            {
-                STRING_CAT(p_pcre, "\\}", pcre_str_end);
-                break;
-            }
-
-            -- brace_level;
-            *(p_pcre ++) = ')';
-            break;
-
-        case ',':
-            if (brace_level > 0)  /* , inside {...} */
-                *(p_pcre ++) = '|';
-            else
-                STRING_CAT(p_pcre, "\\,", pcre_str_end);
-            break;
-
-        case '/':
-            // /**/ case, match both single / and /anything/
-            if (!strncmp(c, "/**/", 4))
-            {
-                STRING_CAT(p_pcre, "(\\/|\\/.*\\/)", pcre_str_end);
-                c += 3;
-            }
-            else
-                STRING_CAT(p_pcre, "\\/", pcre_str_end);
-
-            break;
-
-        default:
-            if (!isalnum(*c))
-                *(p_pcre ++) = '\\';
-
-            *(p_pcre ++) = *c;
+        }
+        // escape special chars
+        else if (strchr(".(){}[]", c) != NULL) {
+            ec_glob_catc(re_pattern, '\\');
+            ec_glob_catc(re_pattern, c);
+        }
+        // literal (includes path separators)
+        else {
+            ec_glob_catc(re_pattern, c);
         }
     }
 
-    *(p_pcre ++) = '$';
+    // terminate the regular expression
+    ec_glob_catc(re_pattern, '$');
+    ec_glob_catc(re_pattern, '\0');
 
-    pcre_free(re); /* ^\\d+\\.\\.\\d+$ */
 
-    re = pcre_compile(pcre_str, 0, &error_msg, &erroffset, NULL);
+    // compile pattern and execute matching
+    regex_t re;
+    int status;
+    int flags = REG_EXTENDED;
 
-    if (!re)        /* failed to compile */
-    {
-        utarray_free(nums);
-        return -1;
+    // when we don't have a num-pattern, don't capture anything
+    if (numrange_grp_count == 0) {
+        flags |= REG_NOSUB;
     }
 
-    pcre_result_len = 3 * (utarray_len(nums) + 1);
-    pcre_result = (int *) calloc(pcre_result_len, sizeof(int_pair));
-    rc = pcre_exec(re, NULL, string, (int) strlen(string), 0, 0,
-            pcre_result, pcre_result_len);
+    if ((status = regcomp(&re, re_pattern.str, flags)) == 0) {
+        status = regexec(&re, string, numrange_max, numrange_matches, 0);
 
-    if (rc < 0)     /* failed to match */
-    {
-        if (rc == PCRE_ERROR_NOMATCH)
-            ret = EC_GLOB_NOMATCH;
-        else
-            ret = rc;
-
-        pcre_free(re);
-        free(pcre_result);
-        utarray_free(nums);
-
-        return ret;
+        // check num ranges
+        for (unsigned i = 0 ; status == 0 && i < numrange_grp_count ; i++) {
+            regmatch_t nm = numrange_matches[numrange_grp_idx[i]];
+            int nmlen = nm.rm_eo-nm.rm_so;
+            char *nmatch = malloc(nmlen+1);
+            memcpy(nmatch, string+nm.rm_so, nmlen);
+            nmatch[nmlen] = '\0';
+            errno = 0;
+            char *chk;
+            long num = strtol(nmatch, &chk, 10);
+            if (*chk == '\0' && 0 == errno) {
+                // check if the matched number is within the range
+                status |= !(numrange_pairs[i].min <= num
+                        && num <= numrange_pairs[i].max);
+            } else {
+                // number not processable, return error
+                status = 1;
+            }
+            free(nmatch);
+        }
+        regfree(&re);
     }
 
-    /* Whether the numbers are in the desired range? */
-    for(p = (int_pair *) utarray_front(nums), i = 1; p;
-            ++ i, p = (int_pair *) utarray_next(nums, p))
-    {
-        const char * substring_start = string + pcre_result[2 * i];
-        size_t  substring_length = pcre_result[2 * i + 1] - pcre_result[2 * i];
-        char *       num_string;
-        int          num;
-
-        /* we don't consider 0digits such as 010 as matched */
-        if (*substring_start == '0')
-            break;
-
-        num_string = strndup(substring_start, substring_length);
-        num = atoi(num_string);
-        free(num_string);
-
-        if (num < p->num1 || num > p->num2) /* not matched */
-            break;
+    if (re_pattern.capacity > EC_GLOB_STACK_CAPACITY) {
+        free(re_pattern.str);
     }
 
-    if (p != NULL)      /* numbers not matched */
-        ret = EC_GLOB_NOMATCH;
-
-    pcre_free(re);
-    free(pcre_result);
-    utarray_free(nums);
-
-    return ret;
+    return status;
 }

@@ -126,7 +126,7 @@ fi
 
 # direct dependencies of xnedit and xnc
 cygver=`uname -s`
-for file in cygX11-6.dll cygwin1.dll cygxcb-1.dll cygXau-6.dll cygXdmcp-6.dll cygXft-2.dll cygfontconfig-1.dll cygexpat-1.dll cygfreetype-6.dll cygbrotlidec-1.dll cygbrotlicommon-1.dll cygbz2-1.dll cygpng16-16.dll cygz.dll cygintl-8.dll cygiconv-2.dll cyguuid-1.dll cygXrender-1.dll cygXm-4.dll cygjpeg-8.dll cygXext-6.dll cygXmu-6.dll cygXt-6.dll cygICE-6.dll cygSM-6.dll cygXpm-4.dll cygpcre-1.dll ; do
+for file in cygX11-6.dll cygwin1.dll cygxcb-1.dll cygXau-6.dll cygXdmcp-6.dll cygXft-2.dll cygfontconfig-1.dll cygexpat-1.dll cygfreetype-6.dll cygbrotlidec-1.dll cygbrotlicommon-1.dll cygbz2-1.dll cygpng16-16.dll cygz.dll cygintl-8.dll cygiconv-2.dll cyguuid-1.dll cygXrender-1.dll cygXm-4.dll cygjpeg-8.dll cygXext-6.dll cygXmu-6.dll cygXt-6.dll cygICE-6.dll cygSM-6.dll cygXpm-4.dll ; do
    if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlidec-1.dll") then continue ; fi
    if (test "$cygver" = "CYGWIN_NT-5.1" && test "$file" = "cygbrotlicommon-1.dll") then continue ; fi
    cp "$root/bin/$file" "$pkg/cygroot/bin"

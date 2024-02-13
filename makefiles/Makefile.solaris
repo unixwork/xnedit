@@ -23,12 +23,12 @@ ARCH=-m64
 #ARCH=-m32
 
 PKGCONFIG_CFLAGS:sh=pkg-config --cflags xft fontconfig
-CFLAGS=-O -std=gnu99 $(ARCH) -I/usr/openwin/include -I/usr/include/X11 -I/usr/include/pcre $(PKGCONFIG_CFLAGS)
+CFLAGS=-O -std=gnu99 $(ARCH) -I/usr/openwin/include -I/usr/include/X11 $(PKGCONFIG_CFLAGS)
 
 ARFLAGS=-urs
 
 PKGCONFIG_LIBS:sh = pkg-config --libs-only-l xft fontconfig
-LIBS= -L/usr/lib $(ARCH) -R/usr/sfw/lib/64 -L/usr/sfw/lib/64 -lpcre -lm -lXm -lXt -lX11 -lXrender \
+LIBS= -L/usr/lib $(ARCH) -R/usr/sfw/lib/64 -L/usr/sfw/lib/64 -lm -lXm -lXt -lX11 -lXrender \
     	-lsocket -lnsl $(PKGCONFIG_LIBS)
 
 include Makefile.common
