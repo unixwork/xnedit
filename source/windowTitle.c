@@ -149,7 +149,7 @@ static char* safeStrCpy(char* dest, char* destEnd, const char* source)
    }
 }
 
-static char* safeCharAdd(char* dest, char* destEnd, char c)
+static char* safeCharAdd(char* dest, const char* destEnd, char c)
 {
    if (destEnd - dest > 0)
    {
@@ -336,7 +336,6 @@ char *FormatWindowTitle(const char* filename,
                     }
                     titlePtr = safeStrCpy(titlePtr, titleEnd, enc);
                     break;
-                    break;
                 case '0': /* directory with limited no. of components */
                 case '1':
                 case '2':
@@ -400,7 +399,7 @@ char *FormatWindowTitle(const char* filename,
                    
 		case '*': /* short file status ? */
                     fileStatusPresent = True;
-		    if (*titleFormat && *titleFormat == 'S')
+		    if (*titleFormat == 'S')
 		    {
 			++titleFormat;
 			shortStatus = True;

@@ -5251,16 +5251,16 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 
     /* Reset all of the heights, scroll positions, etc. */
     for (i=0; i<=window->nPanes; i++) {
-    	textDisp *textD;
+    	textDisp *paneTextD;
 	
     	text = i==0 ? window->textArea : window->textPanes[i-1];
 	TextSetCursorPos(text, insertPositions[i]);
 	TextSetScroll(text, topLines[i], horizOffsets[i]);
 
 	/* dim the cursor */
-    	textD = ((TextWidget)text)->text.textD;
-	TextDSetCursorStyle(textD, DIM_CURSOR);
-	TextDUnblankCursor(textD);
+    	paneTextD = ((TextWidget)text)->text.textD;
+	TextDSetCursorStyle(paneTextD, DIM_CURSOR);
+	TextDUnblankCursor(paneTextD);
     }
         
     /* set the focus pane */
