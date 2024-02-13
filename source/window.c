@@ -5351,7 +5351,6 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     window->autoSaveOpCount = orgWin->autoSaveOpCount;
     window->undoOpCount = orgWin->undoOpCount;
     window->undoMemUsed = orgWin->undoMemUsed;
-    window->lockReasons = orgWin->lockReasons;
     window->autoSave = orgWin->autoSave;
     window->saveOldVersion = orgWin->saveOldVersion;
     window->wrapMode = orgWin->wrapMode;

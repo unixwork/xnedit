@@ -973,14 +973,6 @@ static void copyCommandLineArg(CommandLine *commandLine, const char *arg)
 {
     const char *c;
     char *outPtr = commandLine->shell + strlen(commandLine->shell);
-#if defined(VMS) || defined(__EMX__)
-    /* Non-Unix shells don't want/need esc */
-    for (c=arg; *c!='\0'; c++) {
-	*outPtr++ = *c;
-    }
-    *outPtr++ = ' ';
-    *outPtr = '\0';
-#else
     *outPtr++ = '\'';
     for (c=arg; *c!='\0'; c++) {
 	if (*c == '\'') {
@@ -995,7 +987,6 @@ static void copyCommandLineArg(CommandLine *commandLine, const char *arg)
     *outPtr++ = '\'';
     *outPtr++ = ' ';
     *outPtr = '\0';
-#endif /* VMS */
 }
 
 /* Print version of 'xnc' */
