@@ -27,8 +27,7 @@ sources are:
  - Xrender and Xft
  - iconv (*BSD, cygwin)
  - Fontconfig
- - Motif 2.0 or above 
- - libpcre (Perl Compatible Regular Expressions library v8.x)
+ - Motif 2.0 or above
  
 Optionally one may use:
  

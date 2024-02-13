@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+version 1.6.0 (tbd.)
+--------------------------
+
+ - removed dependency to libpcre for matching editorconfig patterns
+
 version 1.5.3 (2024-02-12)
 --------------------------
 

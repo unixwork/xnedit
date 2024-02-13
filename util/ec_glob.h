@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2014-2018 Hong Xu <hong AT topbug DOT net>
- * All rights reserved.
- * 
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+ *
+ * Copyright 2024 Mike Becker - All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
+ *
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,27 +24,17 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-#ifndef __EC_GLOB_H__
-#define __EC_GLOB_H__
-
-/* include "global.h" */
-#define EDITORCONFIG_LOCAL
-
-#define EC_GLOB_NOMATCH  1   /* Match failed. */
+#ifndef EC_GLOB_H
+#define EC_GLOB_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-EDITORCONFIG_LOCAL
 int ec_glob(const char * pattern, const char * string);
-
-/* Special characters. */
-extern const char ec_special_chars[];
-
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
-#endif /* !__EC_GLOB_H__ */
+#endif /* EC_GLOB_H */
