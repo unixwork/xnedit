@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Feb 12, 2024 (Do NOT edit!)
+                 Generated on Feb 13, 2024 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2024 Mark Edel                                            *
@@ -5160,9 +5160,6 @@ static char * htxt_version [] = {
 "not obligated to do so. If you do not wish to do so, delete this ",
 "exception statement from your version. ",
 "\n\n",
-"Some files from the EditorConfig C Library are used, which are distributed ",
-"under the Simplified BSD license. ",
-"\n\n",
 "This program is distributed in the hope that it will be useful, ",
 "but WITHOUT ANY WARRANTY; without even the implied warranty of ",
 "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ",
@@ -5845,5 +5842,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit 1.5.3\nFeb 12, 2024\n";
-#define XNEDIT_IS_RELEASE
+static const char * NEditVersion = "XNEdit rev 17d5172 2024-02-13\n";

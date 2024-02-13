@@ -5392,9 +5392,6 @@ Version
   you may extend this exception to your version of the file, but you are
   not obligated to do so. If you do not wish to do so, delete this
   exception statement from your version.
-  
-  Some files from the EditorConfig C Library are used, which are distributed
-  under the Simplified BSD license.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
