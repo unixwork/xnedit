@@ -285,34 +285,6 @@ static const Dimension XT_IGNORE_PPOSITION = 32767;
 static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
 
-// TODO: remove code dup (filadialog.c)
-#define DETECT_ENCODING "detect"
-static char *default_encodings[] = {
-    DETECT_ENCODING,
-    "UTF-8",
-    "UTF-16",
-    "UTF-16BE",
-    "UTF-16LE",
-    "UTF-32",
-    "UTF-32BE",
-    "UTF-32LE",
-    "ISO8859-1",
-    "ISO8859-2",
-    "ISO8859-3",
-    "ISO8859-4",
-    "ISO8859-5",
-    "ISO8859-6",
-    "ISO8859-7",
-    "ISO8859-8",
-    "ISO8859-9",
-    "ISO8859-10",
-    "ISO8859-13",
-    "ISO8859-14",
-    "ISO8859-15",
-    "ISO8859-16",
-    NULL
-};
-
 /*
 ** Create a new editor window
 */
@@ -1867,6 +1839,7 @@ void ShowEncodingInfoBar(WindowInfo *window, int state)
     int index = 0;
     
     // add default encodings
+    const char *default_encodings = FileDialogDefaultEncodings();
     for(i=0;(encStr=default_encodings[i]);i++) {
         if(i >= arraylen) {
             arraylen *= 2;

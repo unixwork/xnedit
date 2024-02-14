@@ -1503,7 +1503,6 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     } else
     {
         strcpy(fullname, file->path);
-        // TODO: create window_set_encoding function
         if(!strcmp(file->encoding, "UTF-8")) {
             window->encoding[0] = '\0';
         } else {

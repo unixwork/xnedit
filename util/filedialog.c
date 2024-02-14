@@ -2429,7 +2429,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         
         // TODO: code dup of encoding list generation (window.c)
         
-        char *encStr;
+        const char *encStr;
         XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
         /* skip the "detect" item on type == save */
         int skip = type == FILEDIALOG_OPEN ? 0 : 1;
@@ -2441,7 +2441,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
                 arraylen *= 2;
                 encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
             }
-            encodings[i] = XmStringCreateSimple(encStr);
+            encodings[i] = XmStringCreateSimple((char*)encStr);
             if(defEncoding) {
                 if(!strcasecmp(defEncoding, encStr)) {
                     hasDef = 1;
@@ -2764,4 +2764,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtUnmapWidget(dialog);
     XtDestroyWidget(dialog);
     return data.status;
+}
+
+const char ** FileDialogDefaultEncodings(void) {
+    return (const char **)default_encodings;
 }
