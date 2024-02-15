@@ -36,6 +36,8 @@
 
 #define PREVIEW_STR "ABCDEFGHIJabcdefghijklmn[](){}.:,;-_$%&/\"'"
 
+#define MONOSPACE_ONLY_DEFAULT 1
+
 typedef struct FontSelector {
     FcPattern *filter;
     FcFontSet *list;
@@ -236,19 +238,19 @@ static char* CreateFontName(FcChar8 *family, FcChar8 *style) {
     return name;
 }
 
-static void UpdateFontList(FontSelector *sel, char *pattern)
+static void UpdateFontList(FontSelector *sel, const char *pattern)
 {
     XmStringTable items;
     FcChar8 *name;
     FcChar8 *family;
     FcChar8 *style;
     int nfonts, nfound;
-    
-    if(sel->filter) {
-        FcPatternDestroy(sel->filter);
-        sel->filter = NULL;
-    }
+      
     if(pattern) {
+        if(sel->filter) {
+            FcPatternDestroy(sel->filter);
+            sel->filter = NULL;
+        }
         sel->filter = FcNameParse((FcChar8*)pattern);
     }
     if(!sel->filter) {
@@ -261,6 +263,10 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     FcObjectSetAdd(os, FC_FULLNAME);
     FcObjectSetAdd(os, FC_SCALABLE);
     FcObjectSetAdd(os, FC_SPACING);
+    
+    if(sel->list) {
+        FcFontSetDestroy(sel->list);
+    }
     sel->list = FcFontList(NULL, sel->filter, os);
     FcObjectSetDestroy(os);
     
@@ -298,6 +304,10 @@ static void UpdateFontList(FontSelector *sel, char *pattern)
     }
     
     XtVaSetValues(sel->fontlist, XmNitems, items, XmNitemCount, nfound, NULL);
+    for(int i=0;i<nfound;i++) {
+        XmStringFree(items[i]);
+    }
+    NEditFree(items);
 }
 
 static void MatchFont(const char *name, XmString *retName, XmString *retSize)
@@ -421,6 +431,23 @@ static void fontlist_callback(Widget w, FontSelector *sel, XmListCallbackStruct 
 {
     sel->selected_item = cb->item_position;
     UpdateFontName(sel);
+}
+
+static void SetMonospaceFilter(FontSelector *sel, Boolean on)
+{
+    if(sel->filter) {
+        FcPatternDestroy(sel->filter);
+    }
+    sel->filter = FcPatternCreate();
+    if(on) {
+        FcPatternAddInteger(sel->filter, FC_SPACING, FC_MONO);
+    }
+}
+
+void fontlist_toggle_monospace(Widget w, FontSelector *sel, XmToggleButtonCallbackStruct *cb)
+{
+    SetMonospaceFilter(sel, cb->set);
+    UpdateFontList(sel, NULL);
 }
 
 void size_callback (Widget w, FontSelector *sel, XtPointer data)
@@ -564,10 +591,29 @@ char *FontSel(Widget parent, const char *curFont)
             (XtCallbackProc)exposeFontPreview,
             sel);
     
+    /* toggle monospace */
+    n = 0;
+    str = XmStringCreateSimple("Show only non-proportional fonts");
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopOffset, 5); n++;
+    XtSetArg(args[n], XmNleftOffset, 5); n++;
+    XtSetArg(args[n], XmNlabelString, str); n++;
+    XtSetArg(args[n], XmNset, MONOSPACE_ONLY_DEFAULT); n++;
+    Widget toggleMonospace = XmCreateToggleButton(form, "toggle_monospace", args, n);
+    XtManageChild(toggleMonospace);
+    XmStringFree(str);
+    XtAddCallback(
+            toggleMonospace,
+            XmNvalueChangedCallback,
+            (XtCallbackProc)fontlist_toggle_monospace,
+            sel);
+    
     /* label */
     n = 0;
     str = XmStringCreateSimple("Font:");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, toggleMonospace); n++;
     XtSetArg(args[n], XmNtopOffset, 5); n++;
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
@@ -578,7 +624,8 @@ char *FontSel(Widget parent, const char *curFont)
     
     n = 0;
     str = XmStringCreateSimple("Size:");
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, toggleMonospace); n++;
     XtSetArg(args[n], XmNtopOffset, 5); n++;
     XtSetArg(args[n], XmNrightOffset, 5); n++;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
@@ -637,6 +684,7 @@ char *FontSel(Widget parent, const char *curFont)
     
     UpdatePreview(sel, curFont);
     
+    SetMonospaceFilter(sel, MONOSPACE_ONLY_DEFAULT);
     UpdateFontList(sel, NULL);
     XmString fontSelection;
     XmString sizeSelection;
