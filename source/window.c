@@ -1834,18 +1834,18 @@ void ShowEncodingInfoBar(WindowInfo *window, int state)
     
     int arraylen = 22;
     XmStringTable encodings = NEditCalloc(arraylen, sizeof(XmString));
-    char *encStr;
+    const char *encStr;
     int i;
     int index = 0;
     
     // add default encodings
-    const char *default_encodings = FileDialogDefaultEncodings();
+    const char **default_encodings = FileDialogDefaultEncodings();
     for(i=0;(encStr=default_encodings[i]);i++) {
         if(i >= arraylen) {
             arraylen *= 2;
             encodings = NEditRealloc(encodings, arraylen * sizeof(XmString));
         }
-        encodings[i] = XmStringCreateSimple(encStr);
+        encodings[i] = XmStringCreateSimple((char*)encStr);
         
         if(def) {
             if(!strcasecmp(def, encStr)) {
