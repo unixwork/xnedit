@@ -634,6 +634,29 @@ char *FontSel(Widget parent, const char *curFont)
     XtManageChild(fontSizeLabel);
     XmStringFree(str);
     
+    /* font size list */
+    n = 0;
+    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNtopWidget, fontSizeLabel); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightOffset, 5); n++;
+    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNbottomWidget, previewFrame); n++;
+    XtSetArg(args[n], XmNleftOffset, 2); n++;
+    XtSetArg(args[n], XmNbottomOffset, 2); n++;
+    XtSetArg(args[n], XmNtopOffset, 2); n++;
+    sel->size = XmCreateScrolledList(form, "sizelist", args, n);
+    CreateSizeList(sel->size);
+    XtAddCallback (sel->size, XmNbrowseSelectionCallback, (XtCallbackProc)size_callback, sel);
+    XmListSelectPos(sel->size, 6, 0);
+    XtManageChild(sel->size);
+    
+    Dimension szListWidth;
+    XtVaGetValues(sel->size, XmNwidth, &szListWidth, NULL);
+    if(szListWidth > 0 && szListWidth < 40) {
+        XtVaSetValues(sel->size, XmNwidth, 40, NULL);
+    }
+    
     /* font list */
     n = 0;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
@@ -642,6 +665,8 @@ char *FontSel(Widget parent, const char *curFont)
     XtSetArg(args[n], XmNbottomOffset, 2); n++;
     XtSetArg(args[n], XmNleftOffset, 5); n++;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+    XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+    XtSetArg(args[n], XmNrightWidget, sel->size); n++;
     XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNbottomWidget, previewFrame); n++;
     XtSetArg(args[n], XmNvisibleItemCount, 10); n++;
@@ -654,33 +679,6 @@ char *FontSel(Widget parent, const char *curFont)
                 (XtCallbackProc)fontlist_callback,
                 sel);
     
-    /* font size list */
-    n = 0;
-    XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNtopWidget, fontSizeLabel); n++;
-    XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-    XtSetArg(args[n], XmNrightOffset, 5); n++;
-    XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNleftWidget, sel->fontlist); n++;
-    XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-    XtSetArg(args[n], XmNbottomWidget, previewFrame); n++;
-    XtSetArg(args[n], XmNleftOffset, 2); n++;
-    XtSetArg(args[n], XmNbottomOffset, 2); n++;
-    XtSetArg(args[n], XmNtopOffset, 2); n++;
-    sel->size = XmCreateScrolledList(form, "sizelist", args, n);
-    CreateSizeList(sel->size);
-    XtAddCallback (sel->size, XmNbrowseSelectionCallback, (XtCallbackProc)size_callback, sel);
-    XmListSelectPos(sel->size, 6, 0);
-    XtManageChild(sel->size);
-    
-    /*
-    CreateSizeList(sel->size);
-    XtManageChild(sel->size);
-    str = XmStringCreateSimple("10");
-    XmComboBoxSelectItem(sel->size, str);
-    XtAddCallback (sel->size, XmNselectionCallback, (XtCallbackProc)size_callback, sel);
-    XmStringFree(str);
-    */
     
     UpdatePreview(sel, curFont);
     
