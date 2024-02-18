@@ -1089,6 +1089,11 @@ static void destroy(TextWidget w)
     XtRemoveAllCallbacks((Widget)w, textNcursorMovementCallback);
     XtRemoveAllCallbacks((Widget)w, textNdragStartCallback);
     XtRemoveAllCallbacks((Widget)w, textNdragEndCallback);
+    
+    FontUnref(w->text.font2);
+    FontUnref(w->text.boldFont);
+    FontUnref(w->text.italicFont);
+    FontUnref(w->text.boldItalicFont);
 
 #ifndef NO_XMIM
     /* Unregister the widget from the input manager */

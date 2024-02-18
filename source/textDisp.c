@@ -395,6 +395,15 @@ void TextDInitXft(textDisp *textD) {
 void TextDFree(textDisp *textD)
 {
     FontUnref(textD->font);
+    FontUnref(textD->boldFont);
+    FontUnref(textD->italicFont);
+    FontUnref(textD->boldItalicFont);
+    
+    NEditFree(textD->multicursor);
+    
+    if(textD->indentRainbowColors) {
+        NEditFree(textD->indentRainbowColors);
+    }
     
     BufRemoveModifyCB(textD->buffer, bufModifiedCB, textD);
     BufRemovePreDeleteCB(textD->buffer, bufPreDeleteCB, textD);
