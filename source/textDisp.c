@@ -3841,6 +3841,8 @@ static int countLines(const char *string)
 */
 static int measureVisLine(textDisp *textD, int visLineNum)
 {
+    // TODO: this function needs some performance improvements
+    
     textBuffer *buf = textD->buffer;
     int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
@@ -3876,6 +3878,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
         
         width += stringWidth4(textD, expandedChar, charLen, font);
     }
+    NEditFree(lineStr);
     return width;
 }
 
