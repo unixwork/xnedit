@@ -853,7 +853,7 @@ PathBar* CreatePathBar(Widget parent, ArgList args, int n)
     
     bar->segmentAlloc = 16;
     bar->numSegments = 0;
-    bar->pathSegments = calloc(16, sizeof(Widget));
+    bar->pathSegments = NEditCalloc(16, sizeof(Widget));
     
     bar->selection = 0;
     
@@ -972,6 +972,13 @@ void PathBarSetPath(PathBar *bar, char *path)
     pathbar_resize(bar->widget, bar, NULL);
 }
 
+void PathBarDestroy(PathBar *pathbar) {
+    if(pathbar->path) {
+        NEditFree(pathbar->path);
+    }
+    NEditFree(pathbar->pathSegments);
+    NEditFree(pathbar);
+}
 
 
 
@@ -1423,8 +1430,12 @@ static void free_files(FileElm *ls, int count)
 
 static void filedialog_cleanup_filedata(FileDialogData *data)
 {
-    free_files(data->dirs, data->dircount);
-    free_files(data->files, data->filecount);
+    if(data->dirs) {
+        free_files(data->dirs, data->dircount);
+    }
+    if(data->files) {
+        free_files(data->files, data->filecount);
+    }
     data->dirs = NULL;
     data->files = NULL;
     data->dircount = 0;
@@ -2761,6 +2772,11 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.status = FILEDIALOG_CANCEL;
     }
    
+    filedialog_cleanup_filedata(&data);
+    PathBarDestroy(data.pathBar);
+    if(data.currentPath) {
+        NEditFree(data.currentPath);
+    }
     XtUnmapWidget(dialog);
     XtDestroyWidget(dialog);
     return data.status;
