@@ -5126,7 +5126,7 @@ void FontDestroy(NFont *f)
     while(l) {
         XftFontClose(f->display, l->font);
         nl = l->next;
-        NEditFree(nl);
+        NEditFree(l);
         l = nl;
     }
     
