@@ -3935,7 +3935,6 @@ static void blankCursorProtrusions(textDisp *textD) {
 ** Allocate shared graphics contexts used by the widget, which must be
 ** re-allocated on a font change.
 */
-// TODO: remove unused parameters
 static void allocateFixedFontGCs(textDisp *textD, Pixel bgPixel, Pixel fgPixel)
 {
     textD->gc = allocateGC(textD->w, GCForeground | GCBackground,
