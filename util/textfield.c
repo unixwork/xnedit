@@ -43,7 +43,6 @@
 #define TF_TAB_STR "    "
 
 static NFont *defaultFont;
-static Dimension defaultMaxLength = 4;
 
 static void textfield_class_init(void);
 
@@ -695,7 +694,6 @@ static void insertText(TextFieldWidget tf, char *chars, int nchars, XEvent *even
 static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     
-    XKeyEvent *e = &event->xkey;
     char chars[128];
     KeySym keysym;
     int nchars;
@@ -716,7 +714,7 @@ static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 }
 
 static void actionAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
-    TextFieldWidget tf = (TextFieldWidget)w;
+    //TextFieldWidget tf = (TextFieldWidget)w;
 }
 
 static void deleteText(TextFieldWidget tf, int from, int to, XEvent *event) {
@@ -815,9 +813,9 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args, Cardinal *nA
     
     int wright;
     int index = tf->textfield.pos;
-    wordbounds(tf, tf->textfield.pos, NULL, &wright);
+    wordbounds(tf, index, NULL, &wright);
     
-    TFDelete(tf, tf->textfield.pos, wright);
+    TFDelete(tf, index, wright);
     tfRedrawText(tf);
 }
 
@@ -944,7 +942,7 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
                 tf);
     }
     
-    Region r;
+    Region r = NULL;
     textfield_expose(w, event, r);
 }
 
@@ -962,7 +960,7 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     tf->textfield.cursorOn = 1;
     
     tf->textfield.hasFocus = 0;
-    Region r;
+    Region r = NULL;
     textfield_expose(w, event, r);
 }
 
