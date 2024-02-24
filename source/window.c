@@ -4582,7 +4582,7 @@ int SaveFilesDialog(WindowInfo *window)
             }
         }
     }
-    
+    NEditFree(docButtons);
     XtDestroyWidget(dialog);
     
     return data.status == 2 ? True : False;
