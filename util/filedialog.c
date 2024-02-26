@@ -2522,7 +2522,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     data.selectedview = LastView;
     
     // form for dir/file lists
-    int layout = 2;
     n = 0;
     XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_WIDGET); n++;
@@ -2536,7 +2535,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
     XtSetArg(args[n], XmNwidth, 580); n++;
     XtSetArg(args[n], XmNheight, 400); n++;
-    layout = n;
     data.listform = XmCreateForm(form, "fds_listform", args, n); 
     
     // dir/file lists
