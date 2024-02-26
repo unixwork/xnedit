@@ -3089,8 +3089,6 @@ int BufEscPos2Index(
     *value = prev_sum;
     
     
-    //printf("%zu -> %zu, %zu\n", pos, *index, *value);
-    
     return 0;
 }
 
@@ -3135,14 +3133,11 @@ static void bufRemoveEscSeq(textBuffer *buf, size_t pos, size_t nDeleted, ssize_
 {
     size_t nDeleteEsc = 0;                      // number of deleted esc
     size_t num_escpos = buf->num_ansi_escpos;   // array length
-    size_t prev_pos = startValue;                        // abs position of esc before delete
+    size_t prev_pos = startValue;               // abs position of esc before delete
     size_t cur_pos = startValue;
     size_t i;
     for(i=startPos+1;i<num_escpos;i++) {
         cur_pos += buf->ansi_escpos[i];
-        //if(cur_pos < pos) {
-        //    prev_pos = cur_pos;
-        //}
         if(cur_pos >= pos+nDeleted) {
             break;
         }
@@ -3167,21 +3162,7 @@ static void bufRemoveEscSeq(textBuffer *buf, size_t pos, size_t nDeleted, ssize_
 }
 
 void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDeleted)
-{
-    /*
-    if(nInserted + nDeleted == 0) {
-        size_t p = 0;
-        for(int i=0;i<buf->num_ansi_escpos;i++) {
-            int ap = buf->ansi_escpos[i];
-            unsigned int c = BufGetCharacter(buf, p+ap);
-            printf("%zu-%d : %x\n", p+ap, ap, c);
-            p += ap;
-        }
-        printf("\n");
-        return;
-    }
-    //*/
-    
+{    
     // get previous element
     ssize_t startPos;   // index to previous escape sequence
     size_t startValue;  // abs position of previous esc
@@ -3189,7 +3170,7 @@ void BufParseEscSeq(textBuffer *buf, size_t pos, size_t nInserted, size_t nDelet
     BufEscPos2Index(buf, 0, 0, pos, &startPos, &startValue);
     insertPos = startPos + 1;
     
-    // handle deletee
+    // handle delete
     if(nDeleted > 0) {
         bufRemoveEscSeq(buf, pos, nDeleted, startPos, startValue);
     }
@@ -3236,7 +3217,7 @@ static int bufEscCharLen(const textBuffer *buf, int pos)
         if(c < '0' || (c > '9' && c != ';')) break;
     }
     i = i-pos+1;
-    return i; //+ BufCharLen(buf, i);
+    return i;
 }
 
 int BufCharLen(const textBuffer *buf, int pos)
