@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <Xm/XmAll.h>
+#include <Xm/XmP.h>
 
 #include <X11/Xft/Xft.h>
 #include <fontconfig/fontconfig.h>
@@ -52,6 +53,7 @@ typedef struct FontSelector {
     XftFont *bold;
     XftFont *italic;
     XftDraw *draw;
+    XftColor color;
     
     int selected_item;
     int end;
@@ -122,6 +124,20 @@ static void InitXftDraw(FontSelector *sel)
             XtWindow(sel->preview),
             visual,
             colormap);
+    
+    Pixel previewFg;
+    XtVaGetValues(sel->preview, XmNforeground, &previewFg, NULL);
+    
+    XColor xcolor;
+    memset(&xcolor, 0, sizeof(XColor));
+    xcolor.pixel = previewFg;
+    XQueryColor(XtDisplay(sel->preview), sel->preview->core.colormap, &xcolor);
+    
+    sel->color.pixel = previewFg;
+    sel->color.color.red = xcolor.red;
+    sel->color.color.green = xcolor.green;
+    sel->color.color.blue = xcolor.blue;
+    sel->color.color.alpha = 0xFFFF;
 }
 
 static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
@@ -132,12 +148,6 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
     }
     
     XClearWindow(XtDisplay(w), XtWindow(w));
-    
-    XftColor color;
-    color.color.red = 0;
-    color.color.green = 0;
-    color.color.blue = 0;
-    color.color.alpha = 0xFFFF;
     
     Dimension width, height;
     XtVaGetValues(
@@ -167,7 +177,7 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
     int y = space/2;
     XftDrawStringUtf8(
             sel->draw,
-            &color,
+            &sel->color,
             sel->font,
             10,
             y + sel->font->ascent,
@@ -178,7 +188,7 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
     if(sel->bold) {
         XftDrawStringUtf8(
             sel->draw,
-            &color,
+            &sel->color,
             sel->bold,
             10,
             y + sel->bold->ascent,
@@ -189,7 +199,7 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
     if(sel->italic) {
         XftDrawStringUtf8(
             sel->draw,
-            &color,
+            &sel->color,
             sel->italic,
             10,
             y + sel->italic->ascent,
