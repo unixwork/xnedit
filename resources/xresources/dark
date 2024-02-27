@@ -1,0 +1,100 @@
+*highlightColor: #4a90d9
+
+*XmDialogShell.background:	#121212
+*XmDialogShell.foreground:	#ffffff
+
+*XmForm.background:	#121212
+*XmForm.foreground:	#ffffff
+
+*XmFrame.background:	#121212
+*XmFrame.foreground:	#ffffff
+
+*XmPanedWindow.background:	#2b2b2b
+*XmPanedWindow.foreground:	#ffffff
+
+*XmRowColumn.background:	#2b2b2b
+*XmRowColumn.foreground:	#ffffff
+
+*XmMenuShell.background:	#2b2b2b
+*XmMenuShell.foreground:	#ffffff
+
+*XmMessageBox.background:	#2b2b2b
+*XmMessageBox.foreground:	#ffffff
+
+*XmScrollBar.background:	#2b2b2b
+*XmScrollBar.foreground:	#ffffff
+
+*XmScrolledWindow.background:	#2b2b2b
+*XmScrolledWindow.foreground:	#ffffff
+
+*XmSelectionBox.background:	#2b2b2b
+*XmSelectionBox.foreground:	#ffffff
+
+
+
+*XmLabel.background:	#121212
+*XmLabel.foreground:	#ffffff
+*XmLabelGadget.background:	#121212
+*XmLabelGadget.foreground:	#ffffff
+
+*XmPushButton.background:	#222222
+*XmPushButton.foreground:	#ffffff
+*XmPushButtonGadget.background:	#222222
+*XmPushButtonGadget.foreground:	#ffffff
+*XmPushButton.highlightThickness: 2
+
+*XmCascadeButton.background:	#222222
+*XmCascadeButton.foreground:	#ffffff
+*XmCascadeButtonGadget.background:	#222222
+*XmCascadeButtonGadget.foreground:	#ffffff
+*XmCascadeButtonGadget.highlightThickness: 2
+
+*XmTearOffButton.background:	#222222
+*XmTearOffButton.foreground:	#ffffff
+*XmTearOffButtonGadget.background:	#222222
+*XmTearOffButtonGadget.foreground:	#ffffff
+*XmTearOffButtonGadget.highlightThickness: 2
+
+*XmToggleButton.background:	#222222
+*XmToggleButton.foreground:	#ffffff
+*XmToggleButtonGadget.background:	#222222
+*XmToggleButtonGadget.foreground:	#ffffff
+*XmToggleButtonGadget.highlightThickness: 2
+
+*XmSeparator.background:	#121212
+*XmSeparator.foreground:	#ffffff
+*XmSeparatorGadget.background:	#121212
+*XmSeparatorGadget.foreground:	#ffffff
+
+*XmList.background:	#1a1a1a
+*XmList.foreground:	#ffffff
+
+*XmSash.background:	#1a1a1a
+*XmSash.foreground:	#ffffff
+
+*XmText.background:	#1a1a1a
+*XmText.foreground:	#ffffff
+
+*XmTextField.foreground:	#ffffff
+*XmTextField.background:	#121212
+
+
+*TextWidget.background: #1a1a1a
+
+
+*enableEtchedInMenu:	True
+*enableMenuInCascade:	True
+*enableThinThickness:	True
+*ScrollbarBackground:	#2b2b2b
+
+*foreground: #ffffff
+*background: #121212
+
+
+*text.background: #f5f5f5
+
+*topShadowColor: #3d3d3d
+*bottomShadowColor: #6e6e6e
+
+*defaultRT.renditionForeground: #ffffff
+*fixedRT.renditionForeground: #ffffff
