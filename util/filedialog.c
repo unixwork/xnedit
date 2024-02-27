@@ -38,6 +38,9 @@
 
 #include"../Microline/XmL/Grid.h"
 
+#include <X11/Xresource.h>
+
+
 /* nedit utils */
 #include "nedit_malloc.h"
 #include "utils.h"
@@ -2627,11 +2630,23 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XmLGridSetSort(data.grid, file_cmp_field, sort_type);  
     XtManageChild(data.grid);
     
+    // get the XmList background color
+    const char *cellBg = "white";
+    XrmValue value;
+    char *resourceType = NULL;
+    
+    // Get the resource value from the resource database
+    if(XrmGetResource(XtDatabase(XtDisplay(data.grid)), "XmList", "background", &resourceType, &value)) {
+        if(!strcmp(resourceType, "String")) {
+            cellBg = value.addr;
+        }
+    }
+    
     XtVaSetValues(
             data.grid,
             XmNcellDefaults, True,
-            XtVaTypedArg, XmNblankBackground, XmRString, "white", 6,
-            XtVaTypedArg, XmNcellBackground, XmRString, "white", 6,
+            XtVaTypedArg, XmNblankBackground, XmRString, cellBg, strlen(cellBg),
+            XtVaTypedArg, XmNcellBackground, XmRString, cellBg, strlen(cellBg),
             NULL);
     
     //XmLGridSetStrings(data.grid, "Name|Size|Last Modified");
