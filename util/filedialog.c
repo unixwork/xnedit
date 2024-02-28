@@ -2636,7 +2636,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     char *resourceType = NULL;
     
     // Get the resource value from the resource database
-    if(XrmGetResource(XtDatabase(XtDisplay(data.grid)), "XmList", "background", &resourceType, &value)) {
+    if(XrmGetResource(XtDatabase(XtDisplay(data.grid)), "XmList.background", NULL, &resourceType, &value)) {
         if(!strcmp(resourceType, "String")) {
             cellBg = value.addr;
         }
