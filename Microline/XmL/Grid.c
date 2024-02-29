@@ -8600,6 +8600,7 @@ _GridColumnNew(Widget grid)
 	column->grid.width = 8;
 	column->grid.userData = 0;
 	column->grid.resizable = True;
+        column->grid.sort = XmSORT_NONE; // fix XNE uninitialized memory access
     column->grid.hidden = 0;
 	return column;
 	}
