@@ -1734,6 +1734,7 @@ void set_path_from_row(FileDialogData *data, int row) {
     
     if(data->type == FILEDIALOG_SAVE) {
         XmTextFieldSetString(data->name, FileName(path));
+        NEditFree(path);
     } else {
         if(data->selectedPath) {
             NEditFree(data->selectedPath);
@@ -2783,6 +2784,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         }
     } else {
         data.status = FILEDIALOG_CANCEL;
+        if(data.selectedPath) {
+            NEditFree(data.selectedPath);
+        }
     }
    
     filedialog_cleanup_filedata(&data);
