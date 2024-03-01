@@ -707,11 +707,15 @@ static char *fillParagraph(char *text, int leftMargin, int firstLineIndent,
        margin width is exceeded, search backward for beginning of the word
        and convert the last whitespace character into a newline */
     col = firstLineIndent;
-    for (c=cleanedText; *c!='\0'; c++) {
-    	if (*c == '\n')
-    	    col = leftMargin;
-    	else
-    	    col += BufCharWidth(*c, col, tabDist, nullSubsChar);
+    int inc = 1;
+    for (c=cleanedText; *c!='\0'; c+=inc) {
+    	if (*c == '\n') {
+            col = leftMargin;
+            inc = 1;
+        } else {
+            col += BufCharWidth(*c, col, tabDist, nullSubsChar);
+            inc = Utf8CharLen((unsigned char*)c);
+        }
     	if (col-1 > rightMargin) {
     	    inWhitespace = True;
     	    for (b=c; b>=cleanedText && *b!='\n'; b--) {
