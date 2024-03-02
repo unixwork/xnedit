@@ -420,9 +420,18 @@ static void create_image(Display *dp, Visual *visual, int depth, Pixmap pix, con
     size_t len = wh*wh;
     for(int i=0;i<len;i++) {
         uint32_t pixel = src[i];
+#if defined(__sparc) || defined(__sparc__)
+        // big endian: sparc is probably the only relevant platform
+        //uint8_t alpha = pixel & 0xFF;
+        uint8_t blue = (pixel & 0xFF00) >> 8;
+        uint8_t green = (pixel & 0xFF0000) >> 16;
+        uint8_t red = (pixel & 0xFF000000) >> 24;
+#else
+        // little endian: basically all modern cpus
         uint8_t red = pixel & 0xFF;
         uint8_t green = (pixel & 0xFF00) >> 8;
         uint8_t blue = (pixel & 0xFF0000) >> 16;
+#endif
         // TODO: work with alpha value
         if(pixel == UINT32_MAX) {
             red = bgColor.red;
