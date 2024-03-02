@@ -142,8 +142,10 @@ void XdndInit(
     dropData = dropCBData;
 }
 
+
+
 void XdndEnable(Widget w) {
-    int version = 4;
+    long version = 4;
     XChangeProperty(
             XtDisplay(w),
             XtWindow(w),
