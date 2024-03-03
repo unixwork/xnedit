@@ -2494,6 +2494,7 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         for(int i=0;i<rainbowColors.ncolors;i++) {
             profile->rainbowColors[i] = ParseXftColor(display, cmap, foreground, depth, rainbowColors.colors[i]);
         }
+        profile->numRainbowColors = rainbowColors.ncolors;
         free(rainbowColors.colors);
         free(rainbowColors.liststr);
     }
@@ -2504,6 +2505,7 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         for(int i=0;i<ansiColors.ncolors;i++) {
             profile->ansiColors[i] = ParseXftColor(display, cmap, foreground, depth, ansiColors.colors[i]);
         }
+        profile->numAnsiColors = ansiColors.ncolors;
         free(ansiColors.colors);
         free(ansiColors.liststr);
     }

@@ -104,6 +104,9 @@ typedef struct _ColorProfile {
     Boolean  windowDarkTheme;
     XrmDatabase *db;
     
+    Boolean  modified;
+    struct _ColorProfile *orig;
+    
     struct _ColorProfile *next;
 } ColorProfile;
 

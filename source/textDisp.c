@@ -2743,7 +2743,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         color = textD->colorProfile->selectFgColor;
     }
     else if (highlightLine && textD->highlightCursorLine) {
-        bground = &textD->colorProfile->hiliteBgColor;
+        bground = &textD->colorProfile->lineHiBgColor;
     }
     else {
         gc = &textD->colorProfile->textFgColor;

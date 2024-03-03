@@ -246,8 +246,16 @@ void SetPrefLockEncodingError(int state);
 int GetPrefLockEncodingError(void);
 
 ColorProfile* GetDefaultColorProfile(void);
+ColorProfile* GetColorProfiles(void);
 char* GetPrefDefaultColorProfileName(void);
 void SetPrefDefaultColorProfileName(char *str);
+
+void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to);
+
+int GetNumColorProfiles(void);
+
+char* WriteColorProfilesString(void);
+
 
 char* ChangeFontSize(const char *name, int newsize);
 
