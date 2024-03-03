@@ -3221,7 +3221,7 @@ static int updateGutterWidth(WindowInfo* window)
 
         XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
         XftFont *xftFont = FontDefault(fs);
-        fontWidth = xftFont->max_advance_width;
+        fontWidth = fs->maxWidth; //xftFont->max_advance_width;
 
         XtVaGetValues(window->shell, XmNwidth, &windowWidth, NULL);
         XtVaSetValues(window->shell,
@@ -3462,7 +3462,7 @@ void UpdateWMSizeHints(WindowInfo *window)
     XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
     font = FontDefault(fs);
     fontHeight = textD->ascent + textD->descent;
-    fontWidth = font->max_advance_width;
+    fontWidth = fs->maxWidth; //font->max_advance_width;
 
     /* Find the base (non-expandable) width and height of the editor window.
     
@@ -3499,7 +3499,7 @@ void UpdateWMSizeHints(WindowInfo *window)
     baseHeight = shellHeight - nRows * fontHeight;
 
     /* Set the size hints in the shell widget */
-    XtVaSetValues(window->shell, XmNwidthInc, font->max_advance_width,
+    XtVaSetValues(window->shell, XmNwidthInc, fs->maxWidth,
             XmNheightInc, fontHeight,
             XmNbaseWidth, baseWidth, XmNbaseHeight, baseHeight,
             XmNminWidth, baseWidth + fontWidth,
