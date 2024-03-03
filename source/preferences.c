@@ -6775,7 +6775,7 @@ void ChooseColors(WindowInfo *window)
             &(cd->ansiWhiteW), &(cd->ansiWhiteErrW), tmpW, 1, 49, cd );
 
     /* The right column (backgrounds) */
-    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "BrightBlack",
+    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "Bright Black",
             &(cd->ansiBrightBlackW), &(cd->ansiBrightBlackErrW), topW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "ansiBrightRed", 'B', "Bright Red",
             &(cd->ansiBrightRedW), &(cd->ansiBrightRedErrW), tmpW, 51, 99, cd );
