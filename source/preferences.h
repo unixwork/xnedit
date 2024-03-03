@@ -241,6 +241,9 @@ int GetPrefLockEncodingError(void);
 
 char* ChangeFontSize(const char *name, int newsize);
 
+void ColorProfileDestroy(ColorProfile *profile);
 char* ParseAnsiColorList(char **array, const char *str);
+
+void ParseColorProfiles(const char *str);
 
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */

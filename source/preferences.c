@@ -126,6 +126,8 @@ static char *SearchMethodStrings[] = {
 	NULL
 };
 
+static ColorProfile *colorProfiles;
+
 #ifdef REPLACE_SCOPE
 /* enumerated default scope for replace dialog if a selection exists when
 ** the dialog is popped up.
@@ -369,6 +371,8 @@ static struct prefData {
     NFont *italicFont;
     NFont *boldItalicFont;
     
+    ColorProfile colorProfiles;
+    
     char *iconSize;
     int closeIconSize;
     int isrcFindIconSize;
@@ -430,6 +434,7 @@ static struct {
     char *smartIndent;
     char *smartIndentCommon;
     char *shell;
+    char *colorProfiles;
 } TempStringPrefs;
 
 /* preference descriptions for SavePreferences and RestorePreferences. */
@@ -905,6 +910,12 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.ansiColorList, NULL, True},
     {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
       &PrefData.ansiColors, NULL, True},
+    {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING,
+       "Test:colors:{black;white;black;rgb:cc/cc/cc;white;red;#4a4a4a;rgb:f2/f2/f2;black;rgb:ee/ee/ee},"
+       "ansi:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
+       "rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
+       "res:{test.res}", &TempStringPrefs.colorProfiles,
+	NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -1432,6 +1443,11 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	LoadSmartIndentCommonString(TempStringPrefs.smartIndentCommon);
 	NEditFree(TempStringPrefs.smartIndentCommon);
 	TempStringPrefs.smartIndentCommon = NULL;
+    }
+    if (TempStringPrefs.colorProfiles != NULL) {
+        ParseColorProfiles(TempStringPrefs.colorProfiles);
+        NEditFree(TempStringPrefs.colorProfiles);
+        TempStringPrefs.colorProfiles = NULL;
     }
     if (PrefData.iconSize) {
         parseIconSize(PrefData.iconSize);
@@ -6918,6 +6934,240 @@ static void loadAnsiColors(colorDialog *cd)
    
     
     NEditFree(colorListStr);
+}
+
+
+typedef struct ColorList {
+    char *liststr;
+    char **colors;
+    size_t ncolors;
+} ColorList;
+
+ColorList ParseColorList(const char *str, size_t len)
+{
+    ColorList list = { NULL, NULL, 0 };
+    
+    // copy str
+    list.liststr = NEditMalloc(len+1);
+    memcpy(list.liststr, str, len);
+    list.liststr[len] = 0;
+    
+    size_t alloc = 16;
+    list.colors = NEditCalloc(alloc, sizeof(char*));
+    
+    // parse str
+    int b = 0;
+    for(int i=0;i<=len;i++) {
+        char c = list.liststr[i];
+        if(c == ';' || c == '\0') {
+            if(list.ncolors >= alloc) {
+                alloc += 8;
+                list.colors = NEditRealloc(list.colors, alloc * sizeof(char*));
+            }
+            
+            list.colors[list.ncolors++] = list.liststr+b;
+            list.liststr[i] = '\0';
+            b = i+1;
+        }
+    }
+    
+    return list;
+}
+
+void ColorProfileDestroy(ColorProfile *profile)
+{
+    NEditFree(profile->name);
+    NEditFree(profile->textFg);
+    NEditFree(profile->textBg);
+    NEditFree(profile->selectFg);
+    NEditFree(profile->hiliteFg);
+    NEditFree(profile->hiliteBg);
+    NEditFree(profile->lineNoFg);
+    NEditFree(profile->lineNoBg);
+    NEditFree(profile->cursorFg);
+    NEditFree(profile->lineHiBg);
+    NEditFree(profile->ansiColorList);
+    NEditFree(profile->rainbowColorList);
+    NEditFree(profile->resourceFile);
+    
+    NEditFree(profile);
+}
+
+static int GetCgProfileName(const char *str, size_t len, const char **out_name, size_t *out_namelen)
+{
+    const char *name = str;
+    size_t namelen = 0;
+    for(int i=0;i<len;i++) {
+        if(str[i] == ':') {
+            namelen = i;
+            break;
+        }
+    }
+    while(namelen > 0 && isspace(*name)) {
+        name++;
+        namelen--;
+    }
+    if(namelen == 0) {
+        return 0;
+    }
+    
+    *out_name = name;
+    *out_namelen = namelen;
+    
+    return 1;
+}
+
+static int GetCgProfileSection(const char *str, size_t len, const char **sectionName, size_t *sectionNameLen, const char **list, size_t *listlen)
+{
+    if(!GetCgProfileName(str, len, sectionName, sectionNameLen)) {
+        return 0;
+    }
+    
+    const char *listStr = str + *sectionNameLen + 1;
+    size_t remainingLen = len - (listStr - str);
+    size_t listStrLen = 0;
+    
+    if(remainingLen == 0 || listStr[0] != '{') {
+        return 0;
+    }
+    
+    // find '}'
+    for(int i=0;i<remainingLen;i++) {
+        if(listStr[i] == '}') {
+            listStrLen = i+1;
+            break;
+        }
+    }
+    
+    if(listStrLen <= 2) {
+        // empty list str
+        return 0;
+    }
+    
+    *list = listStr+1;
+    *listlen = listStrLen-2;
+    
+    return (listStr - str) + listStrLen;
+}
+
+static ColorProfile* ParseColorProfile(const char *str, size_t len)
+{
+    // get profile name
+    const char *name = str;
+    size_t namelen = 0;
+    if(!GetCgProfileName(str, len, &name, &namelen)) {
+        return NULL;
+    }
+    
+    // get sections
+    const char *remaining = name + namelen + 1;
+    size_t remainingLen = len - (remaining - str);
+    
+    int err = 0;
+    ColorProfile *profile = NEditMalloc(sizeof(ColorProfile));
+    memset(profile, 0, sizeof(ColorProfile));
+    profile->name = NEditMalloc(namelen+1);
+    memcpy(profile->name, name, namelen);
+    profile->name[namelen] = 0;
+    
+    while(remainingLen > 0) {
+        const char *sectionName = NULL;
+        size_t sectionNameLen = 0;
+        const char *sectionColors = NULL;
+        size_t sectionColorsLen = 0;
+        
+        int sectionLen = GetCgProfileSection(remaining, remainingLen, &sectionName, &sectionNameLen, &sectionColors, &sectionColorsLen);
+        if(sectionLen > 0) {
+            
+            // parse colors
+            if(!strncmp(sectionName, "colors", sectionNameLen)) {
+                ColorList colors = ParseColorList(sectionColors, sectionColorsLen);
+                profile->textFg = NEditStrdup(colors.ncolors >= 1 ? colors.colors[0] : GetPrefColorName(TEXT_FG_COLOR));
+                profile->textBg = NEditStrdup(colors.ncolors >= 2 ? colors.colors[1] : GetPrefColorName(TEXT_BG_COLOR));
+                profile->selectFg = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(SELECT_FG_COLOR));
+                profile->selectBg = NEditStrdup(colors.ncolors >= 4 ? colors.colors[3] : GetPrefColorName(SELECT_BG_COLOR));
+                profile->hiliteFg = NEditStrdup(colors.ncolors >= 5 ? colors.colors[4] : GetPrefColorName(HILITE_FG_COLOR));
+                profile->hiliteBg = NEditStrdup(colors.ncolors >= 6 ? colors.colors[5] : GetPrefColorName(HILITE_BG_COLOR));
+                profile->lineNoFg = NEditStrdup(colors.ncolors >= 7 ? colors.colors[6] : GetPrefColorName(LINENO_FG_COLOR));
+                profile->lineNoBg = NEditStrdup(colors.ncolors >= 8 ? colors.colors[7] : GetPrefColorName(LINENO_BG_COLOR));
+                profile->cursorFg = NEditStrdup(colors.ncolors >= 9 ? colors.colors[8] : GetPrefColorName(CURSOR_FG_COLOR));
+                profile->lineHiBg = NEditStrdup(colors.ncolors >= 10 ? colors.colors[9] : GetPrefColorName(CURSOR_LINE_BG_COLOR));
+                free(colors.liststr);
+                free(colors.colors);
+            } else if(!strncmp(sectionName, "ansi", sectionNameLen)) {
+                profile->ansiColorList = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->ansiColorList, sectionColors, sectionColorsLen);
+                profile->ansiColorList[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "rainbow", sectionNameLen)) {
+                profile->rainbowColorList = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->rainbowColorList, sectionColors, sectionColorsLen);
+                profile->rainbowColorList[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "res", sectionNameLen)) {
+                profile->resourceFile = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->resourceFile, sectionColors, sectionColorsLen);
+                profile->resourceFile[sectionColorsLen] = 0;
+            } else {
+                fprintf(stderr, "XNEdit: Error: cannot parse color profile %s: unknown str '%.*s'\n", profile->name, (int)sectionNameLen, sectionName);
+            }
+            
+            
+            // next section
+            remaining += sectionLen;
+            remainingLen -= sectionLen;
+            
+            // skip ',' before next section
+            if(remainingLen > 0 && remaining[0] == ',') {
+                remainingLen--;
+                remaining++;
+            }
+        } else {
+            err = 1;
+            break;
+        }
+    }
+    
+    if(err) {
+        ColorProfileDestroy(profile);
+        profile = NULL;
+    }
+    
+    
+    return profile;
+}
+
+void ParseColorProfiles(const char *str)
+{
+    ColorProfile *profilesListBegin = NULL;
+    ColorProfile *profilesListEnd = NULL;
+    
+    size_t len = strlen(str);
+    if(len == 0) {
+        return;
+    }
+    
+    // each line contains one color profile
+    // parse each line and add the profiles to a linked list
+    int lineStart = 0;
+    for(int i=0;i<=len;i++) {
+        if(i == len || str[i] == '\n') {
+            ColorProfile *cgProfile = ParseColorProfile(str+lineStart, i-lineStart);
+            lineStart = i+1;
+            
+            if(cgProfile) {
+                if(profilesListEnd) {
+                    profilesListEnd->next = cgProfile;
+                    profilesListEnd = cgProfile;
+                } else {
+                    profilesListBegin = cgProfile;
+                    profilesListEnd = cgProfile;
+                }
+            }
+        }
+    }
+    
+    // TODO: add default color profile
+    
+    colorProfiles = profilesListBegin;
 }
 
 /*
