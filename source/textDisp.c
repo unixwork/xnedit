@@ -3896,7 +3896,7 @@ static int emptyLinesVisible(textDisp *textD)
 static void blankSingleCursorProtrusions(textDisp *textD)
 {
     int x, width, cursorX = textD->cursor->x, cursorY = textD->cursor->y;
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth; //FontDefault(textD->font)->max_advance_width;
     int fontHeight = textD->ascent + textD->descent;
     int cursorWidth, left = textD->left, right = left + textD->width;
     
