@@ -48,6 +48,12 @@ enum helpFonts {HELP_FONT, BOLD_HELP_FONT, ITALIC_HELP_FONT,
     H1_HELP_FONT, H2_HELP_FONT, H3_HELP_FONT, NUM_HELP_FONTS
 };
 
+typedef struct ColorList {
+    char *liststr;
+    char **colors;
+    size_t ncolors;
+} ColorList;
+
 XrmDatabase CreateNEditPrefDB(int *argcInOut, char **argvInOut);
 void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB);
 void SaveNEditPrefs(Widget parent, int quietly);
@@ -239,8 +245,13 @@ int GetPrefISrcClearIconSize(void);
 void SetPrefLockEncodingError(int state);
 int GetPrefLockEncodingError(void);
 
+ColorProfile* GetDefaultColorProfile(void);
+char* GetPrefDefaultColorProfileName(void);
+void SetPrefDefaultColorProfileName(char *str);
+
 char* ChangeFontSize(const char *name, int newsize);
 
+ColorList ParseColorList(const char *str, size_t len);
 void ColorProfileDestroy(ColorProfile *profile);
 char* ParseAnsiColorList(char **array, const char *str);
 

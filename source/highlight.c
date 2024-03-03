@@ -1958,13 +1958,30 @@ void SetParseColorError(int value)
     printParseColorError = value;
 }
 
+XftColor ParseXftColor(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName)
+{
+    XftColor xftColor;
+    memset(&xftColor, 0, sizeof(XftColor));
+    xftColor.color.alpha = 0xFFFF;
+    
+    XColor  colorDef;
+    if (XParseColor(display, colormap, colorName, &colorDef)) {
+        xftColor.color.red = colorDef.red;
+	xftColor.color.green = colorDef.green;
+	xftColor.color.blue = colorDef.blue;
+    } else if(printParseColorError)  {
+        fprintf(stderr, "XNEdit: Color name %s not in database\n",  colorName);
+    }
+    
+    return xftColor;
+}
+
 /*
 ** Allocate a read-only (shareable) colormap cell for a named color, from the
 ** the default colormap of the screen on which the widget (w) is displayed. If
 ** the colormap is full and there's no suitable substitute, print an error on
 ** stderr, and return the widget's foreground color as a backup.
 */
-
 Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b)
 {
     XColor       colorDef;

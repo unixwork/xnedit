@@ -912,7 +912,7 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.ansiColors, NULL, True},
     {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING,
        "Test:colors:{black;white;black;rgb:cc/cc/cc;white;red;#4a4a4a;rgb:f2/f2/f2;black;rgb:ee/ee/ee},"
-       "ansi:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
+       "ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},"
        "rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
        "res:{test.res}", &TempStringPrefs.colorProfiles,
 	NULL, True},
@@ -2365,6 +2365,18 @@ void SetPrefLockEncodingError(int state)
 int GetPrefLockEncodingError(void)
 {
     return PrefData.lockEncodingError;
+}
+
+ColorProfile* GetDefaultColorProfile(void) {
+    return colorProfiles; // TODO:
+}
+
+char* GetPrefDefaultColorProfileName(void) {
+    return NULL; // TODO
+}
+
+void SetPrefDefaultColorProfileName(char *str) {
+    // TODO
 }
 
 
@@ -6008,10 +6020,14 @@ static void updateColors(colorDialog *cd)
     
     // update windows
     for (window = WindowList; window != NULL; window = window->next) {
-        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
+        SetColors_Deprecated(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
                 hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
-        SetIndentRainbowColors(window, irStr);
-        SetAnsiColorList(window, ansiColorList);
+        SetIndentRainbowColors_Deprecated(window, irStr);
+        SetAnsiColorList_Deprecated(window, ansiColorList);
+        
+        ColorProfile *profile = GetDefaultColorProfile();
+        profile->colorsLoaded = FALSE;
+        SetColorProfile(window, GetDefaultColorProfile()); // TODO
     }
     
     // cleanup
@@ -6852,7 +6868,7 @@ static void updateRainbowColors(indentColorDialog *cd)
     WindowInfo *window;
     for (window = WindowList; window != NULL; window = window->next)
     {
-        SetIndentRainbowColors(window, colors);
+        SetIndentRainbowColors_Deprecated(window, colors);
     }
     
     SetPrefIndentRainbowColors(colors);
@@ -6936,12 +6952,6 @@ static void loadAnsiColors(colorDialog *cd)
     NEditFree(colorListStr);
 }
 
-
-typedef struct ColorList {
-    char *liststr;
-    char **colors;
-    size_t ncolors;
-} ColorList;
 
 ColorList ParseColorList(const char *str, size_t len)
 {

@@ -970,7 +970,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->lastFocus = text;
 
     /* Set the initial colors from the globals. */
-    SetColors(window,
+    SetColors_Deprecated(window,
               GetPrefColorName(TEXT_FG_COLOR  ),
               GetPrefColorName(TEXT_BG_COLOR  ),
               GetPrefColorName(SELECT_FG_COLOR),
@@ -981,7 +981,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(LINENO_BG_COLOR), 
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
-    SetAnsiColorList(window, GetPrefAnsiColorList());
+    SetAnsiColorList_Deprecated(window, GetPrefAnsiColorList());
+    SetColorProfile(window, GetDefaultColorProfile());
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -1606,13 +1607,10 @@ void SplitPane(WindowInfo *window)
     textD = ((TextWidget)window->textArea)->text.textD;
     newTextD = ((TextWidget)text)->text.textD;
     XtVaSetValues(text,
-                XmNforeground, textD->fgPixel.pixel,
-                XmNbackground, textD->bgPixel.pixel,
+                XmNforeground, textD->colorProfile->textFgColor.pixel,
+                XmNbackground, textD->colorProfile->textBgColor.pixel,
                 NULL);
-    TextDSetColors( newTextD, &textD->fgPixel, &textD->bgPixel, 
-            &textD->selectFGPixel, &textD->selectBGPixel, &textD->highlightFGPixel,
-            &textD->highlightBGPixel, &textD->lineNumFGPixel, &textD->lineNumBGPixel,
-            &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
+    TextDSetColorProfile(newTextD, textD->colorProfile);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2377,7 +2375,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     UpdateMinPaneHeights(window);
 }
 
-void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
+void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
         const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
         const char *cursorFg, const char *lineHiBg)
@@ -2423,7 +2421,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             XmNbackground, textBgPix,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
-    TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+    TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
             &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
             &cursorFgC, &lineHiBgC );
     /* Update any additional panes */
@@ -2433,9 +2431,107 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 XmNbackground, textBgPix,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
-        TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+        TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
                 &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
                 &cursorFgC, &lineHiBgC );
+    }
+    
+    /* Redo any syntax highlighting */
+    if (window->highlightData != NULL)
+        UpdateHighlightStyles(window, True);
+}
+
+static void LoadColorProfile(Widget w, ColorProfile *profile)
+{
+    Colormap     cmap;
+    Pixel        foreground;
+    int          depth;
+    XtVaGetValues(w,
+                  XtNcolormap,   &cmap,
+                  XtNdepth,      &depth,
+                  XtNforeground, &foreground,
+                  NULL);
+    
+    Display *display = XtDisplay(w);   
+    
+    int i, dummy;
+        Pixel   textFgPix   = AllocColor( w, profile->textFg, 
+                    &dummy, &dummy, &dummy),
+            textBgPix   = AllocColor( w, profile->textBg, 
+                    &dummy, &dummy, &dummy),
+            selectFgPix = AllocColor( w, profile->selectFg, 
+                    &dummy, &dummy, &dummy),
+            selectBgPix = AllocColor( w, profile->selectBg, 
+                    &dummy, &dummy, &dummy),
+            hiliteFgPix = AllocColor( w, profile->hiliteFg, 
+                    &dummy, &dummy, &dummy),
+            hiliteBgPix = AllocColor( w, profile->hiliteBg, 
+                    &dummy, &dummy, &dummy),
+            lineNoFgPix = AllocColor( w, profile->lineNoFg, 
+                    &dummy, &dummy, &dummy),
+            lineNoBgPix = AllocColor( w, profile->lineNoBg, 
+                    &dummy, &dummy, &dummy),
+            cursorFgPix = AllocColor( w, profile->cursorFg, 
+                    &dummy, &dummy, &dummy),
+            lineHiBgPix = AllocColor( w, profile->lineHiBg, 
+                    &dummy, &dummy, &dummy);
+    textDisp *textD;
+    
+    profile->textFgColor = PixelToColor(w, textFgPix);
+    profile->textBgColor = PixelToColor(w, textBgPix);
+    profile->selectFgColor = PixelToColor(w, selectFgPix);
+    profile->selectBgColor = PixelToColor(w, selectBgPix);
+    profile->hiliteFgColor = PixelToColor(w, hiliteFgPix);
+    profile->hiliteBgColor = PixelToColor(w, hiliteBgPix);
+    profile->lineNoFgColor = PixelToColor(w, lineNoFgPix);
+    profile->lineNoBgColor = PixelToColor(w, lineNoBgPix);
+    profile->cursorFgColor = PixelToColor(w, cursorFgPix);
+    profile->lineHiBgColor = PixelToColor(w, lineHiBgPix);
+    
+    if(profile->rainbowColorList) {
+        ColorList rainbowColors = ParseColorList(profile->rainbowColorList, strlen(profile->rainbowColorList));
+        profile->rainbowColors = NEditCalloc(rainbowColors.ncolors, sizeof(XftColor));
+        for(int i=0;i<rainbowColors.ncolors;i++) {
+            profile->rainbowColors[i] = ParseXftColor(display, cmap, foreground, depth, rainbowColors.colors[i]);
+        }
+        free(rainbowColors.colors);
+        free(rainbowColors.liststr);
+    }
+    
+    if(profile->ansiColorList) {
+        ColorList ansiColors = ParseColorList(profile->ansiColorList, strlen(profile->ansiColorList));
+        profile->ansiColors = NEditCalloc(ansiColors.ncolors, sizeof(XftColor));
+        for(int i=0;i<ansiColors.ncolors;i++) {
+            profile->ansiColors[i] = ParseXftColor(display, cmap, foreground, depth, ansiColors.colors[i]);
+        }
+        free(ansiColors.colors);
+        free(ansiColors.liststr);
+    }
+    
+    profile->colorsLoaded = TRUE;
+}
+
+void SetColorProfile(WindowInfo *window, ColorProfile *profile)
+{
+    if(!profile->colorsLoaded) {
+        LoadColorProfile(window->textArea, profile);
+    }
+    
+    /* Update the main pane */
+    XtVaSetValues(window->textArea,
+            XmNforeground, profile->textFgColor.pixel,
+            XmNbackground, profile->textBgColor.pixel,
+            NULL);
+    textDisp *textD = ((TextWidget)window->textArea)->text.textD;
+    TextDSetColorProfile( textD, profile);
+    /* Update any additional panes */
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i],
+                XmNforeground, profile->textFgColor.pixel,
+                XmNbackground, profile->textBgColor.pixel,
+                NULL);
+        textD = ((TextWidget)window->textPanes[i])->text.textD;
+        TextDSetColorProfile( textD, profile);
     }
     
     /* Redo any syntax highlighting */
@@ -3695,7 +3791,7 @@ void SetHighlightCursorLine(WindowInfo *window, Boolean state)
     }
 }
 
-void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
+void SetIndentRainbowColors_Deprecated(WindowInfo *window, const char *colorList)
 {
     NEditFree(window->indentRainbowColors);
     window->indentRainbowColors = NEditStrdup(colorList);
@@ -3729,7 +3825,7 @@ void SetAnsiColors(WindowInfo *window, Boolean state)
     }
 }
 
-void SetAnsiColorList(WindowInfo *window, const char *colorList)
+void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList)
 {
     memset(window->ansiColorList, 0, sizeof(window->ansiColorList));
     
@@ -4075,7 +4171,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->lastFocus = text;
     
     /* Set the initial colors from the globals. */
-    SetColors(window,
+    SetColors_Deprecated(window,
               GetPrefColorName(TEXT_FG_COLOR  ),
               GetPrefColorName(TEXT_BG_COLOR  ),
               GetPrefColorName(SELECT_FG_COLOR),
@@ -4086,6 +4182,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(LINENO_BG_COLOR),
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    SetColorProfile(window, GetDefaultColorProfile());
+    // TODO: remove XtVaSetValues here, changing the color profile is enough
     XtVaSetValues(window->textArea,
           textNansiColorList, window->ansiColorList, NULL);
     for (int i=0; i<window->nPanes; i++) {
@@ -5197,14 +5295,10 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
-            XtVaSetValues(text, XmNforeground, textD->fgPixel.pixel,
-                    XmNbackground, textD->bgPixel.pixel, 
+            XtVaSetValues(text, XmNforeground, textD->colorProfile->textFgColor.pixel,
+                    XmNbackground, textD->colorProfile->textBgColor.pixel, 
                     textNansiColorList, window->ansiColorList, NULL);
-            TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
-                    &textD->selectFGPixel, &textD->selectBGPixel,
-                    &textD->highlightFGPixel, &textD->highlightBGPixel,
-                    &textD->lineNumFGPixel, &textD->lineNumBGPixel,
-                    &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
+            TextDSetColorProfile(newTextD, textD->colorProfile);
 	}
         
 	/* Set the minimum pane height in the new pane */
@@ -5290,7 +5384,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
-    SetIndentRainbowColors(window, orgWin->indentRainbowColors);
+    SetIndentRainbowColors_Deprecated(window, orgWin->indentRainbowColors);
     SetAnsiColors(window, orgWin->ansiColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     

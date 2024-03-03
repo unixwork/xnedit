@@ -279,46 +279,7 @@ typedef struct _EncError {
     int    c;
 } EncError;
 
-typedef struct _ColorProfile {
-    char     *name;
-    
-    char     *textFg;
-    char     *textBg;
-    char     *selectFg;
-    char     *selectBg;
-    char     *hiliteFg;
-    char     *hiliteBg;
-    char     *lineNoFg;
-    char     *lineNoBg;
-    char     *cursorFg;
-    char     *lineHiBg;
-    char     *ansiColorList;
-    char     *rainbowColorList;   
-    
-    Boolean  colorsLoaded;
-    
-    XftColor textFgColor;
-    XftColor textBgColor;
-    XftColor selectFgColor;
-    XftColor selectBgColor;
-    XftColor hiliteFgColor;
-    XftColor hiliteBgColor;
-    XftColor lineNoFgColor;
-    XftColor lineNoBgColor;
-    XftColor cursorFgColor;
-    XftColor lineHiBgColor;
-    
-    XftColor *ansiColors;
-    size_t   numAnsiColors;
-    XftColor *rainbowColors;
-    size_t   numRainbowColors;
-    
-    char     *resourceFile;
-    Boolean  windowDarkTheme;
-    XrmDatabase *db;
-    
-    struct _ColorProfile *next;
-} ColorProfile;
+
 
 /* The WindowInfo structure holds the information on a Document. A number
    of 'tabbed' documents may reside within a shell window, hence some of 
