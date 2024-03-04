@@ -6181,7 +6181,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
      
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
-          XmNcolumns, MAX_COLOR_LEN-1,
+          XmNcolumns, 12,
           XmNmaxLength, MAX_COLOR_LEN-1,
           XmNleftAttachment, XmATTACH_POSITION,
           XmNleftPosition, leftPos,
@@ -6424,7 +6424,7 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     XtSetArg(args[n], XmNleftWidget, down); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, remove); n++;
-    XtSetArg(args[n], XmNcolumns, 20); n++;
+    XtSetArg(args[n], XmNcolumns, 8); n++;
     Widget textfield = XmCreateText(cd->btnForm, "irText", args, n);
     XtManageChild(textfield);
     
@@ -6641,7 +6641,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
             NULL);  
-    
+        
     /*
      * Tab 1: Generral
      */
@@ -6714,7 +6714,7 @@ void ChooseColors(WindowInfo *window)
             XmNbottomAttachment, XmATTACH_FORM,
             XmNtopOffset, 3*h + 3*MARGIN_SPACING,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
-      
+    
     /*
      * Tab 2: Indent Rainbow Colors
      */
@@ -6809,7 +6809,7 @@ void ChooseColors(WindowInfo *window)
     
     /* Handle mnemonic selection of buttons and focus to dialog */
     AddDialogMnemonicHandler(form, FALSE);
-    
+        
     /* put up dialog */
     ManageDialogCenteredOnPointer(form);
 }
