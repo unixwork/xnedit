@@ -128,6 +128,7 @@ static char *SearchMethodStrings[] = {
 };
 
 static ColorProfile *colorProfiles;
+static ColorProfile *defaultColorProfile;
 
 #ifdef REPLACE_SCOPE
 /* enumerated default scope for replace dialog if a selection exists when
@@ -378,7 +379,7 @@ static struct prefData {
     NFont *italicFont;
     NFont *boldItalicFont;
     
-    ColorProfile colorProfiles;
+    char *defaultColorProfile;
     
     char *iconSize;
     int closeIconSize;
@@ -923,6 +924,8 @@ static PrefDescripRec PrefDescrip[] = {
        "rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
        "res:{test.res}", &TempStringPrefs.colorProfiles,
 	NULL, True},
+    {"defaultColorProfile", "DefaultColorProfile", PREF_ALLOC_STRING, "default",
+        &PrefData.defaultColorProfile, NULL, True},
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -2391,7 +2394,7 @@ int GetPrefLockEncodingError(void)
 }
 
 ColorProfile* GetDefaultColorProfile(void) {
-    return colorProfiles; // TODO:
+    return defaultColorProfile;
 }
 
 ColorProfile* GetColorProfiles(void) 
@@ -2400,11 +2403,13 @@ ColorProfile* GetColorProfiles(void)
 }
 
 char* GetPrefDefaultColorProfileName(void) {
-    return NULL; // TODO
+    return PrefData.defaultColorProfile;
 }
 
-void SetPrefDefaultColorProfileName(char *str) {
-    // TODO
+void SetPrefDefaultColorProfileName(const char *str) {
+    if(PrefData.defaultColorProfile) NEditFree(PrefData.defaultColorProfile);
+    PrefData.defaultColorProfile = NEditStrdup(str);
+    PrefsHaveChanged = True;
 }
 
 
@@ -6045,57 +6050,61 @@ static void updateColors(colorDialog *cd)
     
     saveColorProfileSettings(cd);
     
+    ColorProfile *setProfile = NULL;
+    
     // update color profiles
     ColorProfile *first = NULL;
     ColorProfile *prev = NULL;
     for(int i=0;i<cd->numColorProfiles;i++) {
         ColorProfile *profile = &cd->colorProfiles[i];
-        //ColorProfile *orig = profile->orig;
-        // not sure if we want to reuse old profile pointers
-        ColorProfile *orig = NEditMalloc(sizeof(ColorProfile));
-        memset(orig, 0, sizeof(ColorProfile));
-        if(orig) {
-            /*
-            NEditFree(orig->name);
-            NEditFree(orig->textFg);
-            NEditFree(orig->textBg);
-            NEditFree(orig->selectFg);
-            NEditFree(orig->selectBg);
-            NEditFree(orig->hiliteFg);
-            NEditFree(orig->hiliteBg);
-            NEditFree(orig->lineNoFg);
-            NEditFree(orig->lineNoBg);
-            NEditFree(orig->cursorFg);
-            NEditFree(orig->lineHiBg);
-            NEditFree(orig->ansiColorList);
-            NEditFree(orig->rainbowColorList);
-            NEditFree(orig->resourceFile);
-            */
-            
-            orig->name = NEditStrdup(profile->name);
-            orig->textFg = NEditStrdup(profile->textFg);
-            orig->textBg = NEditStrdup(profile->textBg);
-            orig->selectFg = NEditStrdup(profile->selectFg);
-            orig->selectBg = NEditStrdup(profile->selectBg);
-            orig->hiliteFg = NEditStrdup(profile->hiliteFg);
-            orig->hiliteBg = NEditStrdup(profile->hiliteBg);
-            orig->lineNoFg = NEditStrdup(profile->lineNoFg);
-            orig->lineNoBg = NEditStrdup(profile->lineNoBg);
-            orig->cursorFg = NEditStrdup(profile->cursorFg);
-            orig->lineHiBg = NEditStrdup(profile->lineHiBg);
-            orig->ansiColorList = NEditStrdup(profile->ansiColorList);
-            orig->rainbowColorList = NEditStrdup(profile->rainbowColorList);
-            orig->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
-            
-            orig->colorsLoaded = FALSE;
-            
-            if(prev) {
-                prev->next = orig;
-            } else {
-                first = orig;
-            }
-            orig = prev;
+        ColorProfile *prefProfile = profile->orig;
+        if(!prefProfile) {
+            prefProfile = NEditMalloc(sizeof(ColorProfile));
+            memset(prefProfile, 0, sizeof(ColorProfile));
         }
+        
+        NEditFree(prefProfile->name);
+        NEditFree(prefProfile->textFg);
+        NEditFree(prefProfile->textBg);
+        NEditFree(prefProfile->selectFg);
+        NEditFree(prefProfile->selectBg);
+        NEditFree(prefProfile->hiliteFg);
+        NEditFree(prefProfile->hiliteBg);
+        NEditFree(prefProfile->lineNoFg);
+        NEditFree(prefProfile->lineNoBg);
+        NEditFree(prefProfile->cursorFg);
+        NEditFree(prefProfile->lineHiBg);
+        NEditFree(prefProfile->ansiColorList);
+        NEditFree(prefProfile->rainbowColorList);
+        NEditFree(prefProfile->resourceFile);
+
+        prefProfile->name = NEditStrdup(profile->name);
+        prefProfile->textFg = NEditStrdup(profile->textFg);
+        prefProfile->textBg = NEditStrdup(profile->textBg);
+        prefProfile->selectFg = NEditStrdup(profile->selectFg);
+        prefProfile->selectBg = NEditStrdup(profile->selectBg);
+        prefProfile->hiliteFg = NEditStrdup(profile->hiliteFg);
+        prefProfile->hiliteBg = NEditStrdup(profile->hiliteBg);
+        prefProfile->lineNoFg = NEditStrdup(profile->lineNoFg);
+        prefProfile->lineNoBg = NEditStrdup(profile->lineNoBg);
+        prefProfile->cursorFg = NEditStrdup(profile->cursorFg);
+        prefProfile->lineHiBg = NEditStrdup(profile->lineHiBg);
+        prefProfile->ansiColorList = NEditStrdup(profile->ansiColorList);
+        prefProfile->rainbowColorList = NEditStrdup(profile->rainbowColorList);
+        prefProfile->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
+
+        prefProfile->colorsLoaded = FALSE;
+        
+        if(i == cd->selectedProfile) {
+            setProfile = prefProfile;
+        }
+
+        if(prev) {
+            prev->next = prefProfile;
+        } else {
+            first = prefProfile;
+        }
+        prev = prefProfile;
     }
     
     // update default profile
@@ -6113,11 +6122,17 @@ static void updateColors(colorDialog *cd)
     SetPrefIndentRainbowColors(defaultProfile.rainbowColorList);
     SetPrefAnsiColorList(defaultProfile.ansiColorList); 
     
-    // TODO: free previous color profiles
+    // TODO: free previous color profiles that are not in use
+    
     colorProfiles = first;
     
-    ColorProfile *setProfile = cd->colorProfiles[cd->selectedProfile].orig;
+    if(!setProfile) {
+        // should not happen but this makes it extra safe
+        setProfile = first;
+    }
     
+    SetPrefDefaultColorProfileName(setProfile->name);
+    defaultColorProfile = setProfile;
     
     // update windows
     for (window = WindowList; window != NULL; window = window->next) {  
@@ -6651,6 +6666,10 @@ void ChooseColors(WindowInfo *window)
     ColorProfile *profile = GetColorProfiles();
     int i = 0;
     while(profile) {
+        if(profile == defaultColorProfile) {
+            cd->selectedProfile = i;
+        }
+        
         ColorProfileCopySettings(profile, &cd->colorProfiles[i]);
         
         cgProfileList[i] = XmStringCreateSimple(profile->name);
@@ -6668,6 +6687,10 @@ void ChooseColors(WindowInfo *window)
     XtSetArg(args[ac], XmNcolumns, 20); ac++;
     cd->profileDropDown = XmCreateDropDownList(form, "combobox", args, ac);
     XtManageChild(cd->profileDropDown);
+    
+    s1 = XmStringCreateSimple(defaultColorProfile->name);
+    XmComboBoxSelectItem(cd->profileDropDown, s1);
+    XmStringFree(s1);
     
     XtAddCallback(cd->profileDropDown, XmNselectionCallback,(XtCallbackProc)colorDialogProfileSelected, cd);
     
@@ -7008,7 +7031,8 @@ static void clearRainbowColors(colorDialog *cd)
         XtDestroyWidget(children[i]);
     }
     
-    NEditFree(cd->indentRainbowColors);
+    //NEditFree(cd->indentRainbowColors);
+    //cd->indentRainbowColors = NULL;
     cd->numIndentRainbowColors = 0;
     
     cd->addBtn = NULL;
@@ -7391,6 +7415,11 @@ void ParseColorProfiles(const char *str)
     
     size_t len = strlen(str);
     
+    char *defaultProfileName = GetPrefDefaultColorProfileName();
+    if(!defaultProfileName) {
+        defaultProfileName = "default";
+    }
+    
     // each line contains one color profile
     // parse each line and add the profiles to a linked list
     int lineStart = 0;
@@ -7400,6 +7429,10 @@ void ParseColorProfiles(const char *str)
             lineStart = i+1;
             
             if(cgProfile) {
+                if(!strcmp(cgProfile->name, defaultProfileName)) {
+                    defaultColorProfile = cgProfile;
+                }
+                
                 if(profilesListEnd) {
                     profilesListEnd->next = cgProfile;
                     profilesListEnd = cgProfile;
@@ -7430,7 +7463,11 @@ void ParseColorProfiles(const char *str)
     defaultProfile->ansiColorList = NEditStrdup(GetPrefAnsiColorList());
     
     defaultProfile->next = profilesListBegin;
+    
     colorProfiles = defaultProfile;
+    if(!defaultColorProfile) {
+        defaultColorProfile = defaultProfile;
+    }
 }
 
 /*

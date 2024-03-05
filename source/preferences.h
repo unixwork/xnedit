@@ -248,7 +248,7 @@ int GetPrefLockEncodingError(void);
 ColorProfile* GetDefaultColorProfile(void);
 ColorProfile* GetColorProfiles(void);
 char* GetPrefDefaultColorProfileName(void);
-void SetPrefDefaultColorProfileName(char *str);
+void SetPrefDefaultColorProfileName(const char *str);
 
 void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to);
 
