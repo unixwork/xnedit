@@ -3847,7 +3847,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
     FcChar32 uc;
     int inc;
     int charLen;
-    char indent = 0;
+    unsigned short indent = 0;
     NFont *font;
     
     for(i=0;i<lineLen;i+=inc) {
