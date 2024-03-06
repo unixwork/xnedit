@@ -2321,7 +2321,9 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 outStr[MAX_DISP_LINE_LEN];
     FcChar32 *outPtr;
-    char *lineStr;
+    const char *lineStr;
+    char *lineStrFree;
+    size_t lineStrLen;
     char baseChar;
     FcChar32 uc = 0;
     NFont *styleFL = textD->font;
@@ -2361,7 +2363,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	lineStr = NULL;
     } else {
 	lineLen = visLineLength(textD, visLineNum);
-	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+	lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &lineStrFree, &lineStrLen);
         endOfLine = BufEndOfLine(buf, lineStartPos);
         if(textD->highlightCursorLine) {
             startOfLine = BufStartOfLine(buf, lineStartPos);
@@ -2385,7 +2387,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     stdCharWidth = textD->font->maxWidth;
     if (stdCharWidth <= 0) {
     	fprintf(stderr, "xnedit: Internal Error, bad font measurement\n");
-    	NEditFree(lineStr);
+    	NEditFree(lineStrFree);
     	return;
     }
     
@@ -2423,7 +2425,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             inc = 1;
         } else {
             baseChar = lineStr[charIndex];
-            char *line = lineStr + charIndex;
+            const char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
                     
             inc = getCharWidth(textD, line, &uc, remainingLen);
@@ -2698,7 +2700,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if (hasCursor && (y_orig != textD->cursor->y || y_orig != y))
         TextDRedrawCalltip(textD, 0);
     
-    NEditFree(lineStr);
+    NEditFree(lineStrFree);
     if(textD->mcursorSizeReal > 1) NEditFree(cursorX);
 }
 
