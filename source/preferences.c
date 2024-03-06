@@ -6593,14 +6593,11 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     addAddBtn(cd);
 }
 
-static void colorDialogProfileSelected(
-        Widget w,
-        colorDialog *cd,
-        XmComboBoxCallbackStruct *cb)
+static void colorDialogSelectProfile(colorDialog *cd, int index)
 {
     saveColorProfileSettings(cd);
     
-    cd->selectedProfile = cb->item_position;
+    cd->selectedProfile = index;
     
     clearRainbowColors(cd);
     
@@ -6608,6 +6605,71 @@ static void colorDialogProfileSelected(
     loadAnsiColors(cd);
 
     indentRainbowDialogLoadColors(cd);
+}
+
+static void colorDialogProfileSelected(
+        Widget w,
+        colorDialog *cd,
+        XmComboBoxCallbackStruct *cb)
+{
+    colorDialogSelectProfile(cd, cb->item_position);
+}
+
+static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
+{
+    if(cd->selectedProfile == 0) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The default color profile cannot be renamed.", "OK");
+        return;
+    }
+}
+
+static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
+{
+    if(cd->selectedProfile == 0) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The default color profile cannot be removed.", "OK");
+    }
+    
+    
+}
+
+static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
+{
+    char profileName[DF_MAX_PROMPT_LENGTH];
+    profileName[0] = 0;
+    
+    int response = DialogF(
+            DF_PROMPT,
+            w,
+            2,
+            "Create new color profile", "Profile name:",
+            profileName,
+            "OK",
+            "Cancel");
+    
+    if(response == 2 || strlen(profileName) == 0) {
+        return;
+    }
+    
+    // TODO: check if the name is already in use
+    
+    cd->numColorProfiles++;
+    cd->colorProfiles = NEditRealloc(cd->colorProfiles, cd->numColorProfiles * sizeof(ColorProfile));
+    
+    ColorProfile *newProfile = &cd->colorProfiles[cd->numColorProfiles-1];
+    memset(newProfile, 0, sizeof(ColorProfile));
+    
+    // copy default values
+    ColorProfileCopySettings(&cd->colorProfiles[cd->selectedProfile], newProfile);
+    NEditFree(newProfile->name);
+    newProfile->name = NEditStrdup(profileName);
+    
+    XmString s = XmStringCreateSimple(profileName);
+    XmComboBoxAddItem(cd->profileDropDown, s, -1, False);
+    XmComboBoxSelectItem(cd->profileDropDown, s);
+    colorDialogSelectProfile(cd, cd->numColorProfiles-1);
+    XmStringFree(s);
 }
 
 /* 
@@ -6678,6 +6740,12 @@ void ChooseColors(WindowInfo *window)
     }
     cd->colorProfiles[0].modified = TRUE;
     
+    Widget colorProfileForm = XtVaCreateManagedWidget("colorProfileForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    
     ac = 0;
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_FORM); ac++;
     XtSetArg(args[ac], XmNleftAttachment, XmATTACH_FORM); ac++;
@@ -6685,7 +6753,8 @@ void ChooseColors(WindowInfo *window)
     XtSetArg(args[ac], XmNitems, cgProfileList); ac++;
     XtSetArg(args[ac], XmNitemCount, nProfiles); ac++;
     XtSetArg(args[ac], XmNcolumns, 20); ac++;
-    cd->profileDropDown = XmCreateDropDownList(form, "combobox", args, ac);
+    XtSetArg(args[ac], XmNhighlightThickness, 2); ac++;
+    cd->profileDropDown = XmCreateDropDownList(colorProfileForm, "combobox", args, ac);
     XtManageChild(cd->profileDropDown);
     
     s1 = XmStringCreateSimple(defaultColorProfile->name);
@@ -6694,11 +6763,53 @@ void ChooseColors(WindowInfo *window)
     
     XtAddCallback(cd->profileDropDown, XmNselectionCallback,(XtCallbackProc)colorDialogProfileSelected, cd);
     
+    s1 = XmStringCreateSimple("Rename");
+    Widget colorProfileRename = XtVaCreateManagedWidget("colorProfileRename", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->profileDropDown,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNdefaultButtonShadowThickness 	, 0,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileRename, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileRename, cd);
+    
+    s1 = XmStringCreateSimple("Remove");
+    Widget colorProfileRemove = XtVaCreateManagedWidget("colorProfileRename", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, colorProfileRename,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileRemove, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileRemove, cd);
+
+    s1 = XmStringCreateSimple("New");
+    Widget colorProfileNew = XtVaCreateManagedWidget("colorProfilNew", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, colorProfileRemove,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileNew, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileNew, cd);
     
     /* tabs */
     cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, cd->profileDropDown,
+            XmNtopWidget, colorProfileForm,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_POSITION,
@@ -6711,7 +6822,7 @@ void ChooseColors(WindowInfo *window)
     XmStringFree(s1);
     cd->tabs[1] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, cd->profileDropDown,
+            XmNtopWidget, colorProfileForm,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[0],
@@ -6724,7 +6835,7 @@ void ChooseColors(WindowInfo *window)
     XmStringFree(s1);
     cd->tabs[2] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, cd->profileDropDown,
+            XmNtopWidget, colorProfileForm,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[1],
