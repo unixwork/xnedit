@@ -3842,7 +3842,9 @@ static int measureVisLine(textDisp *textD, int visLineNum)
     textBuffer *buf = textD->buffer;
     int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
-    char *lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+    size_t length;
+    char *free_lineStr;
+    const char *lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &free_lineStr, &length);
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
     int inc;
@@ -3874,7 +3876,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
         
         width += stringWidth4(textD, expandedChar, charLen, font);
     }
-    NEditFree(lineStr);
+    NEditFree(free_lineStr);
     return width;
 }
 
