@@ -441,13 +441,12 @@ char* BufGetRange(const textBuffer* buf, int start, int end)
 // If the buffer gap falls between "start" and "end", a copy of the string
 // is made, and *free_str is assigned.
 // *out_length is updated with the length of the retrieved string (end - start)
-const char* BufGetRange2(const textBuffer* buf, ssize_t start, ssize_t end, char **free_str, size_t *out_length)
+const char* BufGetRange2(const textBuffer* buf, ssize_t start, ssize_t end, char **free_str)
 {
     char *text;
     int length, part1Length;
     
     *free_str = NULL;
-    *out_length = 0;
     
     // Make sure start and end are ok
     // If start is bad, return "", if end is bad, adjust it. 
@@ -462,8 +461,6 @@ const char* BufGetRange2(const textBuffer* buf, ssize_t start, ssize_t end, char
     if (end > buf->length)
         end = buf->length;
     length = end - start;
-    
-    *out_length = length;
     
     // only copy the string the gap is between start-end
     if (end <= buf->gapStart) {

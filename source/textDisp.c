@@ -2323,7 +2323,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     FcChar32 *outPtr;
     const char *lineStr;
     char *lineStrFree;
-    size_t lineStrLen;
     char baseChar;
     FcChar32 uc = 0;
     NFont *styleFL = textD->font;
@@ -2363,7 +2362,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     	lineStr = NULL;
     } else {
 	lineLen = visLineLength(textD, visLineNum);
-	lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &lineStrFree, &lineStrLen);
+	lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &lineStrFree);
         endOfLine = BufEndOfLine(buf, lineStartPos);
         if(textD->highlightCursorLine) {
             startOfLine = BufStartOfLine(buf, lineStartPos);
@@ -3844,9 +3843,8 @@ static int measureVisLine(textDisp *textD, int visLineNum)
     textBuffer *buf = textD->buffer;
     int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
-    size_t length;
     char *free_lineStr;
-    const char *lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &free_lineStr, &length);
+    const char *lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &free_lineStr);
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
     int inc;
