@@ -261,6 +261,7 @@ char* ChangeFontSize(const char *name, int newsize);
 
 ColorList ParseColorList(const char *str, size_t len);
 void ColorProfileDestroy(ColorProfile *profile);
+void ColorProfileFreeContent(ColorProfile *profile);
 char* ParseAnsiColorList(char **array, const char *str);
 
 void ParseColorProfiles(const char *str);

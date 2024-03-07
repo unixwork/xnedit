@@ -6701,7 +6701,22 @@ static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
                 "The default color profile cannot be removed.", "OK");
     }
     
+    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    ColorProfileFreeContent(profile);
     
+    if(cd->selectedProfile+1 < cd->numColorProfiles) {
+        int len = cd->numColorProfiles - cd->selectedProfile - 1;
+        ColorProfile *dst = cd->colorProfiles + cd->selectedProfile;
+        ColorProfile *src = dst + 1;
+        memmove(
+                dst,
+                src,
+                len * sizeof(ColorProfile));
+    }
+    cd->numColorProfiles--;
+    cd->selectedProfile--;
+    
+    colorDialogUpdateProfileList(cd);
 }
 
 static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
@@ -7433,6 +7448,12 @@ ColorList ParseColorList(const char *str, size_t len)
 
 void ColorProfileDestroy(ColorProfile *profile)
 {
+    ColorProfileFreeContent(profile);
+    NEditFree(profile);
+}
+
+void ColorProfileFreeContent(ColorProfile *profile)
+{
     NEditFree(profile->name);
     NEditFree(profile->textFg);
     NEditFree(profile->textBg);
@@ -7446,8 +7467,6 @@ void ColorProfileDestroy(ColorProfile *profile)
     NEditFree(profile->ansiColorList);
     NEditFree(profile->rainbowColorList);
     NEditFree(profile->resourceFile);
-    
-    NEditFree(profile);
 }
 
 static int GetCgProfileName(const char *str, size_t len, const char **out_name, size_t *out_namelen)
