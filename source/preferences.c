@@ -6615,6 +6615,43 @@ static void colorDialogProfileSelected(
     colorDialogSelectProfile(cd, cb->item_position);
 }
 
+static void colorDialogUpdateProfileList(colorDialog *cd)
+{
+    XmStringTable profileList = NEditCalloc(cd->numColorProfiles, sizeof(XmString));
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        profileList[i] = XmStringCreateLocalized(cd->colorProfiles[i].name);
+    }
+    
+    XtVaSetValues(cd->profileDropDown, XmNitems, profileList, XmNitemCount, cd->numColorProfiles, NULL);
+    XmComboBoxSelectItem(cd->profileDropDown, profileList[cd->selectedProfile]);
+    NEditFree(profileList);
+}
+
+static Boolean colorDialogCheckProfileName(colorDialog *cd, const char *name)
+{
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        if(!strcmp(cd->colorProfiles[i].name, name)) {
+            return False;
+        }
+    }
+    return True;
+}
+
+static Boolean colorDialogCheckProfileNameChars(colorDialog *cd, const char *name)
+{
+    size_t len = strlen(name);
+    for(int i=0;i<len;i++) {
+        char c = name[i];
+        if(c == '\\' || c == ',' || c == ';') {
+            DialogF(DF_ERR, cd->shell, 1, "Error",
+                    "Character '%c' is not allowed in profile names.", "OK", c);
+            return False;
+        }
+    }
+    return True;
+}
+
+
 static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
 {
     if(cd->selectedProfile == 0) {
@@ -6622,6 +6659,39 @@ static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
                 "The default color profile cannot be renamed.", "OK");
         return;
     }
+    
+    char profileName[DF_MAX_PROMPT_LENGTH];
+    profileName[0] = 0;
+    
+    int response = DialogF(
+            DF_PROMPT,
+            w,
+            2,
+            "Rename Profile", "New Profile Name:",
+            profileName,
+            "OK",
+            "Cancel");
+    
+    if(response == 2 || strlen(profileName) == 0) {
+        return;
+    }
+    
+    // check profile name
+    if(!colorDialogCheckProfileName(cd, profileName)) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The profile name '%s' is already in use.", "OK", profileName);
+        return;
+    }
+    if(!colorDialogCheckProfileNameChars(cd, profileName)) {
+        return;
+    }
+    
+    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    
+    NEditFree(profile->name);
+    profile->name = NEditStrdup(profileName);
+    
+    colorDialogUpdateProfileList(cd);
 }
 
 static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
@@ -6643,7 +6713,7 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
             DF_PROMPT,
             w,
             2,
-            "Create new color profile", "Profile name:",
+            "Create Profile", "Profile Name:",
             profileName,
             "OK",
             "Cancel");
@@ -6652,7 +6722,15 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
         return;
     }
     
-    // TODO: check if the name is already in use
+    // check profile name
+    if(!colorDialogCheckProfileName(cd, profileName)) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The profile name '%s' is already in use.", "OK", profileName);
+        return;
+    }
+    if(!colorDialogCheckProfileNameChars(cd, profileName)) {
+        return;
+    }
     
     cd->numColorProfiles++;
     cd->colorProfiles = NEditRealloc(cd->colorProfiles, cd->numColorProfiles * sizeof(ColorProfile));
@@ -6734,7 +6812,7 @@ void ChooseColors(WindowInfo *window)
         
         ColorProfileCopySettings(profile, &cd->colorProfiles[i]);
         
-        cgProfileList[i] = XmStringCreateSimple(profile->name);
+        cgProfileList[i] = XmStringCreateLocalized(profile->name);
         profile = profile->next;
         i++;
     }
@@ -6756,8 +6834,9 @@ void ChooseColors(WindowInfo *window)
     XtSetArg(args[ac], XmNhighlightThickness, 2); ac++;
     cd->profileDropDown = XmCreateDropDownList(colorProfileForm, "combobox", args, ac);
     XtManageChild(cd->profileDropDown);
+    NEditFree(cgProfileList);
     
-    s1 = XmStringCreateSimple(defaultColorProfile->name);
+    s1 = XmStringCreateLocalized(defaultColorProfile->name);
     XmComboBoxSelectItem(cd->profileDropDown, s1);
     XmStringFree(s1);
     
