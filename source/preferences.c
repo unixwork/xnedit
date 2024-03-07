@@ -2454,34 +2454,36 @@ char* WriteColorProfilesString(void)
     char *out = NEditMalloc(alloc);
     
     while(profile) {
-        char buf[4096];
-        int len = snprintf(
-                buf,
-                4096,
-                "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
-                "ansi:{%s},rainbow:{%s}%s",
-                profile->name,
-                profile->textFg,
-                profile->textBg,
-                profile->selectFg,
-                profile->selectBg,
-                profile->hiliteFg,
-                profile->hiliteBg,
-                profile->lineNoFg,
-                profile->lineNoBg,
-                profile->cursorFg,
-                profile->lineHiBg,
-                profile->ansiColorList,
-                profile->rainbowColorList,
-                profile->next ? "\\n\\\n" : ""
-                );
-        if(len < 1024) {
-            if(size + len >= alloc) {
-                alloc += len + 256;
-                out = NEditRealloc(out, alloc);
+        if(!profile->removed) {
+            char buf[4096];
+            int len = snprintf(
+                    buf,
+                    4096,
+                    "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
+                    "ansi:{%s},rainbow:{%s}%s",
+                    profile->name,
+                    profile->textFg,
+                    profile->textBg,
+                    profile->selectFg,
+                    profile->selectBg,
+                    profile->hiliteFg,
+                    profile->hiliteBg,
+                    profile->lineNoFg,
+                    profile->lineNoBg,
+                    profile->cursorFg,
+                    profile->lineHiBg,
+                    profile->ansiColorList,
+                    profile->rainbowColorList,
+                    profile->next ? "\\n\\\n" : ""
+                    );
+            if(len < 1024) {
+                if(size + len >= alloc) {
+                    alloc += len + 256;
+                    out = NEditRealloc(out, alloc);
+                }
+                memcpy(out+size, buf, len);
+                size += len;
             }
-            memcpy(out+size, buf, len);
-            size += len;
         }
         
         profile = profile->next;
@@ -6702,6 +6704,9 @@ static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
     }
     
     ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    if(profile->orig) {
+        profile->orig->removed = True;
+    }
     ColorProfileFreeContent(profile);
     
     if(cd->selectedProfile+1 < cd->numColorProfiles) {
