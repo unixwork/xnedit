@@ -539,8 +539,10 @@ void TextDSetFont(textDisp *textD, NFont *font)
     if (textD->height < maxAscent + maxDescent)
         textD->height = maxAscent + maxDescent;
  
-    FontUnref(textD->font);
-    textD->font = FontRef(font); 
+    if(textD->font != font) {
+        FontUnref(textD->font);
+        FontRef(font);
+    }
     
     if(textD->disableRedisplay) {
         return;
@@ -569,20 +571,26 @@ void TextDSetFont(textDisp *textD, NFont *font)
 
 void TextDSetBoldFont(textDisp *textD, NFont *boldFont)
 {
-    FontUnref(textD->boldFont);
-    textD->boldFont = FontRef(boldFont);
+    if(textD->boldFont != boldFont) {
+        FontUnref(textD->boldFont);
+        FontRef(boldFont);
+    }
 }
 
 void TextDSetItalicFont(textDisp *textD, NFont *italicFont)
 {
-    FontUnref(textD->italicFont);
-    textD->italicFont = FontRef(italicFont);
+    if(textD->italicFont != italicFont) {
+        FontUnref(textD->italicFont);
+        textD->italicFont = FontRef(italicFont);
+    }
 }
 
 void TextDSetBoldItalicFont(textDisp *textD, NFont *boldItalicFont)
 {
-    FontUnref(textD->boldItalicFont);
-    textD->boldItalicFont = FontRef(boldItalicFont);
+    if(textD->boldItalicFont != boldItalicFont) {
+        FontUnref(textD->boldItalicFont);
+        textD->boldItalicFont = FontRef(boldItalicFont);
+    }
 }
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)

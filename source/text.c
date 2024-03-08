@@ -885,6 +885,19 @@ void TextWidgetClassInit(Display *dp, const char *fontname)
 */
 static void initialize(TextWidget request, TextWidget new)
 {
+    if(new->text.font2) {
+        FontRef(new->text.font2);
+    }
+    if(new->text.boldFont) {
+        FontRef(new->text.boldFont);
+    }
+    if(new->text.italicFont) {
+        FontRef(new->text.italicFont);
+    }
+    if(new->text.boldItalicFont) {
+        FontRef(new->text.boldItalicFont);
+    }
+    
     NFont *font = new->text.font2;
     XftFont *xfont = FontDefault(font);
     char *delimiters;
@@ -1279,15 +1292,23 @@ static Boolean setValues(TextWidget current, TextWidget request,
     }
     
     if (new->text.boldFont != current->text.boldFont) {
+        FontUnref(current->text.boldFont);
+        FontRef(new->text.boldFont);
         TextDSetBoldFont(new->text.textD, new->text.boldFont);
     }
     if (new->text.italicFont != current->text.italicFont) {
+        FontUnref(current->text.italicFont);
+        FontRef(new->text.italicFont);
         TextDSetItalicFont(new->text.textD, new->text.italicFont);
     }
     if (new->text.boldItalicFont != current->text.boldItalicFont) {
+        FontUnref(current->text.boldItalicFont);
+        FontRef(new->text.boldItalicFont);
         TextDSetBoldItalicFont(new->text.textD, new->text.boldItalicFont);
     }
     if (new->text.font2 != current->text.font2) {
+        FontUnref(current->text.font2);
+        FontRef(new->text.font2);
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
     	TextDSetFont(current->text.textD, new->text.font2);
