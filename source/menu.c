@@ -3299,8 +3299,9 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     }
 
     /* Close all files and exit when the last one is closed */
-    if (CloseAllFilesAndWindows())
+    if (CloseAllFilesAndWindows()) {
         exit(EXIT_SUCCESS);
+    }
 }
 
 static void undoAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 

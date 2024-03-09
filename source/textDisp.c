@@ -2368,6 +2368,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if (lineStartPos == -1) {
     	lineLen = 0;
     	lineStr = NULL;
+        lineStrFree = NULL;
     } else {
 	lineLen = visLineLength(textD, visLineNum);
 	lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &lineStrFree);
