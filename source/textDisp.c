@@ -541,7 +541,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
  
     if(textD->font != font) {
         FontUnref(textD->font);
-        FontRef(font);
+        textD->font = FontRef(font);
     }
     
     if(textD->disableRedisplay) {
@@ -573,7 +573,7 @@ void TextDSetBoldFont(textDisp *textD, NFont *boldFont)
 {
     if(textD->boldFont != boldFont) {
         FontUnref(textD->boldFont);
-        FontRef(boldFont);
+        textD->boldFont = FontRef(boldFont);
     }
 }
 
