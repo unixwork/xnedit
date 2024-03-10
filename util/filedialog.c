@@ -1666,52 +1666,6 @@ static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
     NEditFree(newPath);
 }
 
-static void filedialog_setselection(
-        FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
-{
-    if(sel->selected_item_count > 0) {
-        FileElm *file = NULL;
-        XtVaGetValues(sel->selected_items[0], XmNuserData, &file, NULL);
-        if(file) {
-            if(data->selectedPath) {
-                NEditFree(data->selectedPath);
-            }
-            data->selectedPath = NEditStrdup(file->path);
-            data->selIsDir = file->isDirectory;
-            
-            if(!file->isDirectory) {
-                if(data->name) {
-                    XmTextFieldSetString(data->name, FileName(file->path));
-                }
-            }
-        }
-    }
-}
-
-static void filedialog_select(
-        Widget w,
-        FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
-{
-    filedialog_setselection(data, sel);
-}
-
-static void filedialog_action(
-        Widget w,
-        FileDialogData *data,
-        XmContainerSelectCallbackStruct *sel)
-{
-    filedialog_setselection(data, sel);
-    
-    if(data->selIsDir) {
-        filedialog_update_dir(data, data->selectedPath);
-        PathBarSetPath(data->pathBar, data->selectedPath);
-    } else {
-        filedialog_ok(w, data, NULL);
-    }
-}
-
 char* set_selected_path(FileDialogData *data, XmString item)
 {
     char *name = NULL;
