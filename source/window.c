@@ -1128,7 +1128,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     	    XtSetSensitive(win->contextMoveDocumentItem, state);
 	}
     }
-    
+      
     return window;
 }
 
@@ -6133,7 +6133,92 @@ static void windowStructureNotifyEventEH(
 
 
 
+typedef struct CPDummyWindow {
+    Widget shell;
+    Widget mainWin;
+    Widget form;
+    Widget menubar;
+    Widget menu;
+    Widget menuButton;
+    Widget menuItem;
+} CPDummyWindow;
+
+static void UpdateWidgetValues(Widget dst, Widget src)
+{
+    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor;
+    Dimension shadowThickness, highlightThickness;
+    XtVaGetValues(src,
+            XmNbackground, &background,
+            XmNforeground, &foreground,
+            XmNtopShadowColor, &topShadowColor,
+            XmNbottomShadowColor, &bottomShadowColor,
+            XmNhighlightColor, &highlightColor,
+            XmNarmColor, &armColor,
+            XmNshadowThickness, &shadowThickness,
+            XmNhighlightThickness, &highlightThickness,
+            NULL);
+    
+    XtVaSetValues(dst,
+            XmNbackground, background,
+            XmNforeground, foreground,
+            XmNtopShadowColor, topShadowColor,
+            XmNbottomShadowColor, bottomShadowColor,
+            XmNhighlightColor, highlightColor,
+            XmNarmColor, armColor,
+            XmNshadowThickness, shadowThickness,
+            XmNhighlightThickness, highlightThickness,
+            NULL);
+}
+
+static void UpdateMenuItem(Widget menuItem, CPDummyWindow *template);
+
+static void UpdateMenu(Widget menu, CPDummyWindow *template)
+{
+    UpdateWidgetValues(menu, template->menu);
+    
+    WidgetList children;
+    Cardinal numChildren;
+    XtVaGetValues(menu, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    for(int i=0;i<numChildren;i++) {
+        UpdateMenuItem(children[i], template);
+    }
+}
+
+static void UpdateMenuItem(Widget menuItem, CPDummyWindow *template)
+{
+    Widget menu = NULL;
+    XtVaGetValues(menuItem, XmNsubMenuId, &menu, NULL);
+    
+    UpdateWidgetValues(menuItem, template->menuButton);
+    if(menu) {
+        UpdateMenu(menu, template);
+    }
+}
+
+static void UpdateMenubarResources(Widget menubar, CPDummyWindow *template)
+{
+    UpdateWidgetValues(menubar, template->menubar);
+    UpdateMenu(menubar, template);
+}
+
 void ReloadWindowResources(WindowInfo *window)
 {
+    CPDummyWindow dw;
+    dw.shell = CreateWidget(TheAppShell, "textShell", topLevelShellWidgetClass, NULL, 0);
+    dw.mainWin = XmCreateMainWindow(dw.shell, "main", NULL, 0);
+    dw.menubar = XmCreateMenuBar(dw.mainWin, "menuBar", NULL, 0);
     
+    dw.menu = CreatePulldownMenu(dw.menubar, "fileMenu", NULL, 0);
+    dw.menuButton = XtVaCreateWidget("fileMenu", xmCascadeButtonWidgetClass, dw.menubar, XmNsubMenuId, dw.menu, NULL);
+    dw.menuItem = XtVaCreateWidget("fileNew", xmPushButtonWidgetClass, dw.menu, NULL);
+    
+    //XtManageChild(dw.shell);
+    //XtManageChild(dw.mainWin);
+    //XtManageChild(dw.menubar);
+    //XtManageChild(dw.menuButton);
+    //XtManageChild(dw.menuItem);
+    
+    UpdateMenubarResources(window->menuBar, &dw);
+    
+    XtDestroyWidget(dw.shell);
 }
