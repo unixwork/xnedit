@@ -285,6 +285,18 @@ static const Dimension XT_IGNORE_PPOSITION = 32767;
 static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
 
+static Bool CopyDBEntry(
+    XrmDatabase	*db,
+    XrmBindingList bindings,
+    XrmQuarkList quarks,
+    XrmRepresentation *type,
+    XrmValuePtr value,
+    XPointer data)
+{
+    XrmDatabase newDB = (XrmDatabase)data;
+    XrmQPutResource(&newDB, bindings, quarks, *type, value);
+    return 0;
+}
 
 void LoadColorProfileResources(Display *display, ColorProfile *profile)
 {
@@ -304,8 +316,10 @@ void LoadColorProfileResources(Display *display, ColorProfile *profile)
             fpath = fpathFree;
         }
         
-        XrmDatabase newDB = NULL;
-        XrmMergeDatabases(GetDefaultResourceDB(), &newDB);
+        XrmDatabase defaultDB = GetDefaultResourceDB();
+        XrmDatabase newDB = XrmGetStringDatabase("");
+        XrmQuark empty = NULLQUARK;
+        XrmEnumerateDatabase(defaultDB, &empty, &empty, XrmEnumAllLevels, CopyDBEntry, (XPointer) newDB);
         
         XrmDatabase resFileDB = XrmGetFileDatabase(fpath);
         if(resFileDB) {
@@ -6121,5 +6135,5 @@ static void windowStructureNotifyEventEH(
 
 void ReloadWindowResources(WindowInfo *window)
 {
-    // TODO
+    
 }
