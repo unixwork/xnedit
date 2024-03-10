@@ -72,7 +72,7 @@ void Push(Stack* stack, const void* value);
 void* Pop(Stack* stack);
 
 /* N_FILE_TYPES must be the last entry!! This saves us from counting. */
-enum {NEDIT_RC, AUTOLOAD_NM, NEDIT_HISTORY, SEARCH_HISTORY, N_FILE_TYPES};
+enum {NEDIT_RC, AUTOLOAD_NM, NEDIT_HISTORY, SEARCH_HISTORY, XNEDIT_HOME, N_FILE_TYPES};
 
 /* If anyone knows where to get this from system include files (in a machine
    independent way), please change this (L_cuserid is apparently not ANSI) */

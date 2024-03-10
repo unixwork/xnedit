@@ -101,8 +101,8 @@ typedef struct _ColorProfile {
     size_t   numRainbowColors;
     
     char     *resourceFile;
-    Boolean  windowDarkTheme;
-    XrmDatabase *db;
+    int      windowThemeVariant; // 0: undefined, 1: light, 2: dark
+    XrmDatabase db;
     
     Boolean modified;
     Boolean removed;

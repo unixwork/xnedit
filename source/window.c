@@ -285,6 +285,42 @@ static const Dimension XT_IGNORE_PPOSITION = 32767;
 static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
 
+
+void LoadColorProfileResources(Display *display, ColorProfile *profile)
+{
+    if(profile->resourceFile) {
+        const char *fpath;
+        char *fpathFree = NULL;
+        if(profile->resourceFile[0] == '/') {
+            fpath = profile->resourceFile;
+        } else {
+            const char *xneditHome = GetRCFileName(XNEDIT_HOME);
+            size_t xneditHomeLen = strlen(xneditHome);
+            size_t resFileLen = strlen(profile->resourceFile);
+            fpathFree = NEditMalloc(xneditHomeLen + resFileLen + 1);
+            memcpy(fpathFree, xneditHome, xneditHomeLen);
+            memcpy(fpathFree+xneditHomeLen, profile->resourceFile, resFileLen);
+            fpathFree[xneditHomeLen+resFileLen] = 0;
+            fpath = fpathFree;
+        }
+        
+        char *res = XResourceManagerString(display);
+        XrmDatabase newDB = XrmGetStringDatabase(res ? res : "");
+
+        XrmDatabase resFileDB = XrmGetFileDatabase(fpath);
+        if(resFileDB) {
+            XrmMergeDatabases(resFileDB, &newDB);
+        } // TODO: else error 
+        
+        NEditFree(fpathFree);
+        
+        profile->db = newDB;
+        
+    } else {
+        profile->db = GetDefaultResourceDB();
+    }
+}
+
 /*
 ** Create a new editor window
 */
@@ -306,7 +342,14 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     static Pixmap isrcFind = 0;
     static Pixmap isrcClear = 0;
     static Pixmap closeTabPixmap = 0;
-
+    
+    // Before creating any UI widgets, load custom color profile X resources 
+    ColorProfile *colorProfile = GetDefaultColorProfile();
+    if(!colorProfile->db) {
+        LoadColorProfileResources(TheDisplay, colorProfile);
+    }
+    XrmSetDatabase(TheDisplay, colorProfile->db);
+    
     /* Allocate some memory for the new window data structure */
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     window->opened = False;
@@ -2509,6 +2552,12 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         free(ansiColors.colors);
         free(ansiColors.liststr);
     }
+    
+    if(!profile->db) {
+        LoadColorProfileResources(display, profile);
+    }
+    
+    
     
     profile->colorsLoaded = TRUE;
 }

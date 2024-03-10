@@ -32,6 +32,7 @@
 
 #include <X11/Intrinsic.h>
 
+void LoadColorProfileResources(Display *display, ColorProfile *profile);
 void AttachSessionMgrHandler(Widget appShell);
 WindowInfo *CreateWindow(const char *title, char *geometry, int iconic);
 void CloseWindow(WindowInfo *window);
