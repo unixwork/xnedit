@@ -118,4 +118,5 @@ void CleanUpTabBarExposeQueue(WindowInfo *window);
 void SetEncoding(WindowInfo *window, const char *encoding);
 void SetZoom(WindowInfo *window, int step);
 void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors);
+void ReloadWindowResources(WindowInfo *window);
 #endif /* NEDIT_WINDOW_H_INCLUDED */

@@ -6137,8 +6137,10 @@ static void updateColors(colorDialog *cd)
     defaultColorProfile = setProfile;
     
     // update windows
-    for (window = WindowList; window != NULL; window = window->next) {  
+    for (window = WindowList; window != NULL; window = window->next) {
         SetColorProfile(window, setProfile);
+        XrmSetDatabase(XtDisplay(window->shell), setProfile->db);
+        ReloadWindowResources(window);
     }
 }
 

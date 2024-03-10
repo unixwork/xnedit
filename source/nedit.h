@@ -531,6 +531,8 @@ typedef struct _WindowInfo {
     NFont       *boldFont;
     NFont       *boldItalicFont;
     
+    ColorProfile *colorProfile;
+    
     Boolean     resizeOnFontChange;
     
     EncError    *encErrors;

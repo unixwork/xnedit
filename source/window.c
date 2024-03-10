@@ -304,9 +304,9 @@ void LoadColorProfileResources(Display *display, ColorProfile *profile)
             fpath = fpathFree;
         }
         
-        char *res = XResourceManagerString(display);
-        XrmDatabase newDB = XrmGetStringDatabase(res ? res : "");
-
+        XrmDatabase newDB = NULL;
+        XrmMergeDatabases(GetDefaultResourceDB(), &newDB);
+        
         XrmDatabase resFileDB = XrmGetFileDatabase(fpath);
         if(resFileDB) {
             XrmMergeDatabases(resFileDB, &newDB);
@@ -353,6 +353,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Allocate some memory for the new window data structure */
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     window->opened = False;
+    window->colorProfile = colorProfile;
     
     /* initialize window structure */
     /* + Schwarzenberg: should a 
@@ -2567,6 +2568,7 @@ void SetColorProfile(WindowInfo *window, ColorProfile *profile)
     if(!profile->colorsLoaded) {
         LoadColorProfile(window->textArea, profile);
     }
+    window->colorProfile = profile;
     
     /* Update the main pane */
     XtVaSetValues(window->textArea,
@@ -6113,4 +6115,11 @@ static void windowStructureNotifyEventEH(
         updateWindowMapStatus(widget, True);
         InvalidateWindowMenus();
     }
+}
+
+
+
+void ReloadWindowResources(WindowInfo *window)
+{
+    // TODO
 }
