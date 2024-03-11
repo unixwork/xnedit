@@ -620,24 +620,37 @@ XtActionsRec *GetMenuActions(int *nActions)
     *nActions = XtNumber(Actions);
     return Actions;
 }
+Widget CreateMenuBar(Widget parent, WindowInfo *window)
+{
+    /*
+    ** Create the menu bar (row column) widget
+    */
+    Widget menuBar  = XmCreateMenuBar(parent, "menuBar", NULL, 0);
+    return RecreateMenuBar(parent, menuBar, window, False);
+}
 
 /*
 ** Create the menu bar
 */
-Widget CreateMenuBar(Widget parent, WindowInfo *window)
+Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolean clear)
 {
-    Widget menuBar, menuPane, btn, subPane, subSubPane, subSubSubPane, cascade;
+    Widget menuPane, btn, subPane, subSubPane, subSubSubPane, cascade;
+
+    if(clear) {
+        WidgetList children;
+        Cardinal numChildren;
+        XtVaGetValues(menuBar, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+        for(int i=0;i<numChildren;i++) {
+            XtUnmanageChild(children[i]);
+            XtDestroyWidget(children[i]);
+        }
+    }
 
     /*
     ** cache user menus:
     ** allocate user menu cache
     */
     window->userMenuCache = CreateUserMenuCache();
-
-    /*
-    ** Create the menu bar (row column) widget
-    */
-    menuBar = XmCreateMenuBar(parent, "menuBar", NULL, 0);
 
 #ifdef SGI_CUSTOM
     /*

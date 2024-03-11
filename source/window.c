@@ -6198,7 +6198,7 @@ static void UpdateMenuItem(Widget menuItem, CPDummyWindow *template)
 static void UpdateMenubarResources(Widget menubar, CPDummyWindow *template)
 {
     UpdateWidgetValues(menubar, template->menubar);
-    UpdateMenu(menubar, template);
+    //UpdateMenu(menubar, template);
 }
 
 void ReloadWindowResources(WindowInfo *window)
@@ -6219,6 +6219,7 @@ void ReloadWindowResources(WindowInfo *window)
     //XtManageChild(dw.menuItem);
     
     UpdateMenubarResources(window->menuBar, &dw);
+    RecreateMenuBar(window->mainWin, window->menuBar, window, True);
     
     XtDestroyWidget(dw.shell);
 }
