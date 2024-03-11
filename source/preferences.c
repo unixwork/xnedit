@@ -2460,7 +2460,7 @@ char* WriteColorProfilesString(void)
                     buf,
                     4096,
                     "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
-                    "ansi:{%s},rainbow:{%s}%s",
+                    "ansi:{%s},rainbow:{%s}%s%s%s%s",
                     profile->name,
                     profile->textFg,
                     profile->textBg,
@@ -2474,6 +2474,9 @@ char* WriteColorProfilesString(void)
                     profile->lineHiBg,
                     profile->ansiColorList,
                     profile->rainbowColorList,
+                    profile->resourceFile ? ",res:{" : "",
+                    profile->resourceFile ? profile->resourceFile : "",
+                    profile->resourceFile ? "}" : "",
                     profile->next ? "\\n\\\n" : ""
                     );
             if(len < 1024) {
