@@ -6138,14 +6138,17 @@ typedef struct CPDummyWindow {
     Widget mainWin;
     Widget form;
     Widget menubar;
-    Widget menu;
-    Widget menuButton;
-    Widget menuItem;
+    Widget button;
+    Widget togglebutton;
+    Widget label;
+    Widget textfield1;
+    Widget textfield2;
+    Widget textfield3;
 } CPDummyWindow;
 
 static void UpdateWidgetValues(Widget dst, Widget src)
 {
-    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor;
+    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor, selectBG, selectFG;
     Dimension shadowThickness, highlightThickness;
     XtVaGetValues(src,
             XmNbackground, &background,
@@ -6156,6 +6159,8 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNarmColor, &armColor,
             XmNshadowThickness, &shadowThickness,
             XmNhighlightThickness, &highlightThickness,
+            XmNselectBackground, &selectBG,
+            XmNselectForeground, &selectFG,
             NULL);
     
     XtVaSetValues(dst,
@@ -6167,38 +6172,33 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNarmColor, armColor,
             XmNshadowThickness, shadowThickness,
             XmNhighlightThickness, highlightThickness,
+            XmNselectBackground, selectBG,
+            XmNselectForeground, selectFG,
             NULL);
 }
 
-static void UpdateMenuItem(Widget menuItem, CPDummyWindow *template);
 
-static void UpdateMenu(Widget menu, CPDummyWindow *template)
+
+static void UpdateWidgetsHierarchy(Widget parent, CPDummyWindow *template)
 {
-    UpdateWidgetValues(menu, template->menu);
+    UpdateWidgetValues(parent, template->form);
+
+    Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3 };
+    size_t numSrcWidgets = 6;
     
     WidgetList children;
     Cardinal numChildren;
-    XtVaGetValues(menu, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    XtVaGetValues(parent, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
     for(int i=0;i<numChildren;i++) {
-        UpdateMenuItem(children[i], template);
+        Widget src = template->togglebutton;
+        for(int s=0;s<numSrcWidgets;s++) {
+            if(children[i]->core.widget_class == srcWidgets[s]->core.widget_class) {
+                src = srcWidgets[s];
+                break;
+            }
+        }
+        UpdateWidgetValues(children[i], src);
     }
-}
-
-static void UpdateMenuItem(Widget menuItem, CPDummyWindow *template)
-{
-    Widget menu = NULL;
-    XtVaGetValues(menuItem, XmNsubMenuId, &menu, NULL);
-    
-    UpdateWidgetValues(menuItem, template->menuButton);
-    if(menu) {
-        UpdateMenu(menu, template);
-    }
-}
-
-static void UpdateMenubarResources(Widget menubar, CPDummyWindow *template)
-{
-    UpdateWidgetValues(menubar, template->menubar);
-    //UpdateMenu(menubar, template);
 }
 
 void ReloadWindowResources(WindowInfo *window)
@@ -6207,19 +6207,23 @@ void ReloadWindowResources(WindowInfo *window)
     dw.shell = CreateWidget(TheAppShell, "textShell", topLevelShellWidgetClass, NULL, 0);
     dw.mainWin = XmCreateMainWindow(dw.shell, "main", NULL, 0);
     dw.menubar = XmCreateMenuBar(dw.mainWin, "menuBar", NULL, 0);
-    
-    dw.menu = CreatePulldownMenu(dw.menubar, "fileMenu", NULL, 0);
-    dw.menuButton = XtVaCreateWidget("fileMenu", xmCascadeButtonWidgetClass, dw.menubar, XmNsubMenuId, dw.menu, NULL);
-    dw.menuItem = XtVaCreateWidget("fileNew", xmPushButtonWidgetClass, dw.menu, NULL);
-    
-    //XtManageChild(dw.shell);
-    //XtManageChild(dw.mainWin);
-    //XtManageChild(dw.menubar);
-    //XtManageChild(dw.menuButton);
-    //XtManageChild(dw.menuItem);
-    
-    UpdateMenubarResources(window->menuBar, &dw);
+    dw.form = XmCreateForm(dw.mainWin, "form", NULL, 0);
+    dw.button = XmCreatePushButton(dw.form, "button", NULL, 0);
+    dw.togglebutton = XmCreateToggleButton(dw.form, "togglebutton", NULL, 0);
+    dw.label = XmCreateLabel(dw.form, "label", NULL, 0);
+    dw.textfield1 = XmCreateTextField(dw.form, "textfield1", NULL, 0);
+    dw.textfield2 = XmCreateText(dw.form, "textfield2", NULL, 0);
+    dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
+
+    UpdateWidgetValues(window->menuBar, dw.menubar);
     RecreateMenuBar(window->mainWin, window->menuBar, window, True);
+
+    UpdateWidgetValues(window->mainWin, dw.mainWin);
+
+    UpdateWidgetsHierarchy(window->iSearchForm, &dw);
+    UpdateWidgetsHierarchy(window->statsLineForm, &dw);
+    UpdateWidgetsHierarchy(window->tabBar, &dw);
+    UpdateWidgetsHierarchy(window->splitPane, &dw);
     
     XtDestroyWidget(dw.shell);
 }
