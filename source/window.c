@@ -217,6 +217,7 @@ extern void _XmDismissTearOff(Widget, XtPointer, XtPointer);
 static void hideTooltip(Widget tab);
 static Pixmap createBitmapWithDepth(Widget w, char *data, unsigned int width,
 	unsigned int height);
+static void createSearchForm(WindowInfo *window);
 static WindowInfo *getNextTabWindow(WindowInfo *window, int direction,
         int crossWin, int wrap);
 static Widget addTab(Widget folder, const char *string);
@@ -335,6 +336,10 @@ void LoadColorProfileResources(Display *display, ColorProfile *profile)
     }
 }
 
+static Pixmap isrcFind = 0;
+static Pixmap isrcClear = 0;
+static Pixmap closeTabPixmap = 0;
+
 /*
 ** Create a new editor window
 */
@@ -352,10 +357,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     char newGeometry[MAX_GEOM_STRING_LEN];
     unsigned int rows, cols;
     int x = 0, y = 0, bitmask, showTabBar, state;
-
-    static Pixmap isrcFind = 0;
-    static Pixmap isrcClear = 0;
-    static Pixmap closeTabPixmap = 0;
     
     // Before creating any UI widgets, load custom color profile X resources 
     ColorProfile *colorProfile = GetDefaultColorProfile();
@@ -606,170 +607,30 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        
     window->iSearchForm = XtVaCreateWidget("iSearchForm", 
        	    xmFormWidgetClass, statsAreaForm,
-	    XmNshadowThickness, 0,
-	    XmNleftAttachment, XmATTACH_FORM,
-	    XmNleftOffset, STAT_SHADOW_THICKNESS,
-	    XmNtopAttachment, XmATTACH_FORM,
-	    XmNtopOffset, STAT_SHADOW_THICKNESS,
-	    XmNrightAttachment, XmATTACH_FORM,
-	    XmNrightOffset, STAT_SHADOW_THICKNESS,
-	    XmNbottomOffset, STAT_SHADOW_THICKNESS, NULL);
+        XmNshadowThickness, 0,
+        XmNleftAttachment, XmATTACH_FORM,
+        XmNleftOffset, STAT_SHADOW_THICKNESS,
+        XmNtopAttachment, XmATTACH_FORM,
+        XmNtopOffset, STAT_SHADOW_THICKNESS,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNrightOffset, STAT_SHADOW_THICKNESS,
+        XmNbottomOffset, STAT_SHADOW_THICKNESS, NULL);
     if(window->showISearchLine)
         XtManageChild(window->iSearchForm);
-
-    /* Disable keyboard traversal of the find, clear and toggle buttons.  We
-       were doing this previously by forcing the keyboard focus back to the
-       text widget whenever a toggle changed.  That causes an ugly focus flash
-       on screen.  It's better just not to go there in the first place. 
-       Plus, if the user really wants traversal, it's an X resource so it
-       can be enabled without too much pain and suffering. */
     
-    if (isrcFind == 0) {
-        switch(GetPrefISrcFindIconSize()) {
-            default: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_bits, isrcFind_width, isrcFind_height);
-                break;
-            }
-            case 1: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_m_bits, isrcFind_m_width, isrcFind_m_height);
-                break;
-            }
-            case 2: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_l_bits, isrcFind_l_width, isrcFind_l_height);
-                break;
-            }
-        }
-        
-    }
-    window->iSearchFindButton = XtVaCreateManagedWidget("iSearchFindButton",
-            xmPushButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Find"),
-            XmNlabelType, XmPIXMAP,
-            XmNlabelPixmap, isrcFind,
-            XmNtraversalOn, False,
-            XmNmarginHeight, 1,
-            XmNmarginWidth, 1,
-            XmNleftAttachment, XmATTACH_FORM,
-            /* XmNleftOffset, 3, */
-            XmNleftOffset, 0,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 1,
-            NULL);
-    XmStringFree(s1);
-
-    window->iSearchCaseToggle = XtVaCreateManagedWidget("iSearchCaseToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Case"),
-            XmNset, GetPrefSearch() == SEARCH_CASE_SENSE 
-            || GetPrefSearch() == SEARCH_REGEX
-            || GetPrefSearch() == SEARCH_CASE_SENSE_WORD,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_FORM,
-            XmNmarginHeight, 0, 
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
+    createSearchForm(window);
     
-    window->iSearchRegexToggle = XtVaCreateManagedWidget("iSearchREToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("RegExp"),
-            XmNset, GetPrefSearch() == SEARCH_REGEX_NOCASE 
-            || GetPrefSearch() == SEARCH_REGEX,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchCaseToggle,
-            XmNmarginHeight, 0,
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
-    
-    window->iSearchRevToggle = XtVaCreateManagedWidget("iSearchRevToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Rev"),
-            XmNset, False,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchRegexToggle,
-            XmNmarginHeight, 0,
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
-    
-    if (isrcClear == 0) {
-        switch(GetPrefISrcClearIconSize()) {
-            default: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_bits, isrcClear_width, isrcClear_height);
-                break;
-            }
-            case 1: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_m_bits, isrcClear_m_width, isrcClear_m_height);
-                break;
-            }
-            case 2: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_l_bits, isrcClear_l_width, isrcClear_l_height);
-                break;
-            }
-        }
-    }
-    window->iSearchClearButton = XtVaCreateManagedWidget("iSearchClearButton",
-            xmPushButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("<x"),
-            XmNlabelType, XmPIXMAP,
-            XmNlabelPixmap, isrcClear,
-            XmNtraversalOn, False,
-            XmNmarginHeight, 1,
-            XmNmarginWidth, 1,
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchRevToggle,
-            XmNrightOffset, 2,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 1,
-            NULL);
-    XmStringFree(s1);
-
-    window->iSearchText = XtVaCreateManagedWidget("iSearchText",
-            XNEtextfieldWidgetClass, window->iSearchForm,
-            XmNmarginHeight, 1,
-            XmNnavigationType, XmEXCLUSIVE_TAB_GROUP,
-            XmNleftAttachment, XmATTACH_WIDGET,
-            XmNleftWidget, window->iSearchFindButton,
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchClearButton,
-            /* XmNrightOffset, 5, */
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 0, /* see openmotif note above */
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 0, NULL);
-    RemapDeleteKey(window->iSearchText);
-
-    SetISearchTextCallbacks(window);
 
     /* create the a form to house the tab bar and close-tab button */
     tabForm = XtVaCreateWidget("tabForm", 
-       	    xmFormWidgetClass, statsAreaForm,
-	    XmNmarginHeight, 0,
-	    XmNmarginWidth, 0,
-	    XmNspacing, 0,
-    	    XmNresizable, False, 
+            xmFormWidgetClass, statsAreaForm,
+        XmNmarginHeight, 0,
+        XmNmarginWidth, 0,
+        XmNspacing, 0,
+            XmNresizable, False, 
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
-	    XmNshadowThickness, 0, NULL);
+        XmNshadowThickness, 0, NULL);
 
     /* button to close top document */
     if (closeTabPixmap == 0) {
@@ -792,35 +653,35 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
         }
     }
     closeTabBtn = XtVaCreateManagedWidget("closeTabBtn",
-      	    xmPushButtonWidgetClass, tabForm,
-	    XmNmarginHeight, 0,
-	    XmNmarginWidth, 0,
-    	    XmNhighlightThickness, 0,
-	    XmNlabelType, XmPIXMAP,
-	    XmNlabelPixmap, closeTabPixmap,
-    	    XmNshadowThickness, 1,
+            xmPushButtonWidgetClass, tabForm,
+            XmNmarginHeight, 0,
+            XmNmarginWidth, 0,
+            XmNhighlightThickness, 0,
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, closeTabPixmap,
+            XmNshadowThickness, 1,
             XmNtraversalOn, False,
             XmNrightAttachment, XmATTACH_FORM,
             XmNrightOffset, 3,
             XmNbottomAttachment, XmATTACH_FORM,	    
             XmNbottomOffset, 3,
-	    NULL);
+            NULL);
     XtAddCallback(closeTabBtn, XmNactivateCallback, (XtCallbackProc)closeTabCB, 
-	    mainWin);
+            mainWin);
     
     /* create the tab bar */
     window->tabBar = XtVaCreateManagedWidget("tabBar", 
-       	    xmlFolderWidgetClass, tabForm,
-	    XmNresizePolicy, XmRESIZE_PACK,
-	    XmNleftAttachment, XmATTACH_FORM,
+            xmlFolderWidgetClass, tabForm,
+            XmNresizePolicy, XmRESIZE_PACK,
+            XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 0,
-	    XmNrightAttachment, XmATTACH_WIDGET,
-	    XmNrightWidget, closeTabBtn,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, closeTabBtn,
             XmNrightOffset, 5,
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 0,
             XmNtopAttachment, XmATTACH_FORM,
-	    NULL);
+            NULL);
 
     window->tabMenuPane = CreateTabContextMenu(window->tabBar, window);
     AddTabContextMenuAction(window->tabBar);
@@ -829,13 +690,13 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        widget to hide the 3D shadow for the manager area.
        Note: this works only on the patched XmLFolder widget */
     form = XtVaCreateWidget("form",
-	    xmFormWidgetClass, window->tabBar,
-	    XmNheight, 1,
-	    XmNresizable, False,
-	    NULL);
+        xmFormWidgetClass, window->tabBar,
+        XmNheight, 1,
+        XmNresizable, False,
+        NULL);
 
     XtAddCallback(window->tabBar, XmNactivateCallback,
-    	    raiseTabCB, NULL);
+            raiseTabCB, NULL);
 
     window->tab = addTab(window->tabBar, name);
 
@@ -881,9 +742,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNshadowThickness, 0,
             XmNhighlightColor, bgpix,
             XmNhighlightThickness, 0,  /* must be zero, for OM (2.1.30) to 
-	                                  aligns tatsLineColNo & statsLine */
+                                       aligns tatsLineColNo & statsLine */
             XmNmarginHeight, 1,        /* == statsLineColNo.marginHeight - 1,
-	                                  to align with statsLineColNo */
+                                      to align with statsLineColNo */
             XmNscrollHorizontal, False,
             XmNeditMode, XmSINGLE_LINE_EDIT,
             XmNeditable, False,
@@ -976,7 +837,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNhighlightThickness, 1,
             NULL);
     XtAddCallback(btnClose, XmNactivateCallback, (XtCallbackProc)closeInfoBarCB, 
-	    mainWin);
+            mainWin);
     
     s1 = XmStringCreateSimple("Reload");
     Widget btnReload = XtVaCreateManagedWidget(
@@ -994,7 +855,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNhighlightThickness, 1,
             NULL);
     XtAddCallback(btnReload, XmNactivateCallback, (XtCallbackProc)reloadCB, 
-	    mainWin);
+            mainWin);
     XmStringFree(s1);
     
     /* Create the menu bar */
@@ -1078,12 +939,12 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 
     showTabBar = GetShowTabBar(window);
     if (showTabBar)
-    	XtManageChild(tabForm);
+        XtManageChild(tabForm);
 
     manageToolBars(statsAreaForm);
 
     if (showTabBar || window->showISearchLine || 
-    	    window->showStats || window->showInfoBar)
+            window->showStats || window->showInfoBar)
     {
         XtManageChild(statsAreaForm);
     }
@@ -1123,13 +984,161 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* dim/undim Attach_Tab menu items */
     state = NDocuments(window) < NWindows();
     for(win=WindowList; win; win=win->next) {
-    	if (IsTopDocument(win)) {
-    	    XtSetSensitive(win->moveDocumentItem, state);
-    	    XtSetSensitive(win->contextMoveDocumentItem, state);
-	}
+        if (IsTopDocument(win)) {
+            XtSetSensitive(win->moveDocumentItem, state);
+            XtSetSensitive(win->contextMoveDocumentItem, state);
+        }
     }
       
     return window;
+}
+
+static void createSearchForm(WindowInfo *window)
+{
+    XmString s1;
+
+    /* Disable keyboard traversal of the find, clear and toggle buttons.  We
+       were doing this previously by forcing the keyboard focus back to the
+       text widget whenever a toggle changed.  That causes an ugly focus flash
+       on screen.  It's better just not to go there in the first place.
+       Plus, if the user really wants traversal, it's an X resource so it
+       can be enabled without too much pain and suffering. */
+
+    if (isrcFind == 0) {
+        switch(GetPrefISrcFindIconSize()) {
+            default: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_bits, isrcFind_width, isrcFind_height);
+                break;
+            }
+            case 1: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_m_bits, isrcFind_m_width, isrcFind_m_height);
+                break;
+            }
+            case 2: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_l_bits, isrcFind_l_width, isrcFind_l_height);
+                break;
+            }
+        }
+
+    }
+    window->iSearchFindButton = XtVaCreateManagedWidget("iSearchFindButton",
+            xmPushButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Find"),
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, isrcFind,
+            XmNtraversalOn, False,
+            XmNmarginHeight, 1,
+            XmNmarginWidth, 1,
+            XmNleftAttachment, XmATTACH_FORM,
+            /* XmNleftOffset, 3, */
+            XmNleftOffset, 0,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 1,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchCaseToggle = XtVaCreateManagedWidget("iSearchCaseToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Case"),
+            XmNset, GetPrefSearch() == SEARCH_CASE_SENSE
+            || GetPrefSearch() == SEARCH_REGEX
+            || GetPrefSearch() == SEARCH_CASE_SENSE_WORD,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchRegexToggle = XtVaCreateManagedWidget("iSearchREToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("RegExp"),
+            XmNset, GetPrefSearch() == SEARCH_REGEX_NOCASE
+            || GetPrefSearch() == SEARCH_REGEX,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchCaseToggle,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchRevToggle = XtVaCreateManagedWidget("iSearchRevToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Rev"),
+            XmNset, False,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchRegexToggle,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    if (isrcClear == 0) {
+        switch(GetPrefISrcClearIconSize()) {
+            default: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_bits, isrcClear_width, isrcClear_height);
+                break;
+            }
+            case 1: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_m_bits, isrcClear_m_width, isrcClear_m_height);
+                break;
+            }
+            case 2: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_l_bits, isrcClear_l_width, isrcClear_l_height);
+                break;
+            }
+        }
+    }
+    window->iSearchClearButton = XtVaCreateManagedWidget("iSearchClearButton",
+            xmPushButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("<x"),
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, isrcClear,
+            XmNtraversalOn, False,
+            XmNmarginHeight, 1,
+            XmNmarginWidth, 1,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchRevToggle,
+            XmNrightOffset, 2,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 1,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchText = XtVaCreateManagedWidget("iSearchText",
+            XNEtextfieldWidgetClass, window->iSearchForm,
+            XmNmarginHeight, 1,
+            XmNnavigationType, XmEXCLUSIVE_TAB_GROUP,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, window->iSearchFindButton,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchClearButton,
+            /* XmNrightOffset, 5, */
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 0, /* see openmotif note above */
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 0, NULL);
+    RemapDeleteKey(window->iSearchText);
+
+    SetISearchTextCallbacks(window);
 }
 
 static Widget evTab;
@@ -6146,6 +6155,17 @@ typedef struct CPDummyWindow {
     Widget textfield3;
 } CPDummyWindow;
 
+static void clearCompositeWidget(Widget w)
+{
+    WidgetList children;
+    Cardinal numChildren;
+    XtVaGetValues(w, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    for(int i=0;i<numChildren;i++) {
+        XtUnmanageChild(children[i]);
+        XtDestroyWidget(children[i]);
+    }
+}
+
 static void UpdateWidgetValues(Widget dst, Widget src)
 {
     if(dst->core.widget_class == textWidgetClass) {
@@ -6279,8 +6299,13 @@ void ReloadWindowResources(WindowInfo *window)
     RecreateMenuBar(window->mainWin, window->menuBar, window, True);
 
     UpdateWidgetValues(window->mainWin, dw.mainWin);
+    Widget winForm = XtParent(window->iSearchForm);
+    UpdateWidgetValues(winForm, dw.form);
 
     UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
+    clearCompositeWidget(window->iSearchForm);
+    createSearchForm(window);
+    
     UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
     UpdateWidgetsHierarchy(window->tabBar, dw.form, &dw);
     UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);
@@ -6290,6 +6315,9 @@ void ReloadWindowResources(WindowInfo *window)
     for (int i=0; i<window->nPanes; i++) {
         RecreateTextareaScrollbar(window->textPanes[i]);
     }
-    
+
+
+
+
     XtDestroyWidget(dw.shell);
 }
