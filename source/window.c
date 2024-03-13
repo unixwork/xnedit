@@ -6148,7 +6148,11 @@ typedef struct CPDummyWindow {
 
 static void UpdateWidgetValues(Widget dst, Widget src)
 {
-    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor, selectBG, selectFG;
+    if(dst->core.widget_class == textWidgetClass) {
+        return; // textWidgetClass is updated separately
+    }
+
+    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor, selectBG, selectFG, troughColor;
     Dimension shadowThickness, highlightThickness;
     XtVaGetValues(src,
             XmNbackground, &background,
@@ -6161,6 +6165,7 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNhighlightThickness, &highlightThickness,
             XmNselectBackground, &selectBG,
             XmNselectForeground, &selectFG,
+            XmNtroughColor, &troughColor,
             NULL);
     
     XtVaSetValues(dst,
@@ -6174,14 +6179,15 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNhighlightThickness, highlightThickness,
             XmNselectBackground, selectBG,
             XmNselectForeground, selectFG,
+            XmNtroughColor, troughColor,
             NULL);
 }
 
 
 
-static void UpdateWidgetsHierarchy(Widget parent, CPDummyWindow *template)
+static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *template)
 {
-    UpdateWidgetValues(parent, template->form);
+    UpdateWidgetValues(parent, src);
 
     Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3 };
     size_t numSrcWidgets = 6;
@@ -6190,6 +6196,7 @@ static void UpdateWidgetsHierarchy(Widget parent, CPDummyWindow *template)
     Cardinal numChildren;
     XtVaGetValues(parent, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
     for(int i=0;i<numChildren;i++) {
+        Widget dst = children[i];
         Widget src = template->togglebutton;
         for(int s=0;s<numSrcWidgets;s++) {
             if(children[i]->core.widget_class == srcWidgets[s]->core.widget_class) {
@@ -6197,7 +6204,60 @@ static void UpdateWidgetsHierarchy(Widget parent, CPDummyWindow *template)
                 break;
             }
         }
-        UpdateWidgetValues(children[i], src);
+        UpdateWidgetsHierarchy(dst, src, template);
+    }
+}
+
+// Destroy the current horizontal and vertical scrollbar
+// and create a new pair of scrollbars for the given textArea
+static void RecreateTextareaScrollbar(Widget textArea)
+{
+    Widget textAreaFrame = XtParent(textArea);
+    Widget textAreaScrolledWindow = XtParent(textAreaFrame);
+
+    // get the scrollbars and the current values
+    Widget oldHscrollbar = NULL;
+    Widget oldVscrollbar = NULL;
+    XtVaGetValues(textAreaScrolledWindow, XmNhorizontalScrollBar, &oldHscrollbar, XmNverticalScrollBar, &oldVscrollbar, NULL);
+    if(!oldHscrollbar || !oldVscrollbar) {
+        fprintf(stderr, "Error: cannot update scrollbars\n");
+        return;
+    }
+    int hincrement, hmin, hmax, hpageIncrement, hsliderSize;
+    int vincrement, vmin, vmax, vpageIncrement, vsliderSize;
+    XtVaGetValues(oldHscrollbar, XmNincrement, &hincrement, XmNminimum, &hmin, XmNmaximum, &hmax, XmNpageIncrement, &hpageIncrement, XmNsliderSize, &hsliderSize, NULL);
+    XtVaGetValues(oldVscrollbar, XmNincrement, &vincrement, XmNminimum, &vmin, XmNmaximum, &vmax, XmNpageIncrement, &vpageIncrement, XmNsliderSize, &vsliderSize, NULL);
+
+    int hIsManaged = XtIsManaged(oldHscrollbar);
+    int vIsManaged = XtIsManaged(oldVscrollbar);
+
+    // unmanage and destroy
+    XtUnmanageChild(oldHscrollbar);
+    XtUnmanageChild(oldVscrollbar);
+    XtDestroyWidget(oldHscrollbar);
+    XtDestroyWidget(oldVscrollbar);
+
+    // create new scrollbars
+    Widget newHscrollbar = XtVaCreateManagedWidget(
+            "textHorScrollBar",
+            xmScrollBarWidgetClass, textAreaScrolledWindow, XmNorientation, XmHORIZONTAL,
+            XmNrepeatDelay, 10, NULL);
+    Widget newVscrollbar = XtVaCreateManagedWidget(
+            "textVertScrollBar",
+            xmScrollBarWidgetClass, textAreaScrolledWindow, XmNorientation, XmVERTICAL,
+            XmNrepeatDelay, 10, NULL);
+    XtVaSetValues(newHscrollbar, XmNincrement, hincrement, XmNminimum, hmin, XmNmaximum, hmax, XmNpageIncrement, hpageIncrement, XmNsliderSize, hsliderSize, NULL);
+    XtVaSetValues(newVscrollbar, XmNincrement, vincrement, XmNminimum, vmin, XmNmaximum, vmax, XmNpageIncrement, vpageIncrement, XmNsliderSize, vsliderSize, NULL);
+
+    XtVaSetValues(textAreaScrolledWindow, XmNhorizontalScrollBar,
+                  newHscrollbar, XmNverticalScrollBar, newVscrollbar, NULL);
+    XtVaSetValues(textArea, textNhScrollBar, newHscrollbar, textNvScrollBar, newVscrollbar, NULL);
+
+    if(!hIsManaged) {
+        XtUnmanageChild(newHscrollbar);
+    }
+    if(!vIsManaged) {
+        XtUnmanageChild(newVscrollbar);
     }
 }
 
@@ -6220,10 +6280,16 @@ void ReloadWindowResources(WindowInfo *window)
 
     UpdateWidgetValues(window->mainWin, dw.mainWin);
 
-    UpdateWidgetsHierarchy(window->iSearchForm, &dw);
-    UpdateWidgetsHierarchy(window->statsLineForm, &dw);
-    UpdateWidgetsHierarchy(window->tabBar, &dw);
-    UpdateWidgetsHierarchy(window->splitPane, &dw);
+    UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
+    UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
+    UpdateWidgetsHierarchy(window->tabBar, dw.form, &dw);
+    UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);
+
+    RecreateTextareaScrollbar(window->textArea);
+    /* Update any additional panes */
+    for (int i=0; i<window->nPanes; i++) {
+        RecreateTextareaScrollbar(window->textPanes[i]);
+    }
     
     XtDestroyWidget(dw.shell);
 }

@@ -1364,6 +1364,13 @@ static Boolean setValues(TextWidget current, TextWidget request,
         TextDSetAnsiColorList_Deprecated(new->text.textD, new->text.ansiColorList);
         redraw = True;
     }
+
+    if(new->text.hScrollBar != current->text.hScrollBar) {
+        new->text.textD->hScrollBar = new->text.hScrollBar;
+    }
+    if(new->text.vScrollBar != current->text.vScrollBar) {
+        new->text.textD->vScrollBar = new->text.vScrollBar;
+    }
     
     return redraw;
 } 
