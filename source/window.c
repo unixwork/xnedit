@@ -6305,7 +6305,7 @@ void ReloadWindowResources(WindowInfo *window)
     UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
     clearCompositeWidget(window->iSearchForm);
     createSearchForm(window);
-    
+
     UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
     UpdateWidgetsHierarchy(window->tabBar, dw.form, &dw);
     UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);

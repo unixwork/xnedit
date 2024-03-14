@@ -32,6 +32,7 @@
 #endif
 
 #include "highlightData.h"
+#include "colorprofile.h"
 #include "textBuf.h"
 #include "nedit.h"
 #include "highlight.h"
@@ -80,13 +81,6 @@
 enum fontTypes {PLAIN_FONT, ITALIC_FONT, BOLD_FONT, BOLD_ITALIC_FONT};
 static const char *FontTypeNames[N_FONT_TYPES] =
    {"Plain", "Italic", "Bold", "Bold Italic"};
-
-typedef struct {
-    char *name;
-    char *color;
-    char *bgColor;
-    int font;
-} highlightStyleRec;
 
 static int styleError(const char *stringStart, const char *stoppedAt,
        const char *message);

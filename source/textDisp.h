@@ -28,6 +28,7 @@
 #define NEDIT_TEXTDISP_H_INCLUDED
 
 #include "textBuf.h"
+#include "colorprofile.h"
 
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
@@ -65,51 +66,6 @@ struct NFont {
     int maxWidth;
     unsigned int ref;
 };
-
-typedef struct _ColorProfile {
-    char     *name;
-    
-    char     *textFg;
-    char     *textBg;
-    char     *selectFg;
-    char     *selectBg;
-    char     *hiliteFg;
-    char     *hiliteBg;
-    char     *lineNoFg;
-    char     *lineNoBg;
-    char     *cursorFg;
-    char     *lineHiBg;
-    char     *ansiColorList;
-    char     *rainbowColorList;   
-    
-    Boolean  colorsLoaded;
-    
-    XftColor textFgColor;
-    XftColor textBgColor;
-    XftColor selectFgColor;
-    XftColor selectBgColor;
-    XftColor hiliteFgColor;
-    XftColor hiliteBgColor;
-    XftColor lineNoFgColor;
-    XftColor lineNoBgColor;
-    XftColor cursorFgColor;
-    XftColor lineHiBgColor;
-    
-    XftColor *ansiColors;
-    size_t   numAnsiColors;
-    XftColor *rainbowColors;
-    size_t   numRainbowColors;
-    
-    char     *resourceFile;
-    int      windowThemeVariant; // 0: undefined, 1: light, 2: dark
-    XrmDatabase db;
-    
-    Boolean modified;
-    Boolean removed;
-    struct _ColorProfile *orig;
-    
-    struct _ColorProfile *next;
-} ColorProfile;
 
 typedef struct {
     char *highlightName;
