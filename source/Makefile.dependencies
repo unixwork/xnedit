@@ -38,6 +38,7 @@ parse_noyacc.o: parse_noyacc.c parse.h interpret.h nedit.h textBuf.h \
 preferences.o: preferences.c preferences.h nedit.h textBuf.h text.h \
   search.h window.h userCmds.h highlight.h highlightData.h help.h \
   help_topic.h regularExp.h smartIndent.h windowTitle.h server.h tags.h \
+  colorprofile.h \
   ../util/prefFile.h ../util/misc.h ../util/DialogF.h \
   ../util/managedList.h ../util/fontsel.h ../util/fileUtils.h \
   ../util/utils.h ../util/clearcase.h
@@ -64,10 +65,10 @@ tags.o: tags.c tags.h nedit.h textBuf.h text.h window.h file.h \
   preferences.h search.h selection.h calltips.h textDisp.h \
   ../util/DialogF.h ../util/fileUtils.h ../util/misc.h ../util/utils.h
 text.o: text.c text.h textBuf.h textP.h textDisp.h textSel.h textDrag.h \
-  nedit.h calltips.h
+  nedit.h calltips.h colorprofile.h
 textBuf.o: textBuf.c textBuf.h rangeset.h
 textDisp.o: textDisp.c textDisp.h textBuf.h text.h textP.h nedit.h \
-  calltips.h highlight.h rangeset.h
+  calltips.h highlight.h rangeset.h colorprofile.h
 textDrag.o: textDrag.c textDrag.h text.h textBuf.h textDisp.h textP.h
 textSel.o: textSel.c textSel.h textP.h textBuf.h textDisp.h text.h
 undo.o: undo.c undo.h nedit.h textBuf.h text.h search.h window.h file.h \

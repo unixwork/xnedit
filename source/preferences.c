@@ -239,8 +239,8 @@ typedef struct {
     
     Widget profileDropDown;
     
-    Widget tabs[3];
-    Widget tabForms[3];
+    Widget tabs[4];
+    Widget tabForms[4];
     
     // general colors
     Widget textFgW;
@@ -305,6 +305,13 @@ typedef struct {
     Widget ansiBrightCyanErrW;
     Widget ansiBrightWhiteW;
     Widget ansiBrightWhiteErrW;
+
+    // styles
+    Widget styleDefaultW;
+    Widget styleLightenW;
+    Widget styleCustomW;
+    Widget styleGreyPctW;
+    Widget styleColorPctW;
     
     ColorProfile *colorProfiles;
     size_t numColorProfiles;
@@ -439,6 +446,7 @@ static struct {
     char *highlight;
     char *language;
     char *styles;
+    char *colorProfileStyles;
     char *smartIndent;
     char *smartIndentCommon;
     char *shell;
@@ -881,6 +889,8 @@ static PrefDescripRec PrefDescrip[] = {
         ADD_5_2_STYLES
         ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
+    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "",
+     &TempStringPrefs.colorProfileStyles, NULL, False},
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
         "C:Default\n\
 	C++:Default\n\
@@ -1437,9 +1447,17 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	TempStringPrefs.highlight = NULL;
     }
     if (TempStringPrefs.styles != NULL) {
-	LoadStylesString(TempStringPrefs.styles);
-    	NEditFree(TempStringPrefs.styles);
-	TempStringPrefs.styles = NULL;
+        LoadStylesString(TempStringPrefs.styles, False);
+        NEditFree(TempStringPrefs.styles);
+        TempStringPrefs.styles = NULL;
+    }
+    if (TempStringPrefs.colorProfileStyles != NULL) {
+        if(strlen(TempStringPrefs.colorProfileStyles) > 0) {
+            LoadStylesString(TempStringPrefs.colorProfileStyles, True);
+            PrefDescrip[7].save = True;
+        }
+        NEditFree(TempStringPrefs.colorProfileStyles);
+        TempStringPrefs.colorProfileStyles = NULL;
     }
     if (TempStringPrefs.language != NULL) {
 	loadLanguageModesString(TempStringPrefs.language, fileVer);
@@ -2429,6 +2447,7 @@ void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
     to->ansiColorList = NEditStrdup(from->ansiColorList);
     to->rainbowColorList = NEditStrdup(from->rainbowColorList);
     to->resourceFile = from->resourceFile ? NEditStrdup(from->resourceFile) : NULL;
+    to->styleType = from->styleType;
     
     to->orig = from;
 }
@@ -2460,7 +2479,7 @@ char* WriteColorProfilesString(void)
                     buf,
                     4096,
                     "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
-                    "ansi:{%s},rainbow:{%s}%s%s%s%s",
+                    "ansi:{%s},rainbow:{%s},styles:{%d}%s%s%s%s",
                     profile->name,
                     profile->textFg,
                     profile->textBg,
@@ -2474,6 +2493,7 @@ char* WriteColorProfilesString(void)
                     profile->lineHiBg,
                     profile->ansiColorList,
                     profile->rainbowColorList,
+                    profile->styleType,
                     profile->resourceFile ? ",res:{" : "",
                     profile->resourceFile ? profile->resourceFile : "",
                     profile->resourceFile ? "}" : "",
@@ -6097,6 +6117,7 @@ static void updateColors(colorDialog *cd)
         prefProfile->ansiColorList = NEditStrdup(profile->ansiColorList);
         prefProfile->rainbowColorList = NEditStrdup(profile->rainbowColorList);
         prefProfile->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
+        prefProfile->styleType = profile->styleType;
 
         prefProfile->colorsLoaded = FALSE;
         
@@ -6338,7 +6359,7 @@ static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
         return;
     }
     
-    for(int i=0;i<3;i++) {
+    for(int i=0;i<4;i++) {
         if(cd->tabs[i] != w) {
             XmToggleButtonSetState(cd->tabs[i], False, False);
             XtUnmanageChild(cd->tabForms[i]);
@@ -6775,6 +6796,21 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
     XmStringFree(s);
 }
 
+static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
+{
+    if(!tb->set) {
+        return; // ignore unset events
+    }
+
+    int type = 0;
+    if(w == cd->styleLightenW) {
+        type = 1;
+    } else if(w == cd->styleCustomW) {
+        type = 2;
+    }
+    cd->colorProfiles[cd->selectedProfile].styleType = type;
+}
+
 /* 
  * Code for the dialog itself
  */
@@ -6917,7 +6953,7 @@ void ChooseColors(WindowInfo *window)
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 33,
+            XmNrightPosition, 25,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNset, True,
@@ -6931,7 +6967,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[0],
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 66,
+            XmNrightPosition, 50,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("Indent Rainbow"),
@@ -6943,15 +6979,28 @@ void ChooseColors(WindowInfo *window)
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[1],
-            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 75,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("ANSI Colors"),
+            NULL);
+    cd->tabs[3] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorProfileForm,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[2],
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("Styles"),
             NULL);
     XmStringFree(s1);
     XtAddCallback(cd->tabs[0], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
+    XtAddCallback(cd->tabs[3], XmNvalueChangedCallback, selectColorTab, cd);
     
     topW = cd->tabs[0];
       
@@ -7039,8 +7088,16 @@ void ChooseColors(WindowInfo *window)
             XmNbottomWidget, sepW,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
-            NULL);  
-    
+            NULL);
+    cd->tabForms[3] = XtVaCreateWidget("styleForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+
     /*
      * Tab 1: Generral
      */
@@ -7193,6 +7250,88 @@ void ChooseColors(WindowInfo *window)
     
     loadAnsiColors(cd);
 
+    /*
+     * Tab 4: Styles
+     */
+    tabForm = cd->tabForms[3];
+    s1 = XmStringCreateLocalized("test description");
+    Widget stInfoLabel = XtVaCreateManagedWidget("stInfoLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            //XmNrightAttachment, XmATTACH_FORM,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            //XmNalignment, XmALIGNMENT_CENTER,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+
+    Widget radioRC = XtVaCreateManagedWidget("style_radiobuttons",
+            xmRowColumnWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stInfoLabel,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNradioBehavior, True,
+            XmNpacking, XmPACK_COLUMN,
+    	    XmNnumColumns, 3,
+            NULL);
+
+    ColorProfile *sp = &cd->colorProfiles[cd->selectedProfile];
+
+    s1 = XmStringCreateLocalized("Default Styles");
+    cd->styleDefaultW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 0 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleDefaultW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Lightened Colors");
+    cd->styleLightenW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 1 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleLightenW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Custom Styles");
+    cd->styleCustomW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 2 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleCustomW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Text Drawing Styles...");
+    Widget stOpenStyleSettings = XtVaCreateManagedWidget("stOpenButton",
+            xmPushButtonWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, radioRC,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNlabelString, s1,
+            NULL);
+
+    // TODO: style preview drawing area
     
     /* Set initial values */
     loadColors(cd);
@@ -7588,6 +7727,17 @@ static ColorProfile* ParseColorProfile(const char *str, size_t len)
                 profile->rainbowColorList = NEditMalloc(sectionColorsLen+1);
                 memcpy(profile->rainbowColorList, sectionColors, sectionColorsLen);
                 profile->rainbowColorList[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "styles", sectionNameLen)) {
+                // the styles value is either 0, 1 or 2
+                if(sectionColorsLen == 1) {
+                    // profile->styleType is initialized with 0, we only
+                    // need to check if the new value is 1 or 2
+                    if(sectionColors[0] == '1') {
+                        profile->styleType = 1;
+                    } else if(sectionColors[0] == '2') {
+                        profile->styleType = 2;
+                    }
+                }
             } else if(!strncmp(sectionName, "res", sectionNameLen)) {
                 profile->resourceFile = NEditMalloc(sectionColorsLen+1);
                 memcpy(profile->resourceFile, sectionColors, sectionColorsLen);

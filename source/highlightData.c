@@ -1096,10 +1096,11 @@ static char *DefaultPatternSets[] = {
 ** styles information, parse it, and load it into the stored highlight style
 ** list (HighlightStyles) for this NEdit session.
 */
-int LoadStylesString(char *inString)
+int LoadStylesString(char *inString, Boolean profile)
 {    
     char *errMsg, *fontStr;
     char *inPtr = inString;
+    char *profileName = NULL;
     highlightStyleRec *hs;
     int i;
 
@@ -1110,6 +1111,14 @@ int LoadStylesString(char *inString)
 
 	/* Allocate a language mode structure in which to store the info. */
 	hs = (highlightStyleRec *)NEditMalloc(sizeof(highlightStyleRec));
+
+    /* read profile name */
+    if(profile) {
+        profileName = ReadSymbolicField(&inPtr);
+        if(!profileName) {
+            return styleError(inString,inPtr, "profile name required");
+        }
+    }
 
 	/* read style name */
 	hs->name = ReadSymbolicField(&inPtr);
@@ -1153,26 +1162,33 @@ int LoadStylesString(char *inString)
 	}
 	NEditFree(fontStr);
 
-   	/* pattern set was read correctly, add/change it in the list */
-   	for (i=0; i<NHighlightStyles; i++) {
-	    if (!strcmp(HighlightStyles[i]->name, hs->name)) {
-		freeHighlightStyleRec(HighlightStyles[i]);
-		HighlightStyles[i] = hs;
-		break;
-	    }
-	}
-	if (i == NHighlightStyles) {
-	    HighlightStyles[NHighlightStyles++] = hs;
-   	    if (NHighlightStyles > MAX_HIGHLIGHT_STYLES)
-   		return styleError(inString, inPtr,
-   	    		"maximum allowable number of styles exceeded");
-	}
-	
-    	/* if the string ends here, we're done */
+    /* pattern set was read correctly, add/change it in the list */
+    if(!profile) {
+        for (i=0; i<NHighlightStyles; i++) {
+            if (!strcmp(HighlightStyles[i]->name, hs->name)) {
+                freeHighlightStyleRec(HighlightStyles[i]);
+                HighlightStyles[i] = hs;
+                break;
+            }
+        }
+
+        if (i == NHighlightStyles) {
+            HighlightStyles[NHighlightStyles++] = hs;
+            if (NHighlightStyles > MAX_HIGHLIGHT_STYLES)
+                return styleError(inString, inPtr,
+                                  "maximum allowable number of styles exceeded");
+        }
+    } else {
+        // TODO
+    }
+
+    /* if the string ends here, we're done */
    	inPtr += strspn(inPtr, " \t\n");
     	if (*inPtr == '\0')
     	    return True;
     }
+
+    return False;
 }
 
 /*

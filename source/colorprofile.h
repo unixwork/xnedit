@@ -75,8 +75,10 @@ typedef struct _ColorProfile {
     XftColor *rainbowColors;
     size_t   numRainbowColors;
 
-
-    highlightStyleRec *styles;
+    int styleType; // 0: default     styles points to default text styles
+                   // 1: lightened   lightened default colors (styles allocated)
+                   // 2: custom      custom color profile text styles (styles allocated)
+    highlightStyleRec **styles;
     size_t numStyles;
 
     char     *resourceFile;
