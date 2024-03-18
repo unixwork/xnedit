@@ -4067,7 +4067,7 @@ void ChooseFonts(WindowInfo *window, int forWindow)
 
     fd->primaryW = XtVaCreateManagedWidget("primary", xmTextWidgetClass,
     	    primaryForm,
-    	    XmNcolumns, 70,
+    	    XmNcolumns, 30,
     	    XmNmaxLength, MAX_FONT_LEN,
 	    XmNleftAttachment, XmATTACH_WIDGET,
 	    XmNleftWidget, primaryBtn,
