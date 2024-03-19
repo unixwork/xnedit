@@ -23,6 +23,7 @@
 #include "window.h"
 #include "nedit.h"
 
+#include "../util/nedit_malloc.h"
 #include "../util/misc.h"
 #include "../util/managedList.h"
 
@@ -44,42 +45,93 @@ typedef struct {
 
     IOFilter **filters;
     int nfilters;
+    int filteralloc;
 } filterDialog;
 
 static filterDialog fd  = { NULL, NULL, NULL, NULL, NULL, NULL};
 
 
-static void filterOkCB(Widget w, XtPointer clientData, XtPointer callData)
-{
+static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
+static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData);
+static void fdApplyCB(Widget w, XtPointer clientData, XtPointer callData);
+static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData);
 
+
+static int fdIsEmpty(void)
+{
+    char *s = XmTextGetString(fd.nameW);
+    if(s && strlen(s) > 0) {
+        return 0;
+    }
+    XtFree(s);
+    s = XmTextGetString(fd.patternW);
+    if(s && strlen(s) > 0) {
+        return 0;
+    }
+    XtFree(s);
+    s = XmTextGetString(fd.cmdInW);
+    if(s && strlen(s) > 0) {
+        return 0;
+    }
+    XtFree(s);
+    s = XmTextGetString(fd.cmdOutW);
+    if(s && strlen(s) > 0) {
+        return 0;
+    }
+    XtFree(s);
+    return 1;
 }
 
-static void filterApplyCB(Widget w, XtPointer clientData, XtPointer callData)
+static void fdFreeItemCB(void *item)
 {
-
-}
-
-static void filterCloseCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    /* pop down and destroy the dialog */
-    XtDestroyWidget(fd.shell);
-    fd.shell = NULL;
+    IOFilter *f = item;
+    XtFree(f->name);
+    XtFree(f->pattern);
+    XtFree(f->cmdin);
+    XtFree(f->cmdout);
+    NEditFree(f);
 }
 
 static void *fdGetDisplayedCB(void *oldItem, int explicitRequest, int *abort,
     	void *cbArg)
 {
-    return NULL;
+    if(fdIsEmpty()) {
+        return NULL;
+    }
+    
+    IOFilter *filter = NEditMalloc(sizeof(IOFilter));
+    filter->name = XmTextGetString(fd.nameW);
+    filter->pattern = XmTextGetString(fd.patternW);
+    filter->cmdin = XmTextGetString(fd.cmdInW);
+    filter->cmdout = XmTextGetString(fd.cmdOutW);
+    
+    if (strlen(filter->name) == 0 ||
+        strlen(filter->pattern) == 0 ||
+        strlen(filter->cmdin) == 0 ||
+        strlen(filter->cmdout) == 0 ||
+        fd.nfilters == fd.filteralloc)
+    {
+        fdFreeItemCB(filter);
+        *abort = 1;
+    }
+    
+    return filter;
 }
 
 static void fdSetDisplayedCB(void *item, void *cbArg)
 {
-
-}
-
-static void fdFreeItemCB(void *item)
-{
-
+    if(!item) {
+        XmTextSetString(fd.nameW, "");
+        XmTextSetString(fd.patternW, "");
+        XmTextSetString(fd.cmdInW, "");
+        XmTextSetString(fd.cmdOutW, "");
+    } else {
+        IOFilter *f = item;
+        XmTextSetString(fd.nameW, f->name);
+        XmTextSetString(fd.patternW, f->pattern);
+        XmTextSetString(fd.cmdInW, f->cmdin);
+        XmTextSetString(fd.cmdOutW, f->cmdout);
+    }
 }
 
 #define FD_LIST_RIGHT 30
@@ -95,7 +147,10 @@ void FilterSettings(WindowInfo *window)
         RaiseDialogWindow(fd.shell);
         return;
     }
-
+    
+    fd.filteralloc = 256;
+    fd.filters = NEditCalloc(sizeof(IOFilter), fd.filteralloc);
+    fd.nfilters = 0;
 
     int ac = 0;
     Arg args[20];
@@ -122,9 +177,6 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
         NULL);
     XmStringFree(s1);
 
-
-
-
     Widget okBtn = XtVaCreateManagedWidget("ok",xmPushButtonWidgetClass,form,
             XmNlabelString, s1=XmStringCreateSimple("OK"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
@@ -135,7 +187,7 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    XtAddCallback(okBtn, XmNactivateCallback, filterOkCB, NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, fdOkCB, NULL);
     XmStringFree(s1);
 
     Widget applyBtn = XtVaCreateManagedWidget("apply",xmPushButtonWidgetClass,form,
@@ -148,7 +200,7 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    XtAddCallback(applyBtn, XmNactivateCallback, filterApplyCB, NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, fdApplyCB, NULL);
     XmStringFree(s1);
 
     Widget closeBtn = XtVaCreateManagedWidget("close",
@@ -161,7 +213,7 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    XtAddCallback(closeBtn, XmNactivateCallback, filterCloseCB, NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, fdCloseCB, NULL);
     XmStringFree(s1);
 
     Widget sep1 = XtVaCreateManagedWidget("sep1", xmSeparatorGadgetClass, form,
@@ -314,8 +366,29 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
     XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
     XtVaSetValues(form, XmNcancelButton, closeBtn, NULL);
 
-    //XtAddCallback(form, XmNdestroyCallback, hsDestroyCB, NULL);
-    //AddMotifCloseCallback(fd.shell, hsCloseCB, NULL);
+    XtAddCallback(form, XmNdestroyCallback, fdDestroyCB, NULL);
+    AddMotifCloseCallback(fd.shell, fdCloseCB, NULL);
 
     RealizeWithoutForcingPosition(fd.shell);
+}
+
+static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void fdApplyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    XtDestroyWidget(fd.shell);
+    fd.shell = NULL;
 }
