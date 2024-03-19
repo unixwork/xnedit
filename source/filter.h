@@ -32,6 +32,7 @@
 typedef struct IOFilter IOFilter;
 struct IOFilter {
     char *name;
+    char *pattern;
     char *cmdin;
     char *cmdout;
 };

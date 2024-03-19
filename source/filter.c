@@ -38,6 +38,7 @@ typedef struct {
     WindowInfo *window;
     Widget managedListW;
     Widget nameW;
+    Widget patternW;
     Widget cmdInW;
     Widget cmdOutW;
 
@@ -189,11 +190,68 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             256, 20, fdGetDisplayedCB, NULL, fdSetDisplayedCB,
             form, fdFreeItemCB);
 
-    s1 = XmStringCreateLocalized("Input Filter Command");
-    Widget lblCmdIn = XtVaCreateManagedWidget("sep1", xmLabelGadgetClass, form,
+    s1 = XmStringCreateLocalized("Name");
+    Widget lblName = XtVaCreateManagedWidget("nameLbl", xmLabelGadgetClass, form,
         XmNtopAttachment, XmATTACH_WIDGET,
         XmNtopWidget, topLbl,
         XmNtopOffset, FD_H_MARGIN,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, fd.managedListW,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNleftOffset, 6,
+        XmNrightOffset, 6,
+        XmNlabelString, s1,
+        XmNalignment, XmALIGNMENT_BEGINNING,
+        NULL);
+    XmStringFree(s1);
+    
+    fd.nameW = XtVaCreateManagedWidget("patternLbl", xmTextWidgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, lblName,
+        XmNtopOffset, 6,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, fd.managedListW,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNleftOffset, 6,
+        XmNrightOffset, 6,
+        XmNlabelString, s1,
+        XmNalignment, XmALIGNMENT_BEGINNING,
+        NULL);
+    
+    s1 = XmStringCreateLocalized("File Pattern");
+    Widget lblPattern = XtVaCreateManagedWidget("nameLbl", xmLabelGadgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, fd.nameW,
+        XmNtopOffset, 6,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, fd.managedListW,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNleftOffset, 6,
+        XmNrightOffset, 6,
+        XmNlabelString, s1,
+        XmNalignment, XmALIGNMENT_BEGINNING,
+        NULL);
+    XmStringFree(s1);
+    
+    fd.patternW = XtVaCreateManagedWidget("patternLbl", xmTextWidgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, lblPattern,
+        XmNtopOffset, 6,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, fd.managedListW,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNleftOffset, 6,
+        XmNrightOffset, 6,
+        XmNlabelString, s1,
+        XmNalignment, XmALIGNMENT_BEGINNING,
+        NULL);
+
+    
+    s1 = XmStringCreateLocalized("Input Filter Command");
+    Widget lblCmdIn = XtVaCreateManagedWidget("cmdInLbl", xmLabelGadgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, fd.patternW,
+        XmNtopOffset, 6,
         XmNleftAttachment, XmATTACH_WIDGET,
         XmNleftWidget, fd.managedListW,
         XmNrightAttachment, XmATTACH_FORM,
@@ -214,14 +272,14 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     XtSetArg(args[ac], XmNrightOffset, 6); ac++;
     XtSetArg(args[ac], XmNbottomAttachment, XmATTACH_POSITION); ac++;
-    XtSetArg(args[ac], XmNbottomPosition, 47); ac++;
+    XtSetArg(args[ac], XmNbottomPosition, 61); ac++;
     XtSetArg(args[ac], XmNeditMode, XmMULTI_LINE_EDIT); ac++;
     XtSetArg(args[ac], XmNrows, 4); ac++;
     fd.cmdInW = XmCreateScrolledText(form, "cmdInText", args, ac);
     XtManageChild(fd.cmdInW);
 
     s1 = XmStringCreateLocalized("Output Filter Command");
-    Widget lblCmdOut = XtVaCreateManagedWidget("sep1", xmLabelGadgetClass, form,
+    Widget lblCmdOut = XtVaCreateManagedWidget("cmdOutLbl", xmLabelGadgetClass, form,
         XmNtopAttachment, XmATTACH_WIDGET,
         XmNtopWidget, fd.cmdInW,
         XmNtopOffset, FD_H_MARGIN,
