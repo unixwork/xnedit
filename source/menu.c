@@ -46,6 +46,7 @@
 #include "userCmds.h"
 #include "shell.h"
 #include "macro.h"
+#include "filter.h"
 #include "highlight.h"
 #include "highlightData.h"
 #include "interpret.h"
@@ -189,6 +190,7 @@ static void reposDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1049,6 +1051,8 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->lockEncodingErrorDefItem = createMenuToggle(subPane, "lockEncodingError",
     	    "Lock File On Encoding Error", 0, lockEncodingErrorDefCB, window,
     	    GetPrefLockEncodingError(), FULL);
+    createMenuItem(subPane, "filters", "Filters...", 'F', filterDefCB, window,
+    	    FULL);
     subSubPane = createMenu(subPane, "warnings", "Warnings", 'r', NULL, FULL);
     window->modWarnDefItem = createMenuToggle(subSubPane,
 	    "filesModifiedExternally", "Files Modified Externally", 'F',
@@ -1059,7 +1063,6 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     XtSetSensitive(window->modWarnRealDefItem, GetPrefWarnFileMods());
     window->exitWarnDefItem = createMenuToggle(subSubPane, "onExit", "On Exit", 'O',
 	    exitWarnDefCB, window, GetPrefWarnExit(), FULL);
-    
     /* Initial Window Size sub menu (simulates radioBehavior) */
     subSubPane = createMenu(subPane, "initialwindowSize",
     	    "Initial Window Size", 'z', NULL, FULL);
@@ -2363,6 +2366,13 @@ static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callDat
     	if (IsTopDocument(win))
     	    XmToggleButtonSetState(win->lockEncodingErrorDefItem, state, False);
     }
+}
+
+static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+            ((XmAnyCallbackStruct *)callData)->event);
+    FilterSettings(WidgetToWindow(MENU_WIDGET(w)));
 }
 
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData)
