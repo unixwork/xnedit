@@ -2096,7 +2096,7 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
 	    XmNtopOffset, HS_H_MARGIN,
  	    XmNrightAttachment, XmATTACH_FORM,
 	    XmNbottomAttachment, XmATTACH_WIDGET,
-    	    XmNbottomWidget, closeBtn, 0,
+    	    XmNbottomWidget, closeBtn,
 	    XmNbottomOffset, HS_H_MARGIN, NULL);
     
     ac = 0;
