@@ -40,6 +40,7 @@ typedef struct {
     Widget managedListW;
     Widget nameW;
     Widget patternW;
+    Widget extW;
     Widget cmdInW;
     Widget cmdOutW;
 
@@ -59,26 +60,16 @@ static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData);
 
 static int fdIsEmpty(void)
 {
-    char *s = XmTextGetString(fd.nameW);
-    if(s && strlen(s) > 0) {
-        return 0;
+    Widget w[] = { fd.nameW, fd.patternW, fd.extW, fd.cmdInW, fd.cmdOutW };
+    size_t n = sizeof(w) / sizeof(Widget);
+    for(int i=0;i<n;i++) {
+        char *s = XmTextGetString(w[i]);
+        size_t len = s ? strlen(s) : 0;
+        XtFree(s);
+        if(len > 0) {
+            return 0;
+        }
     }
-    XtFree(s);
-    s = XmTextGetString(fd.patternW);
-    if(s && strlen(s) > 0) {
-        return 0;
-    }
-    XtFree(s);
-    s = XmTextGetString(fd.cmdInW);
-    if(s && strlen(s) > 0) {
-        return 0;
-    }
-    XtFree(s);
-    s = XmTextGetString(fd.cmdOutW);
-    if(s && strlen(s) > 0) {
-        return 0;
-    }
-    XtFree(s);
     return 1;
 }
 
@@ -256,7 +247,7 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
         XmNalignment, XmALIGNMENT_BEGINNING,
         NULL);
     XmStringFree(s1);
-    
+     
     fd.nameW = XtVaCreateManagedWidget("patternLbl", xmTextWidgetClass, form,
         XmNtopAttachment, XmATTACH_WIDGET,
         XmNtopWidget, lblName,
@@ -266,10 +257,8 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
         XmNrightAttachment, XmATTACH_FORM,
         XmNleftOffset, 6,
         XmNrightOffset, 6,
-        XmNlabelString, s1,
-        XmNalignment, XmALIGNMENT_BEGINNING,
         NULL);
-    
+      
     s1 = XmStringCreateLocalized("File Pattern");
     Widget lblPattern = XtVaCreateManagedWidget("nameLbl", xmLabelGadgetClass, form,
         XmNtopAttachment, XmATTACH_WIDGET,
@@ -277,9 +266,9 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
         XmNtopOffset, 6,
         XmNleftAttachment, XmATTACH_WIDGET,
         XmNleftWidget, fd.managedListW,
-        XmNrightAttachment, XmATTACH_FORM,
+        //XmNrightAttachment, XmATTACH_POSITION,
+        //XmNrightPosition, 75,
         XmNleftOffset, 6,
-        XmNrightOffset, 6,
         XmNlabelString, s1,
         XmNalignment, XmALIGNMENT_BEGINNING,
         NULL);
@@ -291,13 +280,37 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
         XmNtopOffset, 6,
         XmNleftAttachment, XmATTACH_WIDGET,
         XmNleftWidget, fd.managedListW,
-        XmNrightAttachment, XmATTACH_FORM,
+        XmNrightAttachment, XmATTACH_POSITION,
+        XmNrightPosition, 75,
         XmNleftOffset, 6,
+        NULL);
+    
+    s1 = XmStringCreateLocalized("Default Extension");
+    Widget lblExt = XtVaCreateManagedWidget("extLbl", xmLabelGadgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, fd.nameW,
+        XmNtopOffset, 6,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, fd.patternW,
+            XmNleftOffset, 6,
+        XmNleftPosition, 76,
         XmNrightOffset, 6,
         XmNlabelString, s1,
         XmNalignment, XmALIGNMENT_BEGINNING,
         NULL);
-
+    XmStringFree(s1);
+    
+    fd.extW = XtVaCreateManagedWidget("patternLbl", xmTextWidgetClass, form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, lblExt,
+        XmNtopOffset, 6,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, fd.patternW,
+        XmNleftOffset, 6,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNrightOffset, 6,
+        NULL);
     
     s1 = XmStringCreateLocalized("Input Filter Command");
     Widget lblCmdIn = XtVaCreateManagedWidget("cmdInLbl", xmLabelGadgetClass, form,
