@@ -456,10 +456,98 @@ static int fdUpdateList(void)
 }
 
 
-
-void ParseFilterSettings(const char *str)
+static int valueListNext(char *str, int len)
 {
+    for(int i=0;i<len;i++) {
+        if(str[i] == ';') {
+            str[i] = '\0';
+            len = i;
+            break;
+        }
+    }
+    return len;
+}
+
+static char *valuedup(char *str, int len)
+{
+    char *newvalue = NEditMalloc(len+1);
+    newvalue[len] = '\0';
+    memcpy(newvalue, str, len);
+    return newvalue;
+}
+
+static IOFilter* ParseFilterStr(char *str, int len)
+{
+    int pos = 0;
+    char *name = str;
+    int namelen = valueListNext(str, len);
+    if(namelen <= 0) {
+        return NULL;
+    }
+    str += namelen + 1;
+    len -= namelen + 1;
+    char *pattern = str;
+    int patternlen = valueListNext(str, len);
+    if(patternlen <= 0) {
+        return NULL;
+    }
+    str += patternlen + 1;
+    len -= patternlen + 1;
+    char *ext = str;
+    int extlen = valueListNext(str, len);
+    if(extlen <= 0) {
+        return NULL;
+    }
+    str += extlen + 1;
+    len -= extlen + 1;
+    char *cmdin = str;
+    int cmdinlen = valueListNext(str, len);
+    if(cmdinlen <= 0) {
+        return NULL;
+    }
+    str += cmdinlen + 1;
+    len -= cmdinlen + 1;
+    char *cmdout = str;
     
+    int cmdoutlen = valueListNext(str, len);
+    if(cmdoutlen <= 0) {
+        return NULL;
+    }
+    str += cmdinlen + 1;
+    len -= cmdinlen + 1;
+    
+    IOFilter *filter = NEditMalloc(sizeof(IOFilter));
+    filter->name = valuedup(name, namelen);
+    filter->pattern = valuedup(pattern, patternlen);
+    filter->ext = valuedup(ext, extlen);
+    filter->cmdin = valuedup(cmdin, cmdinlen);
+    filter->cmdout = valuedup(cmdout, cmdoutlen);
+    return filter;
+}
+
+void ParseFilterSettings(char *str)
+{
+    size_t filterAlloc = 8;
+    filters = NEditCalloc(filterAlloc, sizeof(IOFilter*));
+    numFilters = 0;
+    
+    size_t len = strlen(str);
+    int lineStart = 0;
+    for(int i=0;i<=len;i++) {
+        if(i == len || str[i] == '\n') {
+            IOFilter *filter = ParseFilterStr(str+lineStart, i-lineStart);
+            lineStart = i+1;
+            
+            if(filter) {
+                if(numFilters == filterAlloc) {
+                    filterAlloc += 8;
+                    NEditRealloc(filters, filterAlloc * sizeof(IOFilter*));
+                }
+                filters[numFilters] = filter;
+                numFilters++;
+            }
+        }
+    }
 }
 
 char* WriteFilterString(void)

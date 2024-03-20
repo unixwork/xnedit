@@ -40,7 +40,7 @@ struct IOFilter {
 
 void FilterSettings(WindowInfo *window);
 
-void ParseFilterSettings(const char *str);
+void ParseFilterSettings(char *str);
 
 char* WriteFilterString(void);
 
