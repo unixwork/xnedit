@@ -40,4 +40,8 @@ struct IOFilter {
 
 void FilterSettings(WindowInfo *window);
 
+void ParseFilterSettings(const char *str);
+
+char* WriteFilterString(void);
+
 #endif //XNEDIT_FILTER_H

@@ -22,6 +22,7 @@
 #include "filter.h"
 #include "window.h"
 #include "nedit.h"
+#include "preferences.h"
 
 #include "../util/nedit_malloc.h"
 #include "../util/misc.h"
@@ -29,8 +30,7 @@
 
 #include <Xm/XmAll.h>
 
-static IOFilter *filters;
-static size_t allocFilters;
+static IOFilter **filters;
 static size_t numFilters;
 
 
@@ -56,6 +56,8 @@ static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdApplyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData);
+
+static int fdUpdateList(void);
 
 
 static int fdIsEmpty(void)
@@ -93,11 +95,13 @@ static void *fdGetDisplayedCB(void *oldItem, int explicitRequest, int *abort,
     IOFilter *filter = NEditMalloc(sizeof(IOFilter));
     filter->name = XmTextGetString(fd.nameW);
     filter->pattern = XmTextGetString(fd.patternW);
+    filter->ext = XmTextGetString(fd.extW);
     filter->cmdin = XmTextGetString(fd.cmdInW);
     filter->cmdout = XmTextGetString(fd.cmdOutW);
     
     if (strlen(filter->name) == 0 ||
         strlen(filter->pattern) == 0 ||
+        strlen(filter->ext) == 0 ||
         strlen(filter->cmdin) == 0 ||
         strlen(filter->cmdout) == 0 ||
         fd.nfilters == fd.filteralloc)
@@ -114,15 +118,27 @@ static void fdSetDisplayedCB(void *item, void *cbArg)
     if(!item) {
         XmTextSetString(fd.nameW, "");
         XmTextSetString(fd.patternW, "");
+        XmTextSetString(fd.extW, "");
         XmTextSetString(fd.cmdInW, "");
         XmTextSetString(fd.cmdOutW, "");
     } else {
         IOFilter *f = item;
         XmTextSetString(fd.nameW, f->name);
         XmTextSetString(fd.patternW, f->pattern);
+        XmTextSetString(fd.extW, f->ext);
         XmTextSetString(fd.cmdInW, f->cmdin);
         XmTextSetString(fd.cmdOutW, f->cmdout);
     }
+}
+
+static IOFilter* fdCopyFilter(IOFilter *f) {
+    IOFilter *cp = NEditMalloc(sizeof(IOFilter));
+    cp->name = NEditStrdup(f->name ? f->name : "");
+    cp->pattern = NEditStrdup(f->pattern ? f->pattern : "");
+    cp->ext = NEditStrdup(f->ext ? f->ext : "");
+    cp->cmdin = NEditStrdup(f->cmdin ? f->cmdin : "");
+    cp->cmdout = NEditStrdup(f->cmdout ? f->cmdout : "");
+    return cp;
 }
 
 #define FD_LIST_RIGHT 30
@@ -141,7 +157,10 @@ void FilterSettings(WindowInfo *window)
     
     fd.filteralloc = 256;
     fd.filters = NEditCalloc(sizeof(IOFilter), fd.filteralloc);
-    fd.nfilters = 0;
+    fd.nfilters = numFilters;
+    for(int i=0;i<numFilters;i++) {
+        fd.filters[i] = fdCopyFilter(filters[i]);
+    }
 
     int ac = 0;
     Arg args[20];
@@ -387,21 +406,63 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
 
 static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
 {
-    
-}
-
-static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    
+    for(int i=0;i<fd.nfilters;i++) {
+        fdFreeItemCB(fd.filters[i]);
+    }
+    NEditFree(fd.filters);
 }
 
 static void fdApplyCB(Widget w, XtPointer clientData, XtPointer callData)
 {
+    fdUpdateList();
+}
+
+static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    if(!fdUpdateList()) {
+        return;
+    }
     
+    XtDestroyWidget(fd.shell);
+    fd.shell = NULL;
 }
 
 static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     XtDestroyWidget(fd.shell);
     fd.shell = NULL;
+}
+
+static int fdUpdateList(void)
+{
+    if (!UpdateManagedList(fd.managedListW, True))
+    	return False;
+    
+    for(int i=0;i<numFilters;i++) {
+        fdFreeItemCB(filters[i]);
+    }
+    NEditFree(filters);
+    
+    filters = NEditCalloc(fd.nfilters, sizeof(IOFilter*));
+    numFilters = fd.nfilters;
+    for(int i=0;i<numFilters;i++) {
+        filters[i] = fdCopyFilter(fd.filters[i]);
+    }
+    
+    /* Note that preferences have been changed */
+    MarkPrefsChanged();
+    
+    return True;
+}
+
+
+
+void ParseFilterSettings(const char *str)
+{
+    
+}
+
+char* WriteFilterString(void)
+{
+    return NEditCalloc(1, 1);
 }
