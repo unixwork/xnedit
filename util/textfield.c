@@ -1498,3 +1498,10 @@ void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i) {
     }
 } 
 
+void XNETextFieldSetSelection(Widget w, XmTextPosition first, XmTextPosition last, Time sel_time) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tfSetSelection(tf, first, last);
+    if(XtIsRealized(w)) {
+        tfRedrawText(tf);
+    }
+}

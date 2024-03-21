@@ -36,6 +36,8 @@
 #define XNETextGetString(widget)                XNETextFieldGetString(widget)
 #define XNETextGetLastPosition(widget)          XNETextFieldGetLastPosition(widget)
 #define XNETextSetInsertionPosition(widget, i)  XNETextFieldSetInsertionPosition(widget, i) 
+#define XNETextGetLastPosition(widget)          XNETextFieldGetLastPosition(widget)
+#define XNETextSetSelection(w, f, l, t)         XNETextFieldSetSelection(w, f, l, t)
 #else
 #define XNEtextfieldWidgetClass                 xmTextWidgetClass
 
@@ -44,6 +46,7 @@
 #define XNETextGetString(widget)                TextGetStringUtf8(widget)
 #define XNETextGetLastPosition(widget)          XmTextFieldGetLastPosition(widget)  
 #define XNETextSetInsertionPosition(widget, i)  XmTextFieldSetInsertionPosition(widget, i)  
+#define XNETextSetSelection(w, f, l, t)         XmTextFieldSetSelection(w, f, l, t)
 #endif
 
 #include <X11/Intrinsic.h>
@@ -72,6 +75,7 @@ void  XNETextFieldSetString(Widget widget, char *value);
 char* XNETextFieldGetString(Widget widget);
 XmTextPosition XNETextFieldGetLastPosition(Widget widget);
 void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i);
+void XNETextFieldSetSelection(Widget w, XmTextPosition first, XmTextPosition last, Time sel_time);
 
 
 #endif /* XNE_TEXTFIELD_H */
