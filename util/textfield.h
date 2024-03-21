@@ -39,14 +39,15 @@
 #else
 #define XNEtextfieldWidgetClass                 xmTextWidgetClass
 
-#define XNECreateText(parent,name,args,count)   XmCreateText(parent,name,args,count)
-#define XNETextSetString(widget,value)          XmTextSetString(widget,value)
+#define XNECreateText(parent,name,args,count)   XmCreateTextField(parent,name,args,count)
+#define XNETextSetString(widget,value)          XmTextFieldSetString(widget,value)
 #define XNETextGetString(widget)                TextGetStringUtf8(widget)
-#define XNETextGetLastPosition(widget)          XmTextGetLastPosition(widget)  
-#define XNETextSetInsertionPosition(widget, i)  XmTextSetInsertionPosition(widget, i)  
+#define XNETextGetLastPosition(widget)          XmTextFieldGetLastPosition(widget)  
+#define XNETextSetInsertionPosition(widget, i)  XmTextFieldSetInsertionPosition(widget, i)  
 #endif
 
 #include <X11/Intrinsic.h>
+#include <Xm/TextF.h>
 #include "../source/text.h" /* textNXftFont */
 
 extern WidgetClass textfieldWidgetClass;
