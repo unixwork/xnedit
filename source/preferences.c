@@ -1537,6 +1537,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     NEditFree(TempStringPrefs.styles);
     NEditFree(TempStringPrefs.smartIndent);
     NEditFree(TempStringPrefs.smartIndentCommon);
+    NEditFree(TempStringPrefs.filter);
     
     PrefsHaveChanged = False;
 }

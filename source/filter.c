@@ -28,6 +28,8 @@
 #include "../util/misc.h"
 #include "../util/managedList.h"
 
+#include <string.h>
+#include <ctype.h>
 #include <Xm/XmAll.h>
 
 static IOFilter **filters;
@@ -80,6 +82,7 @@ static void fdFreeItemCB(void *item)
     IOFilter *f = item;
     XtFree(f->name);
     XtFree(f->pattern);
+    XtFree(f->ext);
     XtFree(f->cmdin);
     XtFree(f->cmdout);
     NEditFree(f);
@@ -481,11 +484,17 @@ static IOFilter* ParseFilterStr(char *str, int len)
     int pos = 0;
     char *name = str;
     int namelen = valueListNext(str, len);
+    int skip_space = 0;
+    while(isspace(*name) && namelen > 0) {
+        name++;
+        namelen--;
+        skip_space++;
+    }
     if(namelen <= 0) {
         return NULL;
-    }
-    str += namelen + 1;
-    len -= namelen + 1;
+    }   
+    str += skip_space + namelen + 1;
+    len -= skip_space + namelen + 1;
     char *pattern = str;
     int patternlen = valueListNext(str, len);
     if(patternlen <= 0) {
@@ -552,5 +561,37 @@ void ParseFilterSettings(char *str)
 
 char* WriteFilterString(void)
 {
-    return NEditCalloc(1, 1);
+    size_t str_alloc = 2048;
+    size_t len = 0;
+    char *str = NEditMalloc(str_alloc);
+    str[0] = 0;
+    
+    for(int i=0;i<numFilters;i++) {
+        IOFilter *filter = filters[i];
+        char *prefix = i > 0 ? "\t" : "";
+        char *suffix = i+1 != numFilters ? "\\n\\\n" : "";
+        for(;;) {
+            size_t remaining = str_alloc - len;
+            size_t w = snprintf(
+                    str + len,
+                    remaining, 
+                    "%s%s;%s;%s;%s;%s%s",
+                    prefix,
+                    filter->name,
+                    filter->pattern,
+                    filter->ext,
+                    filter->cmdin,
+                    filter->cmdout,
+                    suffix);
+            if(w < remaining) {
+                len += w;
+                break;
+            } else {
+                str_alloc += 1024;
+                str = NEditRealloc(str, str_alloc);
+            }
+        }
+    }
+    
+    return str;
 }
