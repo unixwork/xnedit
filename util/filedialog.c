@@ -709,7 +709,7 @@ static void pathbarActivateTF(PathBar *p)
 {
     XtUnmanageChild(p->left);
     XtUnmanageChild(p->right);
-    XmTextFieldSetSelection(p->textfield, 0, XmTextFieldGetLastPosition(p->textfield), 0);
+    XNETextSetSelection(p->textfield, 0, XNETextGetLastPosition(p->textfield), 0);
     XtManageChild(p->textfield);
     p->input = 1;
 
@@ -747,7 +747,7 @@ void pathbar_losingfocus(Widget w, PathBar *p, XtPointer c)
 
 void pathbar_pathinput(Widget w, PathBar *p, XtPointer d)
 {
-    char *newpath = XmTextFieldGetString(p->textfield);
+    char *newpath = XNETextGetString(p->textfield);
     if(newpath) {
         if(newpath[0] == '~') {
             char *p = newpath+1;
@@ -828,7 +828,7 @@ PathBar* CreatePathBar(Widget parent, ArgList args, int n)
     XtSetArg(a[0], XmNshadowThickness, 0);
     XtSetArg(a[1], XmNx, 0);
     XtSetArg(a[2], XmNy, 0);
-    bar->textfield = XmCreateTextField(bar->widget, "pbtext", a, 3);
+    bar->textfield = XNECreateText(bar->widget, "pbtext", a, 3);
     bar->input = 0;
     XtAddCallback(
             bar->textfield,
@@ -979,8 +979,8 @@ void PathBarSetPath(PathBar *bar, char *path)
     bar->selection = bar->numSegments-1;
     XmToggleButtonSetState(bar->pathSegments[bar->selection], True, False);
     
-    XmTextFieldSetString(bar->textfield, path);
-    XmTextFieldSetInsertionPosition(bar->textfield, XmTextFieldGetLastPosition(bar->textfield));
+    XNETextSetString(bar->textfield, path);
+    XNETextSetInsertionPosition(bar->textfield, XNETextGetLastPosition(bar->textfield));
     
     pathbar_resize(bar->widget, bar, NULL);
 }
