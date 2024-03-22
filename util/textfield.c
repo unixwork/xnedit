@@ -115,6 +115,7 @@ static XtResource resources[] = {
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
     {XmNvalueChangedCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.valueChangedCB), XmRCallback, NULL},
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
+    {XmNlosingFocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.losingFocusCB), XmRCallback, NULL},
     {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.activateCB), XmRCallback, NULL},
     {XmNblinkRate, XmCBlinkRate , XmRInt, sizeof(int), XtOffset(TextFieldWidget, textfield.blinkrate), XmRImmediate, (XtPointer)500}
 };
@@ -929,6 +930,8 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
         XSetICFocus(tf->textfield.xic);
     }
     
+    // TODO: the motif textfield uses XmTextVerifyCallbackStruct for
+    //       focus/losingFocus events
     XmAnyCallbackStruct cb;
     cb.reason = XmCR_FOCUS;
     cb.event = event;
@@ -960,6 +963,12 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     tf->textfield.cursorOn = 1;
     
     tf->textfield.hasFocus = 0;
+    
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_LOSING_FOCUS;
+    cb.event = event;
+    XtCallCallbackList (w, tf->textfield.losingFocusCB, (XtPointer) &cb);
+    
     Region r = NULL;
     textfield_expose(w, event, r);
 }

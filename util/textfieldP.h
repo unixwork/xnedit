@@ -48,6 +48,7 @@ extern TextFieldClassRec nTextFieldClassRec;
 typedef struct TextFieldPart {
     XtCallbackList valueChangedCB;
     XtCallbackList focusCB;
+    XtCallbackList losingFocusCB;
     XtCallbackList activateCB;
     
     int            hasFocus;
