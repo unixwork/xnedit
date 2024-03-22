@@ -595,3 +595,9 @@ char* WriteFilterString(void)
     
     return str;
 }
+
+IOFilter** GetFilterList(size_t *num)
+{
+    *num = numFilters;
+    return filters;
+}

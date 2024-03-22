@@ -49,6 +49,7 @@
 #include "misc.h"
 
 #include "../source/preferences.h"
+#include "../source/filter.h"
 
 #include "DialogF.h"
 
@@ -1030,6 +1031,7 @@ struct FileDialogData {
     Widget dosFormat;
     Widget macFormat;
     Widget encoding;
+    Widget iofilter;
     Widget bom;
     Widget xattr;
     
@@ -2062,6 +2064,26 @@ static void shortcutEH(Widget widget, XtPointer data, XEvent *event, Boolean *di
     }
 }
 
+static void createFilterWidgets(FileDialogData *data, Widget parent, Arg *args, int n) {
+    size_t nfilters;
+    IOFilter **filter = GetFilterList(&nfilters);
+    XmStringTable filterStrTable = NEditCalloc(nfilters+1, sizeof(XmString));
+    filterStrTable[0] = XmStringCreateSimple("-");
+    for(int i=0;i<nfilters;i++) {
+        filterStrTable[i+1] = XmStringCreateLocalized(filter[i]->name);
+    }
+
+    XtSetArg(args[n], XmNcolumns, 11); n++;
+    XtSetArg(args[n], XmNitemCount, nfilters+1); n++;
+    XtSetArg(args[n], XmNitems, filterStrTable); n++;
+    data->iofilter = XmCreateDropDownList(parent, "filtercombobox", args, n);
+    XtManageChild(data->iofilter);
+    for(int i=0;i<nfilters+1;i++) {
+        XmStringFree(filterStrTable[i]);
+    }
+    NEditFree(filterStrTable);
+}
+
 int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
 {
     Arg args[32];
@@ -2334,20 +2356,44 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     Widget bottomWidget = separator;
     
-    if(type == FILEDIALOG_SAVE) {
+    if(type == FILEDIALOG_SAVE) { 
+        n = 0;
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNbottomWidget, separator); n++;
+        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+        createFilterWidgets(&data, form, args, n);
+        
         n = 0;
         XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
         XtSetArg(args[n], XmNbottomWidget, separator); n++;
         XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
         XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
         XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNrightWidget, data.iofilter); n++;
+        XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+        XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
         data.name = XmCreateTextField(form, "textfield", args, n);
         XtManageChild(data.name);
         XtAddCallback(data.name, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
-
+        
+        n = 0;
+        str = XmStringCreateSimple("Filter");
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNbottomWidget, data.name); n++;
+        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNleftWidget, data.name); n++;
+        XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNlabelString, str); n++;
+        Widget filterLabel = XmCreateLabel(form, "label", args, n);
+        XtManageChild(filterLabel);
+        XmStringFree(str);
+        
         n = 0;
         str = XmStringCreateSimple("New File Name");
         XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
@@ -2481,6 +2527,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             data.xattr = XmCreateToggleButton(enc, "togglebutton", args, n);
             XtManageChild(data.xattr);
             XmStringFree(str);
+        } else {
+            // FILEDIALOG_OPEN
+            n = 0;
+            XmString str = XmStringCreateSimple("Filter");
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            Widget filterLabel = XmCreateLabel(enc, "filter_label", args, n);
+            XtManageChild(filterLabel);
+            XmStringFree(str);
+            
+            createFilterWidgets(&data, enc, args, 0);
         }
         
     }

@@ -44,4 +44,6 @@ void ParseFilterSettings(char *str);
 
 char* WriteFilterString(void);
 
+IOFilter** GetFilterList(size_t *num);
+
 #endif //XNEDIT_FILTER_H
