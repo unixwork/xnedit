@@ -402,6 +402,9 @@ void textfield_destroy(Widget widget) {
     if(tf->textfield.highlightBackground) {
         XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
     }
+    if(tf->textfield.blinkProcId != 0) {
+        XtRemoveTimeOut(tf->textfield.blinkProcId);
+    }
 }
 
 void textfield_resize(Widget widget) {
