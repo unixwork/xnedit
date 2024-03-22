@@ -47,6 +47,7 @@
 #include "fileUtils.h"
 #include "getfiles.h"
 #include "misc.h"
+#include "textfield.h"
 
 #include "../source/preferences.h"
 
@@ -1192,7 +1193,7 @@ static void filedialog_update_lists(
         int filecount,
         int maxnamelen)
 {
-    char *filter = XmTextFieldGetString(data->filter);
+    char *filter = XNETextGetString(data->filter);
     char *filterStr = filter;
     if(!filter || strlen(filter) == 0) {
         filterStr = "*";
@@ -1402,7 +1403,7 @@ static void filedialog_update_grid(
         int filecount,
         int maxnamelen)
 {
-    char *filter = XmTextFieldGetString(data->filter);
+    char *filter = XNETextGetString(data->filter);
     char *filterStr = filter;
     if(!filter || strlen(filter) == 0) {
         filterStr = "*";
@@ -2279,16 +2280,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNrightWidget, filterButton); n++;
     XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
-    data.filter = XmCreateTextField(filterform, "filedialog_filter_textfield", args, n);
+    data.filter = XNECreateText(filterform, "filedialog_filter_textfield", args, n);
     XtManageChild(data.filter);
     XtAddCallback(data.filter, XmNactivateCallback,
                  (XtCallbackProc)filedialog_filter, &data);
     if(LastFilter) {
-        XmTextFieldSetString(data.filter, LastFilter);
+        XNETextSetString(data.filter, LastFilter);
         XtFree(LastFilter);
         LastFilter = NULL;
     } else {
-        XmTextFieldSetString(data.filter, "*");
+        XNETextSetString(data.filter, "*");
     }
     
     /* lower part */
@@ -2686,7 +2687,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         data.selectedPath = NULL;
         
         // remember filter string
-        LastFilter = XmTextFieldGetString(data.filter);
+        LastFilter = XNETextGetString(data.filter);
         if(LastFilter) {
             if(strlen(LastFilter) == 0) {
                 XtFree(LastFilter);
