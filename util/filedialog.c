@@ -1988,33 +1988,33 @@ static void filedialog_select_iofilter(
                 }
                 XtFree(name);
             }
-            
-            // get the current filter from the combobox
-            int selectedFilterIndex;
-            XtVaGetValues(data->iofilter, XmNselectedPosition, &selectedFilterIndex, NULL);
-            // index 0 is always '-' no filter
-            if(selectedFilterIndex == 0) {
-                data->selected_filter = NULL;
-            } else {
-                // combobox indices are always +1 compared to data->filters indices
-                data->selected_filter = data->filters[selectedFilterIndex-1];
-                
-                // set extension if the name doesn't already contain the extension
-                if(data->selected_filter->ext) {
-                    char *name = XmTextFieldGetString(data->name);
-                    if(!str_has_suffix(name, data->selected_filter->ext)) {
-                        size_t name_len = strlen(name);
-                        size_t ext_len = strlen(data->selected_filter->ext);
-                        size_t newname_len = name_len + ext_len;
-                        char *newname = NEditMalloc(newname_len + 1);
-                        memcpy(newname, name, name_len);
-                        memcpy(newname+name_len, data->selected_filter->ext, ext_len);
-                        newname[newname_len] = '\0';
-                        XmTextFieldSetString(data->name, newname);
-                        NEditFree(newname);
-                    }
-                    XtFree(name);
+        }
+        
+        // get the current filter from the combobox
+        int selectedFilterIndex;
+        XtVaGetValues(data->iofilter, XmNselectedPosition, &selectedFilterIndex, NULL);
+        // index 0 is always '-' no filter
+        if(selectedFilterIndex == 0) {
+            data->selected_filter = NULL;
+        } else {
+            // combobox indices are always +1 compared to data->filters indices
+            data->selected_filter = data->filters[selectedFilterIndex-1];
+
+            // set extension if the name doesn't already contain the extension
+            if(data->name && data->selected_filter->ext) {
+                char *name = XmTextFieldGetString(data->name);
+                if(!str_has_suffix(name, data->selected_filter->ext)) {
+                    size_t name_len = strlen(name);
+                    size_t ext_len = strlen(data->selected_filter->ext);
+                    size_t newname_len = name_len + ext_len;
+                    char *newname = NEditMalloc(newname_len + 1);
+                    memcpy(newname, name, name_len);
+                    memcpy(newname+name_len, data->selected_filter->ext, ext_len);
+                    newname[newname_len] = '\0';
+                    XmTextFieldSetString(data->name, newname);
+                    NEditFree(newname);
                 }
+                XtFree(name);
             }
         }
     }

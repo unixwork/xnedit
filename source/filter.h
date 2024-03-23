@@ -38,6 +38,13 @@ struct IOFilter {
     char *cmdout;
 };
 
+typedef struct FileStream {
+    FILE *file;
+    int pipe[2];
+    pid_t pid;
+    char *filter_cmd;
+} FileStream;
+
 void FilterSettings(WindowInfo *window);
 
 void ParseFilterSettings(char *str);
@@ -45,5 +52,13 @@ void ParseFilterSettings(char *str);
 char* WriteFilterString(void);
 
 IOFilter** GetFilterList(size_t *num);
+
+FileStream* filestream_open(FILE *f, const char *filter_cmd);
+int filestream_reset(FileStream *stream, int pos);
+size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stream);
+size_t filestream_write(const void *buffer, size_t size, size_t count, FileStream *stream);
+int filestream_close(FileStream *stream);
+
+
 
 #endif //XNEDIT_FILTER_H

@@ -50,8 +50,9 @@ typedef struct DefaultEncoding {
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
         const char *languageMode, const char *defaultPath);
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
-        const char *path, const char *encoding, int flags, char *geometry,
-        int iconic, const char *languageMode, int tabbed, int bgOpen);
+        const char *path, const char *encoding, const char *filter, int flags,
+        char *geometry, int iconic, const char *languageMode, int tabbed,
+        int bgOpen);
 void RevertToSaved(WindowInfo *window, char *newEncoding);
 int SaveWindow(WindowInfo *window);
 int SaveWindowAs(WindowInfo *window, FileSelection *file);

@@ -601,3 +601,33 @@ IOFilter** GetFilterList(size_t *num)
     *num = numFilters;
     return filters;
 }
+
+/* ----------------------------- FileStream -----------------------------*/
+
+FileStream* filestream_open(FILE *f, const char *filter_cmd) {
+    FileStream *stream = NEditMalloc(sizeof(FileStream));
+    stream->file = f;
+    stream->filter_cmd = filter_cmd ? NEditStrdup(filter_cmd) : NULL;
+    stream->pid = 0;
+    return stream;
+}
+
+int filestream_reset(FileStream *stream, int pos) {
+    fseek(stream->file, pos, SEEK_SET);
+    return 0;
+}
+
+size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stream) {
+    return fread(buffer, size, count, stream->file);
+}
+
+size_t filestream_write(const void *buffer, size_t size, size_t count, FileStream *stream) {
+    return fwrite(buffer, size, count, stream->file);
+}
+
+int filestream_close(FileStream *stream) {
+    int err = fclose(stream->file);
+    NEditFree(stream->filter_cmd);
+    NEditFree(stream);
+    return err;
+}
