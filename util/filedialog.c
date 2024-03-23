@@ -1651,7 +1651,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         FileSelect(data, openFile);
         data->status = FILEDIALOG_OK;
         if(data->name) {
-            XmTextFieldSetString(data->name, openFile);
+            XNETextSetString(data->name, openFile);
             XmProcessTraversal(data->name, XmTRAVERSE_CURRENT);
         } else {
             select_view(data);
@@ -1697,7 +1697,7 @@ void set_path_from_row(FileDialogData *data, int row) {
     char *path = NEditStrdup(elm->path);
     
     if(data->type == FILEDIALOG_SAVE) {
-        XmTextFieldSetString(data->name, FileName(path));
+        XNETextSetString(data->name, FileName(path));
         NEditFree(path);
     } else {
         if(data->selectedPath) {
@@ -1830,7 +1830,7 @@ void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
     if(data->type == FILEDIALOG_SAVE) {
         char *name = NULL;
         XmStringGetLtoR(cb->item, XmFONTLIST_DEFAULT_TAG, &name);
-        XmTextFieldSetString(data->name, name);
+        XNETextSetString(data->name, name);
         XtFree(name);
     } else {
         char *path = set_selected_path(data, cb->item);
@@ -1879,7 +1879,7 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
     }
     
     if(data->type == FILEDIALOG_SAVE) {
-        char *newName = XmTextFieldGetString(data->name);
+        char *newName = XNETextGetString(data->name);
         if(newName) {
             if(strlen(newName) > 0) {
                 data->selectedPath = newName[0] == '/' ? NEditStrdup(newName) : ConcatPath(data->currentPath, newName);
@@ -2344,7 +2344,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
         XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
         XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
-        data.name = XmCreateTextField(form, "textfield", args, n);
+        data.name = XNECreateText(form, "textfield", args, n);
         XtManageChild(data.name);
         XtAddCallback(data.name, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
@@ -2649,7 +2649,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         PathBarSetPath(data.pathBar, defDir);
         NEditFree(defDir);
         
-        XmTextFieldSetString(data.name, FileName(file->path));
+        XNETextSetString(data.name, FileName(file->path));
     } else {
         char *defDirStr = GetDefaultDirectoryStr();
         char *defDir = defDirStr ? defDirStr : getenv("HOME");
