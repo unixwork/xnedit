@@ -349,6 +349,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->posEncErrors = 0;
     
     window->encoding[0] = '\0';
+    window->filter = NULL;
     const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
@@ -1476,6 +1477,8 @@ void CloseWindow(WindowInfo *window)
     FontUnref(window->boldFont);
     FontUnref(window->italicFont);
     FontUnref(window->boldItalicFont);
+    
+    NEditFree(window->filter);
     
     if(window->encErrors) {
         NEditFree(window->encErrors);
@@ -3956,6 +3959,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->filename, name);
     
     window->encoding[0] = '\0';
+    window->filter = NULL;
     const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
@@ -5262,6 +5266,11 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     strcpy(window->path, orgWin->path);
     strcpy(window->filename, orgWin->filename);
     strcpy(window->encoding, orgWin->encoding);
+    
+    if(orgWin->filter) {
+        NEditFree(window->filter);
+        window->filter = NEditStrdup(orgWin->filter);
+    }
 
     ShowLineNumbers(window, orgWin->showLineNumbers);
 
@@ -5795,6 +5804,16 @@ void SetEncoding(WindowInfo *window, const char *encoding)
     
     memcpy(window->encoding, encoding, len);
     window->encoding[len] = '\0';
+}
+
+void SetFilter(WindowInfo *window, const char *filter)
+{
+    if(window->filter == filter) {
+        // noop
+        return;
+    }
+    NEditFree(window->filter);
+    window->filter = NEditStrdup(filter);
 }
 
 #define MIN_FONT_SIZE 2

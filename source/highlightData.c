@@ -1984,7 +1984,7 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
             XmNtopWidget, bgColorLbl,
             XmNhighlightThickness, 2,
             XmNshadowThickness, 0,
-            XmNbackground, 0,
+            //XmNbackground, 0,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
     XmStringFree(s1);

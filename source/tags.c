@@ -1448,8 +1448,8 @@ static void editTaggedLocation( Widget parent, int i )
     
     ParseFilename(tagFiles[i],filename,pathname);
     /* open the file containing the definition */
-    EditExistingFile(parentWindow, filename, pathname, NULL, 0, NULL, False, 
-    	    NULL, GetPrefOpenInTab(), False);
+    EditExistingFile(parentWindow, filename, pathname, NULL, NULL, 0, NULL,
+            False, NULL, GetPrefOpenInTab(), False);
     windowToSearch = FindWindowWithFile(filename, pathname);
     if (windowToSearch == NULL) {
         DialogF(DF_WARN, parent, 1, "File not found", "File %s not found", "OK",

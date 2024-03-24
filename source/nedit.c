@@ -761,7 +761,8 @@ int main(int argc, char **argv)
 		   items. The current file may also be raised if there're
 		   macros to execute on. */
 		window = EditExistingFile(WindowList, filename, pathname, NULL,
-		    	editFlags, geometry, iconic, langMode, isTabbed, True);
+                        NULL, editFlags, geometry, iconic, langMode, isTabbed,
+                        True);
     	    	fileSpecified = TRUE;
 		if (window) {
 		    CleanUpTabBarExposeQueue(window);

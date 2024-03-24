@@ -46,6 +46,7 @@
 #include "userCmds.h"
 #include "shell.h"
 #include "macro.h"
+#include "filter.h"
 #include "highlight.h"
 #include "highlightData.h"
 #include "interpret.h"
@@ -189,6 +190,7 @@ static void reposDlogsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1049,6 +1051,8 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     window->lockEncodingErrorDefItem = createMenuToggle(subPane, "lockEncodingError",
     	    "Lock File On Encoding Error", 0, lockEncodingErrorDefCB, window,
     	    GetPrefLockEncodingError(), FULL);
+    createMenuItem(subPane, "filters", "Filters...", 'F', filterDefCB, window,
+    	    FULL);
     subSubPane = createMenu(subPane, "warnings", "Warnings", 'r', NULL, FULL);
     window->modWarnDefItem = createMenuToggle(subSubPane,
 	    "filesModifiedExternally", "Files Modified Externally", 'F',
@@ -1059,7 +1063,6 @@ Widget CreateMenuBar(Widget parent, WindowInfo *window)
     XtSetSensitive(window->modWarnRealDefItem, GetPrefWarnFileMods());
     window->exitWarnDefItem = createMenuToggle(subSubPane, "onExit", "On Exit", 'O',
 	    exitWarnDefCB, window, GetPrefWarnExit(), FULL);
-    
     /* Initial Window Size sub menu (simulates radioBehavior) */
     subSubPane = createMenu(subPane, "initialwindowSize",
     	    "Initial Window Size", 'z', NULL, FULL);
@@ -2365,6 +2368,13 @@ static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callDat
     }
 }
 
+static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+            ((XmAnyCallbackStruct *)callData)->event);
+    FilterSettings(WidgetToWindow(MENU_WIDGET(w)));
+}
+
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     WindowInfo *win;
@@ -2895,25 +2905,24 @@ static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void openDialogAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, True };
-    char *params[3];
+    FileSelection file = { NULL, NULL, NULL, True };
+    char *params[4];
     int response;
-    int n=1;
     
     response = PromptForExistingFile(window, "Open File", &file);
     if (response != GFN_OK)
     	return;
     params[0] = file.path;
 
-    if (*nArgs>0 && !strcmp(args[0], "1")) {
-        params[n++] = "1";
-    }
-    if(file.encoding) {
-        params[n++] = file.encoding;
-    }
+    //if (*nArgs>0 && !strcmp(args[0], "1")) {
+    //    params[n++] = "1";
+    //}
+    params[1] = file.encoding;
+    params[2] = file.filter;
     
-    XtCallActionProc(window->lastFocus, "open", event, params, n);
+    XtCallActionProc(window->lastFocus, "open", event, params, 3);
     NEditFree(file.path);
+    NEditFree(file.filter);
     CheckCloseDim();
 }
 
@@ -2921,6 +2930,7 @@ static void openAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     WindowInfo *window = WidgetToWindow(w);
     char *enc = NULL;
+    char *filter = NULL;
     
     if (*nArgs == 0) {
     	fprintf(stderr, "xnedit: open action requires file argument\n");
@@ -2929,13 +2939,16 @@ static void openAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if(*nArgs > 1) {
         enc = args[1];
     }
+    if(*nArgs > 2) {
+        filter = args[2];
+    }
     
     /* ParseFileName was replaced by the new path util functions */
     
     char *name = FileName(args[0]);
     char *dirpath = ParentPath(args[0]);
     
-    EditExistingFile(window, name, dirpath, enc, 0, NULL, False, 
+    EditExistingFile(window, name, dirpath, enc, filter, 0, NULL, False, 
             NULL, GetPrefOpenInTab(), False);
     CheckCloseDim();
     
@@ -2992,16 +3005,13 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     if(strlen(window->encoding) > 0) {
         file.encoding = window->encoding;
     }
+    file.filter = window->filter;
     response = PromptForNewFile(window, "Save File As", &file,
 	    &fileFormat);
     if (response != GFN_OK)
     	return;
     window->fileFormat = fileFormat;
-    params[0] = file.path;
-    params[1] = file.encoding;
-    params[2] = file.writebom ? "writebom" : "";
-    params[3] = file.setxattr ? "setxattr" : "";
-    params[4] = file.addwrap ? "wrapped" : "";
+    
     char *formatStr;
     switch(file.format) {
         default:
@@ -3009,9 +3019,17 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
         case DOS_FILE_FORMAT: formatStr = "1"; break;
         case MAC_FILE_FORMAT: formatStr = "2"; break;
     }
-    params[5] = formatStr;
-    XtCallActionProc(window->lastFocus, "save_as", event, params, 6);
+    
+    params[0] = file.path;
+    params[1] = file.writebom ? "writebom" : "";
+    params[2] = file.setxattr ? "setxattr" : "";
+    params[3] = file.addwrap ? "wrapped" : "";
+    params[4] = formatStr;
+    params[5] = file.encoding;
+    params[6] = file.filter;
+    XtCallActionProc(window->lastFocus, "save_as", event, params, 7);
     NEditFree(file.path);
+    NEditFree(file.filter);
 }
 
 static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
@@ -3023,11 +3041,12 @@ static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     FileSelection file;
     memset(&file, 0, sizeof(FileSelection));
     file.path = args[0];
-    file.encoding = *nArgs > 1 ? args[1] : NULL;
-    file.writebom = *nArgs > 2 && !strCaseCmp(args[2], "writebom") ? 1 : 0;
-    file.setxattr = *nArgs > 3 && !strCaseCmp(args[3], "setxattr") ? 1 : 0;
-    file.addwrap = *nArgs > 4 && !strCaseCmp(args[4], "wrapped") ? 1 : 0;
-    file.format = *nArgs > 5 ? atoi(args[5]) : UNIX_FILE_FORMAT;
+    file.writebom = *nArgs > 1 && !strCaseCmp(args[1], "writebom") ? 1 : 0;
+    file.setxattr = *nArgs > 2 && !strCaseCmp(args[2], "setxattr") ? 1 : 0;
+    file.addwrap = *nArgs > 3 && !strCaseCmp(args[3], "wrapped") ? 1 : 0;
+    file.format = *nArgs > 4 ? atoi(args[4]) : UNIX_FILE_FORMAT;
+    file.encoding = *nArgs > 5 ? args[5] : NULL;
+    file.filter = *nArgs > 6 ? args[6] : NULL;
     SaveWindowAs(WidgetToWindow(w), &file);
 }
 
@@ -3069,10 +3088,10 @@ static void includeDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, True };
-    char *params[2];
+    FileSelection file = { NULL, NULL, NULL, True };
+    char *params[4];
     int response;
-    int n = 1;
+    int n = 3;
     
     if (CheckReadOnly(window))
     	return;
@@ -3080,11 +3099,11 @@ static void includeDialogAP(Widget w, XEvent *event, String *args,
     if (response != GFN_OK)
     	return;
     params[0] = file.path;
-    if(file.encoding) {
-        params[n++] = file.encoding;
-    }
+    params[1] = file.encoding;
+    params[2] = file.filter;
     XtCallActionProc(window->lastFocus, "include_file", event, params, n);
     NEditFree(file.path);
+    NEditFree(file.filter);
 }
 
 static void includeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -3104,7 +3123,7 @@ static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, NULL, False };
     char *params[1];
     int response;
     
@@ -3114,6 +3133,7 @@ static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
     params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_macro_file", event, params, 1);
     NEditFree(file.path);
+    NEditFree(file.filter);
 }
 
 static void loadMacroAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -3129,7 +3149,7 @@ static void loadTagsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, NULL, False };
     char *params[1];
     int response;
     
@@ -3139,6 +3159,7 @@ static void loadTagsDialogAP(Widget w, XEvent *event, String *args,
     params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_tags_file", event, params, 1);
     NEditFree(file.path);
+    NEditFree(file.filter);
 }
 
 static void loadTagsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
@@ -3186,7 +3207,7 @@ static void loadTipsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
-    FileSelection file = { NULL, NULL, False };
+    FileSelection file = { NULL, NULL, NULL, False };
     char *params[1];
     int response;
     
@@ -3196,6 +3217,7 @@ static void loadTipsDialogAP(Widget w, XEvent *event, String *args,
     params[0] = file.path;
     XtCallActionProc(window->lastFocus, "load_tips_file", event, params, 1);
     NEditFree(file.path);
+    NEditFree(file.filter);
 }
 
 static void loadTipsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 

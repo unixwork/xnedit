@@ -31,6 +31,7 @@
 #endif
 
 #include "file.h"
+#include "filter.h"
 #include "textBuf.h"
 #include "text.h"
 #include "window.h"
@@ -273,7 +274,7 @@ static Locale locales[] = {
 static int doSave(WindowInfo *window, Boolean setEncAttr);
 static void safeClose(WindowInfo *window);
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     const char *encoding, int flags);
+     const char *encoding, const char *filter_name, int flags);
 static void backupFileName(WindowInfo *window, char *name, size_t len);
 static int writeBckVersion(WindowInfo *window);
 static int bckError(WindowInfo *window, const char *errString, const char *file);
@@ -425,8 +426,9 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
 ** opening operation when multiple files are being opened in succession. 
 */
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
-        const char *path, const char *encoding, int flags, char *geometry,
-        int iconic, const char *languageMode, int tabbed, int bgOpen)
+        const char *path, const char *encoding, const char *filter, int flags,
+        char *geometry, int iconic, const char *languageMode, int tabbed,
+        int bgOpen)
 {
     WindowInfo *window;
     char fullname[MAXPATHLEN];
@@ -489,7 +491,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     }
     
     /* Open the file */
-    if (!doOpen(window, name, path, encoding, flags)) {
+    if (!doOpen(window, name, path, encoding, filter, flags)) {
 	/* The user may have destroyed the window instead of closing the 
 	   warning dialog; don't close it twice */
 	safeClose(window);
@@ -581,7 +583,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     RemoveBackupFile(window);
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
-    if (!doOpen(window, name, path, encoding, openFlags)) {
+    if (!doOpen(window, name, path, encoding, NULL /*TODO: filter*/, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
@@ -664,7 +666,7 @@ size_t copyBytes(
 #define IO_BUFSIZE 2048
 
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     const char *encoding, int flags)
+     const char *encoding, const char *filter_name, int flags)
 {
     char fullname[MAXPATHLEN];
     struct stat statbuf;
@@ -672,6 +674,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     char *fileString, *c;
     char buf[IO_BUFSIZE];
     FILE *fp = NULL;
+    FileStream *stream = NULL;;
     int fd;
     int resp;
     int err;
@@ -698,7 +701,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     window->filenameSet = TRUE;
     window->fileMissing = TRUE;
 
-   /* Get the full name of the file */
+    /* Get the full name of the file */
     strcpy(fullname, path);
     strcat(fullname, name);
     
@@ -775,7 +778,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             return FALSE;
         }
     }
-    
+     
     /* Get the length of the file, the protection mode, and the time of the
        last modification to the file */
     if (fstat(fileno(fp), &statbuf) != 0) {
@@ -807,6 +810,13 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
 #endif
     fileLen = statbuf.st_size;
+    
+    IOFilter* filter = GetFilterFromName(filter_name);
+    char *filter_cmd = NULL;
+    if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
+        filter_cmd = filter->cmdin;
+    }
+    stream = filestream_open_r(window->shell, fp, filter_cmd);
     
     char *enc_attr = NULL;
     
@@ -875,7 +885,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(checkBOM) {
         /* read Byte Order Mark */
         int bom = 0;
-        size_t r = fread(buf, 1, 4, fp);
+        size_t r = filestream_read(buf, 4, stream);
         do {
             if(r >= 4) {
                 bom = 4;
@@ -919,7 +929,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             }
             bom = 0;
         } while (0);
-        fseek(fp, bom, SEEK_SET);
+        filestream_reset(stream, bom);
     }
     if(setEncoding) {
         encoding = setEncoding;
@@ -927,12 +937,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     if(checkEncoding) {
-        size_t r = fread(buf, 1, IO_BUFSIZE, fp);
+        size_t r = filestream_read(buf, IO_BUFSIZE, stream);
         const char *newEnc = DetectEncoding(buf, r, encoding);
         if(newEnc && newEnc != encoding) {
             encoding = newEnc;
         }
-        fseek(fp, 0, SEEK_SET);
+        filestream_reset(stream, 0);
     }
     
     
@@ -940,7 +950,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     size_t strAlloc = fileLen;
     fileString = (char *)malloc(strAlloc + 1); /* +1 = space for null */
     if (fileString == NULL) {
-        fclose(fp);
+        filestream_close(stream);
         window->filenameSet = FALSE; /* Temp. prevent check for changes. */
         DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                 "File is too large to edit", "OK");
@@ -956,7 +966,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(encoding) {
         ic = iconv_open("UTF-8", encoding);
         if(ic == (iconv_t) -1) {
-            fclose(fp);
+            filestream_close(stream);
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             char *format = "File cannot be converted from %s to UTF8";
             size_t msglen = strlen(format) + strlen(encoding) + 4;
@@ -993,7 +1003,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     readLen = 0;
     char *outStr = fileString;
     size_t prev = 0;
-    while((r = fread(buf+prev, 1, IO_BUFSIZE-prev, fp)) > 0 && !err) {
+    while((r = filestream_read(buf+prev, IO_BUFSIZE-prev, stream)) > 0 && !err) {
         char *str = buf;
         size_t inleft = prev + r;
         size_t outleft = strAlloc - readLen;   
@@ -1124,7 +1134,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     if (err || ferror(fp)) {
-        fclose(fp);
+        filestream_close(stream);
         window->filenameSet = FALSE; /* Temp. prevent check for changes. */
         if(show_err) {
              DialogF(DF_ERR, window->shell, 1, "Error while opening File",
@@ -1137,12 +1147,14 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     fileString[readLen] = 0;
     
     /* Close the file */
-    if (fclose(fp) != 0) {
+    if (filestream_close(stream) != 0) {
         /* unlikely error */
         DialogF(DF_WARN, window->shell, 1, "Error while opening File",
                 "Unable to close file", "OK");
         /* we read it successfully, so continue */
     }
+    
+    SetFilter(window, filter_name);
     
     /* bom in the window */
     window->bom = hasBOM;
@@ -1481,6 +1493,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     	    return FALSE;
         window->bom = newFile.writebom;
 	window->fileFormat = newFile.format;
+        SetFilter(window, newFile.filter);
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
             fprintf(stderr, "Error: Path too long\n");
@@ -1510,6 +1523,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         }
         window->bom = file->writebom;
         window->fileFormat = file->format;
+        SetFilter(window, file->filter);
     }
 
     if (1 == NormalizePathname(fullname))
@@ -1714,13 +1728,19 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     /* write to the file */
+    IOFilter *filter = GetFilterFromName(window->filter);
+    char *filter_cmd = NULL;
+    if(filter && filter->cmdout && strlen(filter->cmdout) > 0) {
+        filter_cmd = filter->cmdout;
+    }
+    FileStream *stream = filestream_open_w(window->shell, fp, filter_cmd);
     
     /* write bom if requsted */
     if(window->bom) {
         char *bom;
         int bomLen = getBOM(window->encoding, &bom);
         if(bomLen > 0) {
-            if(fwrite(bom, 1, bomLen, fp) != bomLen) {
+            if(filestream_write(bom, bomLen, stream) != bomLen) {
                 fileLen = 0;
             }
         }
@@ -1745,7 +1765,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         w -= outleft;
         
         if(w > 0) {
-            fwrite(buf, 1, w, fp);
+            filestream_write(buf, w, stream);
         }
         
         if(rc == (size_t)-1) {
@@ -1799,7 +1819,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     if (ferror(fp) || eresp == 2) {
-        fclose(fp);
+        filestream_close(stream);
         remove(fullname);
         NEditFree(fileString);
         return FALSE;
@@ -1844,7 +1864,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
     
     /* close the file */
-    if (fclose(fp) != 0)
+    if (filestream_close(stream) != 0)
     {
         DialogF(DF_ERR, window->shell, 1, "Error closing File",
                 "Error closing file:\n%s", "OK", errorString());

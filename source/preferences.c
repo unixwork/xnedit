@@ -46,6 +46,7 @@
 #include "windowTitle.h"
 #include "server.h"
 #include "tags.h"
+#include "filter.h"
 #include "../util/prefFile.h"
 #include "../util/misc.h"
 #include "../util/DialogF.h"
@@ -430,6 +431,7 @@ static struct {
     char *smartIndent;
     char *smartIndentCommon;
     char *shell;
+    char *filter;
 } TempStringPrefs;
 
 /* preference descriptions for SavePreferences and RestorePreferences. */
@@ -1145,6 +1147,10 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.iconSize, NULL, True} ,
     {"lockEncodingError", "LockEncodingError", PREF_BOOLEAN, "True",
             &PrefData.lockEncodingError, NULL, True},
+    {"filter", "Filter", PREF_ALLOC_STRING,
+      "gzip;*.gz;.gz;gzip -d;gzip\n"
+      "bzip2;*.bz;.bz;bzip2 -d;bzip2",
+      &TempStringPrefs.filter, NULL, True} ,
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -1433,10 +1439,16 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	NEditFree(TempStringPrefs.smartIndentCommon);
 	TempStringPrefs.smartIndentCommon = NULL;
     }
+    if(TempStringPrefs.filter) {
+        ParseFilterSettings(TempStringPrefs.filter);
+        NEditFree(TempStringPrefs.filter);
+        TempStringPrefs.filter = NULL;
+    }
+    
     if (PrefData.iconSize) {
         parseIconSize(PrefData.iconSize);
     }
-    
+     
     PrefData.font = FontFromName(TheDisplay, PrefData.fontString);
     PrefData.boldFont = FontFromName(TheDisplay, PrefData.boldFontString);
     PrefData.italicFont = FontFromName(TheDisplay, PrefData.italicFontString);
@@ -1507,6 +1519,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     TempStringPrefs.styles = WriteStylesString();
     TempStringPrefs.smartIndent = WriteSmartIndentString();
     TempStringPrefs.smartIndentCommon = WriteSmartIndentCommonString();
+    TempStringPrefs.filter = WriteFilterString();
     strcpy(PrefData.fileVersion, PREF_FILE_VERSION);
 
     if (!SavePreferences(XtDisplay(parent), prefFileName, HeaderText,
@@ -1524,6 +1537,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     NEditFree(TempStringPrefs.styles);
     NEditFree(TempStringPrefs.smartIndent);
     NEditFree(TempStringPrefs.smartIndentCommon);
+    NEditFree(TempStringPrefs.filter);
     
     PrefsHaveChanged = False;
 }

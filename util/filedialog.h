@@ -39,6 +39,7 @@ extern "C" {
 typedef struct FileSelection {
     char    *path;
     char    *encoding;
+    char    *filter;
     Boolean setenc;
     Boolean setxattr;
     Boolean writebom;

@@ -48,8 +48,10 @@
 #include "getfiles.h"
 #include "misc.h"
 #include "textfield.h"
+#include "ec_glob.h"
 
 #include "../source/preferences.h"
+#include "../source/filter.h"
 
 #include "DialogF.h"
 
@@ -1031,6 +1033,7 @@ struct FileDialogData {
     Widget dosFormat;
     Widget macFormat;
     Widget encoding;
+    Widget iofilter;
     Widget bom;
     Widget xattr;
     
@@ -1049,6 +1052,10 @@ struct FileDialogData {
     char *selectedPath;
     int selIsDir;
     int showHidden;
+    
+    IOFilter **filters;
+    size_t nfilters;
+    IOFilter *selected_filter;
       
     int type;
     
@@ -1094,6 +1101,25 @@ static void filedialog_cleanup(FileDialogData *data)
     }
     if(data->currentPath) {
         NEditFree(data->currentPath);
+    }
+}
+
+static void filedialog_check_iofilters(FileDialogData *data, const char *path)
+{
+    if(!path) {
+        return;
+    }
+    
+    for(int i=0;i<data->nfilters;i++) {
+        if(data->filters[i]->ec_pattern) {
+            if(!ec_glob(data->filters[i]->ec_pattern, path)) {
+                data->selected_filter = data->filters[i];
+                XmString s = XmStringCreateLocalized(data->selected_filter->name);
+                XmComboBoxSelectItem(data->iofilter, s);
+                XmStringFree(s);
+                return;
+            }
+        }
     }
 }
 
@@ -1589,7 +1615,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         }
     
         /* dir reading complete - set the path textfield */  
-        XmTextFieldSetString(data->path, path);
+        XNETextSetString(data->path, path);
         char *oldPath = data->currentPath;
         data->currentPath = NEditStrdup(path);
         if(oldPath) {
@@ -1695,6 +1721,7 @@ void set_path_from_row(FileDialogData *data, int row) {
     }
     
     char *path = NEditStrdup(elm->path);
+    filedialog_check_iofilters(data, path);
     
     if(data->type == FILEDIALOG_SAVE) {
         XNETextSetString(data->name, FileName(path));
@@ -1831,9 +1858,13 @@ void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
         char *name = NULL;
         XmStringGetLtoR(cb->item, XmFONTLIST_DEFAULT_TAG, &name);
         XNETextSetString(data->name, name);
+        char *path = name ? ConcatPath(data->currentPath, name) : NULL;
         XtFree(name);
+        filedialog_check_iofilters(data, path);
+        XtFree(path);
     } else {
         char *path = set_selected_path(data, cb->item);
+        filedialog_check_iofilters(data, path);
         if(path) {
             data->selIsDir = False;
         }
@@ -1918,7 +1949,7 @@ static char *default_encodings[] = {
     NULL
 };
 
-static void adjust_enc_settings(FileDialogData *data){
+static void adjust_enc_settings(FileDialogData *data) {
     /* this should never happen, but make sure it will not do anything */
     if(data->type != FILEDIALOG_SAVE) return;
     
@@ -1951,6 +1982,67 @@ static void filedialog_select_encoding(
 {
     if(cb->reason == XmCR_SELECT) {
         adjust_enc_settings(data);
+    }
+}
+
+static int str_has_suffix(const char *str, const char *suffix) {
+    size_t str_len = str ? strlen(str) : 0;
+    size_t suffix_len = suffix ? strlen(suffix) : 0;
+    if(str_len >= suffix_len) {
+        const char *str_end = str + str_len - suffix_len;
+        int result = memcmp(str_end, suffix, suffix_len) == 0;
+        return result;
+    }
+    return 0;
+}
+
+static void filedialog_select_iofilter(
+        Widget w,
+        FileDialogData *data,
+        XmComboBoxCallbackStruct *cb)
+{
+    if(cb->reason == XmCR_SELECT) {
+        if(data->type == FILEDIALOG_SAVE) {
+            // remove previous extension
+            if(data->selected_filter) {
+                // compare current file name extension with selected_filter extension
+                char *name = XNETextGetString(data->name);
+                size_t name_len = strlen(name);
+                if(str_has_suffix(name, data->selected_filter->ext)) {
+                    name[name_len - strlen(data->selected_filter->ext)] = 0; // remove ext
+                    XNETextSetString(data->name, name);
+                }
+                XtFree(name);
+            }
+        }
+        
+        // get the current filter from the combobox
+        int selectedFilterIndex;
+        XtVaGetValues(data->iofilter, XmNselectedPosition, &selectedFilterIndex, NULL);
+        // index 0 is always '-' no filter
+        if(selectedFilterIndex == 0) {
+            data->selected_filter = NULL;
+        } else {
+            // combobox indices are always +1 compared to data->filters indices
+            data->selected_filter = data->filters[selectedFilterIndex-1];
+
+            // set extension if the name doesn't already contain the extension
+            if(data->name && data->selected_filter->ext) {
+                char *name = XNETextGetString(data->name);
+                if(!str_has_suffix(name, data->selected_filter->ext)) {
+                    size_t name_len = strlen(name);
+                    size_t ext_len = strlen(data->selected_filter->ext);
+                    size_t newname_len = name_len + ext_len;
+                    char *newname = NEditMalloc(newname_len + 1);
+                    memcpy(newname, name, name_len);
+                    memcpy(newname+name_len, data->selected_filter->ext, ext_len);
+                    newname[newname_len] = '\0';
+                    XNETextSetString(data->name, newname);
+                    NEditFree(newname);
+                }
+                XtFree(name);
+            }
+        }
     }
 }
 
@@ -2060,6 +2152,45 @@ static void shortcutEH(Widget widget, XtPointer data, XEvent *event, Boolean *di
     if(event->xkey.keycode == keycodeL) {
         PathBarActivateTextfield(fsb->pathBar);
         *dispatch = False;
+    }
+}
+
+static void createFilterWidgets(FileDialogData *data, const char *current_filter, Widget parent, Arg *args, int n) {
+    size_t nfilters;
+    IOFilter **filter = GetFilterList(&nfilters);
+    data->filters = filter;
+    data->nfilters = nfilters;
+       
+    XmStringTable filterStrTable = NEditCalloc(nfilters+1, sizeof(XmString));
+    filterStrTable[0] = XmStringCreateSimple("-");
+    for(int i=0;i<nfilters;i++) {
+        filterStrTable[i+1] = XmStringCreateLocalized(filter[i]->name);
+    }
+
+    XtSetArg(args[n], XmNcolumns, 11); n++;
+    XtSetArg(args[n], XmNitemCount, nfilters+1); n++;
+    XtSetArg(args[n], XmNitems, filterStrTable); n++;
+    data->iofilter = XmCreateDropDownList(parent, "filtercombobox", args, n);
+    XtManageChild(data->iofilter);
+    for(int i=0;i<nfilters+1;i++) {
+        XmStringFree(filterStrTable[i]);
+    }
+    NEditFree(filterStrTable);
+    
+    XtAddCallback(
+            data->iofilter,
+            XmNselectionCallback,
+            (XtCallbackProc)filedialog_select_iofilter,
+            data);
+    
+    if(current_filter) {
+        XmString xCurrentFilter = XmStringCreateLocalized((char*)current_filter);
+        XmComboBoxSelectItem(data->iofilter, xCurrentFilter);
+        XmStringFree(xCurrentFilter);
+        
+        XmComboBoxCallbackStruct cb;
+        cb.reason = XmCR_SELECT;
+        filedialog_select_iofilter(data->iofilter, data, &cb);
     }
 }
 
@@ -2335,20 +2466,44 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     
     Widget bottomWidget = separator;
     
-    if(type == FILEDIALOG_SAVE) {
+    if(type == FILEDIALOG_SAVE) { 
+        n = 0;
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNbottomWidget, separator); n++;
+        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+        createFilterWidgets(&data, file->filter, form, args, n);
+        
         n = 0;
         XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
         XtSetArg(args[n], XmNbottomWidget, separator); n++;
         XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
         XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
         XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+        XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNrightWidget, data.iofilter); n++;
+        XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+        XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
         data.name = XNECreateText(form, "textfield", args, n);
         XtManageChild(data.name);
         XtAddCallback(data.name, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
-
+        
+        n = 0;
+        str = XmStringCreateSimple("Filter");
+        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNbottomWidget, data.name); n++;
+        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+        XtSetArg(args[n], XmNleftWidget, data.name); n++;
+        XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+        XtSetArg(args[n], XmNlabelString, str); n++;
+        Widget filterLabel = XmCreateLabel(form, "label", args, n);
+        XtManageChild(filterLabel);
+        XmStringFree(str);
+        
         n = 0;
         str = XmStringCreateSimple("New File Name");
         XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
@@ -2482,6 +2637,16 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             data.xattr = XmCreateToggleButton(enc, "togglebutton", args, n);
             XtManageChild(data.xattr);
             XmStringFree(str);
+        } else {
+            // FILEDIALOG_OPEN
+            n = 0;
+            XmString str = XmStringCreateSimple("Filter");
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            Widget filterLabel = XmCreateLabel(enc, "filter_label", args, n);
+            XtManageChild(filterLabel);
+            XmStringFree(str);
+            
+            createFilterWidgets(&data, file->filter, enc, args, 0);
         }
         
     }
@@ -2694,6 +2859,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
                 LastFilter = NULL;
             }
         }
+        
+        file->filter = data.selected_filter ? NEditStrdup(data.selected_filter->name) : NULL;
         
         if(file->setenc) {
             int encPos;
