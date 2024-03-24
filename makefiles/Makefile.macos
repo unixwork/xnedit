@@ -127,7 +127,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv
+LIBS= -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
 
 # System independent part
 include Makefile.common

@@ -9,6 +9,6 @@ CFLAGS=-O -std=gnu99 -I/usr/X11R6/include -I/usr/include/X11 -DUSE_LPR_PRINT_CMD
 
 ARFLAGS=-urs
 
-LIBS=-L/usr/X11R6/lib -liconv -lXm -lXt -lX11 -lXrender -lm $(shell pkg-config --libs xft fontconfig)
+LIBS=-L/usr/X11R6/lib -liconv -lXm -lXt -lX11 -lXrender -lm -lpthread $(shell pkg-config --libs xft fontconfig)
 
 include Makefile.common
