@@ -770,6 +770,14 @@ size_t filestream_write(const void *buffer, size_t size, size_t count, FileStrea
 }
 
 int filestream_close(FileStream *stream) {
+    if(stream->pid != 0) {
+        if(close(stream->pin[0])) {
+            perror("pipe pin[0] close");
+        }
+        if(close(stream->pout[0])) {
+            perror("pipe pout[0] close");
+        }
+    }
     int err = fclose(stream->file);
     NEditFree(stream->filter_cmd);
     NEditFree(stream);
