@@ -688,8 +688,6 @@ FileStream* filestream_open(FILE *f, const char *filter_cmd) {
         } else {
             stream->pid = child;
             
-            close(stream->pout[1]);
-            
             pthread_t tid;
             if(pthread_create(&tid, NULL, file_input_thread, stream)) {
                 fprintf(stderr, "Errro: cannot create file input thread: %s\n", strerror(errno));
@@ -702,6 +700,8 @@ FileStream* filestream_open(FILE *f, const char *filter_cmd) {
                 NEditFree(stream);
                 return NULL;
             }
+            
+            close(stream->pout[1]);
         }
     }
     

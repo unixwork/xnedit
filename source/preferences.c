@@ -1148,8 +1148,8 @@ static PrefDescripRec PrefDescrip[] = {
     {"lockEncodingError", "LockEncodingError", PREF_BOOLEAN, "True",
             &PrefData.lockEncodingError, NULL, True},
     {"filter", "Filter", PREF_ALLOC_STRING,
-      "gzip;*.gz;.gz;gzip;gzip -d\n"
-      "bzip2;*.bz;.bz;bzip2;bzip2 -d",
+      "gzip;*.gz;.gz;gzip -d;gzip\n"
+      "bzip2;*.bz;.bz;bzip2 -d;bzip2",
       &TempStringPrefs.filter, NULL, True} ,
 };
 
