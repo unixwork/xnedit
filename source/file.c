@@ -1154,6 +1154,8 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         /* we read it successfully, so continue */
     }
     
+    SetFilter(window, filter_name);
+    
     /* bom in the window */
     window->bom = hasBOM;
 

@@ -3005,6 +3005,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     if(strlen(window->encoding) > 0) {
         file.encoding = window->encoding;
     }
+    file.filter = window->filter;
     response = PromptForNewFile(window, "Save File As", &file,
 	    &fileFormat);
     if (response != GFN_OK)

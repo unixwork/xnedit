@@ -2129,12 +2129,12 @@ static void shortcutEH(Widget widget, XtPointer data, XEvent *event, Boolean *di
     }
 }
 
-static void createFilterWidgets(FileDialogData *data, Widget parent, Arg *args, int n) {
+static void createFilterWidgets(FileDialogData *data, const char *current_filter, Widget parent, Arg *args, int n) {
     size_t nfilters;
     IOFilter **filter = GetFilterList(&nfilters);
     data->filters = filter;
     data->nfilters = nfilters;
-    
+       
     XmStringTable filterStrTable = NEditCalloc(nfilters+1, sizeof(XmString));
     filterStrTable[0] = XmStringCreateSimple("-");
     for(int i=0;i<nfilters;i++) {
@@ -2156,6 +2156,16 @@ static void createFilterWidgets(FileDialogData *data, Widget parent, Arg *args, 
             XmNselectionCallback,
             (XtCallbackProc)filedialog_select_iofilter,
             data);
+    
+    if(current_filter) {
+        XmString xCurrentFilter = XmStringCreateLocalized((char*)current_filter);
+        XmComboBoxSelectItem(data->iofilter, xCurrentFilter);
+        XmStringFree(xCurrentFilter);
+        
+        XmComboBoxCallbackStruct cb;
+        cb.reason = XmCR_SELECT;
+        filedialog_select_iofilter(data->iofilter, data, &cb);
+    }
 }
 
 int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
@@ -2437,7 +2447,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
         XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
         XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
-        createFilterWidgets(&data, form, args, n);
+        createFilterWidgets(&data, file->filter, form, args, n);
         
         n = 0;
         XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
@@ -2610,7 +2620,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             XtManageChild(filterLabel);
             XmStringFree(str);
             
-            createFilterWidgets(&data, enc, args, 0);
+            createFilterWidgets(&data, file->filter, enc, args, 0);
         }
         
     }
