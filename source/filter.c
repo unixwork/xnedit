@@ -30,6 +30,9 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h>
 #include <Xm/XmAll.h>
 
 static IOFilter **filters;
@@ -602,23 +605,164 @@ IOFilter** GetFilterList(size_t *num)
     return filters;
 }
 
+IOFilter* GetFilterFromName(const char *name)
+{
+    if(!name) {
+        return NULL;
+    }
+    for(int i=0;i<numFilters;i++) {
+        if(!strcmp(filters[i]->name, name)) {
+            return filters[i];
+        }
+    }
+    return NULL;
+}
+
 /* ----------------------------- FileStream -----------------------------*/
+
+static void* file_input_thread(void *data) {
+    FileStream *stream = data;
+    
+    char buf[16384];
+    size_t r;
+    while((r = fread(buf, 1, 16384, stream->file)) > 0) {
+        write(stream->pin[1], buf, r);
+    }
+    
+    close(stream->pin[1]);
+    
+    return NULL;
+}
 
 FileStream* filestream_open(FILE *f, const char *filter_cmd) {
     FileStream *stream = NEditMalloc(sizeof(FileStream));
     stream->file = f;
     stream->filter_cmd = filter_cmd ? NEditStrdup(filter_cmd) : NULL;
     stream->pid = 0;
+    stream->hdrbufpos = 0;
+    stream->hdrbuflen = 0;
+    
+    if(filter_cmd) {
+        if(pipe(stream->pin)) {
+            NEditFree(stream->filter_cmd);
+            NEditFree(stream);
+            fclose(f);
+            fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
+            return NULL;
+        }
+        if(pipe(stream->pout)) {
+            close(stream->pin[0]);
+            close(stream->pin[1]);
+            NEditFree(stream->filter_cmd);
+            NEditFree(stream);
+            fclose(f);
+            fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
+            return NULL;
+        }
+        
+        pid_t child = fork();
+        if(child == 0) {
+            close(STDIN_FILENO);
+            close(STDOUT_FILENO);
+            
+            // we need stdin, stdout and stderr refer to the previously
+            // created pipes
+            if(dup2(stream->pin[0], STDIN_FILENO) == -1) {
+                perror("dup2");
+                exit(1);
+            }
+            if(dup2(stream->pout[1], STDOUT_FILENO) == -1) {
+                perror("dup2");
+                exit(1);
+            }
+            
+            close(stream->pin[1]);
+            
+            // execute the command using the shell specified by preferences
+            //fprintf(stderr, "info: input filter command: %s\n", filter_cmd);
+            execlp(GetPrefShell(), GetPrefShell(), "-c", filter_cmd, NULL);
+            
+            // execlp only returns if an error occured
+            fprintf(stderr, "Error starting shell: %s\n", GetPrefShell());
+            exit(1);
+        } else {
+            stream->pid = child;
+            
+            close(stream->pout[1]);
+            
+            pthread_t tid;
+            if(pthread_create(&tid, NULL, file_input_thread, stream)) {
+                fprintf(stderr, "Errro: cannot create file input thread: %s\n", strerror(errno));
+                close(stream->pin[0]);
+                close(stream->pin[1]);
+                close(stream->pout[0]);
+                close(stream->pout[1]);
+                fclose(f);
+                NEditFree(stream->filter_cmd);
+                NEditFree(stream);
+                return NULL;
+            }
+        }
+    }
+    
+    
     return stream;
 }
 
 int filestream_reset(FileStream *stream, int pos) {
-    fseek(stream->file, pos, SEEK_SET);
+    if(stream->pid == 0) {
+        fseek(stream->file, pos, SEEK_SET);
+    } else {
+        if(pos > stream->hdrbuflen || stream->hdrbufpos > stream->hdrbuflen) {
+            return 1;
+        }
+        stream->hdrbufpos = pos;
+    }
     return 0;
 }
 
 size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stream) {
-    return fread(buffer, size, count, stream->file);
+    if(stream->pid == 0) {
+        return fread(buffer, size, count, stream->file);  
+    } else {
+        size_t nbytes = size * count;
+        if(stream->hdrbufpos < stream->hdrbuflen) {
+            // get bytes from hdrbuf before reading more bytes from the pipe
+            size_t r = stream->hdrbuflen - stream->hdrbufpos;
+            if(r > nbytes) {
+                r = nbytes;
+            }
+            memcpy(buffer, stream->hdrbuf, r);
+            nbytes -= r;
+            buffer = ((char*)buffer) + r;
+            stream->hdrbufpos += r;
+            if(nbytes > 0) {
+                r += filestream_read(buffer, 1, nbytes, stream);
+            }
+            return r;
+        }
+        
+        ssize_t sr = read(stream->pout[0], buffer, nbytes);
+        //fwrite(buffer, 1, sr, stdout);
+        //fflush(stdout);
+        if(sr < 0) {
+            return 0;
+        }
+        
+        // the first bytes we read from the pipe are stored in hdrbuf
+        // because we may want to reset the stream
+        if(stream->hdrbuflen < FILESTREAM_HDR_BUFLEN) {
+            size_t buflen = FILESTREAM_HDR_BUFLEN - stream->hdrbuflen;
+            if(buflen > sr) {
+                buflen = sr;
+            }
+            memcpy(stream->hdrbuf + stream->hdrbuflen, buffer, buflen);
+            stream->hdrbuflen += buflen;
+        }
+        
+        stream->hdrbufpos += sr;
+        return (size_t)sr;
+    }
 }
 
 size_t filestream_write(const void *buffer, size_t size, size_t count, FileStream *stream) {

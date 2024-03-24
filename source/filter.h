@@ -38,11 +38,16 @@ struct IOFilter {
     char *cmdout;
 };
 
+#define FILESTREAM_HDR_BUFLEN 32768
 typedef struct FileStream {
     FILE *file;
-    int pipe[2];
+    int pin[2];
+    int pout[2];
     pid_t pid;
     char *filter_cmd;
+    char hdrbuf[FILESTREAM_HDR_BUFLEN];
+    size_t hdrbuflen;
+    size_t hdrbufpos;
 } FileStream;
 
 void FilterSettings(WindowInfo *window);
@@ -52,6 +57,8 @@ void ParseFilterSettings(char *str);
 char* WriteFilterString(void);
 
 IOFilter** GetFilterList(size_t *num);
+
+IOFilter* GetFilterFromName(const char *name);
 
 FileStream* filestream_open(FILE *f, const char *filter_cmd);
 int filestream_reset(FileStream *stream, int pos);

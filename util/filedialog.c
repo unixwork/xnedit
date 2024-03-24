@@ -2824,6 +2824,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
             }
         }
         
+        file->filter = data.selected_filter ? NEditStrdup(data.selected_filter->name) : NULL;
+        
         if(file->setenc) {
             int encPos;
             XtVaGetValues(data.encoding, XmNselectedPosition, &encPos, NULL);

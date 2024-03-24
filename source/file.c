@@ -274,7 +274,7 @@ static Locale locales[] = {
 static int doSave(WindowInfo *window, Boolean setEncAttr);
 static void safeClose(WindowInfo *window);
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     const char *encoding, int flags);
+     const char *encoding, const char *filter_name, int flags);
 static void backupFileName(WindowInfo *window, char *name, size_t len);
 static int writeBckVersion(WindowInfo *window);
 static int bckError(WindowInfo *window, const char *errString, const char *file);
@@ -491,7 +491,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     }
     
     /* Open the file */
-    if (!doOpen(window, name, path, encoding, flags)) {
+    if (!doOpen(window, name, path, encoding, filter, flags)) {
 	/* The user may have destroyed the window instead of closing the 
 	   warning dialog; don't close it twice */
 	safeClose(window);
@@ -583,7 +583,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     RemoveBackupFile(window);
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
-    if (!doOpen(window, name, path, encoding, openFlags)) {
+    if (!doOpen(window, name, path, encoding, NULL /*TODO: filter*/, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
@@ -666,7 +666,7 @@ size_t copyBytes(
 #define IO_BUFSIZE 2048
 
 static int doOpen(WindowInfo *window, const char *name, const char *path,
-     const char *encoding, int flags)
+     const char *encoding, const char *filter_name, int flags)
 {
     char fullname[MAXPATHLEN];
     struct stat statbuf;
@@ -811,7 +811,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
 #endif
     fileLen = statbuf.st_size;
     
-    stream = filestream_open(fp, NULL); // TODO: filter_cmd
+    IOFilter* filter = GetFilterFromName(filter_name);
+    char *filter_cmd = NULL;
+    if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
+        filter_cmd = filter->cmdin;
+    }
+    stream = filestream_open(fp, filter_cmd);
     
     char *enc_attr = NULL;
     
