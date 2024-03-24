@@ -1615,7 +1615,6 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         }
     
         /* dir reading complete - set the path textfield */  
-        XNETextSetString(data->path, path);
         char *oldPath = data->currentPath;
         data->currentPath = NEditStrdup(path);
         if(oldPath) {
@@ -2352,7 +2351,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
     data.pathBar->updateDir = (updatedir_callback)filedialog_update_dir;
     data.pathBar->updateDirData = &data;
     XtManageChild(data.pathBar->widget);
-    data.path = XmCreateTextField(form, "textfield", args, 0);
     
     n = 0;
     str = XmStringCreateLocalized("Filter");
