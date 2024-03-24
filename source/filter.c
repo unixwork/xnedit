@@ -620,39 +620,64 @@ IOFilter* GetFilterFromName(const char *name)
 
 /* ----------------------------- FileStream -----------------------------*/
 
+typedef struct FilterIOThreadData {
+    FILE *file;
+    int fd_in;
+    int fd_out;
+} FilterIOThreadData;
+
 static void* file_input_thread(void *data) {
-    FileStream *stream = data;
+    FilterIOThreadData *stream = data;
     
     char buf[16384];
     size_t r;
     while((r = fread(buf, 1, 16384, stream->file)) > 0) {
-        write(stream->pin[1], buf, r);
+        write(stream->fd_in, buf, r);
     }
     
-    close(stream->pin[1]);
+    close(stream->fd_in);
     
     return NULL;
 }
 
-FileStream* filestream_open(FILE *f, const char *filter_cmd) {
+static void* file_output_thread(void *data) {
+    FilterIOThreadData *stream = data;
+     
+    char buf[16384];
+    ssize_t r;
+    while((r = read(stream->fd_out, buf, r)) > 0) {
+        fwrite(buf, 1, r, stream->file);
+    }
+    
+    close(stream->fd_out);
+    fclose(stream->file);
+    
+    return NULL;
+}
+
+static int filestream_create_pipes(FileStream *stream) {
+    if(pipe(stream->pin)) {
+        return 1;
+    }
+    if(pipe(stream->pout)) {
+        close(stream->pin[0]);
+        close(stream->pin[1]);
+        return 1;
+    }
+    return 0;
+}
+
+static FileStream* filestream_open(FILE *f, const char *filter_cmd, int mode) {
     FileStream *stream = NEditMalloc(sizeof(FileStream));
     stream->file = f;
     stream->filter_cmd = filter_cmd ? NEditStrdup(filter_cmd) : NULL;
     stream->pid = 0;
     stream->hdrbufpos = 0;
     stream->hdrbuflen = 0;
+    stream->mode = mode;
     
     if(filter_cmd) {
-        if(pipe(stream->pin)) {
-            NEditFree(stream->filter_cmd);
-            NEditFree(stream);
-            fclose(f);
-            fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
-            return NULL;
-        }
-        if(pipe(stream->pout)) {
-            close(stream->pin[0]);
-            close(stream->pin[1]);
+        if(filestream_create_pipes(stream)) {
             NEditFree(stream->filter_cmd);
             NEditFree(stream);
             fclose(f);
@@ -664,7 +689,7 @@ FileStream* filestream_open(FILE *f, const char *filter_cmd) {
         if(child == 0) {
             close(STDIN_FILENO);
             close(STDOUT_FILENO);
-            
+
             // we need stdin, stdout and stderr refer to the previously
             // created pipes
             if(dup2(stream->pin[0], STDIN_FILENO) == -1) {
@@ -675,22 +700,28 @@ FileStream* filestream_open(FILE *f, const char *filter_cmd) {
                 perror("dup2");
                 exit(1);
             }
-            
+
             close(stream->pin[1]);
-            
+
             // execute the command using the shell specified by preferences
             //fprintf(stderr, "info: input filter command: %s\n", filter_cmd);
             execlp(GetPrefShell(), GetPrefShell(), "-c", filter_cmd, NULL);
-            
+
             // execlp only returns if an error occured
             fprintf(stderr, "Error starting shell: %s\n", GetPrefShell());
             exit(1);
         } else {
             stream->pid = child;
             
+            FilterIOThreadData *data = NEditMalloc(sizeof(FilterIOThreadData));
+            data->file = stream->file;
+            data->fd_in = stream->pin[1];
+            data->fd_out = stream->pout[0];
+            
             pthread_t tid;
-            if(pthread_create(&tid, NULL, file_input_thread, stream)) {
+            if(pthread_create(&tid, NULL, mode == 0 ? file_input_thread : file_output_thread, data)) {
                 fprintf(stderr, "Errro: cannot create file input thread: %s\n", strerror(errno));
+                NEditFree(data);
                 close(stream->pin[0]);
                 close(stream->pin[1]);
                 close(stream->pout[0]);
@@ -701,12 +732,23 @@ FileStream* filestream_open(FILE *f, const char *filter_cmd) {
                 return NULL;
             }
             
+            if(mode == 1) {
+                stream->file = NULL; // file will be closed by file_output_thread
+            }
+            
             close(stream->pout[1]);
         }
-    }
-    
+    } 
     
     return stream;
+}
+
+FileStream* filestream_open_r(FILE *f, const char *filter_cmd) {
+    return filestream_open(f, filter_cmd, 0);
+}
+
+FileStream* filestream_open_w(FILE *f, const char *filter_cmd) {
+    return filestream_open(f, filter_cmd, 1);
 }
 
 int filestream_reset(FileStream *stream, int pos) {
@@ -721,11 +763,10 @@ int filestream_reset(FileStream *stream, int pos) {
     return 0;
 }
 
-size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stream) {
+size_t filestream_read(void *buffer, size_t nbytes, FileStream *stream) {
     if(stream->pid == 0) {
-        return fread(buffer, size, count, stream->file);  
+        return fread(buffer, 1, nbytes, stream->file);  
     } else {
-        size_t nbytes = size * count;
         if(stream->hdrbufpos < stream->hdrbuflen) {
             // get bytes from hdrbuf before reading more bytes from the pipe
             size_t r = stream->hdrbuflen - stream->hdrbufpos;
@@ -737,7 +778,7 @@ size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stre
             buffer = ((char*)buffer) + r;
             stream->hdrbufpos += r;
             if(nbytes > 0) {
-                r += filestream_read(buffer, 1, nbytes, stream);
+                r += filestream_read(buffer, nbytes, stream);
             }
             return r;
         }
@@ -765,20 +806,37 @@ size_t filestream_read(void *buffer, size_t size, size_t count, FileStream *stre
     }
 }
 
-size_t filestream_write(const void *buffer, size_t size, size_t count, FileStream *stream) {
-    return fwrite(buffer, size, count, stream->file);
+size_t filestream_write(const void *buffer, size_t nbytes, FileStream *stream) {
+    if(stream->pid == 0) {
+        return fwrite(buffer, 1, nbytes, stream->file);
+    } else {
+        ssize_t w = write(stream->pin[1], buffer, nbytes);
+        if(w < 0) {
+            w = 0;
+        }
+        return w;
+    } 
 }
 
 int filestream_close(FileStream *stream) {
     if(stream->pid != 0) {
-        if(close(stream->pin[0])) {
-            perror("pipe pin[0] close");
-        }
-        if(close(stream->pout[0])) {
-            perror("pipe pout[0] close");
+        if(stream->mode == 0) {
+            if(close(stream->pin[0])) {
+                perror("pipe pin[0] close");
+            }
+            if(close(stream->pout[0])) {
+                perror("pipe pout[0] close");
+            }
+        } else {
+            if(close(stream->pin[1])) {
+                perror("pipe pin[1] close");
+            }
         }
     }
-    int err = fclose(stream->file);
+    int err = 0;
+    if(stream->file) {
+        err = fclose(stream->file);
+    }
     NEditFree(stream->filter_cmd);
     NEditFree(stream);
     return err;

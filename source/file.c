@@ -816,7 +816,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
         filter_cmd = filter->cmdin;
     }
-    stream = filestream_open(fp, filter_cmd);
+    stream = filestream_open_r(fp, filter_cmd);
     
     char *enc_attr = NULL;
     
@@ -885,7 +885,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(checkBOM) {
         /* read Byte Order Mark */
         int bom = 0;
-        size_t r = filestream_read(buf, 1, 4, stream);
+        size_t r = filestream_read(buf, 4, stream);
         do {
             if(r >= 4) {
                 bom = 4;
@@ -937,7 +937,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     if(checkEncoding) {
-        size_t r = filestream_read(buf, 1, IO_BUFSIZE, stream);
+        size_t r = filestream_read(buf, IO_BUFSIZE, stream);
         const char *newEnc = DetectEncoding(buf, r, encoding);
         if(newEnc && newEnc != encoding) {
             encoding = newEnc;
@@ -1003,7 +1003,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     readLen = 0;
     char *outStr = fileString;
     size_t prev = 0;
-    while((r = filestream_read(buf+prev, 1, IO_BUFSIZE-prev, stream)) > 0 && !err) {
+    while((r = filestream_read(buf+prev, IO_BUFSIZE-prev, stream)) > 0 && !err) {
         char *str = buf;
         size_t inleft = prev + r;
         size_t outleft = strAlloc - readLen;   
@@ -1491,6 +1491,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     	    return FALSE;
         window->bom = newFile.writebom;
 	window->fileFormat = newFile.format;
+        SetFilter(window, newFile.filter);
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
             fprintf(stderr, "Error: Path too long\n");
@@ -1520,6 +1521,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         }
         window->bom = file->writebom;
         window->fileFormat = file->format;
+        SetFilter(window, file->filter);
     }
 
     if (1 == NormalizePathname(fullname))
@@ -1724,13 +1726,19 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     /* write to the file */
+    IOFilter *filter = GetFilterFromName(window->filter);
+    char *filter_cmd = NULL;
+    if(filter && filter->cmdout && strlen(filter->cmdout) > 0) {
+        filter_cmd = filter->cmdout;
+    }
+    FileStream *stream = filestream_open_w(fp, filter_cmd);
     
     /* write bom if requsted */
     if(window->bom) {
         char *bom;
         int bomLen = getBOM(window->encoding, &bom);
         if(bomLen > 0) {
-            if(fwrite(bom, 1, bomLen, fp) != bomLen) {
+            if(filestream_write(bom, bomLen, stream) != bomLen) {
                 fileLen = 0;
             }
         }
@@ -1755,7 +1763,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         w -= outleft;
         
         if(w > 0) {
-            fwrite(buf, 1, w, fp);
+            filestream_write(buf, w, stream);
         }
         
         if(rc == (size_t)-1) {
@@ -1809,7 +1817,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     if (ferror(fp) || eresp == 2) {
-        fclose(fp);
+        filestream_close(stream);
         remove(fullname);
         NEditFree(fileString);
         return FALSE;
@@ -1854,7 +1862,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
     
     /* close the file */
-    if (fclose(fp) != 0)
+    if (filestream_close(stream) != 0)
     {
         DialogF(DF_ERR, window->shell, 1, "Error closing File",
                 "Error closing file:\n%s", "OK", errorString());
