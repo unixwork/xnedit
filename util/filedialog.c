@@ -47,6 +47,7 @@
 #include "fileUtils.h"
 #include "getfiles.h"
 #include "misc.h"
+#include "ec_glob.h"
 
 #include "../source/preferences.h"
 #include "../source/filter.h"
@@ -1102,6 +1103,25 @@ static void filedialog_cleanup(FileDialogData *data)
     }
 }
 
+static void filedialog_check_iofilters(FileDialogData *data, const char *path)
+{
+    if(!path) {
+        return;
+    }
+    
+    for(int i=0;i<data->nfilters;i++) {
+        if(data->filters[i]->ec_pattern) {
+            if(!ec_glob(data->filters[i]->ec_pattern, path)) {
+                data->selected_filter = data->filters[i];
+                XmString s = XmStringCreateLocalized(data->selected_filter->name);
+                XmComboBoxSelectItem(data->iofilter, s);
+                XmStringFree(s);
+                return;
+            }
+        }
+    }
+}
+
 /*
  * file_cmp_field
  * 0: compare path
@@ -1700,6 +1720,7 @@ void set_path_from_row(FileDialogData *data, int row) {
     }
     
     char *path = NEditStrdup(elm->path);
+    filedialog_check_iofilters(data, path);
     
     if(data->type == FILEDIALOG_SAVE) {
         XmTextFieldSetString(data->name, FileName(path));
@@ -1836,9 +1857,13 @@ void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
         char *name = NULL;
         XmStringGetLtoR(cb->item, XmFONTLIST_DEFAULT_TAG, &name);
         XmTextFieldSetString(data->name, name);
+        char *path = name ? ConcatPath(data->currentPath, name) : NULL;
         XtFree(name);
+        filedialog_check_iofilters(data, path);
+        XtFree(path);
     } else {
         char *path = set_selected_path(data, cb->item);
+        filedialog_check_iofilters(data, path);
         if(path) {
             data->selIsDir = False;
         }

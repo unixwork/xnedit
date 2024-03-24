@@ -36,6 +36,7 @@ struct IOFilter {
     char *ext;
     char *cmdin;
     char *cmdout;
+    char *ec_pattern;
 };
 
 #define FILESTREAM_HDR_BUFLEN 32768

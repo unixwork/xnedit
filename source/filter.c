@@ -58,6 +58,7 @@ typedef struct {
 
 static filterDialog fd  = { NULL, NULL, NULL, NULL, NULL, NULL};
 
+static char* create_ec_pattern(char *pattern);
 
 static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -90,6 +91,7 @@ static void fdFreeItemCB(void *item)
     XtFree(f->ext);
     XtFree(f->cmdin);
     XtFree(f->cmdout);
+    NEditFree(f->ec_pattern);
     NEditFree(f);
 }
 
@@ -106,6 +108,7 @@ static void *fdGetDisplayedCB(void *oldItem, int explicitRequest, int *abort,
     filter->ext = XmTextGetString(fd.extW);
     filter->cmdin = XmTextGetString(fd.cmdInW);
     filter->cmdout = XmTextGetString(fd.cmdOutW);
+    filter->ec_pattern = create_ec_pattern(filter->pattern);
     
     if (strlen(filter->name) == 0 ||
         strlen(filter->pattern) == 0 ||
@@ -146,6 +149,7 @@ static IOFilter* fdCopyFilter(IOFilter *f) {
     cp->ext = NEditStrdup(f->ext ? f->ext : "");
     cp->cmdin = NEditStrdup(f->cmdin ? f->cmdin : "");
     cp->cmdout = NEditStrdup(f->cmdout ? f->cmdout : "");
+    cp->ec_pattern = f->ec_pattern ? NEditStrdup(f->ec_pattern) : NULL;
     return cp;
 }
 
@@ -484,6 +488,28 @@ static char *valuedup(char *str, int len)
     return newvalue;
 }
 
+static char* create_ec_pattern(char *pattern)
+{
+    if(!pattern) {
+        return NULL;
+    }
+    
+    char *ecPattern = NULL;
+    if(pattern[0] == '/') {
+        ecPattern = NEditStrdup(pattern);
+    } else {
+        // add **/
+        size_t len = strlen(pattern);
+        int newlen = len+3;
+        ecPattern = NEditMalloc(newlen+1);
+        memcpy(ecPattern, "**/", 3);
+        memcpy(ecPattern+3, pattern, len);
+        ecPattern[newlen] = 0;
+    }
+    
+    return ecPattern;
+}
+
 static IOFilter* ParseFilterStr(char *str, int len)
 {
     int pos = 0;
@@ -536,6 +562,7 @@ static IOFilter* ParseFilterStr(char *str, int len)
     filter->ext = valuedup(ext, extlen);
     filter->cmdin = valuedup(cmdin, cmdinlen);
     filter->cmdout = valuedup(cmdout, cmdoutlen);
+    filter->ec_pattern = create_ec_pattern(filter->pattern);
     return filter;
 }
 
