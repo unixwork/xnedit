@@ -27,12 +27,14 @@
 #include "../util/nedit_malloc.h"
 #include "../util/misc.h"
 #include "../util/managedList.h"
+#include "../util/DialogF.h"
 
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/wait.h>
 #include <Xm/XmAll.h>
 
 static IOFilter **filters;
@@ -621,10 +623,30 @@ IOFilter* GetFilterFromName(const char *name)
 /* ----------------------------- FileStream -----------------------------*/
 
 typedef struct FilterIOThreadData {
+    XtAppContext appcontext;
+    Widget widget;
     FILE *file;
     int fd_in;
     int fd_out;
+    pid_t pid;
 } FilterIOThreadData;
+
+typedef struct FilterCmdError {
+    Widget w;
+    int status;
+} FilterCmdError;
+
+static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
+    FilterCmdError *error = clientData;
+    // TODO: in theory the widget could be destroyed already
+    //       we could check if error->w in the the window list
+    (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
+            "Filter command reported failed exit status: %d\n",
+            "OK",
+            error->status);
+    
+    NEditFree(error);
+}
 
 static void* file_input_thread(void *data) {
     FilterIOThreadData *stream = data;
@@ -636,6 +658,21 @@ static void* file_input_thread(void *data) {
     }
     
     close(stream->fd_in);
+    
+    int status = -1;
+    waitpid(stream->pid, &status, 0);
+    if(status != 0) {
+        FilterCmdError *error = NEditMalloc(sizeof(FilterCmdError));
+        error->w = stream->widget;
+        error->status = status;
+        XtAppAddTimeOut(
+                stream->appcontext,
+                0,
+                filter_command_error,
+                error);
+    }
+    
+    NEditFree(stream);
     
     return NULL;
 }
@@ -652,6 +689,21 @@ static void* file_output_thread(void *data) {
     close(stream->fd_out);
     fclose(stream->file);
     
+    int status = -1;
+    waitpid(stream->pid, &status, 0);
+    if(status != 0) {
+        FilterCmdError *error = NEditMalloc(sizeof(FilterCmdError));
+        error->w = stream->widget;
+        error->status = status;
+        XtAppAddTimeOut(
+                stream->appcontext,
+                0,
+                filter_command_error,
+                error);
+    }
+    
+    NEditFree(stream);
+    
     return NULL;
 }
 
@@ -667,7 +719,7 @@ static int filestream_create_pipes(FileStream *stream) {
     return 0;
 }
 
-static FileStream* filestream_open(FILE *f, const char *filter_cmd, int mode) {
+static FileStream* filestream_open(Widget w, FILE *f, const char *filter_cmd, int mode) {
     FileStream *stream = NEditMalloc(sizeof(FileStream));
     stream->file = f;
     stream->filter_cmd = filter_cmd ? NEditStrdup(filter_cmd) : NULL;
@@ -714,9 +766,12 @@ static FileStream* filestream_open(FILE *f, const char *filter_cmd, int mode) {
             stream->pid = child;
             
             FilterIOThreadData *data = NEditMalloc(sizeof(FilterIOThreadData));
+            data->appcontext = XtWidgetToApplicationContext(w);
+            data->widget = w;
             data->file = stream->file;
             data->fd_in = stream->pin[1];
             data->fd_out = stream->pout[0];
+            data->pid = child;
             
             pthread_t tid;
             if(pthread_create(&tid, NULL, mode == 0 ? file_input_thread : file_output_thread, data)) {
@@ -743,12 +798,12 @@ static FileStream* filestream_open(FILE *f, const char *filter_cmd, int mode) {
     return stream;
 }
 
-FileStream* filestream_open_r(FILE *f, const char *filter_cmd) {
-    return filestream_open(f, filter_cmd, 0);
+FileStream* filestream_open_r(Widget w, FILE *f, const char *filter_cmd) {
+    return filestream_open(w, f, filter_cmd, 0);
 }
 
-FileStream* filestream_open_w(FILE *f, const char *filter_cmd) {
-    return filestream_open(f, filter_cmd, 1);
+FileStream* filestream_open_w(Widget w, FILE *f, const char *filter_cmd) {
+    return filestream_open(w, f, filter_cmd, 1);
 }
 
 int filestream_reset(FileStream *stream, int pos) {

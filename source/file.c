@@ -816,7 +816,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
         filter_cmd = filter->cmdin;
     }
-    stream = filestream_open_r(fp, filter_cmd);
+    stream = filestream_open_r(window->shell, fp, filter_cmd);
     
     char *enc_attr = NULL;
     
@@ -1731,7 +1731,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     if(filter && filter->cmdout && strlen(filter->cmdout) > 0) {
         filter_cmd = filter->cmdout;
     }
-    FileStream *stream = filestream_open_w(fp, filter_cmd);
+    FileStream *stream = filestream_open_w(window->shell, fp, filter_cmd);
     
     /* write bom if requsted */
     if(window->bom) {
