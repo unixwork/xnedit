@@ -2482,8 +2482,8 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
         XtSetArg(args[n], XmNrightWidget, data.iofilter); n++;
         XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
-        XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
+        //XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+        //XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
         data.name = XNECreateText(form, "textfield", args, n);
         XtManageChild(data.name);
         XtAddCallback(data.name, XmNactivateCallback,
