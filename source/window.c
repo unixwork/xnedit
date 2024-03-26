@@ -65,6 +65,7 @@
 #include "../Microline/XmL/Folder.h"
 #include "../util/nedit_malloc.h"
 #include "../util/textfield.h"
+#include "../util/fontsel.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2444,6 +2445,9 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
     /* Redo any syntax highlighting */
     if (window->highlightData != NULL)
         UpdateHighlightStyles(window, True);
+    
+    /* Update FontSel colors */
+    FontSelSetColors(textFgC, textBgC);
 }
 
 /*

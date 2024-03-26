@@ -39,6 +39,10 @@
 
 #define MONOSPACE_ONLY_DEFAULT 1
 
+static XftColor default_fg;
+static XftColor default_bg;
+static int default_colors_set = 0;
+
 typedef struct FontSelector {
     FcPattern *filter;
     FcFontSet *list;
@@ -54,6 +58,8 @@ typedef struct FontSelector {
     XftFont *italic;
     XftDraw *draw;
     XftColor color;
+    XftColor bg_color;
+    Boolean enable_bg;
     
     int selected_item;
     int end;
@@ -138,6 +144,12 @@ static void InitXftDraw(FontSelector *sel)
     sel->color.color.green = xcolor.green;
     sel->color.color.blue = xcolor.blue;
     sel->color.color.alpha = 0xFFFF;
+    
+    if(default_colors_set) {
+        sel->color = default_fg;
+        sel->bg_color = default_bg;
+        sel->enable_bg = True;
+    }
 }
 
 static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
@@ -147,8 +159,6 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
         return;
     }
     
-    XClearWindow(XtDisplay(w), XtWindow(w));
-    
     Dimension width, height;
     XtVaGetValues(
             w,
@@ -157,6 +167,12 @@ static void exposeFontPreview(Widget w, FontSelector *sel, XtPointer data)
             XmNheight,
             &height,
             NULL);
+    
+    if(sel->enable_bg) {
+        XftDrawRect(sel->draw, &sel->bg_color, 0, 0, width, height);
+    } else {
+        XClearWindow(XtDisplay(w), XtWindow(w));
+    }
     
     int fontHeight = sel->font->ascent + sel->font->descent;
     
@@ -777,4 +793,10 @@ char* FontNameAddAttribute(
     }
     
     return newfont;
+}
+
+void FontSelSetColors(XftColor fg, XftColor bg) {
+    default_fg = fg;
+    default_bg = bg;
+    default_colors_set = 1;
 }
