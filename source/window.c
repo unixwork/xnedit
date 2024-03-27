@@ -2447,7 +2447,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
         UpdateHighlightStyles(window, True);
     
     /* Update FontSel colors */
-    FontSelSetColors(textFgC, textBgC);
+    FontSelSetColors(textFgC, textBgPix);
 }
 
 /*

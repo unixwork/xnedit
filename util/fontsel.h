@@ -70,6 +70,6 @@ char* FontNameAddAttribute(
         const char *attribute,
         const char *value);
 
-void FontSelSetColors(XftColor fg, XftColor bg);
+void FontSelSetColors(XftColor fg, Pixel bg);
 
 #endif /* NEDIT_FONTSEL_H_INCLUDED */
