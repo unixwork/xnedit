@@ -23,11 +23,30 @@ sources are:
 
  - ANSI C99 compiler
  - make utility (eg, GNU make)
+ - pkg-config
  - X11 development stuff (headers, libraries)
  - Xrender and Xft
  - iconv (*BSD, cygwin)
  - Fontconfig
  - Motif 2.0 or above
+ 
+You can install all necessary dependencies with the following command.
+
+Debian/Ubuntu:
+
+    apt install gcc make pkgconf libmotif-dev
+
+EL/Fedora:
+
+    yum install gcc make pkgconf motif-devel
+
+FreeBSD:
+
+	pkg install pkgconf open-motif libiconv
+
+Solaris/OpenIndiana:
+
+    pkg install gcc make pkgconf motif
  
 Optionally one may use:
  
