@@ -30,6 +30,10 @@ sources are:
  - Fontconfig
  - Motif 2.0 or above
  
+Optionally one may use:
+ 
+ - yacc (or GNU bison)
+ 
 You can install all necessary dependencies with the following command.
 
 Debian/Ubuntu:
@@ -38,7 +42,11 @@ Debian/Ubuntu:
 
 EL/Fedora:
 
-    yum install gcc make pkgconf motif-devel
+    dnf install gcc make pkgconf motif-devel
+
+Arch:
+
+	pacman -S gcc make pkgconf openmotif
 
 FreeBSD:
 
@@ -47,10 +55,6 @@ FreeBSD:
 Solaris/OpenIndiana:
 
     pkg install gcc make pkgconf motif
- 
-Optionally one may use:
- 
- - yacc (or GNU bison)
 
 To build XNEdit from source, run make from XNEdit's root directory and specify
 the build-configuration:
