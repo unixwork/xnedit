@@ -1113,14 +1113,13 @@ static void filedialog_check_iofilters(FileDialogData *data, const char *path)
     for(int i=0;i<data->nfilters;i++) {
         if(data->filters[i]->ec_pattern) {
             if(!ec_glob(data->filters[i]->ec_pattern, path)) {
-                data->selected_filter = data->filters[i];
-                XmString s = XmStringCreateLocalized(data->selected_filter->name);
-                XmComboBoxSelectItem(data->iofilter, s);
-                XmStringFree(s);
+                XtVaSetValues(data->iofilter, XmNselectedPosition, i+1, NULL);
                 return;
             }
         }
     }
+    
+    XtVaSetValues(data->iofilter, XmNselectedPosition, 0, NULL);
 }
 
 /*
