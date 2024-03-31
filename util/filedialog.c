@@ -922,14 +922,12 @@ void PathBarSetPath(PathBar *bar, char *path)
     bar->input = False;
     
     Arg args[4];
-    int n;
     XmString str;
     
     bar->numSegments = 0;
     
     int i=0;
     if(path[0] == '/') {
-        n = 0;
         str = XmStringCreateLocalized("/");
         XtSetArg(args[0], XmNlabelString, str);
         XtSetArg(args[1], XmNfillOnSelect, True);
@@ -1043,9 +1041,6 @@ struct FileDialogData {
     int filecount;
     int maxnamelen;
     
-    WidgetList gadgets;
-    int numGadgets;
-    
     int gridRealized;
     
     char *currentPath;
@@ -1069,39 +1064,10 @@ static void filedialog_cancel(Widget w, FileDialogData *data, XtPointer d)
     data->status = FILEDIALOG_CANCEL;
 }
 
-static int cleanupFileView(FileDialogData *data)
-{
-    if(!data->gadgets) {
-        return 0;
-    }
-    
-    XtUnmanageChildren(data->gadgets, data->numGadgets);
-    for(int i=0;i<data->numGadgets;i++) {
-        XtDestroyWidget(data->gadgets[i]);
-    }
-    
-    int ret = data->numGadgets;
-    NEditFree(data->gadgets);
-    data->gadgets = NULL;
-    data->numGadgets = 0;
-    return ret;
-}
-
 static void cleanupLists(FileDialogData *data)
 {
     XmListDeleteAllItems(data->dirlist);
     XmListDeleteAllItems(data->filelist);
-}
-
-static void filedialog_cleanup(FileDialogData *data)
-{
-    cleanupFileView(data);
-    if(data->selectedPath) {
-        NEditFree(data->selectedPath);
-    }
-    if(data->currentPath) {
-        NEditFree(data->currentPath);
-    }
 }
 
 static void filedialog_check_iofilters(FileDialogData *data, const char *path)
@@ -1398,7 +1364,7 @@ static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileEl
     XmLGridColumn column1 = XmLGridGetColumn(grid, XmCONTENT, 1);
     XmLGridColumn column2 = XmLGridGetColumn(grid, XmCONTENT, 2);
     
-    Dimension col0Width = XmLGridColumnWidthInPixels(column1);
+    Dimension col0Width = XmLGridColumnWidthInPixels(column0);
     Dimension col1Width = XmLGridColumnWidthInPixels(column1);
     Dimension col2Width = XmLGridColumnWidthInPixels(column2);
     
@@ -1549,11 +1515,7 @@ void file_array_add(FileElm **files, int *alloc, int *count, FileElm elm) {
 }
 
 static void filedialog_update_dir(FileDialogData *data, char *path)
-{
-    Arg args[16];
-    int n;
-    XmString str;
-    
+{  
     ViewUpdateFunc update_view = NULL;
     switch(data->selectedview) {
         case 1: {
@@ -1569,14 +1531,12 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
     }
     
     char *openFile = NULL;
-    int openFileExists = 0;
     
     /* read dir and insert items */
     if(path) {
         struct stat s;
         int r = stat(path, &s);
         if((!r == !S_ISDIR(s.st_mode)) || (r && errno == ENOENT && data->type == FILEDIALOG_SAVE)) {
-            openFileExists = !r;
             // open file
             if(data->selectedPath) {
                 NEditFree(data->selectedPath);
@@ -1746,7 +1706,6 @@ void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb)
     char chars[16];
     KeySym keysym;
     int nchars;
-    int status;
     
     nchars = XLookupString(&cb->event->xkey, chars, 15, &keysym, NULL);
     
@@ -2488,7 +2447,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         XtAddCallback(data.name, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
         if(defaultName) {
-            XNETextSetString(data.name, defaultName);
+            XNETextSetString(data.name, (char*)defaultName);
         }
         
         n = 0;
