@@ -583,7 +583,7 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     RemoveBackupFile(window);
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
-    if (!doOpen(window, name, path, encoding, NULL /*TODO: filter*/, openFlags)) {
+    if (!doOpen(window, name, path, encoding, window->filter, openFlags)) {
 	/* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
