@@ -314,20 +314,8 @@ Widget getFilenameHelper(Widget parent, char *promptString, char *filename,
 /*		GFN_CANCEL    - Cancel button pressed and no returned file */
 /*									   */
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file) 
-{
-#ifdef MOTIF_FILEDIALOG
-    char FileName[MAXPATHLEN];
-    memset(file, 0, sizeof(FileSelection));
-    Widget existFileSB = getFilenameHelper(parent, promptString, FileName, 
-            True);
-    int r = HandleCustomExistFileSB(existFileSB, FileName);
-    if(r == GFN_OK) {
-        file->path = NEditStrdup(FileName);
-    }
-    return r;
-#else  
+{ 
     return FileDialog(parent, promptString, file, FILEDIALOG_OPEN, NULL);
-#endif
 }
 
 /* GetNewFilename
@@ -339,19 +327,7 @@ int GetExistingFilename(Widget parent, char *promptString, FileSelection *file)
 int GetNewFilename(Widget parent, char *promptString, FileSelection *file,
         char *defaultName)
 {
-#ifdef MOTIF_FILEDIALOG
-    char FileName[MAXPATHLEN];
-    memset(file, 0, sizeof(FileSelection));
-    Widget fileSB = getFilenameHelper(parent, promptString, FileName, False);
-    int r = HandleCustomNewFileSB(fileSB, FileName, defaultName);
-    if(r == GFN_OK) {
-        file->encoding = "";
-        file->path = NEditStrdup(FileName);
-    }
-    return r;
-#else
     return FileDialog(parent, promptString, file, FILEDIALOG_SAVE, defaultName);
-#endif
 }
 
 /*
