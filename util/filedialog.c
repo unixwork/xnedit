@@ -2192,7 +2192,7 @@ static void createFilterWidgets(FileDialogData *data, const char *current_filter
     }
 }
 
-int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
+int FileDialog(Widget parent, char *promptString, FileSelection *file, int type, const char *defaultName)
 {
     Arg args[32];
     int n = 0;
@@ -2487,6 +2487,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type)
         XtManageChild(data.name);
         XtAddCallback(data.name, XmNactivateCallback,
                  (XtCallbackProc)filedialog_ok, &data);
+        if(defaultName) {
+            XNETextSetString(data.name, defaultName);
+        }
         
         n = 0;
         str = XmStringCreateSimple("Filter");

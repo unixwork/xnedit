@@ -666,7 +666,7 @@ typedef struct FilterCmdError {
 static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
     FilterCmdError *error = clientData;
     // TODO: in theory the widget could be destroyed already
-    //       we could check if error->w in the the window list
+    //       we could check if error->w is in the the window list
     (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
             "Filter command reported failed exit status: %d\n",
             "OK",

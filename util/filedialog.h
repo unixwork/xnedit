@@ -47,7 +47,7 @@ typedef struct FileSelection {
     int     format;
 } FileSelection;
 
-int FileDialog(Widget parent, char *promptString, FileSelection *file, int type);
+int FileDialog(Widget parent, char *promptString, FileSelection *file, int type, const char *defaultName);
 
 const char ** FileDialogDefaultEncodings(void);
 

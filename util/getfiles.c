@@ -326,7 +326,7 @@ int GetExistingFilename(Widget parent, char *promptString, FileSelection *file)
     }
     return r;
 #else  
-    return FileDialog(parent, promptString, file, FILEDIALOG_OPEN);
+    return FileDialog(parent, promptString, file, FILEDIALOG_OPEN, NULL);
 #endif
 }
 
@@ -350,8 +350,7 @@ int GetNewFilename(Widget parent, char *promptString, FileSelection *file,
     }
     return r;
 #else
-    // TODO: use defaultName
-    return FileDialog(parent, promptString, file, FILEDIALOG_SAVE);
+    return FileDialog(parent, promptString, file, FILEDIALOG_SAVE, defaultName);
 #endif
 }
 
