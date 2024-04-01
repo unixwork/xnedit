@@ -704,12 +704,14 @@ static void* file_input_thread(void *data) {
     return NULL;
 }
 
+#define FILTER_IO_BUFSIZE 16384
+
 static void* file_output_thread(void *data) {
     FilterIOThreadData *stream = data;
      
-    char buf[16384];
+    char buf[FILTER_IO_BUFSIZE];
     ssize_t r;
-    while((r = read(stream->fd_out, buf, r)) > 0) {
+    while((r = read(stream->fd_out, buf, FILTER_IO_BUFSIZE)) > 0) {
         fwrite(buf, 1, r, stream->file);
     }
     
