@@ -946,7 +946,8 @@ static void initialize(TextWidget request, TextWidget new)
     if(!new->text.ansiColorList) new->text.ansiColorList = defaultAnsiColors;
     
     /* Create and initialize the text-display part of the widget */
-    textLeft = new->text.marginWidth +
+    int fontWidth = new->text.font2->minWidth;
+    textLeft = fontWidth/3 + 1 +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
     new->text.textD = TextDCreate((Widget)new, new->text.hScrollBar,
 	    new->text.vScrollBar, textLeft, new->text.marginHeight,
@@ -1311,6 +1312,14 @@ static Boolean setValues(TextWidget current, TextWidget request,
         FontRef(new->text.font2);
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
+        
+        int fontWidth = new->text.font2->minWidth;
+        int textLeft = fontWidth/3 + 1;
+        if(new->text.lineNumCols == 0) {
+            current->text.textD->left = textLeft;
+        } else {
+            current->text.textD->left = textLeft + new->text.marginWidth + current->text.textD->lineNumWidth;
+        }
     	TextDSetFont(current->text.textD, new->text.font2);
     }
     
@@ -1338,15 +1347,17 @@ static Boolean setValues(TextWidget current, TextWidget request,
         int marginWidth = new->text.marginWidth;
         int charWidth = font->maxWidth;
         int lineNumCols = new->text.lineNumCols;
+        int fontWidth = new->text.font2->minWidth;
+        int textLeft = fontWidth/3 + 1;
         if (lineNumCols == 0)
         {
-            TextDSetLineNumberArea(new->text.textD, 0, 0, marginWidth);
+            TextDSetLineNumberArea(new->text.textD, 0, 0, textLeft);
             new->text.columns = (new->core.width - marginWidth*2) / charWidth;
         } else
         {
             TextDSetLineNumberArea(new->text.textD, marginWidth,
                     charWidth * lineNumCols,
-                    2*marginWidth + charWidth * lineNumCols);
+                    textLeft + marginWidth + charWidth * lineNumCols);
             new->text.columns = (new->core.width - marginWidth*3 - charWidth
                     * lineNumCols) / charWidth;
         }
