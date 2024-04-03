@@ -375,6 +375,26 @@ static struct prefData {
     int isrcFindIconSize;
     int isrcClearIconSize;
     
+    
+    /*  The accumulated list of undo operations can potentially consume huge
+        amounts of memory.  These tuning parameters determine how much undo infor-
+        mation is retained.  Normally, the list is kept between UNDO_OP_LIMIT and
+        UNDO_OP_TRIMTO in length (when the list reaches UNDO_OP_LIMIT, it is
+        trimmed to UNDO_OP_TRIMTO then allowed to grow back to UNDO_OP_LIMIT).
+        When there are very large amounts of saved text held in the list,
+        UNDO_WORRY_LIMIT and UNDO_PURGE_LIMIT take over and cause the list to
+        be trimmed back further to keep its size down. */
+    int undoPurgeLimit;         /* If undo list gets this large (in bytes),
+				   trim it to length of UNDO_PURGE_TRIMTO */
+    int undoPurgeTrimTo;        /* Amount to trim the undo list in a purge */
+    int undoWorryLimit;         /* If undo list gets this large (in bytes),
+				   trim it to length of UNDO_WORRY_TRIMTO */
+    int undoWorryTrimTo;        /* Amount to trim the undo list when memory
+				   use begins to get serious */
+    int undoOpLimit;            /* normal limit for length of undo list */
+    int undoOpTrimTo;           /* size undo list is normally trimmed to
+				   when it exceeds UNDO_OP_TRIMTO in length */
+    
     int zoomStep;
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
@@ -946,6 +966,18 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
+    {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
+    	&PrefData.undoPurgeLimit, NULL, True},
+    {"undoPurgeTrimTo", "UndoPurgeTrimTo", PREF_INT, "1",
+    	&PrefData.undoPurgeTrimTo, NULL, True},
+    {"undoWorryLimit", "UndoWorryLimit", PREF_INT, "8000000",
+    	&PrefData.undoWorryLimit, NULL, True},
+    {"undoWorryTrimTo", "UndoWorryTrimTo", PREF_INT, "5",
+    	&PrefData.undoWorryTrimTo, NULL, True},
+    {"undoOpLimit", "UndoOpLimit", PREF_INT, "600",
+    	&PrefData.undoOpLimit, NULL, True},
+    {"undoOpTrimTo", "UndoOpTrimTo", PREF_INT, "200",
+    	&PrefData.undoOpTrimTo, NULL, True},
     {"sortTabs", "SortTabs", PREF_BOOLEAN, "False",
     	&PrefData.sortTabs, NULL, True},
     {"tabBar", "TabBar", PREF_BOOLEAN, "True",
@@ -2363,6 +2395,66 @@ void SetPrefLockEncodingError(int state)
 int GetPrefLockEncodingError(void)
 {
     return PrefData.lockEncodingError;
+}
+
+void SetPrefUndoPurgeLimit(int limit)
+{
+    setIntPref(&PrefData.undoPurgeLimit, limit);
+}
+
+int GetPrefUndoPurgeLimit(void) 
+{
+    return PrefData.undoPurgeLimit;
+}
+
+void SetPrefUndoPurgeTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoPurgeTrimTo, limit);
+}
+
+int GetPrefUndoPurgeTrimTo(void)
+{
+    return PrefData.undoPurgeTrimTo;
+}
+
+void SetPrefUndoWorryLimit(int limit)
+{
+    setIntPref(&PrefData.undoWorryLimit, limit);
+}
+
+int GetPrefUndoWorryLimit(void)
+{
+    return PrefData.undoWorryLimit;
+}
+
+void SetPrefUndoWorryTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoWorryTrimTo, limit);
+}
+
+int GetPrefUndoWorryTrimTo(void)
+{
+    return PrefData.undoWorryTrimTo;
+}
+
+void SetPrefUndoOpLimit(int limit)
+{
+    setIntPref(&PrefData.undoOpLimit, limit);
+}
+
+int GetPrefUndoOpLimit(void)
+{
+    return PrefData.undoOpLimit;
+}
+
+void SetPrefUndoOpTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoOpTrimTo, limit);
+}
+
+int GetPrefUndoOpTrimTo(void)
+{
+    return PrefData.undoOpTrimTo;
 }
 
 
