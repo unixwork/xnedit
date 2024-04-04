@@ -39,7 +39,7 @@
 #define XNETextGetLastPosition(widget)          XNETextFieldGetLastPosition(widget)
 #define XNETextSetSelection(w, f, l, t)         XNETextFieldSetSelection(w, f, l, t)
 #else
-#define XNEtextfieldWidgetClass                 xmTextWidgetClass
+#define XNEtextfieldWidgetClass                 xmTextFieldWidgetClass
 
 #define XNECreateText(parent,name,args,count)   XmCreateTextField(parent,name,args,count)
 #define XNETextSetString(widget,value)          XmTextFieldSetString(widget,value)
