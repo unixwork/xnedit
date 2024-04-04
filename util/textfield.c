@@ -689,7 +689,10 @@ static void insertText(TextFieldWidget tf, char *chars, int nchars, XEvent *even
     TFInsert(tf, chars, nchars);
     
     // value changed callback
-    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, event);
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_VALUE_CHANGED;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, &cb);
     
     
     tfRedrawText(tf);
@@ -718,13 +721,20 @@ static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 }
 
 static void actionAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
-    //TextFieldWidget tf = (TextFieldWidget)w;
+    TextFieldWidget tf = (TextFieldWidget)w;
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_ACTIVATE;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNactivateCallback, &cb);
 }
 
 static void deleteText(TextFieldWidget tf, int from, int to, XEvent *event) {
     TFDelete(tf, from, to);
     
-    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, event);
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_VALUE_CHANGED;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, &cb);
     
     tf->textfield.pos = from;
     tfRedrawText(tf);
