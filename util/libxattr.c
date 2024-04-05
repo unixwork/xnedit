@@ -390,9 +390,8 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
     size_t arraypos = 0;
     char **array = malloc(LIST_ARRAY_LEN * sizeof(char*));
     
-    char *name = buf;
     for(int i=0;i<length;i++) {
-        char namelen = buf[i];
+        int namelen = buf[i];
         char *name = buf + i + 1;
         char *attrname = malloc(namelen + 1);
         memcpy(attrname, name, namelen);
