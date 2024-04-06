@@ -5425,6 +5425,38 @@ static UndoInfo *cloneUndoItems(UndoInfo *orgList)
     return head;
 }
 
+typedef struct WinGeometry {
+    int cols;
+    int rows;
+} WinGeometry;
+
+static WinGeometry WindowGetGeometry(WindowInfo *window)
+{
+    // get current window size
+    Dimension twWidth, twHeight;
+    int marginWidth, marginHeight, lineNumCols;
+    NFont *font;
+    XtVaGetValues(
+            window->textArea,
+            XmNwidth, &twWidth,
+            XmNheight, &twHeight,
+            textNXftFont, &font,
+            textNmarginWidth, &marginWidth,
+            textNmarginHeight, &marginHeight,
+            textNlineNumCols, &lineNumCols,
+            NULL);
+    int charWidth = font->maxWidth;
+    XftFont *xfont = FontDefault(font);
+    
+    twWidth -= marginWidth*2 + (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
+    twHeight -= marginHeight * 2;
+    
+    int currentCols = twWidth / charWidth;
+    int currentRows = twHeight / (xfont->ascent + xfont->descent);
+    
+    return (WinGeometry){ currentCols, currentRows };
+}
+
 /*
 ** spin off the document to a new window
 */
@@ -5442,8 +5474,12 @@ WindowInfo *DetachDocument(WindowInfo *window)
     	RaiseDocument(win);
     }
     
+    WinGeometry geometry = WindowGetGeometry(window);
+    char geometryStr[64];
+    snprintf(geometryStr, 64, "%dx%d", geometry.cols, geometry.rows);
+    
     /* Create a new window */
-    cloneWin = CreateWindow(window->filename, NULL, False);
+    cloneWin = CreateWindow(window->filename, geometryStr, False);
     
     /* CreateWindow() simply adds the new window's pointer to the
        head of WindowList. We need to adjust the detached window's 
