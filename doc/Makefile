@@ -31,10 +31,10 @@ instructions:
 	@ echo "gets placed appropriately. For example, the following"
 	@ echo "command creates all the files for NEdit version 5.3"
 	@ echo ""
-	@ echo "   make VERSION='NEdit 5.3' all"
+	@ echo "   make VERSION='XNEdit 1.5' all"
 	@ echo ""
 	@ echo "When the version is not specified, the default value will"
-	@ echo "be 'NEdit release of <currentDate>'"
+	@ echo "be 'XNEdit rev <gitRev>'"
 	@ echo ""
 	
 .version:
@@ -89,59 +89,3 @@ clean:
 	@ echo "Removing generated XNEdit documentation..."
 	@ rm -rf help xnedit.html html xnedit.txt .version xnedit.man xnc.man
 
-#
-# FAQ targets. Requires an XSLT parser and processor, such as Java with the
-# XP and XT packages (http://www.jclark.com/xml/)
-# Override the XSLT variable at the command line as follows:
-#
-#   make XSLT=<command to process the xsl files> faq
-#
-# Example: make XSLT="java -classpath xp.jar:xt.jar com.jclark.xsl.sax.Driver" faq
-#
-XSLT=undefined
-
-faq: check_xsl faq.txt html/faq/index.shtml
-
-faq.txt: faq.xml faq-txt.xsl faq-txt-pass2.xsl faq-txt.awk
-	@ echo Building FAQ - text version
-	@ rm -f faq-txt.html faq-txt-tmp.txt faq.txt
-	@ ${XSLT} faq.xml faq-txt.xsl faq-txt.html
-	@ ${XSLT} faq-txt.html faq-txt-pass2.xsl faq-txt-tmp.txt
-	@ awk -f faq-txt.awk < faq-txt-tmp.txt > faq.txt
-	@ rm -f faq-txt-tmp.txt
-
-html/faq/index.shtml: faq.xml faq-txt.xsl
-	@ echo Building FAQ - HTML version
-	@ rm -f html/faq/*.shtml
-	@ if [ ! -d html ]; then mkdir html; fi
-	@ if [ ! -d html/faq ]; then mkdir html/faq; fi
-	@ ${XSLT} faq.xml faq.xsl html/faq/index.shtml
-
-check_xsl:
-	@ if [ "x${XSLT}" = "xundefined" ]; \
-          then\
-	    echo "To rebuild the FAQ, an XSLT parser and processer are required.";\
-            echo "For instance, a Java runtime environment and the XT and XP";\
-	    echo "packages (http://www.jclark.com/xml/) can be used.";\
-	    echo "Then type:";\
-            echo "";\
-	    echo "   make XSLT=<command to process the xsl files> faq";\
-            echo "";\
-	    echo "For instance:";\
-            echo "";\
-            echo "   make XSLT=\"java -classpath xp.jar:xt.jar com.jclark.xsl.sax.Driver\" faq";\
-            echo "";\
-	    exit 1;\
-          fi
-
-FAQFILES = faq-txt.html faq-txt.xsl faq-txt-pass2.xsl faq-txt.awk\
-           faq-txt.dtd README.FAQ faq.txt Makefile faq.xml faq.xsl\
-           faq.dtd
-faq-dist:
-	@ echo "Building faq.tar.gz";\
-          rm -f faq.tar.gz;\
-	  DISTFILES="${FAQFILES} `ls html/faq/*.shtml`";\
-	  tar cv $${DISTFILES} | gzip -c > faq.tar.gz;\
-	  echo "Building faq.zip";\
-	  rm -f faq.zip;\
-	  zip faq.zip $${DISTFILES};\
