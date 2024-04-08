@@ -436,7 +436,7 @@ char* BufGetRange(const textBuffer* buf, int start, int end)
 
 // Enhanced BufGetRange function for improved efficiency
 // Retrieves a pointer to the text between positions "start" and "end"
-//within the buffer
+// within the buffer
 // Note: The returned string may not be null-terminated
 // If the buffer gap falls between "start" and "end", a copy of the string
 // is made, and *free_str is assigned.

@@ -665,12 +665,21 @@ typedef struct FilterCmdError {
 
 static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
     FilterCmdError *error = clientData;
-    // TODO: in theory the widget could be destroyed already
-    //       we could check if error->w is in the the window list
-    (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
-            "Filter command reported failed exit status: %d\n",
-            "OK",
-            error->status);
+    // The widget error->w should be in the WindowList
+    // if it is not in the list, it could already be destroyed
+    Widget w = NULL;
+    for (WindowInfo *win=WindowList; win!=NULL; win=win->next) {
+        if(win->shell == error->w) {
+            w = error->w;
+            break;
+        }
+    }
+    if(w) {
+        (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
+                "Filter command reported failed exit status: %d\n",
+                "OK",
+                error->status);
+    }
     
     NEditFree(error);
 }
