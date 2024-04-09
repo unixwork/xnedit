@@ -11,7 +11,7 @@ version.
 XNEdit 1.5.0 Experimental Multi-cursor Support
 ----------------------------------------------
 
-Additional cursors can be added with Ctrl+Btn1 or Ctrl+Supper+Up/Down.
+Additional cursors can be added with Ctrl+Btn1 or Ctrl+Super+Up/Down.
 Inserting/deleting text and moving cursors works like single-cursor operations.
 
 Multiple text selections is unsupported.
