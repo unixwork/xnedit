@@ -334,12 +334,40 @@ static void tfInitXft(TextFieldWidget w) {
     
 }
 
+static void get_default_font(Display *dp) {
+    XrmValue value;
+    char *resourceType = NULL;
+    char *fixedRTFontName = NULL;
+    char *fixedRTFontSize = NULL;
+    if(XrmGetResource(XtDatabase(dp), "fixedRT.fontName", NULL, &resourceType, &value)) {
+        if(!strcmp(resourceType, "String")) {
+            fixedRTFontName = value.addr;
+        }
+    }
+    if(XrmGetResource(XtDatabase(dp), "fixedRT.fontSize", NULL, &resourceType, &value)) {
+        if(!strcmp(resourceType, "String")) {
+            fixedRTFontSize = value.addr;
+        }
+    }
+    
+    char buf[256];
+    char *fontname = TF_DEFAULT_FONT_NAME;
+    if(fixedRTFontName && fixedRTFontSize) {
+        int ret = snprintf(buf, 256, "%s:size=%s", fixedRTFontName, fixedRTFontSize);
+        if(ret < 256) {
+            fontname = buf;
+        }
+    }
+    
+    defaultFont = FontFromName(dp, fontname);
+}
+
 void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
     Display *dpy = XtDisplay(widget);
     TextFieldWidget text = (TextFieldWidget)widget;
     
     if(!defaultFont) {
-        defaultFont = FontFromName(dpy, TF_DEFAULT_FONT_NAME);
+        get_default_font(dpy);
     }
     if(!text->textfield.font) {
         text->textfield.font = defaultFont;
@@ -566,7 +594,7 @@ Boolean textfield_set_values(Widget old, Widget request, Widget neww, ArgList ar
     
     if(!new->textfield.font) {
         if(!defaultFont) {
-            defaultFont = FontFromName(XtDisplay(neww), TF_DEFAULT_FONT_NAME);
+            get_default_font(XtDisplay(neww));
         }
         new->textfield.font = defaultFont;
     }
