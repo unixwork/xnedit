@@ -112,6 +112,7 @@ static Boolean convertSelection(
 static void loseSelection(Widget w, Atom *type);
 
 static XtResource resources[] = {
+    {XmNtextRenderTable, XmCTextRenderTable, XmRString,sizeof(XmString),XtOffset(TextFieldWidget, textfield.renderTable), XmRString, NULL},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
     {XmNvalueChangedCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.valueChangedCB), XmRCallback, NULL},
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
@@ -334,32 +335,61 @@ static void tfInitXft(TextFieldWidget w) {
     
 }
 
-static void get_default_font(Display *dp) {
+static void get_default_font(TextFieldWidget tf, Display *dp) {
+    int ret;
+    char *resName;
     XrmValue value;
     char *resourceType = NULL;
-    char *fixedRTFontName = NULL;
-    char *fixedRTFontSize = NULL;
-    if(XrmGetResource(XtDatabase(dp), "fixedRT.fontName", NULL, &resourceType, &value)) {
+    char *rtFontName = NULL;
+    char *rtFontSize = NULL;
+    
+    // We don't use the Motif RenderTable directly, however in case the
+    // render table is configured to use Xft Fonts, we try to get the
+    // same font settings
+    //
+    // The textfield has a textRenderTable resource, which is just a string
+    // The textRenderTable name is used to get the rendertable font name
+    // and size from the resource database
+    
+    char resNameBuf[256];
+    resName = "defaultRT.fontName";
+    if(tf->textfield.renderTable) {
+        ret = snprintf(resNameBuf, 256, "%s.fontName", tf->textfield.renderTable);
+        if(ret < 256) {
+            resName = resNameBuf;
+        }
+    }
+    if(XrmGetResource(XtDatabase(dp), resName, NULL, &resourceType, &value)) {
         if(!strcmp(resourceType, "String")) {
-            fixedRTFontName = value.addr;
+            rtFontName = value.addr;
+        }
+    }
+    resName = "defaultRT.fontSize";
+    if(tf->textfield.renderTable) {
+        ret = snprintf(resNameBuf, 256, "%s.fontSize", tf->textfield.renderTable);
+        if(ret < 256) {
+            resName = resNameBuf;
         }
     }
     if(XrmGetResource(XtDatabase(dp), "fixedRT.fontSize", NULL, &resourceType, &value)) {
         if(!strcmp(resourceType, "String")) {
-            fixedRTFontSize = value.addr;
+            rtFontSize = value.addr;
         }
     }
     
     char buf[256];
     char *fontname = TF_DEFAULT_FONT_NAME;
-    if(fixedRTFontName && fixedRTFontSize) {
-        int ret = snprintf(buf, 256, "%s:size=%s", fixedRTFontName, fixedRTFontSize);
+    if(rtFontName && rtFontSize) {
+        ret = snprintf(buf, 256, "%s:size=%s", rtFontName, rtFontSize);
         if(ret < 256) {
             fontname = buf;
         }
     }
     
     defaultFont = FontFromName(dp, fontname);
+    if(!defaultFont) {
+        defaultFont = FontFromName(dp, TF_DEFAULT_FONT_NAME);
+    }
 }
 
 void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
@@ -367,7 +397,7 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
     TextFieldWidget text = (TextFieldWidget)widget;
     
     if(!defaultFont) {
-        get_default_font(dpy);
+        get_default_font(text, dpy);
     }
     if(!text->textfield.font) {
         text->textfield.font = defaultFont;
@@ -594,7 +624,7 @@ Boolean textfield_set_values(Widget old, Widget request, Widget neww, ArgList ar
     
     if(!new->textfield.font) {
         if(!defaultFont) {
-            get_default_font(XtDisplay(neww));
+            get_default_font(new, XtDisplay(neww));
         }
         new->textfield.font = defaultFont;
     }

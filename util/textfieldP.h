@@ -53,6 +53,7 @@ typedef struct TextFieldPart {
     
     int            hasFocus;
     
+    char           *renderTable;
     NFont          *font;    
     XIM            xim;
     XIC            xic;
