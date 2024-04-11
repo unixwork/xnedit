@@ -1438,7 +1438,6 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 {
     int charIndex, lineStartPos, fontHeight, lineLen, isMB;
     int visLineNum, charLen, outIndex, xStep, charStyle, inc;
-    char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
     NFont *font;
@@ -1463,7 +1462,8 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     	return True;
     }
     lineLen = visLineLength(textD, visLineNum);
-    lineStr = BufGetRange(textD->buffer, lineStartPos, lineStartPos + lineLen);
+    char *lineStrAlloc;
+    const char *lineStr = BufGetRange2(textD->buffer, lineStartPos, lineStartPos + lineLen, &lineStrAlloc);
     
     /* Step through character positions from the beginning of the line
        to "pos" to calculate the x coordinate */
@@ -1488,7 +1488,7 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     	outIndex += charLen;
     }
     *x = xStep;
-    NEditFree(lineStr);
+    NEditFree(lineStrAlloc);
     return True;
 }
 
@@ -3105,7 +3105,6 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
     int charIndex, lineStart, lineLen, fontHeight, isMB;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
-    char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc = 0;
     NFont *font;
@@ -3127,7 +3126,8 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     
     /* Get the line text and its length */
     lineLen = visLineLength(textD, visLineNum);
-    lineStr = BufGetRange(textD->buffer, lineStart, lineStart + lineLen);
+    char *lineStrAlloc;
+    const char *lineStr = BufGetRange2(textD->buffer, lineStart, lineStart + lineLen, &lineStrAlloc);
     
     /* Step through character positions from the beginning of the line
        to find the character position corresponding to the x coordinate */
@@ -3152,7 +3152,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
         font = styleFontList(textD, charStyle);
     	charWidth = stringWidth4(textD, expandedChar, charLen, font);
     	if (x < xStep + (posType == CURSOR_POS ? charWidth/2 : charWidth)) {
-    	    NEditFree(lineStr);
+    	    NEditFree(lineStrAlloc);
     	    return lineStart + charIndex;
     	}
     	xStep += charWidth;
@@ -3161,7 +3161,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     
     /* If the x position was beyond the end of the line, return the position
        of the newline at the end of the line */
-    NEditFree(lineStr);
+    NEditFree(lineStrAlloc);
     return lineStart + lineLen;
 }
 
