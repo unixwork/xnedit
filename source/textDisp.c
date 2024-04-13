@@ -1380,7 +1380,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 {
     int i, lineEnd, charIndex, outIndex, isMB;
     int lineStart=0, charLen=0;
-    char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
+    char expandedChar[MAX_EXP_CHAR_LEN];
 
     /* Count lines */
     if (lineNum < 1)
@@ -1402,7 +1402,8 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
     /* Only have to count columns if column isn't zero (or negative) */
     if (column > 0) {
       /* Count columns, expanding each character */
-      lineStr = BufGetRange(textD->buffer, lineStart, lineEnd);
+      char *lineStrAlloc;
+      const char *lineStr = BufGetRange2(textD->buffer, lineStart, lineEnd, &lineStrAlloc);
       outIndex = 0;
       for(i=lineStart; i<lineEnd; i++, charIndex++) {
           charLen = BufExpandCharacter(lineStr+charIndex, lineEnd-charIndex,
@@ -1411,6 +1412,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
           if ( outIndex+charLen >= column ) break;
           outIndex+=charLen;
       }
+      NEditFree(lineStrAlloc);
 
       /* If the column is in the middle of an expanded character, put cursor
        * in front of character if in first half of character, and behind
