@@ -1370,10 +1370,14 @@ static void dndOpenFileCB(Widget w, XtPointer value, XtPointer data) {
     path[k] = '\0';
     
     // open file
-    char *params[2];
-    params[0] = path;
-    params[1] = NULL;
-    XtCallActionProc(w, "open", NULL, params, 1);
+    if(err == 0) {
+        char *params[2];
+        params[0] = path;
+        params[1] = NULL;
+        XtCallActionProc(w, "open", NULL, params, 1);
+    } else {
+        fprintf(stderr, "dnd open file: url decode error\n");
+    }
     
     NEditFree(path);
 }
