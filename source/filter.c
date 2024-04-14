@@ -512,7 +512,6 @@ static char* create_ec_pattern(char *pattern)
 
 static IOFilter* ParseFilterStr(char *str, int len)
 {
-    int pos = 0;
     char *name = str;
     int namelen = valueListNext(str, len);
     int skip_space = 0;

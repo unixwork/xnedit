@@ -2324,7 +2324,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, inc;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, hasCursor = False;
-    int dispIndexOffset, cursorPos = textD->cursor->cursorPos, y_orig;
+    int dispIndexOffset, y_orig;
     int startOfLine = INT_MAX;
     int endOfLine = 0;
     int cursorLine = False;
@@ -3105,7 +3105,7 @@ static int inSelection(selection *sel, int pos, int lineStartPos, int dispIndex)
 */
 static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
-    int charIndex, lineStart, lineLen, fontHeight, isMB;
+    int charIndex, lineStart, lineLen, fontHeight;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc = 0;

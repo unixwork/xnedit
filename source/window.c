@@ -3227,8 +3227,7 @@ static int updateGutterWidth(WindowInfo* window)
         newColsDiff = reqCols - maxCols;
 
         XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
-        XftFont *xftFont = FontDefault(fs);
-        fontWidth = fs->maxWidth; //xftFont->max_advance_width;
+        fontWidth = fs->maxWidth;
 
         XtVaGetValues(window->shell, XmNwidth, &windowWidth, NULL);
         XtVaSetValues(window->shell,
