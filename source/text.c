@@ -681,7 +681,7 @@ static XtResource resources[] = {
     {XmNshadowThickness, XmCShadowThickness, XmRDimension, sizeof(Dimension),
       XtOffset(TextWidget, primitive.shadow_thickness), XmRInt, 0},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *),
-      XtOffset(TextWidget, text.font2), textTXftFont, &defaultFont},
+      XtOffset(TextWidget, text.font), textTXftFont, &defaultFont},
     {textNXftBoldFont, textCXftBoldFont, textTXftFont, sizeof(NFont *),
       XtOffset(TextWidget, text.boldFont), textTXftFont, &defaultFont},
     {textNXftItalicFont, textCXftItalicFont, textTXftFont, sizeof(NFont *),
@@ -885,8 +885,8 @@ void TextWidgetClassInit(Display *dp, const char *fontname)
 */
 static void initialize(TextWidget request, TextWidget new)
 {
-    if(new->text.font2) {
-        FontRef(new->text.font2);
+    if(new->text.font) {
+        FontRef(new->text.font);
     }
     if(new->text.boldFont) {
         FontRef(new->text.boldFont);
@@ -898,7 +898,7 @@ static void initialize(TextWidget request, TextWidget new)
         FontRef(new->text.boldItalicFont);
     }
     
-    NFont *font = new->text.font2;
+    NFont *font = new->text.font;
     XftFont *xfont = FontDefault(font);
     char *delimiters;
     textBuffer *buf;
@@ -946,7 +946,7 @@ static void initialize(TextWidget request, TextWidget new)
     if(!new->text.ansiColorList) new->text.ansiColorList = defaultAnsiColors;
     
     /* Create and initialize the text-display part of the widget */
-    int fontWidth = new->text.font2->minWidth;
+    int fontWidth = new->text.font->minWidth;
     textLeft = fontWidth/3 + 1 +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
     new->text.textD = TextDCreate((Widget)new, new->text.hScrollBar,
@@ -955,7 +955,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
 	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
-	    buf,new->text.font2, new->text.boldFont, new->text.italicFont,
+	    buf,new->text.font, new->text.boldFont, new->text.italicFont,
             new->text.boldItalicFont,new->core.background_pixel,
 	    new->primitive.foreground, new->text.selectFGPixel,
 	    new->text.selectBGPixel, new->text.highlightFGPixel,
@@ -1104,7 +1104,7 @@ static void destroy(TextWidget w)
     XtRemoveAllCallbacks((Widget)w, textNdragStartCallback);
     XtRemoveAllCallbacks((Widget)w, textNdragEndCallback);
     
-    FontUnref(w->text.font2);
+    FontUnref(w->text.font);
     FontUnref(w->text.boldFont);
     FontUnref(w->text.italicFont);
     FontUnref(w->text.boldItalicFont);
@@ -1120,8 +1120,8 @@ static void destroy(TextWidget w)
 */
 static void resize(TextWidget w)
 {
-    XftFont *fs = FontDefault(w->text.font2);
-    NFont *font = w->text.font2;
+    XftFont *fs = FontDefault(w->text.font);
+    NFont *font = w->text.font;
     int height = w->core.height, width = w->core.width;
     int marginWidth = w->text.marginWidth, marginHeight = w->text.marginHeight;
     int lineNumAreaWidth = w->text.lineNumCols == 0 ? 0 : w->text.marginWidth +
@@ -1281,7 +1281,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
 	TextWidget new)
 {
     Boolean redraw = False, reconfigure = False;
-    NFont *font = new->text.font2;
+    NFont *font = new->text.font;
     
     if (new->text.overstrike != current->text.overstrike) {
     	if (current->text.textD->cursorStyle == BLOCK_CURSOR)
@@ -1307,20 +1307,20 @@ static Boolean setValues(TextWidget current, TextWidget request,
         FontRef(new->text.boldItalicFont);
         TextDSetBoldItalicFont(new->text.textD, new->text.boldItalicFont);
     }
-    if (new->text.font2 != current->text.font2) {
-        FontUnref(current->text.font2);
-        FontRef(new->text.font2);
+    if (new->text.font != current->text.font) {
+        FontUnref(current->text.font);
+        FontRef(new->text.font);
 	if (new->text.lineNumCols != 0)
 	    reconfigure = True;
         
-        int fontWidth = new->text.font2->minWidth;
+        int fontWidth = new->text.font->minWidth;
         int textLeft = fontWidth/3 + 1;
         if(new->text.lineNumCols == 0) {
             current->text.textD->left = textLeft;
         } else {
             current->text.textD->left = textLeft + new->text.marginWidth + current->text.textD->lineNumWidth;
         }
-    	TextDSetFont(current->text.textD, new->text.font2);
+    	TextDSetFont(current->text.textD, new->text.font);
     }
     
     if (new->text.wrapMargin != current->text.wrapMargin ||
@@ -1347,7 +1347,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
         int marginWidth = new->text.marginWidth;
         int charWidth = font->maxWidth;
         int lineNumCols = new->text.lineNumCols;
-        int fontWidth = new->text.font2->minWidth;
+        int fontWidth = new->text.font->minWidth;
         int textLeft = fontWidth/3 + 1;
         if (lineNumCols == 0)
         {

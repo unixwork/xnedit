@@ -62,7 +62,7 @@ typedef struct _TextPart {
     /* resources */
     Pixel selectFGPixel, selectBGPixel, highlightFGPixel, highlightBGPixel;
     Pixel cursorFGPixel, lineNumFGPixel, lineNumBGPixel, calltipFGPixel, calltipBGPixel, lineHighlightBGPixel;
-    NFont *font2;
+    NFont *font;
     NFont *boldFont;
     NFont *italicFont;
     NFont *boldItalicFont;
