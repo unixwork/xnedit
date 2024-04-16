@@ -495,7 +495,7 @@ static void draw_img2(Display *dp, Window win, cgData *data) {
                 img2_x + data->img2_width, img2_y + data->img2_select_y);
         XDrawLine(dp, win, data->selGC,
                 img2_x + data->img2_select_x, img2_y,
-                img2_x + data->img2_select_x, img2_y + data->img2_height);
+                img2_x + data->img2_select_x, img2_y + data->img2_height - 1);
     }
 }
 
