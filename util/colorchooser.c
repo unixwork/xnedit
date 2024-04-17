@@ -50,6 +50,8 @@ typedef struct {
     
     int base_sel_y;
     float hue;
+    float saturation;
+    float value;
     
     uint8_t selected_red;
     uint8_t selected_green;
@@ -208,7 +210,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     
     // base color
     set_base_color(&data, (*red)/257, (*green)/257, (*blue)/257);
-    
+     
     // manage dialog
     XtManageChild(dialog);
     
@@ -414,6 +416,13 @@ static void init_pix2(cgData *data, Widget w) {
     if(data->image2) {
         if(width == data->img2_width == height == data->img2_height) return;
         XDestroyImage(data->image2);
+        data->has_selection = 0;
+    }
+    
+    if(!data->has_selection) {
+        data->img2_select_x = (float)width * data->value - 1;
+        data->img2_select_y = height - ((float)height * data->saturation);
+        data->has_selection = 1;
     }
     
     Visual *visual = get_visual(w->core.screen, w->core.depth);
@@ -759,7 +768,7 @@ static void hsvToRgb(float hue, float saturation, float value, int *red, int *gr
 static void set_base_color(cgData *data, int r, int g, int b) {
     float h, s, v;
     rgbToHsv(r, g, b, &h, &s, &v);
-    
+       
     int red, green, blue;
     hsvToRgb(h, 1, 1, &red, &green, &blue);
     
@@ -767,6 +776,8 @@ static void set_base_color(cgData *data, int r, int g, int b) {
     data->base_green = green;
     data->base_blue = blue;
     data->hue = h;
+    data->saturation = s;
+    data->value = v;
     data->base_sel_y = -1;
 }
 
