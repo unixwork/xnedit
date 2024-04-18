@@ -315,11 +315,16 @@ static Visual* get_visual(Screen *screen, int depth) {
     return visual;
 }
 
+#define IMG1_WIDTH    20
+#define IMG1_X_OFFSET 20
+#define IMG1_Y_OFFSET 10
+#define IMG2_X_OFFSET 10
+#define IMG2_Y_OFFSET 10
 
 static void init_pix1(cgData *data, Widget w) {
     Display *dp = XtDisplay(w);
-    Dimension width = 20;
-    Dimension height = w->core.height - 20;
+    Dimension width = IMG1_WIDTH;
+    Dimension height = w->core.height - IMG1_Y_OFFSET*2;
     
     if(data->image1) {
         if(height == data->img2_height) return;
@@ -410,8 +415,8 @@ static void init_pix1(cgData *data, Widget w) {
 
 static void init_pix2(cgData *data, Widget w) {
     Display *dp = XtDisplay(w);
-    Dimension width = w->core.width - 60;
-    Dimension height = w->core.height - 20;
+    Dimension width = w->core.width - IMG1_X_OFFSET - IMG1_WIDTH - 2*IMG2_X_OFFSET;
+    Dimension height = w->core.height - 2*IMG2_Y_OFFSET;
     
     if(data->image2) {
         if(width == data->img2_width == height == data->img2_height) return;
@@ -442,9 +447,9 @@ static void init_pix2(cgData *data, Widget w) {
     float y_base_g = data->base_green;
     float y_base_b = data->base_blue;
     
-    float y_step_r = (255-data->base_red) / (float)(height-20);
-    float y_step_g = (255-data->base_green) / (float)(height-20);
-    float y_step_b = (255-data->base_blue) / (float)(height-20);
+    float y_step_r = (255-data->base_red) / (float)(height-2*IMG2_Y_OFFSET);
+    float y_step_g = (255-data->base_green) / (float)(height-2*IMG2_Y_OFFSET);
+    float y_step_b = (255-data->base_blue) / (float)(height-2*IMG2_Y_OFFSET);
     
     for(int y=0;y<height;y++) { 
         float x_step_r = y_base_r / (float)width;
@@ -488,11 +493,6 @@ static void init_pix2(cgData *data, Widget w) {
     data->img2_width = width;
     data->img2_height = height;
 }
-
-#define IMG1_X_OFFSET 20
-#define IMG1_Y_OFFSET 10
-#define IMG2_X_OFFSET 10
-#define IMG2_Y_OFFSET 10
 
 static void draw_img2(Display *dp, Window win, cgData *data) {
     int img2_x = IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET;
