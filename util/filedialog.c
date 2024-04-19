@@ -589,6 +589,8 @@ typedef struct PathBar {
     Widget widget;
     Widget textfield;
     
+    Widget focus_widget;
+    
     Widget left;
     Widget right;
     Dimension lw;
@@ -772,6 +774,10 @@ void pathbar_pathinput(Widget w, PathBar *p, XtPointer d)
         /* hide textfield and show path as buttons */
         XtUnmanageChild(p->textfield);
         pathbar_resize(p->widget, p, NULL);
+        
+        if(p->focus_widget) {
+            XmProcessTraversal(p->focus_widget, XmTRAVERSE_CURRENT);
+        }
     }
 }
 
@@ -809,6 +815,8 @@ PathBar* CreatePathBar(Widget parent, ArgList args, int n)
     bar->path = NULL;
     bar->updateDir = NULL;
     bar->updateDirData = NULL;
+    
+    bar->focus_widget = NULL;
     
     bar->shift = 0;
     
@@ -2039,6 +2047,7 @@ static void select_listview(Widget w, FileDialogData *data, XtPointer u)
     XtManageChild(data->listform);
     XtManageChild(data->filelistcontainer);
     filedialog_update_dir(data, NULL);
+    data->pathBar->focus_widget = data->filelist;
     XmProcessTraversal(data->filelist, XmTRAVERSE_CURRENT);
 }
 
@@ -2051,6 +2060,7 @@ static void select_detailview(Widget w, FileDialogData *data, XtPointer u)
     XtManageChild(data->listform);
     XtManageChild(data->gridcontainer);
     filedialog_update_dir(data, NULL);
+    data->pathBar->focus_widget = data->grid;
     XmProcessTraversal(data->grid, XmTRAVERSE_CURRENT);
 }
 
@@ -2687,7 +2697,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             XmNbrowseSelectionCallback,
             (XtCallbackProc)filelist_select,
             &data);
-    
+     
     // Detail FileList
     // the detail view shares widgets with the list view
     // switching between list and detail view only changes
@@ -2766,6 +2776,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     if(data.type == FILEDIALOG_SAVE) {
         focus = data.name;
     }
+    data.pathBar->focus_widget = focus;
      
     if(file->path) {
         char *defDir = ParentPath(file->path);
