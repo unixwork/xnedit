@@ -1001,7 +1001,6 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
         XSetICFocus(tf->textfield.xic);
     }
     
-    // TODO: the motif textfield uses XmTextVerifyCallbackStruct for
     //       focus/losingFocus events
     XmAnyCallbackStruct cb;
     cb.reason = XmCR_FOCUS;

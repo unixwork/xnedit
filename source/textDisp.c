@@ -2343,7 +2343,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
     Boolean indentRainbow = textD->indentRainbow;
     
-    // TODO: use pointer to multicursor
     textCursorX singleCursor = { textD->cursor->cursorPos, 0 };
     textCursorX *cursorX = textD->mcursorSizeReal == 1 ? &singleCursor : NEditCalloc(textD->mcursorSizeReal, sizeof(textCursorX));
     int cursorNum = 0;
