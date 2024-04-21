@@ -137,7 +137,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
 	patternSet *patSet);
 static void freeHighlightData(windowHighlightData *hd);
 static patternSet *findPatternsForWindow(WindowInfo *window, int warn);
-static highlightDataRec *compilePatterns(Widget dialogParent,
+static highlightDataRec *compilePatterns(ColorProfile *colorProfile, Widget dialogParent,
     	highlightPattern *patternSrc, int nPatterns);
 static void freePatterns(highlightDataRec *patterns);
 static void handleUnparsedRegion(const WindowInfo* win, textBuffer* styleBuf,
@@ -609,6 +609,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
     textBuffer *styleBuf;
     highlightDataRec *pass1Pats, *pass2Pats;
     windowHighlightData *highlightData;
+    ColorProfile *colorprofile = window->colorProfile;
     
     /* The highlighting code can't handle empty pattern sets, quietly say no */
     if (nPatterns == 0)
@@ -617,7 +618,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
     }
 
     /* Check that the styles and parent pattern names actually exist */
-    if (!NamedStyleExists("Plain"))
+    if (!NamedStyleExists(colorprofile, "Plain"))
     {
         DialogF(DF_WARN, window->shell, 1, "Highlight Style",
                 "Highlight style \"Plain\" is missing", "OK");
@@ -640,7 +641,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
 
     for (i=0; i<nPatterns; i++)
     {
-        if (!NamedStyleExists(patternSrc[i].style))
+        if (!NamedStyleExists(colorprofile, patternSrc[i].style))
         {
             DialogF(DF_WARN, window->shell, 1, "Highlight Style",
                     "Style \"%s\" named in pattern \"%s\"\n"
@@ -717,7 +718,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
     if (nPass1Patterns == 0)
     	pass1Pats = NULL;
     else {
-	pass1Pats = compilePatterns(window->shell, pass1PatternSrc,
+	pass1Pats = compilePatterns(window->colorProfile, window->shell, pass1PatternSrc,
     		nPass1Patterns);
 	if (pass1Pats == NULL)
     	    return NULL;
@@ -725,7 +726,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
     if (nPass2Patterns == 0)
     	pass2Pats = NULL;
     else {
-	pass2Pats = compilePatterns(window->shell, pass2PatternSrc,
+	pass2Pats = compilePatterns(window->colorProfile, window->shell, pass2PatternSrc,
     		nPass2Patterns);  
 	if (pass2Pats == NULL)
     	    return NULL;
@@ -770,7 +771,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
     /* Set up table for mapping colors and fonts to syntax */
     styleTablePtr = styleTable = (styleTableEntry *)NEditMalloc(
     	    sizeof(styleTableEntry) * (nPass1Patterns + nPass2Patterns + 1));
-#define setStyleTablePtr(styleTablePtr, patternSrc) \
+#define setStyleTablePtr(colorProfile, styleTablePtr, patternSrc) \
     do { \
       styleTableEntry *p = styleTablePtr; \
       highlightPattern *pat = patternSrc; \
@@ -778,10 +779,10 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       \
       p->highlightName = pat->name; \
       p->styleName = pat->style; \
-      p->colorName = ColorOfNamedStyle(pat->style); \
-      p->bgColorName = BgColorOfNamedStyle(pat->style); \
-      p->isBold = FontOfNamedStyleIsBold(pat->style); \
-      p->isItalic = FontOfNamedStyleIsItalic(pat->style); \
+      p->colorName = ColorOfNamedStyle(colorProfile, pat->style); \
+      p->bgColorName = BgColorOfNamedStyle(colorProfile, pat->style); \
+      p->isBold = FontOfNamedStyleIsBold(colorProfile, pat->style); \
+      p->isItalic = FontOfNamedStyleIsItalic(colorProfile, pat->style); \
       /* And now for the more physical stuff */ \
       p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
       if (p->bgColorName) { \
@@ -795,21 +796,21 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
 
     /* PLAIN_STYLE (pass 1) */
     styleTablePtr->underline = FALSE;
-    setStyleTablePtr(styleTablePtr++,
+    setStyleTablePtr(colorprofile, styleTablePtr++,
                    noPass1 ? &pass2PatternSrc[0] : &pass1PatternSrc[0]);
     /* PLAIN_STYLE (pass 2) */
     styleTablePtr->underline = FALSE;
-    setStyleTablePtr(styleTablePtr++,
+    setStyleTablePtr(colorprofile, styleTablePtr++,
                    noPass2 ? &pass1PatternSrc[0] : &pass2PatternSrc[0]);
     /* explicit styles (pass 1) */
     for (i=1; i<nPass1Patterns; i++) {
     	styleTablePtr->underline = FALSE;
-      setStyleTablePtr(styleTablePtr++, &pass1PatternSrc[i]);
+      setStyleTablePtr(colorprofile, styleTablePtr++, &pass1PatternSrc[i]);
     }
     /* explicit styles (pass 2) */
     for (i=1; i<nPass2Patterns; i++) {
     	styleTablePtr->underline = FALSE;
-      setStyleTablePtr(styleTablePtr++, &pass2PatternSrc[i]);
+      setStyleTablePtr(colorprofile, styleTablePtr++, &pass2PatternSrc[i]);
     }
 
     /* Free the temporary sorted pattern source list */
@@ -839,7 +840,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
 ** actually used by the code.  Output is a tree of highlightDataRec structures
 ** containing compiled regular expressions and style information.
 */
-static highlightDataRec *compilePatterns(Widget dialogParent,
+static highlightDataRec *compilePatterns(ColorProfile *colorProfile, Widget dialogParent,
     	highlightPattern *patternSrc, int nPatterns)
 {
     int i, nSubExprs, patternNum, length, subPatIndex, subExprNum, charsRead;
@@ -886,7 +887,7 @@ static highlightDataRec *compilePatterns(Widget dialogParent,
        just colors and fonts for sub-expressions of the parent pattern */
     for (i=0; i<nPatterns; i++) {
         compiledPats[i].colorOnly = patternSrc[i].flags & COLOR_ONLY;
-        compiledPats[i].userStyleIndex = IndexOfNamedStyle(patternSrc[i].style);
+        compiledPats[i].userStyleIndex = IndexOfNamedStyle(colorProfile, patternSrc[i].style);
         if (compiledPats[i].colorOnly && compiledPats[i].nSubPatterns != 0)
         {
             DialogF(DF_WARN, dialogParent, 1, "Color-only Pattern",

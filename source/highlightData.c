@@ -87,7 +87,7 @@ static int styleError(const char *stringStart, const char *stoppedAt,
 #if 0
 static int lookupNamedPattern(patternSet *p, char *patternName);
 #endif
-static int lookupNamedStyle(const char *styleName);
+static int lookupNamedStyle(ColorProfile *colorProfile, const char *styleName);
 static highlightPattern *readHighlightPatterns(char **inPtr, int withBraces,
        char **errMsg, int *nPatterns);
 static int readHighlightPattern(char **inPtr, char **errMsg,
@@ -1373,7 +1373,7 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
 NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
 {   
     // TODO: this function is just a workaround and not fully converted to Xft
-    int styleNo=lookupNamedStyle(styleName);
+    int styleNo=lookupNamedStyle(window->colorProfile, styleName);
     int fontNum;
     NFont *font;
     
@@ -1393,9 +1393,9 @@ NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
     return font == NULL ? window->font : font;
 }
 
-int FontOfNamedStyleIsBold(char *styleName)
+int FontOfNamedStyleIsBold(ColorProfile *colorProfile, char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName),fontNum;
+    int styleNo=lookupNamedStyle(colorProfile, styleName),fontNum;
     
     if (styleNo<0)
         return 0;
@@ -1403,9 +1403,9 @@ int FontOfNamedStyleIsBold(char *styleName)
     return (fontNum == BOLD_FONT || fontNum == BOLD_ITALIC_FONT);
 }
 
-int FontOfNamedStyleIsItalic(char *styleName)
+int FontOfNamedStyleIsItalic(ColorProfile *colorProfile, char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName),fontNum;
+    int styleNo=lookupNamedStyle(colorProfile, styleName),fontNum;
     
     if (styleNo<0)
         return 0;
@@ -1418,9 +1418,9 @@ int FontOfNamedStyleIsItalic(char *styleName)
 ** called with a valid styleName (call NamedStyleExists to find out whether
 ** styleName is valid).
 */
-char *ColorOfNamedStyle(const char *styleName)
+char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName);
+    int styleNo=lookupNamedStyle(colorProfile, styleName);
     
     if (styleNo<0)
         return "black";
@@ -1430,9 +1430,9 @@ char *ColorOfNamedStyle(const char *styleName)
 /*
 ** Find the background color associated with a named style.
 */
-char *BgColorOfNamedStyle(const char *styleName)
+char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName);
+    int styleNo=lookupNamedStyle(colorProfile, styleName);
 
     if (styleNo<0)
         return "";
@@ -1442,9 +1442,9 @@ char *BgColorOfNamedStyle(const char *styleName)
 /*
 ** Determine whether a named style exists
 */
-int NamedStyleExists(const char *styleName)
+int NamedStyleExists(ColorProfile *colorProfile, const char *styleName)
 {
-    return lookupNamedStyle(styleName) != -1;
+    return lookupNamedStyle(colorProfile, styleName) != -1;
 }
 
 /*
@@ -3903,7 +3903,7 @@ static int lookupNamedPattern(patternSet *p, char *patternName)
 ** Find the index into the HighlightStyles array corresponding to "styleName".
 ** If styleName is not found, return -1.
 */
-static int lookupNamedStyle(const char *styleName)
+static int lookupNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
     int i;
     
@@ -3921,9 +3921,9 @@ static int lookupNamedStyle(const char *styleName)
 /*
 ** Returns a unique number of a given style name
 */
-int IndexOfNamedStyle(const char *styleName)
+int IndexOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    return lookupNamedStyle(styleName);
+    return lookupNamedStyle(colorProfile, styleName);
 }
 
 /*

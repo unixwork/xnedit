@@ -5361,7 +5361,7 @@ static int fillStyleResult(DataValue *result, char **errMsg,
     }
 
     /* insert color name */
-    AllocNStringCpy(&DV.val.str, ColorOfNamedStyle(styleName));
+    AllocNStringCpy(&DV.val.str, ColorOfNamedStyle(window->colorProfile, styleName));
     M_STR_ALLOC_ASSERT(DV);
     if (!ArrayInsert(result, PERM_ALLOC_STR("color"), &DV)) {
         M_ARRAY_INSERT_FAILURE();
@@ -5381,7 +5381,7 @@ static int fillStyleResult(DataValue *result, char **errMsg,
     }
 
     /* Prepare array element for background color name */
-    AllocNStringCpy(&DV.val.str, BgColorOfNamedStyle(styleName));
+    AllocNStringCpy(&DV.val.str, BgColorOfNamedStyle(window->colorProfile, styleName));
     M_STR_ALLOC_ASSERT(DV);
     if (!ArrayInsert(result, PERM_ALLOC_STR("background"), &DV)) {
         M_ARRAY_INSERT_FAILURE();
@@ -5404,13 +5404,13 @@ static int fillStyleResult(DataValue *result, char **errMsg,
     DV.tag = INT_TAG;
 
     /* Put boldness value in array */
-    DV.val.n = FontOfNamedStyleIsBold(styleName);
+    DV.val.n = FontOfNamedStyleIsBold(window->colorProfile, styleName);
     if (!ArrayInsert(result, PERM_ALLOC_STR("bold"), &DV)) {
         M_ARRAY_INSERT_FAILURE();
     }
 
     /* Put italicity value in array */
-    DV.val.n = FontOfNamedStyleIsItalic(styleName);
+    DV.val.n = FontOfNamedStyleIsItalic(window->colorProfile, styleName);
     if (!ArrayInsert(result, PERM_ALLOC_STR("italic"), &DV)) {
         M_ARRAY_INSERT_FAILURE();
     }
@@ -5453,7 +5453,7 @@ static int getStyleByNameMS(WindowInfo *window, DataValue *argList, int nArgs,
         M_FAILURE("First parameter is not a string in %s");
     }
 
-    if (!NamedStyleExists(styleName)) {
+    if (!NamedStyleExists(window->colorProfile, styleName)) {
         /* if the given name is invalid we just return an empty array. */
         return True;
     }

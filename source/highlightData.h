@@ -29,6 +29,7 @@
 
 #include "nedit.h"
 #include "highlight.h"
+#include "colorprofile.h"
 
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
@@ -45,12 +46,12 @@ void EditHighlightPatterns(WindowInfo *window);
 void UpdateLanguageModeMenu(void);
 int LMHasHighlightPatterns(const char *languageMode);
 NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName);
-int FontOfNamedStyleIsBold(char *styleName);
-int FontOfNamedStyleIsItalic(char *styleName);
-char *ColorOfNamedStyle(const char *styleName);
-char *BgColorOfNamedStyle(const char *styleName);
-int IndexOfNamedStyle(const char *styleName);
-int NamedStyleExists(const char *styleName);
+int FontOfNamedStyleIsBold(ColorProfile *colorProfile, char *styleName);
+int FontOfNamedStyleIsItalic(ColorProfile *colorProfile, char *styleName);
+char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
+char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
+int IndexOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
+int NamedStyleExists(ColorProfile *colorProfile, const char *styleName);
 void RenameHighlightPattern(const char *oldName, const char *newName);
 
 #endif /* NEDIT_HIGHLIGHTDATA_H_INCLUDED */
