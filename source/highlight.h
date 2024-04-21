@@ -86,4 +86,6 @@ XftColor HighlightColorValueOfCode(WindowInfo *window, int hCode,
 XftColor GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b);
 
+XftColor LightenColor(XftColor color);
+
 #endif /* NEDIT_HIGHLIGHT_H_INCLUDED */

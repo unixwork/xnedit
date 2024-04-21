@@ -784,12 +784,24 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       p->isBold = FontOfNamedStyleIsBold(colorProfile, pat->style); \
       p->isItalic = FontOfNamedStyleIsItalic(colorProfile, pat->style); \
       /* And now for the more physical stuff */ \
-      p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); \
+      p->color.pixel = AllocColor(window->textArea, p->colorName, &r, &g, &b); \
+      p->color.color.red = r; \
+      p->color.color.green = g; \
+      p->color.color.blue = b; \
+      p->color.color.alpha = 0xFFFF; \
+      /* p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); */ \
       if (p->bgColorName) { \
         p->bgColor = PixelToColor(window->textArea, AllocColor(window->textArea, p->bgColorName, &r, &g, &b)); \
+        p->bgColor.pixel = AllocColor(window->textArea, p->colorName, &r, &g, &b); \
+        p->bgColor.color.red = r; \
+        p->bgColor.color.green = g; \
+        p->bgColor.color.blue = b; \
+        p->bgColor.color.alpha = 0xFFFF; \
       } \
       else { \
         p->bgColor = p->color; \
+        if(colorProfile->styleType == 1) \
+          p->color = LightenColor(p->color); \
       } \
       p->font = FontOfNamedStyle(window, pat->style); \
     } while (0)
@@ -2477,4 +2489,24 @@ static int getFontHeight(WindowInfo *window)
     textDisp *textD = ((TextWidget)window->textArea)->text.textD;
 
     return textD->ascent + textD->descent;
+}
+
+XftColor LightenColor(XftColor color)
+{
+    float red = color.color.red / 65535.f;
+    float green = color.color.green / 65535.f;
+    float blue =  color.color.blue / 65535.f;
+    
+    int r, g, b;
+    r = color.color.red + 0x8000;
+    g = color.color.green + 0x8000;
+    b = color.color.blue + 0x8000;
+    if(r > 0xFFFF) r = 0xFFFF;
+    if(g > 0xFFFF) g = 0xFFFF;
+    if(b > 0xFFFF) b = 0xFFFF;
+    
+    color.color.red = r;
+    color.color.green = g;
+    color.color.blue = b;
+    return color;
 }

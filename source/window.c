@@ -54,6 +54,7 @@
 #include "windowTitle.h"
 #include "interpret.h"
 #include "rangeset.h"
+#include "highlightData.h"
 #include "../util/clearcase.h"
 #include "../util/misc.h"
 #include "../util/fileUtils.h"
@@ -2581,7 +2582,7 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         LoadColorProfileResources(display, profile);
     }
     
-    
+    ColorProfileLoadHighlightStyles(profile);
     
     profile->colorsLoaded = TRUE;
 }

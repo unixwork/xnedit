@@ -1091,6 +1091,16 @@ static char *DefaultPatternSets[] = {
 };
 
 
+void ColorProfileLoadHighlightStyles(ColorProfile *profile)
+{
+    if(profile->styleType != 2) {
+        profile->styles = HighlightStyles;
+        profile->numStyles = NHighlightStyles;
+    } else {
+        // TODO: get custom styles
+    }
+}
+
 /*
 ** Read a string (from the  value of the styles resource) containing highlight
 ** styles information, parse it, and load it into the stored highlight style

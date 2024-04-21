@@ -6120,7 +6120,7 @@ static void updateColors(colorDialog *cd)
         prefProfile->styleType = profile->styleType;
 
         prefProfile->colorsLoaded = FALSE;
-        
+               
         if(i == cd->selectedProfile) {
             setProfile = prefProfile;
         }
@@ -7794,20 +7794,20 @@ void ParseColorProfiles(const char *str)
     int lineStart = 0;
     for(int i=0;i<=len;i++) {
         if(i == len || str[i] == '\n') {
-            ColorProfile *cgProfile = ParseColorProfile(str+lineStart, i-lineStart);
+            ColorProfile *colorProfile = ParseColorProfile(str+lineStart, i-lineStart);
             lineStart = i+1;
             
-            if(cgProfile) {
-                if(!strcmp(cgProfile->name, defaultProfileName)) {
-                    defaultColorProfile = cgProfile;
+            if(colorProfile) {
+                if(!strcmp(colorProfile->name, defaultProfileName)) {
+                    defaultColorProfile = colorProfile;
                 }
                 
                 if(profilesListEnd) {
-                    profilesListEnd->next = cgProfile;
-                    profilesListEnd = cgProfile;
+                    profilesListEnd->next = colorProfile;
+                    profilesListEnd = colorProfile;
                 } else {
-                    profilesListBegin = cgProfile;
-                    profilesListEnd = cgProfile;
+                    profilesListBegin = colorProfile;
+                    profilesListEnd = colorProfile;
                 }
             }
         }
