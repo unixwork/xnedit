@@ -104,30 +104,7 @@ const char *const knownBadLessTif[] = {
 
 static enum MotifStability GetLessTifStability(void)
 {
-    int i;
-    const char *rev = NULL;
-    
-    /* We assume that the lesstif version is the string after the last
-        space. */
-
-    rev = strrchr(LesstifVERSION_STRING, ' ');
-
-    if (rev == NULL)
-        return MotifUnknown;
-
-    rev += 1;
-
-    /* Check for known good LessTif versions */
-    for (i = 0; knownGoodLesstif[i]; i++)
-        if (!strcmp(rev, knownGoodLesstif[i]))
-            return MotifKnownGood;
-
-    /* Check for known bad LessTif versions */
-    for (i = 0; knownBadLessTif[i]; i++) 
-        if (!strcmp(rev, knownBadLessTif[i]))
-            return MotifKnownBad;
-    
-    return MotifUnknown;
+    return MotifKnownBad;
 }
 
 #else
