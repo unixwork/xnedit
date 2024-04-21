@@ -6212,8 +6212,8 @@ static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *tem
     Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3 };
     size_t numSrcWidgets = 6;
     
-    WidgetList children;
-    Cardinal numChildren;
+    WidgetList children = NULL;
+    Cardinal numChildren = 0;
     XtVaGetValues(parent, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
     for(int i=0;i<numChildren;i++) {
         Widget dst = children[i];
