@@ -1912,6 +1912,29 @@ Shell Commands and Filters
   is the user's login shell.
    ----------------------------------------------------------------------
 
+Input/Output Filters
+--------------------
+
+  Input/Output Filters are filter commands executed when opening or saving
+  files.
+
+  File Pattern: A glob pattern used to automatically select filters in the
+  Open/Save File dialog. When a file that matches a file pattern is selected,
+  the filter is automatically applied.
+
+  Default Extension: The default file extension is automatically added to a file
+  name when a filter is selected in the "Save File As" dialog.
+
+  Input Filter Command: The command line executed when a filter is selected in
+  the Open File dialog and the file is opened. The command receives the file
+  content as input, and a document with the command's output is opened.
+
+  Output Filter Command: The command line executed when a file is saved and a
+  filter was selected, either in the "Save File As" dialog or previously when
+  the document was opened with a filter. The command receives the document
+  content as input, and the output of the command is written to the file.
+   ----------------------------------------------------------------------
+
 Learn/Replay
 ------------
 
@@ -5936,7 +5959,7 @@ Problems/Defects
 .. Menu:   F_i_le Format                    # format
 
 .. Menu: Features for Programming           # features
-.. Menu:   Programming with XNEdit           # programmer
+.. Menu:   Programming with XNEdit          # programmer
 .. Menu:   Tab Stops/Emulated Tab Stops     # tabs
 .. Menu:   Auto/Smart Indent                # indent
 .. Menu:   Syntax Highlighting              # syntax
@@ -5952,6 +5975,7 @@ Problems/Defects
 
 .. Menu: Macro/Shell Extensions             # extensions
 .. Menu:   Shell Commands and Filters       # shell, 1
+.. Menu:   Input/Output Filters             # filters
 .. Menu:   Learn/Replay                     # learn
 .. Menu:   Macro Language                   # macro_lang
 .. Menu:   M_a_cro Subroutines              # macro_subrs
@@ -5960,14 +5984,14 @@ Problems/Defects
 .. Menu:   Action Routines                  # actions
 
 .. Menu: Customizing                        # customizing
-.. Menu:   Customizing XNEdit                # customize
+.. Menu:   Customizing XNEdit               # customize
 .. Menu:   Preferences                      # preferences
 .. Menu:   X Resources                      # resources
 .. Menu:   Key Binding                      # binding
 .. Menu:   Highlighting Patterns            # patterns
 .. Menu:   Smart Indent Macros              # smart_indent
 
-.. Menu: XNEdit Command Line                 # command_line
+.. Menu: XNEdit Command Line                # command_line
 .. Menu: Client/Server Mode                 # server
 .. Menu: Cr_a_sh Recovery                   # recovery
 .. Menu: ---------------------------------- # separator1
