@@ -6798,6 +6798,11 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
     XmStringFree(s);
 }
 
+static void colorDialogOpenStylesSettings(Widget w, colorDialog *cd, XtPointer c)
+{
+    EditHighlightStyles(NULL);
+}
+
 static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
 {
     if(!tb->set) {
@@ -7332,6 +7337,8 @@ void ChooseColors(WindowInfo *window)
             XmNtopOffset, 6,
             XmNlabelString, s1,
             NULL);
+    XtAddCallback(stOpenStyleSettings, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogOpenStylesSettings, NULL);
 
     // TODO: style preview drawing area
     
