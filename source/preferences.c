@@ -7261,7 +7261,9 @@ void ChooseColors(WindowInfo *window)
      * Tab 4: Styles
      */
     tabForm = cd->tabForms[3];
-    s1 = XmStringCreateLocalized("test description");
+    s1 = XmStringCreateLocalized("Text drawing styles can be adjusted for a color profile.\n"
+                                 "Lightened Colors: Increase brightness to improve visibility against dark backgrounds.\n"
+                                 "Custom Styles: Implement custom drawing styles by manually adjusting settings in the Text Drawing Styles menu.");
     Widget stInfoLabel = XtVaCreateManagedWidget("stInfoLabel",
             xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_FORM,
@@ -7269,7 +7271,7 @@ void ChooseColors(WindowInfo *window)
             //XmNrightAttachment, XmATTACH_FORM,
             XmNleftOffset, 6,
             XmNtopOffset, 6,
-            //XmNalignment, XmALIGNMENT_CENTER,
+            XmNalignment, XmALIGNMENT_BEGINNING,
             XmNlabelString, s1,
             NULL);
     XmStringFree(s1);
