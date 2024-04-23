@@ -1288,6 +1288,7 @@ static void colorCloseCB(Widget w, XtPointer clientData, XtPointer callData);
 static void indentRainbowDialogLoadColors(colorDialog *cd);
 static void loadAnsiColors(colorDialog *cd);
 static void loadColors(colorDialog *cd);
+static void loadColorProfileStyleSettings(colorDialog *cd);
 static void clearRainbowColors(colorDialog *cd);
 static void saveColorProfileSettings(colorDialog *cd);
 static void updateRainbowColors(indentColorDialog *cd);
@@ -6631,6 +6632,7 @@ static void colorDialogSelectProfile(colorDialog *cd, int index)
     
     loadColors(cd);
     loadAnsiColors(cd);
+    loadColorProfileStyleSettings(cd);
 
     indentRainbowDialogLoadColors(cd);
 }
@@ -7561,6 +7563,14 @@ static void loadColors(colorDialog *cd)
     XmTextSetString(cd->lineNoBgW, selectedProfile->lineNoBg);
     XmTextSetString(cd->cursorFgW, selectedProfile->cursorFg);
     XmTextSetString(cd->cursorLineBgW, selectedProfile->lineHiBg);
+}
+
+static void loadColorProfileStyleSettings(colorDialog *cd)
+{
+    ColorProfile *sp = &cd->colorProfiles[cd->selectedProfile];
+    XtVaSetValues(cd->styleDefaultW, XmNset, sp->styleType == 0 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleLightenW, XmNset, sp->styleType == 1 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleCustomW, XmNset, sp->styleType == 2 ? 1 : 0, NULL);
 }
 
 
