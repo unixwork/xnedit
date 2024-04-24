@@ -15,7 +15,7 @@
 *                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA                                 *                                                                         *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
 *                                                                              *
 *******************************************************************************/
 
@@ -28,6 +28,8 @@
 #include "../util/misc.h"
 #include "../util/managedList.h"
 #include "../util/DialogF.h"
+
+#include "help.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -64,6 +66,7 @@ static void fdDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdOkCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdApplyCB(Widget w, XtPointer clientData, XtPointer callData);
 static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData);
+static void fdHelpCB(Widget w, XtPointer clientData, XtPointer callData);
 
 static int fdUpdateList(void);
 
@@ -203,9 +206,9 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             XmNlabelString, s1=XmStringCreateSimple("OK"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 10,
+            XmNleftPosition, 4,
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 30,
+            XmNrightPosition, 21,
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
@@ -216,9 +219,9 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             XmNlabelString, s1=XmStringCreateSimple("Apply"),
             XmNmnemonic, 'A',
             XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 40,
+            XmNleftPosition, 29,
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 60,
+            XmNrightPosition, 46,
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
@@ -229,13 +232,26 @@ from the list on the left.  Select \"New\" to add a new filter to the list."),
             xmPushButtonWidgetClass, form,
             XmNlabelString, s1=XmStringCreateSimple("Close"),
             XmNleftAttachment, XmATTACH_POSITION,
-            XmNleftPosition, 70,
+            XmNleftPosition, 54,
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 90,
+            XmNrightPosition, 71,
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
     XtAddCallback(closeBtn, XmNactivateCallback, fdCloseCB, NULL);
+    XmStringFree(s1);
+    
+    Widget helpBtn = XtVaCreateManagedWidget("help",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("Help"),
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 79,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 96,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 6,
+            NULL);
+    XtAddCallback(helpBtn, XmNactivateCallback, fdHelpCB, NULL);
     XmStringFree(s1);
 
     Widget sep1 = XtVaCreateManagedWidget("sep1", xmSeparatorGadgetClass, form,
@@ -443,6 +459,11 @@ static void fdCloseCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     XtDestroyWidget(fd.shell);
     fd.shell = NULL;
+}
+
+static void fdHelpCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    Help(HELP_FILTERS);
 }
 
 static int fdUpdateList(void)
