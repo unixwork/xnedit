@@ -1936,7 +1936,7 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorLbl,
             XmNhighlightThickness, 2,
-            XmNshadowThickness, 0,
+            XmNshadowThickness, 1,
             XmNbackground, 0,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
@@ -1955,14 +1955,14 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
     XtAddCallback(HSDialog.colorW, XmNvalueChangedCallback,
           updateCGchooser, fgColorChooserButton);
     
-    //Dimension shadowThickness = 1;
-    //XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
+    Dimension shadowThickness = 1;
+    XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
     XtVaSetValues(fgColorChooserButton,
 #if XmVersion > 2001
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.colorW,
 #endif
-            //XmNshadowThickness, shadowThickness,
+            XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.colorW, NULL);
     
     bgColorLbl = XtVaCreateManagedWidget("bgColorLbl", xmLabelGadgetClass, form,
@@ -1983,8 +1983,8 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, bgColorLbl,
             XmNhighlightThickness, 2,
-            XmNshadowThickness, 0,
-            //XmNbackground, 0,
+            XmNshadowThickness, 1,
+            XmNbackground, 0,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
     XmStringFree(s1);
@@ -2008,7 +2008,7 @@ from the list on the left.  Select \"New\" to add a new style to the list."),
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.bgColorW,
 #endif
-            //XmNshadowThickness, shadowThickness,
+            XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.bgColorW, NULL);
     
     fontLbl = XtVaCreateManagedWidget("fontLbl", xmLabelGadgetClass, form,
