@@ -82,6 +82,8 @@ enum fontTypes {PLAIN_FONT, ITALIC_FONT, BOLD_FONT, BOLD_ITALIC_FONT};
 static const char *FontTypeNames[N_FONT_TYPES] =
    {"Plain", "Italic", "Bold", "Bold Italic"};
 
+char *currentColorProfileName = NULL;
+
 static int styleError(const char *stringStart, const char *stoppedAt,
        const char *message);
 #if 0
@@ -1091,6 +1093,12 @@ static char *DefaultPatternSets[] = {
 };
 
 
+void SetColorProfileName(const char *profileName)
+{
+    NEditFree(currentColorProfileName);
+    currentColorProfileName = profileName ? NEditStrdup(profileName) : NULL;
+}
+
 void ColorProfileLoadHighlightStyles(ColorProfile *profile)
 {
     if(profile->styleType != 2) {
@@ -1905,11 +1913,25 @@ void EditHighlightStyles(const char *initialStyle)
 	    XmNresizePolicy, XmRESIZE_NONE, NULL);
     XtAddCallback(form, XmNdestroyCallback, hsDestroyCB, NULL);
     AddMotifCloseCallback(HSDialog.shell, hsCloseCB, NULL);
+    
+    char *topLblStr = 
+    "To modify the properties of an existing highlight style, select the name\n\
+    from the list on the left.  Select \"New\" to add a new style to the list.";
+    
+    if(currentColorProfileName) {
+        size_t topLblStrLen = strlen(topLblStr);
+        size_t currentColorProfileNameLen = strlen(currentColorProfileName);
+        size_t tlStrAlloc = currentColorProfileNameLen + topLblStrLen + 20;
+        char *tlStr = NEditMalloc(tlStrAlloc);
+        snprintf(tlStr, tlStrAlloc, "Color Profile: %s\n%s", currentColorProfileName, topLblStr);
+        s1=MKSTRING(tlStr);
+        free(tlStr);
+    } else {
+        s1=MKSTRING(topLblStr);
+    }
         
     topLbl = XtVaCreateManagedWidget("topLabel", xmLabelGadgetClass, form,
-    	    XmNlabelString, s1=MKSTRING(
-"To modify the properties of an existing highlight style, select the name\n\
-from the list on the left.  Select \"New\" to add a new style to the list."),
+    	    XmNlabelString, s1,
 	    XmNmnemonic, 'N',
 	    XmNtopAttachment, XmATTACH_POSITION,
 	    XmNtopPosition, 2,

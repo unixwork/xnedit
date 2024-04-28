@@ -36,6 +36,7 @@
 
 #include "textDisp.h"
 
+void SetColorProfileName(const char *profileName);
 void ColorProfileLoadHighlightStyles(ColorProfile *profile);
 patternSet *FindPatternSet(const char *langModeName);
 int LoadHighlightString(char *inString, int convertOld);

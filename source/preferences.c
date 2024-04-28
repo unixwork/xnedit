@@ -6635,6 +6635,10 @@ static void colorDialogSelectProfile(colorDialog *cd, int index)
     loadColorProfileStyleSettings(cd);
 
     indentRainbowDialogLoadColors(cd);
+    
+    // temporarily change the profile name for the text drawing style dialog
+    ColorProfile *cp = &cd->colorProfiles[index];
+    SetColorProfileName(cp->styleType == 2 ? cp->name : NULL);
 }
 
 static void colorDialogProfileSelected(
