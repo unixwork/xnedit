@@ -46,11 +46,11 @@ EL/Fedora:
 
 Arch:
 
-	pacman -S gcc make pkgconf openmotif
+    pacman -S gcc make pkgconf openmotif
 
 FreeBSD:
 
-	pkg install pkgconf open-motif libiconv
+    pkg install pkgconf open-motif libiconv
 
 Solaris/OpenIndiana:
 
