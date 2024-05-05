@@ -7811,7 +7811,7 @@ void ParseColorProfiles(const char *str)
     if(!defaultProfileName) {
         defaultProfileName = "default";
     }
-    
+       
     // each line contains one color profile
     // parse each line and add the profiles to a linked list
     int lineStart = 0;
@@ -7859,6 +7859,10 @@ void ParseColorProfiles(const char *str)
     colorProfiles = defaultProfile;
     if(!defaultColorProfile) {
         defaultColorProfile = defaultProfile;
+    }
+    
+    if(strcmp(defaultColorProfile->name, "default") != 0 && defaultColorProfile->styleType == 2) {
+        SetColorProfileName(defaultColorProfile->name);
     }
 }
 
