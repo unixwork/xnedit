@@ -1034,7 +1034,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* realize all of the widgets in the new window */
     RealizeWithoutForcingPosition(winShell);
     XmProcessTraversal(text, XmTRAVERSE_CURRENT);
-
+    
     /* Make close command in window menu gracefully prompt for close */
     AddMotifCloseCallback(winShell, (XtCallbackProc)closeCB, window);
     
@@ -5424,6 +5424,7 @@ static UndoInfo *cloneUndoItems(UndoInfo *orgList)
     return head;
 }
 
+/*
 typedef struct WinGeometry {
     int cols;
     int rows;
@@ -5455,6 +5456,7 @@ static WinGeometry WindowGetGeometry(WindowInfo *window)
     
     return (WinGeometry){ currentCols, currentRows };
 }
+*/
 
 /*
 ** spin off the document to a new window
@@ -5473,12 +5475,19 @@ WindowInfo *DetachDocument(WindowInfo *window)
     	RaiseDocument(win);
     }
     
-    WinGeometry geometry = WindowGetGeometry(window);
-    char geometryStr[64];
-    snprintf(geometryStr, 64, "%dx%d", geometry.cols, geometry.rows);
+    //WinGeometry geometry = WindowGetGeometry(window);
+    //char geometryStr[64];
+    //snprintf(geometryStr, 64, "%dx%d", geometry.cols, geometry.rows);
+    
+    /* get current window size */
+    Dimension width, height;
+    XtVaGetValues(window->shell, XmNwidth, &width, XmNheight, &height, NULL);
     
     /* Create a new window */
-    cloneWin = CreateWindow(window->filename, geometryStr, False);
+    cloneWin = CreateWindow(window->filename, NULL, False);  
+    
+    /* apply old window size to the new window */
+    XtVaSetValues(cloneWin->shell, XmNwidth, width, XmNheight, height, NULL);
     
     /* CreateWindow() simply adds the new window's pointer to the
        head of WindowList. We need to adjust the detached window's 
