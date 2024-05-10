@@ -2280,7 +2280,7 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     
     /* Present a file selection dialog with an added field for requesting
        long line wrapping to become permanent via inserted newlines */
-    n = 0;
+    int n = 0;
     XtSetArg(args[n],
             XmNselectionLabelString,
             s1 = XmStringCreateLocalized("New File Name:")); n++;
