@@ -168,7 +168,7 @@ const char *GetMotifStableVersions(void)
     strcat(msg, "OpenMotif 2.2.3\n");
     strcat(msg, "OpenMotif 2.3\n");
     strcat(msg, "OpenMotif 2.3.4\n");
-    strcat(msg, "OpenMotif 2.3.8\n");
+    strcat(msg, "Motif 2.3.8\n");
 
     return msg;
 }
