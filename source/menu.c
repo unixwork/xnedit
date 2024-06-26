@@ -59,6 +59,7 @@
 #include "../util/utils.h"
 #include "../Xlt/BubbleButton.h"
 #include "../util/nedit_malloc.h"
+#include "../util/pathutils.h"
 
 #include <ctype.h>
 #include <errno.h>

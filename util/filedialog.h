@@ -51,10 +51,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
 
 const char ** FileDialogDefaultEncodings(void);
 
-char* ConcatPath(const char *parent, const char *name);
-char* FileName(char *path);
-char* ParentPath(char *path);
-
 #ifdef __cplusplus
 }
 #endif

@@ -49,6 +49,7 @@
 #include "misc.h"
 #include "textfield.h"
 #include "ec_glob.h"
+#include "pathutils.h"
 
 #include "../source/preferences.h"
 #include "../source/filter.h"
@@ -516,70 +517,6 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     pixmaps_initialized = 1;
 }
 
-
-/* -------------------- path utils -------------------- */
-
-char* ConcatPath(const char *parent, const char *name)
-{ 
-    size_t parentlen = strlen(parent);
-    size_t namelen = strlen(name);
-    
-    size_t pathlen = parentlen + namelen + 2;
-    char *path = NEditMalloc(pathlen);
-    
-    memcpy(path, parent, parentlen);
-    if(parentlen > 0 && parent[parentlen-1] != '/') {
-        path[parentlen] = '/';
-        parentlen++;
-    }
-    if(name[0] == '/') {
-        name++;
-        namelen--;
-    }
-    memcpy(path+parentlen, name, namelen);
-    path[parentlen+namelen] = '\0';
-    return path;
-}
-
-char* FileName(char *path) {
-    int si = 0;
-    int osi = 0;
-    int i = 0;
-    int p = 0;
-    char c;
-    while((c = path[i]) != 0) {
-        if(c == '/') {
-            osi = si;
-            si = i;
-            p = 1;
-        }
-        i++;
-    }
-    
-    char *name = path + si + p;
-    if(name[0] == 0) {
-        name = path + osi + p;
-        if(name[0] == 0) {
-            return path;
-        }
-    }
-    
-    return name;
-}
-
-char* ParentPath(char *path) {
-    char *name = FileName(path);
-    size_t namelen = strlen(name);
-    size_t pathlen = strlen(path);
-    size_t parentlen = pathlen - namelen;
-    if(parentlen == 0) {
-        parentlen++;
-    }
-    char *parent = NEditMalloc(parentlen + 1);
-    memcpy(parent, path, parentlen);
-    parent[parentlen] = '\0';
-    return parent;
-}
 
 /* -------------------- path bar -------------------- */
 

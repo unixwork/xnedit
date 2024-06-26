@@ -11,8 +11,9 @@ utils.o: utils.c utils.h
 refString.o: refString.c
 rbTree.o: rbTree.c
 libxattr.o: libxattr.c
-filedialog.o: filedialog.c filedialog.h
+filedialog.o: filedialog.c filedialog.h pathutils.h
 xdnd.o: xdnd.c xdnd.h
 textfield.o: textfield.c textfield.h
 ec_glob.o: ec_glob.c ec_glob.h
 colorchooser.o: colorchooser.c colorchooser.h
+pathutils.o: pathutils.c pathutils.h
