@@ -8,7 +8,6 @@ misc.o: misc.c misc.h DialogF.h
 prefFile.o: prefFile.c prefFile.h fileUtils.h utils.h
 printUtils.o: printUtils.c printUtils.h DialogF.h misc.h prefFile.h
 utils.o: utils.c utils.h
-vmsUtils.o: vmsUtils.c
 refString.o: refString.c
 rbTree.o: rbTree.c
 libxattr.o: libxattr.c
