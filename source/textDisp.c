@@ -243,7 +243,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->boldItalicFont = FontRef(boldItalic);
     textD->ascent = xftFont->ascent;
     textD->descent = xftFont->descent;
-    /* TODO: think about renabling textD->fixedFontWidth */
     textD->fixedFontWidth = -1;
     textD->styleBuffer = NULL;
     textD->styleTable = NULL;
@@ -3848,8 +3847,6 @@ static int countLines(const char *string)
 */
 static int measureVisLine(textDisp *textD, int visLineNum)
 {
-    // TODO: this function needs some performance improvements
-    
     textBuffer *buf = textD->buffer;
     int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
