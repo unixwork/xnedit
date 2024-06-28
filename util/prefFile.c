@@ -38,13 +38,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef VMS
-#include "VMSparam.h"
-#else
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif
+
 #include <Xm/Xm.h>
 
 #ifdef HAVE_DEBUG_H

@@ -14,17 +14,10 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#include <types.h>
-#include <stat.h>
-#include <unixio.h>
-#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <fcntl.h>
-#endif /*VMS*/
 #include <Xm/Xm.h>
 #include <Xm/AtomMgr.h>
 #include "../source/textBuf.h"

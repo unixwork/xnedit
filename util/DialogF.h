@@ -28,13 +28,7 @@
 #define NEDIT_DIALOGF_H_INCLUDED
 
 #include <X11/Intrinsic.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif /*VMS*/
 
 #define DF_ERR 1        /* Error Dialog       */
 #define DF_INF 2        /* Information Dialog */

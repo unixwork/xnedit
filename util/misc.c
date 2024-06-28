@@ -57,12 +57,6 @@
 #endif
 #endif
 
-#ifdef VMS
-#include <types.h>
-#include <unixio.h>
-#include <file.h>
-#endif /*VMS*/
-
 #include <X11/Intrinsic.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>

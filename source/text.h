@@ -211,10 +211,6 @@ int TextLookupString(
 
 /* void TextPrintXIMError(void); */
 
-#ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
-#define HandleAllPendingGraphicsExposeNoExposeEvents HandlePendingExpNoExpEvents
-#endif /* VMS */
-
 void HandleAllPendingGraphicsExposeNoExposeEvents(TextWidget w, XEvent *event);
 
 #endif /* NEDIT_TEXT_H_INCLUDED */

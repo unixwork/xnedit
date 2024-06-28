@@ -49,11 +49,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
-#ifndef __MVS__
-#ifndef VMS
 #include <sys/param.h>
-#endif
-#endif
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -1027,11 +1023,7 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
 	
 	/* make this process the leader of a new process group, so the sub
 	   processes can be killed, if necessary, with a killpg call */
-#ifndef __EMX__  /* OS/2 doesn't have this */
-#ifndef VMS  /* VMS doesn't have this */
 	setsid();
-#endif
-#endif
      
         /* change the current working directory to the directory of the
             current file. */ 

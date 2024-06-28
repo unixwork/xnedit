@@ -336,10 +336,6 @@ void FontUnref(NFont *font);
 XftColor PixelToColor(Widget w, Pixel p);
 XftColor RGBToColor(short r, short g, short b);
 
-#ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
-#define TextDImposeGraphicsExposeTranslation TextDGraphicsExposeTranslation
-#endif /* VMS */
-
 void TextDImposeGraphicsExposeTranslation(textDisp *textD, int *xOffset, int *yOffset);
 Boolean TextDPopGraphicExposeQueueEntry(textDisp *textD);
 void TextDTranlateGraphicExposeQueue(textDisp *textD, int xOffset, int yOffset, Boolean appendEntry);

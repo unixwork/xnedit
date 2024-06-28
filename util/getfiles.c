@@ -59,18 +59,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#ifdef VMS
-#include <unixio.h>
-#include <file.h>
-#include "VMSparam.h"
-#else
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif /*VMS*/
 #include <sys/stat.h>
 
 #include <X11/keysym.h>

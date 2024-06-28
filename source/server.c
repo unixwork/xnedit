@@ -48,21 +48,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#ifdef VMS
-#include <lib$routines.h>
-#include ssdef
-#include syidef
-#include "../util/VMSparam.h"
-#include "../util/VMSutils.h"
-#else
 #include <sys/types.h>
 #include <sys/utsname.h>
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
 #include <unistd.h>
 #include <pwd.h>
-#endif
 
 #include <Xm/Xm.h>
 #include <Xm/XmP.h>

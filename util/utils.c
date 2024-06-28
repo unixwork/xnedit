@@ -32,13 +32,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef VMS
-#include <lib$routines.h>
-#include ssdef
-#include syidef
-#include "../util/VMSparam.h"
-#include "../util/VMSutils.h"
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
@@ -51,12 +44,8 @@
 #endif
 
 #define DEFAULT_NEDIT_HOME ".xnedit"
-#ifdef VMS
-    static char* hiddenFileNames[N_FILE_TYPES] = {".nedit", ".neditmacro", ".neditdb;1", ".neditsearch;1"};
-    static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history;1", "search.history;1"};
-#else
-    static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history", "search.history"};
-#endif
+
+static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history", "search.history"};
 
 static void buildFilePath(char* fullPath, const char* dir, const char* file);
 static Boolean isDir(const char* file);
