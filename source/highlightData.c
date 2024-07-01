@@ -288,7 +288,7 @@ static char *DefaultPatternSets[] = {
     	keywords 3 - types:\"<(?:unsigned|signed|char|double|float|int|long|short|void|wchar_t|char16_t|char32_t|char8_t)>\":::Storage Type::D\n\
     	keywords 4 - starting underscore:\"<_(?:Alignas|Alignof|Atomic|Bool|Complex|Decimal128|Decimal32|Decimal64|Generic|Imaginary|Noreturn|Satic_assert|Thread_local)>\":::Keyword::D\n\
     	keywords 5 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for)>\":::Keyword::D\n\
-    	keywords 6 - misc:\"<(?:sizeof|asm|fortran)>\":::Keyword::D\n\
+    	keywords 6 - misc:\"<(?:sizeof|typeof|asm|fortran)>\":::Keyword::D\n\
     	keywords 7 - convenience macros:\"<(?:alignas|alignof|noreturn|static_assert|thread_local)>\":::Keyword::D\n\
     	keywords 8 - convenience type macros:\"<(?:bool|complex|imaginary)>\":::Storage Type::D\n\
     	keywords 9 - atomic macros:\"<atomic_(?:[us]?char|double|float|[u]?int|u?l?long|u?short|bool)>\":::Storage Type::D\n\
