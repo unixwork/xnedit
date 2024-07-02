@@ -3025,14 +3025,14 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 */
 static int stringWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *fontList)
-{
-    if(!fontList) {
-        fontList = textD->font;
-    }
-    
+{ 
     if(string[0] == 0) return 0; // special case for ansi coloring
     
-    XftFont *font = FindFont(fontList, string[0]);
+    if(!fontList) {
+        fontList = textD->font; // TODO: remove if proven to be unnecessary
+    }
+    
+    FcChar32 c = string[0];
     int strWidth = 0;
     if(fontList->minWidth == fontList->maxWidth) {
         int charWidth = fontList->minWidth;
@@ -3043,6 +3043,9 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
         for(int i=0;i<length;i++) {
             int c_isascii = string[i] < 128;
             if(c_isascii && !ascii) {
+                // TODO: can this be removed?
+                //       stringWidth4 doesn't support multiple fonts anyway
+                XftFont *font = FindFont(fontList, string[0]);
                 XGlyphInfo extents;
                 XftTextExtents32(XtDisplay(textD->w), font, string + start, i - start, &extents);
                 strWidth += extents.xOff;
@@ -3056,12 +3059,14 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
         if(ascii) {
             strWidth += charWidth * (length - start);
         } else {
+            XftFont *font = FindFont(fontList, string[0]);
             XGlyphInfo extents;
             XftTextExtents32(XtDisplay(textD->w), font, string + start, length - start, &extents);
             strWidth += extents.xOff;
         } 
     } else {
         // main font is not a monospace font
+        XftFont *font = FindFont(fontList, string[0]);
         XGlyphInfo extents;
         XftTextExtents32(XtDisplay(textD->w), font, string, length, &extents);
         strWidth = extents.xOff;
