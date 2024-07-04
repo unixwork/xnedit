@@ -656,18 +656,24 @@ void TextDResize(textDisp *textD, int width, int height)
        lines in the buffer, and can leave the top line number incorrect, and
        the top character no longer pointing at a valid line start */
     if (textD->continuousWrap && textD->wrapMargin==0 && width!=oldWidth && !textD->cacheNoWrapping) {
-        Boolean wrap = False;
-        int oldFirstChar = textD->firstChar;
-        textD->nBufferLines = TextDCountLinesW(textD, 0, textD->buffer->length,
-                True, &wrap);
+        Boolean wrap0 = False;
+        Boolean wrap1 = False;
         
-        if(!wrap) {
+        int oldFirstChar = textD->firstChar;
+        
+        textD->firstChar = TextDStartOfLine(textD, textD->firstChar);
+        int toplinenum = TextDCountLinesW(textD, 0, textD->firstChar, True, &wrap0);  
+        int count = TextDCountLinesW(textD, textD->firstChar, textD->buffer->length, True, &wrap1);
+
+        
+        textD->nBufferLines = toplinenum + count;
+        
+        if(!(wrap0 || wrap1)) {
             textD->cacheNoWrapping = True;
             textD->cacheNoWrappingWidth = width;
         }
         
-        textD->firstChar = TextDStartOfLine(textD, textD->firstChar);
-        textD->topLineNum = TextDCountLines(textD, 0, textD->firstChar, True)+1;
+        textD->topLineNum = toplinenum+1;
         redrawAll = True;
         offsetAbsLineNum(textD, oldFirstChar);     
     }
