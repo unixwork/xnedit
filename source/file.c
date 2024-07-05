@@ -502,13 +502,18 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     	return NULL;
     }
     forceShowLineNumbers(window);
-
+    
     /* Decide what language mode to use, trigger language specific actions */
     if (languageMode == NULL) 
     	DetermineLanguageMode(window, True);
     else
 	SetLanguageMode(window, FindLanguageMode(languageMode), True);
-
+    
+    /* Disable continuous wrapping if the file is too big */
+    if(window->buffer->length > DISABLE_WRAPPING_THRESHOLD) {
+        SetAutoWrap(window, NO_WRAP);
+    }
+    
     /* update tab label and tooltip */
     RefreshTabState(window);
     SortTabBar(window);
@@ -1235,7 +1240,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     if(show_infobar) {
         ShowEncodingInfoBar(window, 1);
     }
-    
+      
     return TRUE;
 }   
 

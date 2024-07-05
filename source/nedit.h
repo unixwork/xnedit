@@ -144,6 +144,9 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 /* maximum encoding string length */
 #define MAX_ENCODING_LENGTH 64
 
+/* disable continuous wrapping threshold (10mb) */
+#define DISABLE_WRAPPING_THRESHOLD 0xA00000
+
 /* Record on undo list */
 typedef struct _UndoInfo {
     struct _UndoInfo *next;		/* pointer to the next undo record */
