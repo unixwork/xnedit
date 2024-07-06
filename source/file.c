@@ -509,10 +509,9 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     else
 	SetLanguageMode(window, FindLanguageMode(languageMode), True);
     
-    /* Disable continuous wrapping if the file is too big */
-    if(window->buffer->length > DISABLE_WRAPPING_THRESHOLD) {
-        SetAutoWrap(window, NO_WRAP);
-    }
+    /* if a large file was opened, the previous SetLanguageMode should't set 
+     * the wrap mode, however the user should be free to set any mode */
+    window->wrapModeNoneForced = False;
     
     /* update tab label and tooltip */
     RefreshTabState(window);
@@ -1219,6 +1218,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
 
     /* Release the memory that holds fileString */
     NEditFree(fileString);
+    
+    /* Disable continuous wrapping if the file is too big */
+    if(window->buffer->length > DISABLE_WRAPPING_THRESHOLD) {
+        SetAutoWrap(window, NO_WRAP);
+        window->wrapModeNoneForced = True;
+    }
 
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {

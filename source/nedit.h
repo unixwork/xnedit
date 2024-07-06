@@ -597,6 +597,8 @@ typedef struct _WindowInfo {
     UserBGMenuCache  userBGMenuCache;   /* shell & macro menu are shared over all
                                            "tabbed" documents, while each document
                                            has its own background menu. */
+    Boolean wrapModeNoneForced;         /* wrap mode forced to None
+                                           (large file mode) */
     Boolean opened;                     /* Set to true when the window is opened */
     Boolean mapped;
 } WindowInfo;

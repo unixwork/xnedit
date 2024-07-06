@@ -304,6 +304,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* Allocate some memory for the new window data structure */
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     window->opened = False;
+    window->wrapModeNoneForced = False;
     
     /* initialize window structure */
     /* + Schwarzenberg: should a 
@@ -2455,6 +2456,12 @@ void SetOverstrike(WindowInfo *window, int overstrike)
 */
 void SetAutoWrap(WindowInfo *window, WrapStyle state)
 {
+    if(window->wrapModeNoneForced) {
+        // this is only true if a large file was opened (for a short time)
+        // it is set to False after the file is fully opened
+        return;
+    }
+    
     int i;
     int autoWrap = state == NEWLINE_WRAP, contWrap = state == CONTINUOUS_WRAP;
 
