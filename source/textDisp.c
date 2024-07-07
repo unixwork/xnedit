@@ -4481,17 +4481,9 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
 static int measurePropChar(const textDisp* textD, FcChar32 c,
     int colNum, int pos)
 {
-    int charLen, style;
-    FcChar32 expChar[MAX_EXP_CHAR_LEN];
+    int style;
     textBuffer *styleBuf = textD->styleBuffer;
     
-    if(c < 128) {
-        charLen = BufExpandCharacter4(c, colNum, expChar, 
-	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
-    } else {
-        charLen = 1;
-        expChar[0] = c;
-    }
     NFont *font = NULL;
     if (styleBuf) {
 	style = (unsigned char)BufGetCharacter(styleBuf, pos);
@@ -4507,6 +4499,25 @@ static int measurePropChar(const textDisp* textD, FcChar32 c,
     if(!font) {
         font = textD->font;
     }
+    
+    int charLen;
+    FcChar32 expChar[MAX_EXP_CHAR_LEN];
+    if(c < 128) {
+        charLen = BufExpandCharacter4(c, colNum, expChar, 
+	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+        
+        if(font->minWidth == font->maxWidth) {
+            return font->minWidth;
+        } else {
+            XGlyphInfo extents;
+            XftTextExtents32(XtDisplay(textD->w), font->fonts->font, expChar, charLen, &extents);
+            return extents.xOff;
+        }
+    } else {
+        charLen = 1;
+        expChar[0] = c;
+    }
+    
     return stringWidth4(textD, expChar, charLen, font);
 }
 
