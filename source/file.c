@@ -1184,6 +1184,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
     }
     
+    /* Disable continuous wrapping if the file is too big */
+    if(readLen > DISABLE_WRAPPING_THRESHOLD) {
+        SetAutoWrap(window, NO_WRAP);
+        window->wrapModeNoneForced = True;
+    }
+    
     /* Display the file contents in the text widget */
     window->ignoreModify = True;
     BufSetAll(window->buffer, fileString);
@@ -1218,12 +1224,6 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
 
     /* Release the memory that holds fileString */
     NEditFree(fileString);
-    
-    /* Disable continuous wrapping if the file is too big */
-    if(window->buffer->length > DISABLE_WRAPPING_THRESHOLD) {
-        SetAutoWrap(window, NO_WRAP);
-        window->wrapModeNoneForced = True;
-    }
 
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {
