@@ -504,10 +504,14 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     forceShowLineNumbers(window);
     
     /* Decide what language mode to use, trigger language specific actions */
-    if (languageMode == NULL) 
-    	DetermineLanguageMode(window, True);
-    else
-	SetLanguageMode(window, FindLanguageMode(languageMode), True);
+    if(window->buffer->length < DISABLE_LANG_THRESHOLD) {
+        if (languageMode == NULL) {
+            DetermineLanguageMode(window, True);
+        } else {
+            SetLanguageMode(window, FindLanguageMode(languageMode), True);
+        }
+    }
+    
     
     /* if a large file was opened, the previous SetLanguageMode should't set 
      * the wrap mode, however the user should be free to set any mode */
