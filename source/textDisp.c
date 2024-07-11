@@ -125,7 +125,7 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
 static void drawCursor(textDisp *textD, int x, int y);
 static int styleOfPos(textDisp *textD, int lineStartPos,
         int lineLen, int lineIndex, int dispIndex, int thisChar);
-static int stringWidth4(const textDisp* textD, const FcChar32* string,
+static int charWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *font);
 static NFont* styleFontList(const textDisp* textD, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
@@ -1513,7 +1513,7 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
    	    	outIndex, lineStr[charIndex]);
         font = styleFontList(textD, charStyle);
-    	xStep += stringWidth4(textD, expandedChar, charLen, font);
+    	xStep += charWidth4(textD, expandedChar, charLen, font);
     	outIndex += charLen;
     }
     *x = xStep;
@@ -2493,7 +2493,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
                 ? stdCharWidth
-                : stringWidth4(
+                : charWidth4(
                         textD,
                         expandedChar,
                         charLen,
@@ -2660,10 +2660,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         
         if(cpCharLen == 1) {
             *outPtr = *expandedChar;
-            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
+            charWidth = charWidth4(textD, expandedChar, charLen, charFL);
         } else if(charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
-            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
+            charWidth = charWidth4(textD, expandedChar, charLen, charFL);
         } else {
             charWidth = stdCharWidth;
         }
@@ -3064,7 +3064,7 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 /*
 ** Find the width of a string in the font of a particular style
 */
-static int stringWidth4(const textDisp* textD, const FcChar32* string,
+static int charWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *fontList)
 { 
     if(string[0] == 0) return 0; // special case for ansi coloring
@@ -3075,38 +3075,10 @@ static int stringWidth4(const textDisp* textD, const FcChar32* string,
     
     FcChar32 c = string[0];
     int strWidth = 0;
-    if(fontList->minWidth == fontList->maxWidth) {
-        int charWidth = fontList->minWidth;
-        // fontList->minWidth * number of ascii chars
-        // + XftTextExtents32 for remaining non-ascii chars
-        int ascii = 1;
-        int start = 0;
-        for(int i=0;i<length;i++) {
-            int c_isascii = string[i] < 128;
-            if(c_isascii && !ascii) {
-                // TODO: can this be removed?
-                //       stringWidth4 doesn't support multiple fonts anyway
-                XftFont *font = FindFont(fontList, string[0]);
-                XGlyphInfo extents;
-                XftTextExtents32(XtDisplay(textD->w), font, string + start, i - start, &extents);
-                strWidth += extents.xOff;
-                start = i;
-            } else if(!c_isascii && ascii) {
-                strWidth += charWidth * (i - start);
-                start = i;
-            }
-            ascii = c_isascii;
-        }
-        if(ascii) {
-            strWidth += charWidth * (length - start);
-        } else {
-            XftFont *font = FindFont(fontList, string[0]);
-            XGlyphInfo extents;
-            XftTextExtents32(XtDisplay(textD->w), font, string + start, length - start, &extents);
-            strWidth += extents.xOff;
-        } 
+    if(fontList->minWidth == fontList->maxWidth && string[0] < 128) {
+        strWidth += fontList->minWidth * length;
     } else {
-        // main font is not a monospace font
+        // main font is not a monospace font or character is not ascii
         XftFont *font = FindFont(fontList, string[0]);
         XGlyphInfo extents;
         XftTextExtents32(XtDisplay(textD->w), font, string, length, &extents);
@@ -3196,7 +3168,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
    	charStyle = styleOfPos(textD, lineStart, lineLen, charIndex, outIndex,
 				lineStr[charIndex]);
         font = styleFontList(textD, charStyle);
-    	charWidth = stringWidth4(textD, expandedChar, charLen, font);
+    	charWidth = charWidth4(textD, expandedChar, charLen, font);
     	if (x < xStep + (posType == CURSOR_POS ? charWidth/2 : charWidth)) {
     	    NEditFree(lineStrAlloc);
     	    return lineStart + charIndex;
@@ -3927,7 +3899,7 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             font = textD->font;
         }
         
-        width += stringWidth4(textD, expandedChar, charLen, font);
+        width += charWidth4(textD, expandedChar, charLen, font);
     }
     NEditFree(free_lineStr);
     return width;
@@ -4518,7 +4490,7 @@ static int measurePropChar(const textDisp* textD, FcChar32 c,
         expChar[0] = c;
     }
     
-    return stringWidth4(textD, expChar, charLen, font);
+    return charWidth4(textD, expChar, charLen, font);
 }
 
 /*
