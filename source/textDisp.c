@@ -3069,10 +3069,6 @@ static int charWidth4(const textDisp* textD, const FcChar32* string,
 { 
     if(string[0] == 0) return 0; // special case for ansi coloring
     
-    if(!fontList) {
-        fontList = textD->font; // TODO: remove if proven to be unnecessary
-    }
-    
     FcChar32 c = string[0];
     int strWidth = 0;
     if(fontList->minWidth == fontList->maxWidth && string[0] < 128) {
