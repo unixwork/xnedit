@@ -50,6 +50,8 @@ typedef struct {
     
     int base_sel_y;
     float hue;
+    float saturation;
+    float value;
     
     uint8_t selected_red;
     uint8_t selected_green;
@@ -208,7 +210,7 @@ int ColorChooser(Widget parent, int *red, int *green, int *blue) {
     
     // base color
     set_base_color(&data, (*red)/257, (*green)/257, (*blue)/257);
-    
+     
     // manage dialog
     XtManageChild(dialog);
     
@@ -313,11 +315,16 @@ static Visual* get_visual(Screen *screen, int depth) {
     return visual;
 }
 
+#define IMG1_WIDTH    20
+#define IMG1_X_OFFSET 20
+#define IMG1_Y_OFFSET 10
+#define IMG2_X_OFFSET 10
+#define IMG2_Y_OFFSET 10
 
 static void init_pix1(cgData *data, Widget w) {
     Display *dp = XtDisplay(w);
-    Dimension width = 20;
-    Dimension height = w->core.height - 20;
+    Dimension width = IMG1_WIDTH;
+    Dimension height = w->core.height - IMG1_Y_OFFSET*2;
     
     if(data->image1) {
         if(height == data->img2_height) return;
@@ -408,12 +415,19 @@ static void init_pix1(cgData *data, Widget w) {
 
 static void init_pix2(cgData *data, Widget w) {
     Display *dp = XtDisplay(w);
-    Dimension width = w->core.width - 60;
-    Dimension height = w->core.height - 20;
+    Dimension width = w->core.width - IMG1_X_OFFSET - IMG1_WIDTH - 2*IMG2_X_OFFSET;
+    Dimension height = w->core.height - 2*IMG2_Y_OFFSET;
     
     if(data->image2) {
         if(width == data->img2_width == height == data->img2_height) return;
         XDestroyImage(data->image2);
+        data->has_selection = 0;
+    }
+    
+    if(!data->has_selection) {
+        data->img2_select_x = (float)width * data->value - 1;
+        data->img2_select_y = height - ((float)height * data->saturation);
+        data->has_selection = 1;
     }
     
     Visual *visual = get_visual(w->core.screen, w->core.depth);
@@ -433,9 +447,9 @@ static void init_pix2(cgData *data, Widget w) {
     float y_base_g = data->base_green;
     float y_base_b = data->base_blue;
     
-    float y_step_r = (255-data->base_red) / (float)(height-20);
-    float y_step_g = (255-data->base_green) / (float)(height-20);
-    float y_step_b = (255-data->base_blue) / (float)(height-20);
+    float y_step_r = (255-data->base_red) / (float)(height-2*IMG2_Y_OFFSET);
+    float y_step_g = (255-data->base_green) / (float)(height-2*IMG2_Y_OFFSET);
+    float y_step_b = (255-data->base_blue) / (float)(height-2*IMG2_Y_OFFSET);
     
     for(int y=0;y<height;y++) { 
         float x_step_r = y_base_r / (float)width;
@@ -480,11 +494,6 @@ static void init_pix2(cgData *data, Widget w) {
     data->img2_height = height;
 }
 
-#define IMG1_X_OFFSET 20
-#define IMG1_Y_OFFSET 10
-#define IMG2_X_OFFSET 10
-#define IMG2_Y_OFFSET 10
-
 static void draw_img2(Display *dp, Window win, cgData *data) {
     int img2_x = IMG1_X_OFFSET + data->img1_width + IMG2_X_OFFSET;
     int img2_y = IMG2_Y_OFFSET;
@@ -492,10 +501,10 @@ static void draw_img2(Display *dp, Window win, cgData *data) {
     if(data->has_selection) {
         XDrawLine(dp, win, data->selGC,
                 img2_x, img2_y + data->img2_select_y,
-                img2_x + data->img2_width, img2_y + data->img2_select_y);
+                img2_x + data->img2_width - 1, img2_y + data->img2_select_y);
         XDrawLine(dp, win, data->selGC,
                 img2_x + data->img2_select_x, img2_y,
-                img2_x + data->img2_select_x, img2_y + data->img2_height);
+                img2_x + data->img2_select_x, img2_y + data->img2_height - 1);
     }
 }
 
@@ -759,7 +768,7 @@ static void hsvToRgb(float hue, float saturation, float value, int *red, int *gr
 static void set_base_color(cgData *data, int r, int g, int b) {
     float h, s, v;
     rgbToHsv(r, g, b, &h, &s, &v);
-    
+       
     int red, green, blue;
     hsvToRgb(h, 1, 1, &red, &green, &blue);
     
@@ -767,6 +776,8 @@ static void set_base_color(cgData *data, int r, int g, int b) {
     data->base_green = green;
     data->base_blue = blue;
     data->hue = h;
+    data->saturation = s;
+    data->value = v;
     data->base_sel_y = -1;
 }
 

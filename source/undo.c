@@ -42,13 +42,7 @@
 #include "../util/nedit_malloc.h"
 
 #include <string.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif /*VMS*/
 
 #include <Xm/Xm.h>
 #include <Xm/Text.h>
@@ -408,12 +402,12 @@ static void addUndoItem(WindowInfo *window, UndoInfo *undo)
     window->undoMemUsed += undo->oldLen;
     
     /* Trim the list if it exceeds any of the limits */
-    if (window->undoOpCount > UNDO_OP_LIMIT)
-    	trimUndoList(window, UNDO_OP_TRIMTO);
-    if (window->undoMemUsed > UNDO_WORRY_LIMIT)
-    	trimUndoList(window, UNDO_WORRY_TRIMTO);
-    if (window->undoMemUsed > UNDO_PURGE_LIMIT)
-    	trimUndoList(window, UNDO_PURGE_TRIMTO);
+    if (window->undoOpCount > GetPrefUndoOpLimit())
+    	trimUndoList(window, GetPrefUndoOpTrimTo());
+    if (window->undoMemUsed > GetPrefUndoWorryLimit())
+    	trimUndoList(window, GetPrefUndoWorryTrimTo());
+    if (window->undoMemUsed > GetPrefUndoPurgeLimit())
+    	trimUndoList(window, GetPrefUndoPurgeTrimTo());
 }
 
 /*

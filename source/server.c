@@ -48,21 +48,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#ifdef VMS
-#include <lib$routines.h>
-#include ssdef
-#include syidef
-#include "../util/VMSparam.h"
-#include "../util/VMSutils.h"
-#else
 #include <sys/types.h>
 #include <sys/utsname.h>
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
 #include <unistd.h>
 #include <pwd.h>
-#endif
 
 #include <Xm/Xm.h>
 #include <Xm/XmP.h>
@@ -472,7 +462,7 @@ static void processServerCommandString(char *string)
 	       items. The current file may also be raised if there're
 	       macros to execute on. */
 	    window = EditExistingFile(findWindowOnDesktop(tabbed, currentDesktop),
-		    filename, pathname, NULL, editFlags, geometry, iconicFlag, 
+		    filename, pathname, NULL, NULL, editFlags, geometry, iconicFlag, 
 		    lmLen == 0 ? NULL : langMode, 
 		    tabbed == -1? GetPrefOpenInTab() : tabbed, True);
 

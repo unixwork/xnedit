@@ -284,7 +284,7 @@ static char *DefaultPatternSets[] = {
     	keywords 3 - types:\"<(?:unsigned|signed|char|double|float|int|long|short|void|wchar_t|char16_t|char32_t|char8_t)>\":::Storage Type::D\n\
     	keywords 4 - starting underscore:\"<_(?:Alignas|Alignof|Atomic|Bool|Complex|Decimal128|Decimal32|Decimal64|Generic|Imaginary|Noreturn|Satic_assert|Thread_local)>\":::Keyword::D\n\
     	keywords 5 - control flow:\"<(?:return|goto|if|else|case|default|switch|break|continue|while|do|for)>\":::Keyword::D\n\
-    	keywords 6 - misc:\"<(?:sizeof|asm|fortran)>\":::Keyword::D\n\
+    	keywords 6 - misc:\"<(?:sizeof|typeof|asm|fortran)>\":::Keyword::D\n\
     	keywords 7 - convenience macros:\"<(?:alignas|alignof|noreturn|static_assert|thread_local)>\":::Keyword::D\n\
     	keywords 8 - convenience type macros:\"<(?:bool|complex|imaginary)>\":::Storage Type::D\n\
     	keywords 9 - atomic macros:\"<atomic_(?:[us]?char|double|float|[u]?int|u?l?long|u?short|bool)>\":::Storage Type::D\n\
@@ -1979,7 +1979,7 @@ void EditHighlightStyles(const char *initialStyle)
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorLbl,
             XmNhighlightThickness, 2,
-            XmNshadowThickness, 0,
+            XmNshadowThickness, 1,
             XmNbackground, 0,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
@@ -1998,14 +1998,14 @@ void EditHighlightStyles(const char *initialStyle)
     XtAddCallback(HSDialog.colorW, XmNvalueChangedCallback,
           updateCGchooser, fgColorChooserButton);
     
-    //Dimension shadowThickness = 1;
-    //XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
+    Dimension shadowThickness = 1;
+    XtVaGetValues(HSDialog.colorW, XmNshadowThickness, &shadowThickness, NULL);
     XtVaSetValues(fgColorChooserButton,
 #if XmVersion > 2001
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.colorW,
 #endif
-            //XmNshadowThickness, shadowThickness,
+            XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.colorW, NULL);
     
     bgColorLbl = XtVaCreateManagedWidget("bgColorLbl", xmLabelGadgetClass, form,
@@ -2026,7 +2026,7 @@ void EditHighlightStyles(const char *initialStyle)
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, bgColorLbl,
             XmNhighlightThickness, 2,
-            XmNshadowThickness, 0,
+            XmNshadowThickness, 1,
             XmNbackground, 0,
             XmNlabelString, s1 = XmStringCreateSimple("    "),
             NULL);
@@ -2051,7 +2051,7 @@ void EditHighlightStyles(const char *initialStyle)
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, HSDialog.bgColorW,
 #endif
-            //XmNshadowThickness, shadowThickness,
+            XmNshadowThickness, shadowThickness,
             XmNuserData, HSDialog.bgColorW, NULL);
     
     fontLbl = XtVaCreateManagedWidget("fontLbl", xmLabelGadgetClass, form,
@@ -2138,7 +2138,7 @@ void EditHighlightStyles(const char *initialStyle)
 	    XmNtopOffset, HS_H_MARGIN,
  	    XmNrightAttachment, XmATTACH_FORM,
 	    XmNbottomAttachment, XmATTACH_WIDGET,
-    	    XmNbottomWidget, closeBtn, 0,
+    	    XmNbottomWidget, closeBtn,
 	    XmNbottomOffset, HS_H_MARGIN, NULL);
     
     ac = 0;

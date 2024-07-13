@@ -32,13 +32,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef VMS
-#include <lib$routines.h>
-#include ssdef
-#include syidef
-#include "../util/VMSparam.h"
-#include "../util/VMSutils.h"
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>

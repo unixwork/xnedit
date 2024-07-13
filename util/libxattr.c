@@ -36,13 +36,34 @@
 #define LIST_ARRAY_LEN 8
 #define ATTR_BUF_LEN 1024
 
-#define ARRAY_ADD(array, pos, len, obj) if(pos >= len) { \
-        len *= 2; /* TODO: missing error handling for realloc() */ \
-        array = realloc(array, len * sizeof(char*)); \
-    } \
-    array[pos] = obj; \
-    pos++;
 
+static int strarray_add(char ***array_ptr, size_t *pos, size_t *len, char *str) {
+    char **array = *array_ptr;
+    size_t array_pos = *pos;
+    size_t array_len = *len;
+    if(array_pos >= array_len) {
+        size_t newlen = array_len * 2;
+        char **new_array = realloc(array, newlen * sizeof(char*));
+        if(!new_array) {
+            return 1;
+        }
+        *len = array_len;
+        array = new_array;
+        *array_ptr = new_array;
+    }
+    
+    array[array_pos] = str;
+    *pos = array_pos + 1;
+    
+    return 0;
+}
+
+static void strarray_free(char **array, size_t nelm) {
+    for(size_t i=0;i<nelm;i++) {
+        free(array[i]);
+    }
+    free(array);
+}
 
 #ifdef __linux__
 #define XATTR_SUPPORTED
@@ -52,18 +73,29 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
     size_t arraylen = LIST_ARRAY_LEN;
     size_t arraypos = 0;
     char **array = malloc(LIST_ARRAY_LEN * sizeof(char*));
+    if(!array) {
+        *nelm = -1;
+        return NULL;
+    }
     
     char *begin = buf;
     char *name = NULL;
     for(int i=0;i<length;i++) {
         if(!name && buf[i] == '.') {
-            int nslen = (buf+i-begin);
-            //printf("%.*s\n", nslen, begin);
             name = buf + i + 1;
         }
         if(buf[i] == '\0') {
             char *attrname = strdup(name);
-            ARRAY_ADD(array, arraypos, arraylen, attrname);
+            if(!attrname) {
+                strarray_free(array, arraypos);
+                *nelm = -1;
+                return NULL;
+            }
+            if(strarray_add(&array, &arraypos, &arraylen, attrname)) {
+                strarray_free(array, arraypos);
+                *nelm = -1;
+                return NULL;
+            }
             begin = buf + i + 1;
             name = 0;
         }
@@ -80,6 +112,10 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
 
 char ** xattr_list(const char *path, ssize_t *nelm) {
     char *list = malloc(LIST_BUF_LEN);
+    if(!list) {
+        *nelm = -1;
+        return NULL;
+    }
     ssize_t len = listxattr(path, list, LIST_BUF_LEN);
     if(len == -1) {
         switch(errno) {
@@ -88,7 +124,13 @@ char ** xattr_list(const char *path, ssize_t *nelm) {
                 ssize_t newlen = listxattr(path, NULL, 0);
                 if(newlen > 0) {
                     // second try
-                    list = realloc(list, newlen);
+                    char *new_list = realloc(list, newlen);
+                    if(!new_list) {
+                        free(list);
+                        *nelm = -1;
+                        return NULL;
+                    }
+                    list = new_list;
                     len = listxattr(path, list, newlen);
                     if(len != -1) {
                         // this time it worked
@@ -113,6 +155,9 @@ static char* name2nsname(const char *name) {
     // add the 'user' namespace to the name
     size_t namelen = strlen(name);
     char *attrname = malloc(8 + namelen);
+    if(!attrname) {
+        return NULL;
+    }
     memcpy(attrname, "user.", 5);
     memcpy(attrname+5, name, namelen + 1);
     return attrname;
@@ -120,16 +165,30 @@ static char* name2nsname(const char *name) {
 
 char * xattr_get(const char *path, const char *attr, ssize_t *len) {
     char *attrname = name2nsname(attr);
+    if(!attrname) {
+        *len = -1;
+        return NULL;
+    }
     
     char *buf = malloc(ATTR_BUF_LEN);
-    ssize_t vlen = getxattr(path, attrname, buf, ATTR_BUF_LEN);
+    if(!buf) {
+        *len = -1;
+        free(attrname);
+        return NULL;
+    }
+    ssize_t vlen = getxattr(path, attrname, buf, ATTR_BUF_LEN - 1);
     if(vlen < 0) {
         switch(errno) {
             case ERANGE: {
                 ssize_t attrlen = getxattr(path, attrname, NULL, 0);
                 if(attrlen > 0) {
                     free(buf);
-                    buf = malloc(attrlen);
+                    buf = malloc(attrlen + 1);
+                    if(!buf) {
+                        *len = -1;
+                        free(attrname);
+                        return NULL;
+                    }
                     vlen = getxattr(path, attrname, buf, attrlen);
                     if(vlen > 0) {
                         break;
@@ -144,6 +203,7 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
             }
         }
     }
+    buf[vlen] = 0;
     
     free(attrname);
     *len = vlen;
@@ -152,6 +212,9 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
 
 int xattr_set(const char *path, const char *name, const void *value, size_t len) {
     char *attrname = name2nsname(name);
+    if(!attrname) {
+        return 1;
+    }
     int ret = setxattr(path, attrname, value, len, 0);
     free(attrname);
     return ret;
@@ -159,6 +222,9 @@ int xattr_set(const char *path, const char *name, const void *value, size_t len)
 
 int xattr_remove(const char *path, const char *name) {
     char *attrname = name2nsname(name);
+    if(!attrname) {
+        return 1;
+    }
     int ret = removexattr(path, attrname);
     free(attrname);
     return ret;
@@ -179,7 +245,11 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
     for(int i=0;i<length;i++) {
         if(buf[i] == '\0') {
             char *attrname = strdup(name);
-            ARRAY_ADD(array, arraypos, arraylen, attrname);
+            if(strarray_add(&array, &arraypos, &arraylen, attrname)) {
+                strarray_free(array, arraypos);
+                *nelm = -1;
+                return NULL;
+            }
             name = buf + i + 1;
         }
     }
@@ -195,6 +265,10 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
 
 char ** xattr_list(const char *path, ssize_t *nelm) {
     char *list = malloc(LIST_BUF_LEN);
+    if(!list) {
+        *nelm = -1;
+        return NULL;
+    }
     ssize_t len = listxattr(path, list, LIST_BUF_LEN, 0);
     if(len == -1) {
         switch(errno) {
@@ -203,7 +277,13 @@ char ** xattr_list(const char *path, ssize_t *nelm) {
                 ssize_t newlen = listxattr(path, NULL, 0, 0);
                 if(newlen > 0) {
                     // second try
-                    list = realloc(list, newlen);
+                    char *new_list = realloc(list, newlen);
+                    if(!new_list) {
+                        free(list);
+                        *nelm = -1;
+                        return NULL;
+                    }
+                    list = new_list;
                     len = listxattr(path, list, newlen, 0);
                     if(len != -1) {
                         // this time it worked
@@ -232,13 +312,18 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
         return NULL;
     }
     
-    char *buf = malloc(attrlen);
+    char *buf = malloc(attrlen + 1);
+    if(!buf) {
+        *len = -1;
+        return NULL;
+    }
     ssize_t vlen = getxattr(path, attr, buf, attrlen, 0, 0);
     if(vlen < 0) {
         *len = -1;
         free(buf);
         return NULL;
     }
+    buf[vlen] = 0;
     
     *len = vlen;
     return buf;
@@ -291,6 +376,11 @@ char ** xattr_list(const char *path, ssize_t *nelm) {
     size_t arraylen = LIST_ARRAY_LEN;
     size_t arraypos = 0;
     char **array = malloc(LIST_ARRAY_LEN * sizeof(char*));
+    if(!array) {
+        closedir(dir);
+        *nelm = -1;
+        return NULL;
+    }
     
     struct dirent *ent;
     while((ent = readdir(dir)) != NULL) {
@@ -298,7 +388,12 @@ char ** xattr_list(const char *path, ssize_t *nelm) {
             continue;
         }
         char *name = strdup(ent->d_name);
-        ARRAY_ADD(array, arraypos, arraylen, name);
+        if(strarray_add(&array, &arraypos, &arraylen, name)) {
+            strarray_free(array, arraypos);
+            *nelm = -1;
+            closedir(dir);
+            return NULL;
+        }
     }
     closedir(dir);
     
@@ -321,7 +416,11 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
     }
     
     size_t bufsize = (size_t)s.st_size;
-    char *buf = malloc(bufsize);
+    char *buf = malloc(bufsize + 1);
+    if(!buf) {
+        close(attrfile);
+        return NULL;
+    }
     
     char *b = buf;
     size_t cur = 0;
@@ -339,6 +438,7 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
         return NULL;
     }
     
+    buf[cur] = 0;
     *len = (ssize_t)bufsize;
     return buf;    
 }
@@ -389,15 +489,27 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
     size_t arraylen = LIST_ARRAY_LEN;
     size_t arraypos = 0;
     char **array = malloc(LIST_ARRAY_LEN * sizeof(char*));
+    if(!array) {
+        *nelm = -1;
+        return NULL;
+    }
     
-    char *name = buf;
     for(int i=0;i<length;i++) {
-        char namelen = buf[i];
+        int namelen = buf[i];
         char *name = buf + i + 1;
         char *attrname = malloc(namelen + 1);
+        if(!attrname) {
+            strarray_free(array, arraypos);
+            *nelm = -1;
+            return NULL;
+        }
         memcpy(attrname, name, namelen);
         attrname[namelen] = 0;
-        ARRAY_ADD(array, arraypos, arraylen, attrname);
+        if(strarray_add(&array, &arraypos, &arraylen, attrname)) {
+            strarray_free(array, arraypos);
+            *nelm = -1;
+            return NULL;
+        }
         i += namelen;
     }
     
@@ -421,6 +533,9 @@ char ** xattr_list(const char *path, ssize_t *nelm) {
     }
     
     char *list = malloc(lslen);
+    if(!list) {
+        return NULL;
+    }
     ssize_t len = extattr_list_file(path, EXTATTR_NAMESPACE_USER, list, lslen);
     if(len == -1) {
         free(list);
@@ -440,21 +555,21 @@ char * xattr_get(const char *path, const char *attr, ssize_t *len) {
         return NULL;
     }
     
-    char *buf = malloc(attrlen);
+    char *buf = malloc(attrlen + 1);
     ssize_t vlen = extattr_get_file(path, EXTATTR_NAMESPACE_USER, attr, buf, attrlen);
     if(vlen < 0) {
         *len = -1;
         free(buf);
         return NULL;
     }
-    
+    buf[attrlen] = 0;
     *len = vlen;
     return buf;
 }
 
 int xattr_set(const char *path, const char *name, const void *value, size_t len) {
     int ret = extattr_set_file(path, EXTATTR_NAMESPACE_USER, name, value, len);
-    return ret > 0 ? 0 : -1;
+    return ret >= 0 ? 0 : ret;
 }
 
 int xattr_remove(const char *path, const char *name) {

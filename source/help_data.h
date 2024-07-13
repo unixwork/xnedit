@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Feb 13, 2024 (Do NOT edit!)
+                 Generated on Apr 23, 2024 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2024 Mark Edel                                            *
@@ -61,6 +61,7 @@ char *HelpTitles[] = {
     "Advanced Topics",
     "Example Regular Expressions",
     "Shell Commands and Filters",
+    "Input/Output Filters",
     "Learn/Replay",
     "Macro Language",
     "Macro Subroutines",
@@ -1760,6 +1761,28 @@ static char * htxt_shell [] = {
 "The X resource called nedit.shell (See \"\01QCustomizing XNEdit\01I\") determines which ",
 "Unix shell is used to execute commands.  The default value for this resource ",
 "is the user's login shell. ",
+NULL
+};
+
+static char * htxt_filters [] = {
+"\01IInput/Output Filters are filter commands executed when opening or saving ",
+"files. ",
+"\n\n",
+"File Pattern: A glob pattern used to automatically select filters in the ",
+"Open/Save File dialog. When a file that matches a file pattern is selected, ",
+"the filter is automatically applied. ",
+"\n\n",
+"Default Extension: The default file extension is automatically added to a file ",
+"name when a filter is selected in the \"Save File As\" dialog. ",
+"\n\n",
+"Input Filter Command: The command line executed when a filter is selected in ",
+"the Open File dialog and the file is opened. The command receives the file ",
+"content as input, and a document with the command's output is opened. ",
+"\n\n",
+"Output Filter Command: The command line executed when a file is saved and a ",
+"filter was selected, either in the \"Save File As\" dialog or previously when ",
+"the document was opened with a filter. The command receives the document ",
+"content as input, and the output of the command is written to the file. ",
 NULL
 };
 
@@ -5759,6 +5782,7 @@ static char **HelpText[] = {
     htxt_advancedTopics,
     htxt_examples,
     htxt_shell,
+    htxt_filters,
     htxt_learn,
     htxt_macro_lang,
     htxt_macro_subrs,
@@ -5810,28 +5834,29 @@ HelpMenu H_M [] =
     { &H_M[24], 2, HELP_EXAMPLES,            "examples",            0, 'E', NULL },
     { &H_M[25], 1, HELP_none,                "extensions",          0, 'M', "Macro/Shell Extensions" },
     { &H_M[26], 2, HELP_SHELL,               "shell",               1, 'S', NULL },
-    { &H_M[27], 2, HELP_LEARN,               "learn",               0, 'L', NULL },
-    { &H_M[28], 2, HELP_MACRO_LANG,          "macro_lang",          0, 'M', NULL },
-    { &H_M[29], 2, HELP_MACRO_SUBRS,         "macro_subrs",         0, 'a', NULL },
-    { &H_M[30], 2, HELP_RANGESET,            "rangeset",            0, 'R', NULL },
-    { &H_M[31], 2, HELP_HILITEINFO,          "hiliteInfo",          0, 'H', NULL },
-    { &H_M[32], 2, HELP_ACTIONS,             "actions",             0, 'A', NULL },
-    { &H_M[33], 1, HELP_none,                "customizing",         0, 'C', "Customizing" },
-    { &H_M[34], 2, HELP_CUSTOMIZE,           "customize",           0, 'C', NULL },
-    { &H_M[35], 2, HELP_PREFERENCES,         "preferences",         0, 'P', NULL },
-    { &H_M[36], 2, HELP_RESOURCES,           "resources",           0, 'X', NULL },
-    { &H_M[37], 2, HELP_BINDING,             "binding",             0, 'K', NULL },
-    { &H_M[38], 2, HELP_PATTERNS,            "patterns",            0, 'H', NULL },
-    { &H_M[39], 2, HELP_SMART_INDENT,        "smart_indent",        0, 'S', NULL },
-    { &H_M[40], 1, HELP_COMMAND_LINE,        "command_line",        0, 'X', NULL },
-    { &H_M[41], 1, HELP_SERVER,              "server",              0, 'C', NULL },
-    { &H_M[42], 1, HELP_RECOVERY,            "recovery",            0, 'a', NULL },
-    { &H_M[43], 1, HELP_none,                "separator1",          0, '-', NULL },
-    { &H_M[44], 1, HELP_VERSION,             "version",             0, 'V', NULL },
-    { &H_M[45], 1, HELP_DISTRIBUTION,        "distribution",        0, 'L', NULL },
-    { &H_M[46], 1, HELP_SUPPORT,             "support",             0, 'S', NULL },
-    { &H_M[47], 1, HELP_DEFECTS,             "defects",             0, 'P', NULL },
-    { &H_M[48], 1, HELP_TABS_DIALOG,         "tabs_dialog",         9, 'T', NULL },
+    { &H_M[27], 2, HELP_FILTERS,             "filters",             0, 'I', NULL },
+    { &H_M[28], 2, HELP_LEARN,               "learn",               0, 'L', NULL },
+    { &H_M[29], 2, HELP_MACRO_LANG,          "macro_lang",          0, 'M', NULL },
+    { &H_M[30], 2, HELP_MACRO_SUBRS,         "macro_subrs",         0, 'a', NULL },
+    { &H_M[31], 2, HELP_RANGESET,            "rangeset",            0, 'R', NULL },
+    { &H_M[32], 2, HELP_HILITEINFO,          "hiliteInfo",          0, 'H', NULL },
+    { &H_M[33], 2, HELP_ACTIONS,             "actions",             0, 'A', NULL },
+    { &H_M[34], 1, HELP_none,                "customizing",         0, 'C', "Customizing" },
+    { &H_M[35], 2, HELP_CUSTOMIZE,           "customize",           0, 'C', NULL },
+    { &H_M[36], 2, HELP_PREFERENCES,         "preferences",         0, 'P', NULL },
+    { &H_M[37], 2, HELP_RESOURCES,           "resources",           0, 'X', NULL },
+    { &H_M[38], 2, HELP_BINDING,             "binding",             0, 'K', NULL },
+    { &H_M[39], 2, HELP_PATTERNS,            "patterns",            0, 'H', NULL },
+    { &H_M[40], 2, HELP_SMART_INDENT,        "smart_indent",        0, 'S', NULL },
+    { &H_M[41], 1, HELP_COMMAND_LINE,        "command_line",        0, 'X', NULL },
+    { &H_M[42], 1, HELP_SERVER,              "server",              0, 'C', NULL },
+    { &H_M[43], 1, HELP_RECOVERY,            "recovery",            0, 'a', NULL },
+    { &H_M[44], 1, HELP_none,                "separator1",          0, '-', NULL },
+    { &H_M[45], 1, HELP_VERSION,             "version",             0, 'V', NULL },
+    { &H_M[46], 1, HELP_DISTRIBUTION,        "distribution",        0, 'L', NULL },
+    { &H_M[47], 1, HELP_SUPPORT,             "support",             0, 'S', NULL },
+    { &H_M[48], 1, HELP_DEFECTS,             "defects",             0, 'P', NULL },
+    { &H_M[49], 1, HELP_TABS_DIALOG,         "tabs_dialog",         9, 'T', NULL },
     { NULL,     1, HELP_CUSTOM_TITLE_DIALOG, "custom_title_dialog", 9, 'C', NULL }
 };
 
@@ -5842,4 +5867,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev 17d5172 2024-02-13\n";
+static const char * NEditVersion = "XNEdit rev aa74660 2024-04-21\n";

@@ -46,6 +46,7 @@
 #include "windowTitle.h"
 #include "server.h"
 #include "tags.h"
+#include "filter.h"
 #include "../util/prefFile.h"
 #include "../util/misc.h"
 #include "../util/DialogF.h"
@@ -393,6 +394,26 @@ static struct prefData {
     int isrcFindIconSize;
     int isrcClearIconSize;
     
+    
+    /*  The accumulated list of undo operations can potentially consume huge
+        amounts of memory.  These tuning parameters determine how much undo infor-
+        mation is retained.  Normally, the list is kept between UNDO_OP_LIMIT and
+        UNDO_OP_TRIMTO in length (when the list reaches UNDO_OP_LIMIT, it is
+        trimmed to UNDO_OP_TRIMTO then allowed to grow back to UNDO_OP_LIMIT).
+        When there are very large amounts of saved text held in the list,
+        UNDO_WORRY_LIMIT and UNDO_PURGE_LIMIT take over and cause the list to
+        be trimmed back further to keep its size down. */
+    int undoPurgeLimit;         /* If undo list gets this large (in bytes),
+				   trim it to length of UNDO_PURGE_TRIMTO */
+    int undoPurgeTrimTo;        /* Amount to trim the undo list in a purge */
+    int undoWorryLimit;         /* If undo list gets this large (in bytes),
+				   trim it to length of UNDO_WORRY_TRIMTO */
+    int undoWorryTrimTo;        /* Amount to trim the undo list when memory
+				   use begins to get serious */
+    int undoOpLimit;            /* normal limit for length of undo list */
+    int undoOpTrimTo;           /* size undo list is normally trimmed to
+				   when it exceeds UNDO_OP_TRIMTO in length */
+    
     int zoomStep;
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
@@ -451,6 +472,7 @@ static struct {
     char *smartIndentCommon;
     char *shell;
     char *colorProfiles;
+    char *filter;
 } TempStringPrefs;
 
 /* preference descriptions for SavePreferences and RestorePreferences. */
@@ -975,6 +997,18 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
+    {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
+    	&PrefData.undoPurgeLimit, NULL, True},
+    {"undoPurgeTrimTo", "UndoPurgeTrimTo", PREF_INT, "1",
+    	&PrefData.undoPurgeTrimTo, NULL, True},
+    {"undoWorryLimit", "UndoWorryLimit", PREF_INT, "8000000",
+    	&PrefData.undoWorryLimit, NULL, True},
+    {"undoWorryTrimTo", "UndoWorryTrimTo", PREF_INT, "5",
+    	&PrefData.undoWorryTrimTo, NULL, True},
+    {"undoOpLimit", "UndoOpLimit", PREF_INT, "600",
+    	&PrefData.undoOpLimit, NULL, True},
+    {"undoOpTrimTo", "UndoOpTrimTo", PREF_INT, "200",
+    	&PrefData.undoOpTrimTo, NULL, True},
     {"sortTabs", "SortTabs", PREF_BOOLEAN, "False",
     	&PrefData.sortTabs, NULL, True},
     {"tabBar", "TabBar", PREF_BOOLEAN, "True",
@@ -1176,6 +1210,10 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.iconSize, NULL, True} ,
     {"lockEncodingError", "LockEncodingError", PREF_BOOLEAN, "True",
             &PrefData.lockEncodingError, NULL, True},
+    {"filter", "Filter", PREF_ALLOC_STRING,
+      "gzip;*.gz;.gz;gzip -d;gzip\n"
+      "bzip2;*.bz;.bz;bzip2 -d;bzip2",
+      &TempStringPrefs.filter, NULL, True} ,
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -1482,10 +1520,15 @@ static void translatePrefFormats(int convertOld, int fileVer)
     } else {
         ParseColorProfiles("");
     }
+    if(TempStringPrefs.filter) {
+        ParseFilterSettings(TempStringPrefs.filter);
+        NEditFree(TempStringPrefs.filter);
+        TempStringPrefs.filter = NULL;
+    }
     if (PrefData.iconSize) {
         parseIconSize(PrefData.iconSize);
     }
-    
+     
     PrefData.font = FontFromName(TheDisplay, PrefData.fontString);
     PrefData.boldFont = FontFromName(TheDisplay, PrefData.boldFontString);
     PrefData.italicFont = FontFromName(TheDisplay, PrefData.italicFontString);
@@ -1557,6 +1600,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     TempStringPrefs.smartIndent = WriteSmartIndentString();
     TempStringPrefs.smartIndentCommon = WriteSmartIndentCommonString();
     TempStringPrefs.colorProfiles = WriteColorProfilesString();
+    TempStringPrefs.filter = WriteFilterString();
     strcpy(PrefData.fileVersion, PREF_FILE_VERSION);
 
     if (!SavePreferences(XtDisplay(parent), prefFileName, HeaderText,
@@ -1585,6 +1629,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     TempStringPrefs.smartIndent = NULL;
     TempStringPrefs.smartIndentCommon = NULL;
     TempStringPrefs.colorProfiles = NULL;
+    NEditFree(TempStringPrefs.filter);
     
     PrefsHaveChanged = False;
 }
@@ -2520,6 +2565,66 @@ char* WriteColorProfilesString(void)
     out[size] = 0;
     
     return out;
+}
+
+void SetPrefUndoPurgeLimit(int limit)
+{
+    setIntPref(&PrefData.undoPurgeLimit, limit);
+}
+
+int GetPrefUndoPurgeLimit(void) 
+{
+    return PrefData.undoPurgeLimit;
+}
+
+void SetPrefUndoPurgeTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoPurgeTrimTo, limit);
+}
+
+int GetPrefUndoPurgeTrimTo(void)
+{
+    return PrefData.undoPurgeTrimTo;
+}
+
+void SetPrefUndoWorryLimit(int limit)
+{
+    setIntPref(&PrefData.undoWorryLimit, limit);
+}
+
+int GetPrefUndoWorryLimit(void)
+{
+    return PrefData.undoWorryLimit;
+}
+
+void SetPrefUndoWorryTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoWorryTrimTo, limit);
+}
+
+int GetPrefUndoWorryTrimTo(void)
+{
+    return PrefData.undoWorryTrimTo;
+}
+
+void SetPrefUndoOpLimit(int limit)
+{
+    setIntPref(&PrefData.undoOpLimit, limit);
+}
+
+int GetPrefUndoOpLimit(void)
+{
+    return PrefData.undoOpLimit;
+}
+
+void SetPrefUndoOpTrimTo(int limit)
+{
+    setIntPref(&PrefData.undoOpTrimTo, limit);
+}
+
+int GetPrefUndoOpTrimTo(void)
+{
+    return PrefData.undoOpTrimTo;
 }
 
 
@@ -4238,7 +4343,7 @@ void ChooseFonts(WindowInfo *window, int forWindow)
 
     fd->primaryW = XtVaCreateManagedWidget("primary", xmTextWidgetClass,
     	    primaryForm,
-    	    XmNcolumns, 70,
+    	    XmNcolumns, 30,
     	    XmNmaxLength, MAX_FONT_LEN,
 	    XmNleftAttachment, XmATTACH_WIDGET,
 	    XmNleftWidget, primaryBtn,
@@ -6320,7 +6425,7 @@ static Widget addColorGroup( Widget parent, const char *name, char mnemonic,
      
     *fieldW = XtVaCreateManagedWidget(name, xmTextWidgetClass,
           parent,
-          XmNcolumns, MAX_COLOR_LEN-1,
+          XmNcolumns, 12,
           XmNmaxLength, MAX_COLOR_LEN-1,
           XmNleftAttachment, XmATTACH_POSITION,
           XmNleftPosition, leftPos,
@@ -6563,7 +6668,7 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     XtSetArg(args[n], XmNleftWidget, down); n++;
     XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
     XtSetArg(args[n], XmNtopWidget, remove); n++;
-    XtSetArg(args[n], XmNcolumns, 20); n++;
+    XtSetArg(args[n], XmNcolumns, 8); n++;
     Widget textfield = XmCreateText(cd->btnForm, "irText", args, n);
     XtManageChild(textfield);
     
@@ -7181,7 +7286,7 @@ void ChooseColors(WindowInfo *window)
             XmNbottomAttachment, XmATTACH_FORM,
             XmNtopOffset, 3*h + 3*MARGIN_SPACING,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
-      
+    
     /*
      * Tab 2: Indent Rainbow Colors
      */
@@ -7242,7 +7347,7 @@ void ChooseColors(WindowInfo *window)
             &(cd->ansiWhiteW), &(cd->ansiWhiteErrW), tmpW, 1, 49, cd );
 
     /* The right column (backgrounds) */
-    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "BrightBlack",
+    tmpW = addColorGroup( tabForm, "ansiBrightBlack", 'T', "Bright Black",
             &(cd->ansiBrightBlackW), &(cd->ansiBrightBlackErrW), topW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "ansiBrightRed", 'B', "Bright Red",
             &(cd->ansiBrightRedW), &(cd->ansiBrightRedErrW), tmpW, 51, 99, cd );
@@ -7353,7 +7458,7 @@ void ChooseColors(WindowInfo *window)
     
     /* Handle mnemonic selection of buttons and focus to dialog */
     AddDialogMnemonicHandler(form, FALSE);
-    
+        
     /* put up dialog */
     ManageDialogCenteredOnPointer(form);
 }

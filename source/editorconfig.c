@@ -32,7 +32,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "../util/filedialog.h" /* ParentPath, ConcatPath */
+#include "../util/pathutils.h"
 #include "../util/ec_glob.h"
 
 #define EC_BUFSIZE 4096

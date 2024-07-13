@@ -104,30 +104,7 @@ const char *const knownBadLessTif[] = {
 
 static enum MotifStability GetLessTifStability(void)
 {
-    int i;
-    const char *rev = NULL;
-    
-    /* We assume that the lesstif version is the string after the last
-        space. */
-
-    rev = strrchr(LesstifVERSION_STRING, ' ');
-
-    if (rev == NULL)
-        return MotifUnknown;
-
-    rev += 1;
-
-    /* Check for known good LessTif versions */
-    for (i = 0; knownGoodLesstif[i]; i++)
-        if (!strcmp(rev, knownGoodLesstif[i]))
-            return MotifKnownGood;
-
-    /* Check for known bad LessTif versions */
-    for (i = 0; knownBadLessTif[i]; i++) 
-        if (!strcmp(rev, knownBadLessTif[i]))
-            return MotifKnownBad;
-    
-    return MotifUnknown;
+    return MotifKnownBad;
 }
 
 #else
@@ -151,7 +128,7 @@ static enum MotifStability GetOpenMotifStability(void)
     {
         result = MotifKnownBad;
     }
-    else if (XmFullVersion >= 200203 && XmFullVersion <= 200304) /* 2.2.3 - 2.3 is good */
+    else if (XmFullVersion >= 200203 && XmFullVersion <= 200308) /* 2.2.3 - 2.3.8 are good */
     {
         result = MotifKnownGood;
     }
@@ -191,6 +168,7 @@ const char *GetMotifStableVersions(void)
     strcat(msg, "OpenMotif 2.2.3\n");
     strcat(msg, "OpenMotif 2.3\n");
     strcat(msg, "OpenMotif 2.3.4\n");
+    strcat(msg, "Motif 2.3.8\n");
 
     return msg;
 }

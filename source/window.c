@@ -66,20 +66,14 @@
 #include "../Microline/XmL/Folder.h"
 #include "../util/nedit_malloc.h"
 #include "../util/textfield.h"
+#include "../util/fontsel.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <langinfo.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#include "../util/clearcase.h"
-#endif /*VMS*/
 #include <limits.h>
 #include <math.h>
 #include <ctype.h>
@@ -370,6 +364,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     window->opened = False;
     window->colorProfile = colorProfile;
+    window->wrapModeNoneForced = False;
     
     /* initialize window structure */
     /* + Schwarzenberg: should a 
@@ -409,6 +404,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->posEncErrors = 0;
     
     window->encoding[0] = '\0';
+    window->filter = NULL;
     const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
@@ -953,7 +949,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* realize all of the widgets in the new window */
     RealizeWithoutForcingPosition(winShell);
     XmProcessTraversal(text, XmTRAVERSE_CURRENT);
-
+    
     /* Make close command in window menu gracefully prompt for close */
     AddMotifCloseCallback(winShell, (XtCallbackProc)closeCB, window);
     
@@ -1392,10 +1388,8 @@ void CloseWindow(WindowInfo *window)
        window), leave the window alive until the macro completes */
     keepWindow = !MacroWindowCloseActions(window);
     
-#ifndef VMS
     /* Kill shell sub-process and free related memory */
     AbortShellCommand(window);
-#endif /*VMS*/
     
     /* Unload the default tips files for this language mode if necessary */
     UnloadLanguageModeTipsFile(window);
@@ -1546,6 +1540,8 @@ void CloseWindow(WindowInfo *window)
     FontUnref(window->italicFont);
     FontUnref(window->boldItalicFont);
     
+    NEditFree(window->filter);
+    
     if(window->encErrors) {
         NEditFree(window->encErrors);
     }
@@ -1586,9 +1582,6 @@ WindowInfo *FindWindowWithFile(const char *name, const char *path)
 {
     WindowInfo* window;
 
-/* I don't think this algorithm will work on vms so I am
-   disabling it for now */
-#ifndef VMS
     if (!GetPrefHonorSymlinks())
     {
         char fullname[MAXPATHLEN + 1];
@@ -1608,7 +1601,6 @@ WindowInfo *FindWindowWithFile(const char *name, const char *path)
         }   /*  else:  Not an error condition, just a new file. Continue to check
                 whether the filename is already in use for an unsaved document.  */
     }
-#endif
 
     for (window = WindowList; window != NULL; window = window->next) {
         if (!strcmp(window->filename, name) && !strcmp(window->path, path)) {
@@ -2507,6 +2499,9 @@ void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *te
     /* Redo any syntax highlighting */
     if (window->highlightData != NULL)
         UpdateHighlightStyles(window, True);
+    
+    /* Update FontSel colors */
+    FontSelSetColors(textFgC, textBgPix);
 }
 
 static void LoadColorProfile(Widget w, ColorProfile *profile)
@@ -2634,6 +2629,12 @@ void SetOverstrike(WindowInfo *window, int overstrike)
 */
 void SetAutoWrap(WindowInfo *window, WrapStyle state)
 {
+    if(window->wrapModeNoneForced) {
+        // this is only true if a large file was opened (for a short time)
+        // it is set to False after the file is fully opened
+        return;
+    }
+    
     int i;
     int autoWrap = state == NEWLINE_WRAP, contWrap = state == CONTINUOUS_WRAP;
 
@@ -3073,9 +3074,7 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
                it works on selections in external applications.
                Desensitizing it if there's no NEdit selection 
                disables this feature. */
-#ifndef VMS
             XtSetSensitive(window->filterItem, selected);
-#endif
 
             DimSelectionDepUserMenuItems(window, selected);
             if (window->replaceDlog != NULL && XtIsManaged(window->replaceDlog))
@@ -3393,8 +3392,7 @@ static int updateGutterWidth(WindowInfo* window)
         newColsDiff = reqCols - maxCols;
 
         XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
-        XftFont *xftFont = FontDefault(fs);
-        fontWidth = xftFont->max_advance_width;
+        fontWidth = fs->maxWidth;
 
         XtVaGetValues(window->shell, XmNwidth, &windowWidth, NULL);
         XtVaSetValues(window->shell,
@@ -3635,7 +3633,7 @@ void UpdateWMSizeHints(WindowInfo *window)
     XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
     font = FontDefault(fs);
     fontHeight = textD->ascent + textD->descent;
-    fontWidth = font->max_advance_width;
+    fontWidth = fs->maxWidth; //font->max_advance_width;
 
     /* Find the base (non-expandable) width and height of the editor window.
     
@@ -3672,7 +3670,7 @@ void UpdateWMSizeHints(WindowInfo *window)
     baseHeight = shellHeight - nRows * fontHeight;
 
     /* Set the size hints in the shell widget */
-    XtVaSetValues(window->shell, XmNwidthInc, font->max_advance_width,
+    XtVaSetValues(window->shell, XmNwidthInc, fs->maxWidth,
             XmNheightInc, fontHeight,
             XmNbaseWidth, baseWidth, XmNbaseHeight, baseHeight,
             XmNminWidth, baseWidth + fontWidth,
@@ -4129,6 +4127,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->filename, name);
     
     window->encoding[0] = '\0';
+    window->filter = NULL;
     const char *default_encoding = GetPrefDefaultCharset();
     if(default_encoding) {
         size_t defenc_len = strlen(default_encoding);
@@ -4882,9 +4881,7 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XmToggleButtonSetState(window->highlightCursorLineItem, window->highlightCursorLine, False);
     XmToggleButtonSetState(window->indentRainbowItem, window->indentRainbow, False);
     XmToggleButtonSetState(window->ansiColorsItem, window->ansiColors, False);
-#ifndef VMS
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
-#endif
     XmToggleButtonSetState(window->autoSaveItem, window->autoSave, False);
     XmToggleButtonSetState(window->overtypeModeItem, window->overstrike, False);
     XmToggleButtonSetState(window->matchSyntaxBasedItem, window->matchSyntaxBased, False);
@@ -5433,6 +5430,11 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     strcpy(window->path, orgWin->path);
     strcpy(window->filename, orgWin->filename);
     strcpy(window->encoding, orgWin->encoding);
+    
+    if(orgWin->filter) {
+        NEditFree(window->filter);
+        window->filter = NEditStrdup(orgWin->filter);
+    }
 
     ShowLineNumbers(window, orgWin->showLineNumbers);
 
@@ -5584,6 +5586,40 @@ static UndoInfo *cloneUndoItems(UndoInfo *orgList)
 }
 
 /*
+typedef struct WinGeometry {
+    int cols;
+    int rows;
+} WinGeometry;
+
+static WinGeometry WindowGetGeometry(WindowInfo *window)
+{
+    // get current window size
+    Dimension twWidth, twHeight;
+    int marginWidth, marginHeight, lineNumCols;
+    NFont *font;
+    XtVaGetValues(
+            window->textArea,
+            XmNwidth, &twWidth,
+            XmNheight, &twHeight,
+            textNXftFont, &font,
+            textNmarginWidth, &marginWidth,
+            textNmarginHeight, &marginHeight,
+            textNlineNumCols, &lineNumCols,
+            NULL);
+    int charWidth = font->maxWidth;
+    XftFont *xfont = FontDefault(font);
+    
+    twWidth -= marginWidth*2 + (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
+    twHeight -= marginHeight * 2;
+    
+    int currentCols = twWidth / charWidth;
+    int currentRows = twHeight / (xfont->ascent + xfont->descent);
+    
+    return (WinGeometry){ currentCols, currentRows };
+}
+*/
+
+/*
 ** spin off the document to a new window
 */
 WindowInfo *DetachDocument(WindowInfo *window)
@@ -5600,8 +5636,19 @@ WindowInfo *DetachDocument(WindowInfo *window)
     	RaiseDocument(win);
     }
     
+    //WinGeometry geometry = WindowGetGeometry(window);
+    //char geometryStr[64];
+    //snprintf(geometryStr, 64, "%dx%d", geometry.cols, geometry.rows);
+    
+    /* get current window size */
+    Dimension width, height;
+    XtVaGetValues(window->shell, XmNwidth, &width, XmNheight, &height, NULL);
+    
     /* Create a new window */
-    cloneWin = CreateWindow(window->filename, NULL, False);
+    cloneWin = CreateWindow(window->filename, NULL, False);  
+    
+    /* apply old window size to the new window */
+    XtVaSetValues(cloneWin->shell, XmNwidth, width, XmNheight, height, NULL);
     
     /* CreateWindow() simply adds the new window's pointer to the
        head of WindowList. We need to adjust the detached window's 
@@ -5966,6 +6013,16 @@ void SetEncoding(WindowInfo *window, const char *encoding)
     
     memcpy(window->encoding, encoding, len);
     window->encoding[len] = '\0';
+}
+
+void SetFilter(WindowInfo *window, const char *filter)
+{
+    if(window->filter == filter) {
+        // noop
+        return;
+    }
+    NEditFree(window->filter);
+    window->filter = NEditStrdup(filter);
 }
 
 #define MIN_FONT_SIZE 2

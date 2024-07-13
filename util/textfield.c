@@ -112,9 +112,11 @@ static Boolean convertSelection(
 static void loseSelection(Widget w, Atom *type);
 
 static XtResource resources[] = {
+    {XmNtextRenderTable, XmCTextRenderTable, XmRString,sizeof(XmString),XtOffset(TextFieldWidget, textfield.renderTable), XmRString, NULL},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
     {XmNvalueChangedCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.valueChangedCB), XmRCallback, NULL},
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
+    {XmNlosingFocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.losingFocusCB), XmRCallback, NULL},
     {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.activateCB), XmRCallback, NULL},
     {XmNblinkRate, XmCBlinkRate , XmRInt, sizeof(int), XtOffset(TextFieldWidget, textfield.blinkrate), XmRImmediate, (XtPointer)500}
 };
@@ -333,12 +335,69 @@ static void tfInitXft(TextFieldWidget w) {
     
 }
 
+static void get_default_font(TextFieldWidget tf, Display *dp) {
+    int ret;
+    char *resName;
+    XrmValue value;
+    char *resourceType = NULL;
+    char *rtFontName = NULL;
+    char *rtFontSize = NULL;
+    
+    // We don't use the Motif RenderTable directly, however in case the
+    // render table is configured to use Xft Fonts, we try to get the
+    // same font settings
+    //
+    // The textfield has a textRenderTable resource, which is just a string
+    // The textRenderTable name is used to get the rendertable font name
+    // and size from the resource database
+    
+    char resNameBuf[256];
+    resName = "defaultRT.fontName";
+    if(tf->textfield.renderTable) {
+        ret = snprintf(resNameBuf, 256, "%s.fontName", tf->textfield.renderTable);
+        if(ret < 256) {
+            resName = resNameBuf;
+        }
+    }
+    if(XrmGetResource(XtDatabase(dp), resName, NULL, &resourceType, &value)) {
+        if(!strcmp(resourceType, "String")) {
+            rtFontName = value.addr;
+        }
+    }
+    resName = "defaultRT.fontSize";
+    if(tf->textfield.renderTable) {
+        ret = snprintf(resNameBuf, 256, "%s.fontSize", tf->textfield.renderTable);
+        if(ret < 256) {
+            resName = resNameBuf;
+        }
+    }
+    if(XrmGetResource(XtDatabase(dp), "fixedRT.fontSize", NULL, &resourceType, &value)) {
+        if(!strcmp(resourceType, "String")) {
+            rtFontSize = value.addr;
+        }
+    }
+    
+    char buf[256];
+    char *fontname = TF_DEFAULT_FONT_NAME;
+    if(rtFontName && rtFontSize) {
+        ret = snprintf(buf, 256, "%s:size=%s", rtFontName, rtFontSize);
+        if(ret < 256) {
+            fontname = buf;
+        }
+    }
+    
+    defaultFont = FontFromName(dp, fontname);
+    if(!defaultFont) {
+        defaultFont = FontFromName(dp, TF_DEFAULT_FONT_NAME);
+    }
+}
+
 void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *attributes) {
     Display *dpy = XtDisplay(widget);
     TextFieldWidget text = (TextFieldWidget)widget;
     
     if(!defaultFont) {
-        defaultFont = FontFromName(dpy, TF_DEFAULT_FONT_NAME);
+        get_default_font(text, dpy);
     }
     if(!text->textfield.font) {
         text->textfield.font = defaultFont;
@@ -400,6 +459,9 @@ void textfield_destroy(Widget widget) {
     }
     if(tf->textfield.highlightBackground) {
         XFreeGC(XtDisplay(widget), tf->textfield.highlightBackground);
+    }
+    if(tf->textfield.blinkProcId != 0) {
+        XtRemoveTimeOut(tf->textfield.blinkProcId);
     }
 }
 
@@ -562,7 +624,7 @@ Boolean textfield_set_values(Widget old, Widget request, Widget neww, ArgList ar
     
     if(!new->textfield.font) {
         if(!defaultFont) {
-            defaultFont = FontFromName(XtDisplay(neww), TF_DEFAULT_FONT_NAME);
+            get_default_font(new, XtDisplay(neww));
         }
         new->textfield.font = defaultFont;
     }
@@ -685,7 +747,10 @@ static void insertText(TextFieldWidget tf, char *chars, int nchars, XEvent *even
     TFInsert(tf, chars, nchars);
     
     // value changed callback
-    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, event);
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_VALUE_CHANGED;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, &cb);
     
     
     tfRedrawText(tf);
@@ -714,13 +779,20 @@ static void insertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
 }
 
 static void actionAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
-    //TextFieldWidget tf = (TextFieldWidget)w;
+    TextFieldWidget tf = (TextFieldWidget)w;
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_ACTIVATE;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNactivateCallback, &cb);
 }
 
 static void deleteText(TextFieldWidget tf, int from, int to, XEvent *event) {
     TFDelete(tf, from, to);
     
-    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, event);
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_VALUE_CHANGED;
+    cb.event = event;
+    XtCallCallbacks((Widget)tf, XmNvalueChangedCallback, &cb);
     
     tf->textfield.pos = from;
     tfRedrawText(tf);
@@ -929,6 +1001,7 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
         XSetICFocus(tf->textfield.xic);
     }
     
+    //       focus/losingFocus events
     XmAnyCallbackStruct cb;
     cb.reason = XmCR_FOCUS;
     cb.event = event;
@@ -960,6 +1033,12 @@ static void focusOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     tf->textfield.cursorOn = 1;
     
     tf->textfield.hasFocus = 0;
+    
+    XmAnyCallbackStruct cb;
+    cb.reason = XmCR_LOSING_FOCUS;
+    cb.event = event;
+    XtCallCallbackList (w, tf->textfield.losingFocusCB, (XtPointer) &cb);
+    
     Region r = NULL;
     textfield_expose(w, event, r);
 }
@@ -1498,3 +1577,10 @@ void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i) {
     }
 } 
 
+void XNETextFieldSetSelection(Widget w, XmTextPosition first, XmTextPosition last, Time sel_time) {
+    TextFieldWidget tf = (TextFieldWidget)w;
+    tfSetSelection(tf, first, last);
+    if(XtIsRealized(w)) {
+        tfRedrawText(tf);
+    }
+}

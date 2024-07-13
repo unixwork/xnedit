@@ -28,6 +28,7 @@
 #define NEDIT_FONTSEL_H_INCLUDED
 
 #include <X11/Intrinsic.h>
+#include <X11/Xft/Xft.h>
 
 /*******************************************************************************
 *                                                                              *
@@ -68,5 +69,7 @@ char* FontNameAddAttribute(
         size_t len,
         const char *attribute,
         const char *value);
+
+void FontSelSetColors(XftColor fg, Pixel bg);
 
 #endif /* NEDIT_FONTSEL_H_INCLUDED */

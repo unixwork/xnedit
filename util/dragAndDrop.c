@@ -14,17 +14,10 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#include <types.h>
-#include <stat.h>
-#include <unixio.h>
-#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <fcntl.h>
-#endif /*VMS*/
 #include <Xm/Xm.h>
 #include <Xm/AtomMgr.h>
 #include "../source/textBuf.h"
@@ -157,11 +150,8 @@ void dataTransferCallback(Widget widget, XtPointer clientData, XtPointer callDat
 static void TransferDone(Widget transfer, XtPointer client_data,
         Atom *selection, Atom *type, XtPointer value,
         unsigned long *length, int *format) {
-    Arg args[16];
-    int n = 0;
     Widget widget = (Widget) client_data;
     String string = NULL;
-    char msg[256];
 
 #ifdef DBGS
     printf("TransferDone: Type %s format %d, Selection: %s\n",
@@ -340,11 +330,6 @@ void neditDropInit(Widget w, char *geometry) {
  * neditDropSetup -- Registers widget to accept drops of files.
  */
 void neditDropWidget(Widget w) {
-    static XtCallbackRec transferCBRec[] ={
-        {neditDropCallback, NULL},
-        {NULL, NULL}
-    };
-
 #ifndef CDE
     Arg args[10];
     Cardinal n = 0;
@@ -369,6 +354,10 @@ void neditDropWidget(Widget w) {
     n++;
     XmDropSiteRegister(w, args, n);
 #else
+    static XtCallbackRec transferCBRec[] ={
+        {neditDropCallback, NULL},
+        {NULL, NULL}
+    };
     DtDndVaDropRegister(w,
             DtDND_FILENAME_TRANSFER | DtDND_BUFFER_TRANSFER,
             XmDROP_LINK | XmDROP_COPY,

@@ -23,6 +23,7 @@ sources are:
 
  - ANSI C99 compiler
  - make utility (eg, GNU make)
+ - pkg-config
  - X11 development stuff (headers, libraries)
  - Xrender and Xft
  - iconv (*BSD, cygwin)
@@ -32,6 +33,28 @@ sources are:
 Optionally one may use:
  
  - yacc (or GNU bison)
+ 
+You can install all necessary dependencies with the following command.
+
+Debian/Ubuntu:
+
+    apt install gcc make pkgconf libmotif-dev
+
+EL/Fedora:
+
+    dnf install gcc make pkgconf motif-devel
+
+Arch:
+
+    pacman -S gcc make pkgconf openmotif
+
+FreeBSD:
+
+    pkg install pkgconf open-motif libiconv
+
+Solaris/OpenIndiana:
+
+    pkg install gcc make pkgconf motif
 
 To build XNEdit from source, run make from XNEdit's root directory and specify
 the build-configuration:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Olaf Wintermann
+ * Copyright 2024 Olaf Wintermann
  *
  * Permission is hereby granted, free of charge, to any person obtaining a 
  * copy of this software and associated documentation files (the "Software"), 
@@ -20,40 +20,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef XNEDIT_FILEDIALOG_H
-#define XNEDIT_FILEDIALOG_H
-
-#include <sys/types.h>
-#include <Xm/XmAll.h>
+#ifndef XNE_PATHUTILS_H
+#define XNE_PATHUTILS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
-#define FILEDIALOG_OPEN 1
-#define FILEDIALOG_SAVE 2
-    
-#define FILEDIALOG_OK 1
-#define FILEDIALOG_CANCEL 2
 
-typedef struct FileSelection {
-    char    *path;
-    char    *encoding;
-    char    *filter;
-    Boolean setenc;
-    Boolean setxattr;
-    Boolean writebom;
-    Boolean addwrap;
-    int     format;
-} FileSelection;
+char* ConcatPath(const char *parent, const char *name);
+char* FileName(char *path);
+char* ParentPath(char *path);
 
-int FileDialog(Widget parent, char *promptString, FileSelection *file, int type, const char *defaultName);
-
-const char ** FileDialogDefaultEncodings(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* XNEDIT_FILEDIALOG_H */
+#endif /* XNE_PATHUTILS_H */
 

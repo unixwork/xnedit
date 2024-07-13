@@ -298,8 +298,6 @@ void ExchangeSelections(Widget w, Time time)
 */
 void MovePrimarySelection(Widget w, Time time, int isColumnar)
 {
-    // TODO: investigate when this is called and what happens
-    
     stringSelection *sel = NEditMalloc(sizeof(stringSelection));
     sel->utf8String = NULL;
     sel->string = NULL;

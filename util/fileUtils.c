@@ -41,21 +41,11 @@
 #include <string.h>
 #include <errno.h>
 #include <X11/Intrinsic.h>
-#ifdef VAXC
-#define NULL (void *) 0
-#endif /*VAXC*/
-#ifdef VMS
-#include "vmsparam.h"
-#include <stat.h>
-#else
 #include <sys/types.h>
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <pwd.h>
-#endif /*VMS*/
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -95,13 +85,6 @@ ParseFilename(const char *fullname, char *filename, char *pathname)
     int fullLen = strlen(fullname);
     int i, pathLen, fileLen;
 	    
-#ifdef VMS
-    /* find the last ] or : */
-    for (i=fullLen-1; i>=0; i--) {
-    	if (fullname[i] == ']' || fullname[i] == ':')
-	    break;
-    }
-#else  /* UNIX */
     char *viewExtendPath;
     int scanStart;
     
@@ -117,7 +100,6 @@ ParseFilename(const char *fullname, char *filename, char *pathname)
         if (fullname[i] == '/')
 	    break;
     }
-#endif
 
     /* move chars before / (or ] or :) into pathname,& after into filename */
     pathLen = i + 1;

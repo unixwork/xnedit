@@ -434,6 +434,52 @@ char* BufGetRange(const textBuffer* buf, int start, int end)
     return text;
 }
 
+// Enhanced BufGetRange function for improved efficiency
+// Retrieves a pointer to the text between positions "start" and "end"
+// within the buffer
+// Note: The returned string may not be null-terminated
+// If the buffer gap falls between "start" and "end", a copy of the string
+// is made, and *free_str is assigned.
+// *out_length is updated with the length of the retrieved string (end - start)
+const char* BufGetRange2(const textBuffer* buf, ssize_t start, ssize_t end, char **free_str)
+{
+    char *text;
+    int length, part1Length;
+    
+    *free_str = NULL;
+    
+    // Make sure start and end are ok
+    // If start is bad, return "", if end is bad, adjust it. 
+    if (start < 0 || start > buf->length) {
+    	return "";
+    }
+    if (end < start) {
+    	int temp = start;
+    	start = end;
+    	end = temp;
+    }
+    if (end > buf->length)
+        end = buf->length;
+    length = end - start;
+    
+    // only copy the string the gap is between start-end
+    if (end <= buf->gapStart) {
+        text = &buf->buf[start];
+    } else if (start >= buf->gapStart) {
+        text = &buf->buf[start+(buf->gapEnd-buf->gapStart)];
+    } else {
+        // allocate a string and set free_str
+        text = NEditMalloc(length+1);
+        *free_str = text;
+        part1Length = buf->gapStart - start;
+        memcpy(text, &buf->buf[start], part1Length);
+        memcpy(&text[part1Length], &buf->buf[buf->gapEnd], length-part1Length);
+        text[length] = '\0';
+    }
+    
+    return text;
+}
+
 /*
 ** Return the character at buffer position "pos".  Positions start at 0.
 */

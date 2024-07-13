@@ -125,7 +125,7 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
 static void drawCursor(textDisp *textD, int x, int y);
 static int styleOfPos(textDisp *textD, int lineStartPos,
         int lineLen, int lineIndex, int dispIndex, int thisChar);
-static int stringWidth4(const textDisp* textD, const FcChar32* string,
+static int charWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *font);
 static NFont* styleFontList(const textDisp* textD, int style);
 static int inSelection(selection *sel, int pos, int lineStartPos,
@@ -166,7 +166,8 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
 static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
         int startPos, int maxPos, int maxLines,
         Boolean startPosIsLineStart, int styleBufOffset,
-        int* retPos, int* retLines, int* retLineStart, int* retLineEnd);
+        int* retPos, int* retLines, int* retLineStart, int* retLineEnd,
+        Boolean *retWrap);
 static void findLineEnd(textDisp *textD, int startPos, int startPosIsLineStart,
         int *lineEnd, int *nextLineStart);
 static int wrapUsesCharacter(textDisp *textD, int lineEndPos);
@@ -240,7 +241,6 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->boldItalicFont = FontRef(boldItalic);
     textD->ascent = xftFont->ascent;
     textD->descent = xftFont->descent;
-    /* TODO: think about renabling textD->fixedFontWidth */
     textD->fixedFontWidth = -1;
     textD->styleBuffer = NULL;
     textD->styleTable = NULL;
@@ -298,6 +298,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     
     textD->cursor = textD->multicursor;
     textD->newcursor = textD->multicursor;
+    
+    textD->cacheNoWrappingWidth = 0;
+    textD->cacheNoWrapping = False;
     
     TextDSetAnsiColors(textD, ansiColors);
     
@@ -541,8 +544,10 @@ void TextDSetFont(textDisp *textD, NFont *font)
     if (textD->height < maxAscent + maxDescent)
         textD->height = maxAscent + maxDescent;
  
-    FontUnref(textD->font);
-    textD->font = FontRef(font); 
+    if(textD->font != font) {
+        FontUnref(textD->font);
+        textD->font = FontRef(font);
+    }
     
     if(textD->disableRedisplay) {
         return;
@@ -571,20 +576,26 @@ void TextDSetFont(textDisp *textD, NFont *font)
 
 void TextDSetBoldFont(textDisp *textD, NFont *boldFont)
 {
-    FontUnref(textD->boldFont);
-    textD->boldFont = FontRef(boldFont);
+    if(textD->boldFont != boldFont) {
+        FontUnref(textD->boldFont);
+        textD->boldFont = FontRef(boldFont);
+    }
 }
 
 void TextDSetItalicFont(textDisp *textD, NFont *italicFont)
 {
-    FontUnref(textD->italicFont);
-    textD->italicFont = FontRef(italicFont);
+    if(textD->italicFont != italicFont) {
+        FontUnref(textD->italicFont);
+        textD->italicFont = FontRef(italicFont);
+    }
 }
 
 void TextDSetBoldItalicFont(textDisp *textD, NFont *boldItalicFont)
 {
-    FontUnref(textD->boldItalicFont);
-    textD->boldItalicFont = FontRef(boldItalicFont);
+    if(textD->boldItalicFont != boldItalicFont) {
+        FontUnref(textD->boldItalicFont);
+        textD->boldItalicFont = FontRef(boldItalicFont);
+    }
 }
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
@@ -639,17 +650,34 @@ void TextDResize(textDisp *textD, int width, int height)
     textD->width = width;
     textD->height = height;
     
+    if(width < textD->cacheNoWrappingWidth) {
+        textD->cacheNoWrapping = False;
+    }
+    
     /* In continuous wrap mode, a change in width affects the total number of
        lines in the buffer, and can leave the top line number incorrect, and
        the top character no longer pointing at a valid line start */
-    if (textD->continuousWrap && textD->wrapMargin==0 && width!=oldWidth) {
+    if (textD->continuousWrap && textD->wrapMargin==0 && width!=oldWidth && !textD->cacheNoWrapping) {
+        Boolean wrap0 = False;
+        Boolean wrap1 = False;
+        
         int oldFirstChar = textD->firstChar;
-        textD->nBufferLines = TextDCountLines(textD, 0, textD->buffer->length,
-                True);
+        
         textD->firstChar = TextDStartOfLine(textD, textD->firstChar);
-        textD->topLineNum = TextDCountLines(textD, 0, textD->firstChar, True)+1;
+        int toplinenum = TextDCountLinesW(textD, 0, textD->firstChar, True, &wrap0);  
+        int count = TextDCountLinesW(textD, textD->firstChar, textD->buffer->length, True, &wrap1);
+
+        
+        textD->nBufferLines = toplinenum + count;
+        
+        if(!(wrap0 || wrap1)) {
+            textD->cacheNoWrapping = True;
+            textD->cacheNoWrappingWidth = width;
+        }
+        
+        textD->topLineNum = toplinenum+1;
         redrawAll = True;
-        offsetAbsLineNum(textD, oldFirstChar);
+        offsetAbsLineNum(textD, oldFirstChar);     
     }
  
     /* reallocate and update the line starts array, which may have changed
@@ -1201,9 +1229,16 @@ void TextDSetWrapMode(textDisp *textD, int wrap, int wrapMargin)
 {
     textD->wrapMargin = wrapMargin;
     textD->continuousWrap = wrap;
+    textD->cacheNoWrapping = False;
     
     /* wrapping can change change the total number of lines, re-count */
-    textD->nBufferLines = TextDCountLines(textD, 0, textD->buffer->length,True);
+    Boolean retWrap;
+    textD->nBufferLines = TextDCountLinesW(textD, 0, textD->buffer->length,
+                                           True, &retWrap);
+    if(!retWrap) {
+        textD->cacheNoWrappingWidth = textD->width;
+        textD->cacheNoWrapping = True;
+    }
     
     /* changing wrap margins wrap or changing from wrapped mode to non-wrapped
        can leave the character at the top no longer at a line start, and/or
@@ -1374,7 +1409,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 {
     int i, lineEnd, charIndex, outIndex, isMB;
     int lineStart=0, charLen=0;
-    char *lineStr, expandedChar[MAX_EXP_CHAR_LEN];
+    char expandedChar[MAX_EXP_CHAR_LEN];
 
     /* Count lines */
     if (lineNum < 1)
@@ -1396,7 +1431,8 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
     /* Only have to count columns if column isn't zero (or negative) */
     if (column > 0) {
       /* Count columns, expanding each character */
-      lineStr = BufGetRange(textD->buffer, lineStart, lineEnd);
+      char *lineStrAlloc;
+      const char *lineStr = BufGetRange2(textD->buffer, lineStart, lineEnd, &lineStrAlloc);
       outIndex = 0;
       for(i=lineStart; i<lineEnd; i++, charIndex++) {
           charLen = BufExpandCharacter(lineStr+charIndex, lineEnd-charIndex,
@@ -1405,6 +1441,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
           if ( outIndex+charLen >= column ) break;
           outIndex+=charLen;
       }
+      NEditFree(lineStrAlloc);
 
       /* If the column is in the middle of an expanded character, put cursor
        * in front of character if in first half of character, and behind
@@ -1432,7 +1469,6 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 {
     int charIndex, lineStartPos, fontHeight, lineLen, isMB;
     int visLineNum, charLen, outIndex, xStep, charStyle, inc;
-    char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
     NFont *font;
@@ -1457,7 +1493,8 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
     	return True;
     }
     lineLen = visLineLength(textD, visLineNum);
-    lineStr = BufGetRange(textD->buffer, lineStartPos, lineStartPos + lineLen);
+    char *lineStrAlloc;
+    const char *lineStr = BufGetRange2(textD->buffer, lineStartPos, lineStartPos + lineLen, &lineStrAlloc);
     
     /* Step through character positions from the beginning of the line
        to "pos" to calculate the x coordinate */
@@ -1478,11 +1515,11 @@ int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
    	charStyle = styleOfPos(textD, lineStartPos, lineLen, charIndex,
    	    	outIndex, lineStr[charIndex]);
         font = styleFontList(textD, charStyle);
-    	xStep += stringWidth4(textD, expandedChar, charLen, font);
+    	xStep += charWidth4(textD, expandedChar, charLen, font);
     	outIndex += charLen;
     }
     *x = xStep;
-    NEditFree(lineStr);
+    NEditFree(lineStrAlloc);
     return True;
 }
 
@@ -1858,6 +1895,17 @@ void TextDSetAnsiColorList_Deprecated(textDisp *textD, XftColor *colors)
 int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart)
 {
+    Boolean retWrap;
+    int retLines = TextDCountLinesW(textD, startPos, endPos, startPosIsLineStart, &retWrap);
+    if(retWrap) {
+        textD->cacheNoWrapping = False;
+    }
+    return retLines;
+}
+
+int TextDCountLinesW(textDisp *textD, int startPos, int endPos,
+    	int startPosIsLineStart, Boolean *retWrapped)
+{
     int retLines, retPos, retLineStart, retLineEnd;
     
     /* If we're not wrapping use simple (and more efficient) BufCountLines */
@@ -1866,7 +1914,8 @@ int TextDCountLines(textDisp *textD, int startPos, int endPos,
     
     wrappedLineCounter(textD, textD->buffer, startPos, endPos, INT_MAX,
 	    startPosIsLineStart, 0, &retPos, &retLines, &retLineStart,
-	    &retLineEnd);
+	    &retLineEnd, retWrapped);
+    
     return retLines;
 }
 
@@ -1892,7 +1941,7 @@ int TextDCountForwardNLines(const textDisp* textD, int startPos,
     /* use the common line counting routine to count forward */
     wrappedLineCounter(textD, textD->buffer, startPos, textD->buffer->length,
     	    nLines, startPosIsLineStart, 0, &retPos, &retLines, &retLineStart,
-    	    &retLineEnd);
+    	    &retLineEnd, NULL);
     return retPos;
 }
 
@@ -1925,7 +1974,7 @@ int TextDEndOfLine(const textDisp* textD, int pos,
     	return pos;
     wrappedLineCounter(textD, textD->buffer, pos, textD->buffer->length, 1,
     	    startPosIsLineStart, 0, &retPos, &retLines, &retLineStart,
-	    &retLineEnd);
+	    &retLineEnd, NULL);
     return retLineEnd;
 }
 
@@ -1943,7 +1992,7 @@ int TextDStartOfLine(const textDisp* textD, int pos)
 
     wrappedLineCounter(textD, textD->buffer, BufStartOfLine(textD->buffer, pos),
     	    pos, INT_MAX, True, 0, &retPos, &retLines, &retLineStart, 
-	    &retLineEnd);
+	    &retLineEnd, NULL);
     return retLineStart;
 }
 
@@ -1964,7 +2013,8 @@ int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines)
     while (True) {
 	lineStart = BufStartOfLine(buf, pos);
 	wrappedLineCounter(textD, textD->buffer, lineStart, pos, INT_MAX,
-	    	True, 0, &retPos, &retLines, &retLineStart, &retLineEnd);
+	    	True, 0, &retPos, &retLines, &retLineStart, &retLineEnd,
+                NULL);
 	if (retLines > nLines)
     	    return TextDCountForwardNLines(textD, lineStart, retLines-nLines,
     	    	    True);
@@ -2316,14 +2366,15 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     int x, y, startX, charIndex, lineStartPos, lineLen, fontHeight, inc;
     int stdCharWidth, charWidth, startIndex, charStyle, style;
     int charLen, outStartIndex, outIndex, hasCursor = False;
-    int dispIndexOffset, cursorPos = textD->cursor->cursorPos, y_orig;
+    int dispIndexOffset, y_orig;
     int startOfLine = INT_MAX;
     int endOfLine = 0;
     int cursorLine = False;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 outStr[MAX_DISP_LINE_LEN];
     FcChar32 *outPtr;
-    char *lineStr;
+    const char *lineStr;
+    char *lineStrFree;
     char baseChar;
     FcChar32 uc = 0;
     NFont *styleFL = textD->font;
@@ -2334,7 +2385,6 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             TEXT_OF_TEXTD(textD).emulateTabs : buf->tabDist;
     Boolean indentRainbow = textD->indentRainbow;
     
-    // TODO: use pointer to multicursor
     textCursorX singleCursor = { textD->cursor->cursorPos, 0 };
     textCursorX *cursorX = textD->mcursorSizeReal == 1 ? &singleCursor : NEditCalloc(textD->mcursorSizeReal, sizeof(textCursorX));
     int cursorNum = 0;
@@ -2361,9 +2411,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if (lineStartPos == -1) {
     	lineLen = 0;
     	lineStr = NULL;
+        lineStrFree = NULL;
     } else {
 	lineLen = visLineLength(textD, visLineNum);
-	lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+	lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &lineStrFree);
         endOfLine = BufEndOfLine(buf, lineStartPos);
         if(textD->highlightCursorLine) {
             startOfLine = BufStartOfLine(buf, lineStartPos);
@@ -2387,7 +2438,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     stdCharWidth = textD->font->maxWidth;
     if (stdCharWidth <= 0) {
     	fprintf(stderr, "xnedit: Internal Error, bad font measurement\n");
-    	NEditFree(lineStr);
+    	NEditFree(lineStrFree);
     	return;
     }
     
@@ -2425,7 +2476,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
             inc = 1;
         } else {
             baseChar = lineStr[charIndex];
-            char *line = lineStr + charIndex;
+            const char *line = lineStr + charIndex;
             int remainingLen = lineLen - charIndex;
                     
             inc = getCharWidth(textD, line, &uc, remainingLen);
@@ -2444,7 +2495,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
                 outIndex + dispIndexOffset, baseChar); 
         charWidth = charIndex >= lineLen
                 ? stdCharWidth
-                : stringWidth4(
+                : charWidth4(
                         textD,
                         expandedChar,
                         charLen,
@@ -2611,10 +2662,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         
         if(cpCharLen == 1) {
             *outPtr = *expandedChar;
-            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
+            charWidth = charWidth4(textD, expandedChar, charLen, charFL);
         } else if(charIndex < lineLen) {
             memcpy(outPtr, expandedChar, sizeof(FcChar32)*charLen);
-            charWidth = stringWidth4(textD, expandedChar, charLen, charFL);
+            charWidth = charWidth4(textD, expandedChar, charLen, charFL);
         } else {
             charWidth = stdCharWidth;
         }
@@ -2700,7 +2751,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if (hasCursor && (y_orig != textD->cursor->y || y_orig != y))
         TextDRedrawCalltip(textD, 0);
     
-    NEditFree(lineStr);
+    NEditFree(lineStrFree);
     if(textD->mcursorSizeReal > 1) NEditFree(cursorX);
 }
 
@@ -3015,45 +3066,18 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
 /*
 ** Find the width of a string in the font of a particular style
 */
-static int stringWidth4(const textDisp* textD, const FcChar32* string,
+static int charWidth4(const textDisp* textD, const FcChar32* string,
         int length, NFont *fontList)
-{
-    if(!fontList) {
-        fontList = textD->font;
-    }
-    
+{ 
     if(string[0] == 0) return 0; // special case for ansi coloring
     
-    XftFont *font = FindFont(fontList, string[0]);
+    FcChar32 c = string[0];
     int strWidth = 0;
-    if(fontList->minWidth == fontList->maxWidth) {
-        int charWidth = fontList->minWidth;
-        // fontList->minWidth * number of ascii chars
-        // + XftTextExtents32 for remaining non-ascii chars
-        int ascii = 1;
-        int start = 0;
-        for(int i=0;i<length;i++) {
-            int c_isascii = string[i] < 128;
-            if(c_isascii && !ascii) {
-                XGlyphInfo extents;
-                XftTextExtents32(XtDisplay(textD->w), font, string + start, i - start, &extents);
-                strWidth += extents.xOff;
-                start = i;
-            } else if(!c_isascii && ascii) {
-                strWidth += charWidth * (i - start);
-                start = i;
-            }
-            ascii = c_isascii;
-        }
-        if(ascii) {
-            strWidth += charWidth * (length - start);
-        } else {
-            XGlyphInfo extents;
-            XftTextExtents32(XtDisplay(textD->w), font, string + start, length - start, &extents);
-            strWidth += extents.xOff;
-        } 
+    if(fontList->minWidth == fontList->maxWidth && string[0] < 128) {
+        strWidth += fontList->minWidth * length;
     } else {
-        // main font is not a monospace font
+        // main font is not a monospace font or character is not ascii
+        XftFont *font = FindFont(fontList, string[0]);
         XGlyphInfo extents;
         XftTextExtents32(XtDisplay(textD->w), font, string, length, &extents);
         strWidth = extents.xOff;
@@ -3095,9 +3119,8 @@ static int inSelection(selection *sel, int pos, int lineStartPos, int dispIndex)
 */
 static int xyToPos(textDisp *textD, int x, int y, int posType)
 {
-    int charIndex, lineStart, lineLen, fontHeight, isMB;
+    int charIndex, lineStart, lineLen, fontHeight;
     int charWidth, charLen, charStyle, visLineNum, xStep, outIndex, inc;
-    char *lineStr;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc = 0;
     NFont *font;
@@ -3119,7 +3142,8 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     
     /* Get the line text and its length */
     lineLen = visLineLength(textD, visLineNum);
-    lineStr = BufGetRange(textD->buffer, lineStart, lineStart + lineLen);
+    char *lineStrAlloc;
+    const char *lineStr = BufGetRange2(textD->buffer, lineStart, lineStart + lineLen, &lineStrAlloc);
     
     /* Step through character positions from the beginning of the line
        to find the character position corresponding to the x coordinate */
@@ -3142,9 +3166,9 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
    	charStyle = styleOfPos(textD, lineStart, lineLen, charIndex, outIndex,
 				lineStr[charIndex]);
         font = styleFontList(textD, charStyle);
-    	charWidth = stringWidth4(textD, expandedChar, charLen, font);
+    	charWidth = charWidth4(textD, expandedChar, charLen, font);
     	if (x < xStep + (posType == CURSOR_POS ? charWidth/2 : charWidth)) {
-    	    NEditFree(lineStr);
+    	    NEditFree(lineStrAlloc);
     	    return lineStart + charIndex;
     	}
     	xStep += charWidth;
@@ -3153,7 +3177,7 @@ static int xyToPos(textDisp *textD, int x, int y, int posType)
     
     /* If the x position was beyond the end of the line, return the position
        of the newline at the end of the line */
-    NEditFree(lineStr);
+    NEditFree(lineStrAlloc);
     return lineStart + lineLen;
 }
 
@@ -3839,17 +3863,16 @@ static int countLines(const char *string)
 */
 static int measureVisLine(textDisp *textD, int visLineNum)
 {
-    // TODO: this function needs some performance improvements
-    
     textBuffer *buf = textD->buffer;
     int i, width = 0, style, lineLen = visLineLength(textD, visLineNum);
     int lineStartPos = textD->lineStarts[visLineNum];
-    char *lineStr = BufGetRange(buf, lineStartPos, lineStartPos + lineLen);
+    char *free_lineStr;
+    const char *lineStr = BufGetRange2(buf, lineStartPos, lineStartPos + lineLen, &free_lineStr);
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
     int inc;
     int charLen;
-    char indent = 0;
+    unsigned short indent = 0;
     NFont *font;
     
     for(i=0;i<lineLen;i+=inc) {
@@ -3874,9 +3897,9 @@ static int measureVisLine(textDisp *textD, int visLineNum)
             font = textD->font;
         }
         
-        width += stringWidth4(textD, expandedChar, charLen, font);
+        width += charWidth4(textD, expandedChar, charLen, font);
     }
-    NEditFree(lineStr);
+    NEditFree(free_lineStr);
     return width;
 }
 
@@ -3898,7 +3921,7 @@ static int emptyLinesVisible(textDisp *textD)
 static void blankSingleCursorProtrusions(textDisp *textD)
 {
     int x, width, cursorX = textD->cursor->x, cursorY = textD->cursor->y;
-    int fontWidth = FontDefault(textD->font)->max_advance_width;
+    int fontWidth = textD->font->maxWidth; //FontDefault(textD->font)->max_advance_width;
     int fontHeight = textD->ascent + textD->descent;
     int cursorWidth, left = textD->left, right = left + textD->width;
     
@@ -4076,7 +4099,7 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     	/* advance to the next line.  If the line ended in a real newline
     	   or the end of the buffer, that's far enough */
     	wrappedLineCounter(textD, buf, lineStart, buf->length, 1, True, 0,
-    	    	&retPos, &retLines, &retLineStart, &retLineEnd);
+    	    	&retPos, &retLines, &retLineStart, &retLineEnd, NULL);
     	if (retPos >= buf->length) {
     	    countTo = buf->length;
     	    *modRangeEnd = countTo;
@@ -4173,7 +4196,8 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     /* Note that we need to take into account an offset for the style buffer:
        the deletedTextBuf can be out of sync with the style buffer. */
     wrappedLineCounter(textD, deletedTextBuf, 0, length, INT_MAX, True, 
-	    countFrom, &retPos, &retLines, &retLineStart, &retLineEnd);
+	    countFrom, &retPos, &retLines, &retLineStart, &retLineEnd,
+            NULL);
     BufFree(deletedTextBuf);
     *linesDeleted = retLines;
     textD->suppressResync = 0;
@@ -4225,7 +4249,7 @@ static void measureDeletedLines(textDisp *textD, int pos, int nDeleted)
     	/* advance to the next line.  If the line ended in a real newline
     	   or the end of the buffer, that's far enough */
     	wrappedLineCounter(textD, buf, lineStart, buf->length, 1, True, 0,
-    	    	&retPos, &retLines, &retLineStart, &retLineEnd);
+    	    	&retPos, &retLines, &retLineStart, &retLineEnd, NULL);
     	if (retPos >= buf->length) {
     	    if (retPos != retLineEnd)
     	    	nLines++;
@@ -4271,17 +4295,22 @@ static void measureDeletedLines(textDisp *textD, int pos, int nDeleted)
 **   retLines:	    Number of line breaks counted
 **   retLineStart:  Start of the line where counting ended
 **   retLineEnd:    End position of the last line traversed
+**   retWrap        Was any line wrapped
 */
 static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
         int startPos, int maxPos, int maxLines,
         Boolean startPosIsLineStart, int styleBufOffset,
-        int* retPos, int* retLines, int* retLineStart, int* retLineEnd)
+        int* retPos, int* retLines, int* retLineStart, int* retLineEnd,
+        Boolean *retWrap)
 {
     int lineStart, newLineStart = 0, b, p, colNum, wrapMargin;
     int maxWidth, width, countPixels, i, foundBreak;
     int nLines = 0, tabDist = textD->buffer->tabDist;
     FcChar32 c;
     char nullSubsChar = textD->buffer->nullSubsChar;
+    if(retWrap) {
+        *retWrap = False;
+    }
     
     /* If the font is fixed, or there's a wrap margin set, it's more efficient
        to measure in columns, than to count pixels.  Determine if we can count
@@ -4365,6 +4394,10 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    	    } else
     	    	    	colNum = BufCountDispChars(buf, b+1, p+1);
     	    	    foundBreak = True;
+                    if(retWrap) {
+                        *retWrap = True;
+                        retWrap = NULL;
+                    }
     	    	    break;
     	    	}
     	    }
@@ -4418,17 +4451,9 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
 static int measurePropChar(const textDisp* textD, FcChar32 c,
     int colNum, int pos)
 {
-    int charLen, style;
-    FcChar32 expChar[MAX_EXP_CHAR_LEN];
+    int style;
     textBuffer *styleBuf = textD->styleBuffer;
     
-    if(c < 128) {
-        charLen = BufExpandCharacter4(c, colNum, expChar, 
-	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
-    } else {
-        charLen = 1;
-        expChar[0] = c;
-    }
     NFont *font = NULL;
     if (styleBuf) {
 	style = (unsigned char)BufGetCharacter(styleBuf, pos);
@@ -4444,7 +4469,26 @@ static int measurePropChar(const textDisp* textD, FcChar32 c,
     if(!font) {
         font = textD->font;
     }
-    return stringWidth4(textD, expChar, charLen, font);
+    
+    int charLen;
+    FcChar32 expChar[MAX_EXP_CHAR_LEN];
+    if(c < 128) {
+        charLen = BufExpandCharacter4(c, colNum, expChar, 
+	    textD->buffer->tabDist, textD->buffer->nullSubsChar);
+        
+        if(font->minWidth == font->maxWidth) {
+            return font->minWidth;
+        } else {
+            XGlyphInfo extents;
+            XftTextExtents32(XtDisplay(textD->w), font->fonts->font, expChar, charLen, &extents);
+            return extents.xOff;
+        }
+    } else {
+        charLen = 1;
+        expChar[0] = c;
+    }
+    
+    return charWidth4(textD, expChar, charLen, font);
 }
 
 /*
@@ -4472,7 +4516,7 @@ static void findLineEnd(textDisp *textD, int startPos, int startPosIsLineStart,
     /* use the wrapped line counter routine to count forward one line */
     wrappedLineCounter(textD, textD->buffer, startPos, textD->buffer->length,
     	    1, startPosIsLineStart, 0, nextLineStart, &retLines,
-    	    &retLineStart, lineEnd);
+    	    &retLineStart, lineEnd, NULL);
     return;
 }
 

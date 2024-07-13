@@ -35,13 +35,9 @@
 #include <Xm/Xm.h>
 #include <Xm/XmStrDefs.h>
 #include <X11/Xft/Xft.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
-#endif /*VMS*/
 
 #define NEDIT_VERSION           5
 #define NEDIT_REVISION          7
@@ -66,12 +62,9 @@
 #define MAX_SEARCH_HISTORY 100	/* Maximum length of search string history */
 #define MAX_PANES 6		/* Max # of ADDITIONAL text editing panes
 				   that can be added to a window */
-#ifndef VMS
+
 #define AUTOSAVE_CHAR_LIMIT 30	/* number of characters user can type before
 				   NEdit generates a new backup file */
-#else
-#define AUTOSAVE_CHAR_LIMIT 80	/* set higher on VMS becaus saving is slower */
-#endif /*VMS*/
 #define AUTOSAVE_OP_LIMIT 8	/* number of distinct editing operations user
 				   can do before NEdit gens. new backup file */
 #define MAX_FONT_LEN 100	/* maximum length for a font name */
@@ -81,24 +74,6 @@
 #define APP_NAME GetAppName()   /* application name for loading resources */
 #define APP_CLASS "XNEdit"	/* application class for loading resources */
 
-/* The accumulated list of undo operations can potentially consume huge
-   amounts of memory.  These tuning parameters determine how much undo infor-
-   mation is retained.  Normally, the list is kept between UNDO_OP_LIMIT and
-   UNDO_OP_TRIMTO in length (when the list reaches UNDO_OP_LIMIT, it is
-   trimmed to UNDO_OP_TRIMTO then allowed to grow back to UNDO_OP_LIMIT).
-   When there are very large amounts of saved text held in the list,
-   UNDO_WORRY_LIMIT and UNDO_PURGE_LIMIT take over and cause the list to
-   be trimmed back further to keep its size down. */
-#define UNDO_PURGE_LIMIT 15000000 /* If undo list gets this large (in bytes),
-				     trim it to length of UNDO_PURGE_TRIMTO */
-#define UNDO_PURGE_TRIMTO 1	  /* Amount to trim the undo list in a purge */
-#define UNDO_WORRY_LIMIT 2000000  /* If undo list gets this large (in bytes),
-				     trim it to length of UNDO_WORRY_TRIMTO */
-#define UNDO_WORRY_TRIMTO 5	  /* Amount to trim the undo list when memory
-				     use begins to get serious */
-#define UNDO_OP_LIMIT 400	  /* normal limit for length of undo list */
-#define UNDO_OP_TRIMTO 200	  /* size undo list is normally trimmed to
-				     when it exceeds UNDO_OP_TRIMTO in length */
 #ifdef SGI_CUSTOM
 #define MAX_SHORTENED_ITEMS 100   /* max. number of items excluded in short- */
 #endif	    	    	    	  /*     menus mode */
@@ -168,6 +143,12 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 
 /* maximum encoding string length */
 #define MAX_ENCODING_LENGTH 64
+
+/* disable continuous wrapping threshold (10mb) */
+#define DISABLE_WRAPPING_THRESHOLD 0xA00000
+
+/* disable language mode threshold (128mb) */
+#define DISABLE_LANG_THRESHOLD 0x8000000
 
 /* Record on undo list */
 typedef struct _UndoInfo {
@@ -495,6 +476,7 @@ typedef struct _WindowInfo {
     char	filename[MAXPATHLEN];	/* name component of file being edited*/
     char	path[MAXPATHLEN];	/* path component of file being edited*/
     char        encoding[MAX_ENCODING_LENGTH];
+    char        *filter;                /* io filter name */
     Boolean     bom;                    /* content starts with BOM */
     unsigned	fileMode;		/* permissions of file being edited */
     uid_t	fileUid; 		/* last recorded user id of the file */
@@ -622,6 +604,8 @@ typedef struct _WindowInfo {
     UserBGMenuCache  userBGMenuCache;   /* shell & macro menu are shared over all
                                            "tabbed" documents, while each document
                                            has its own background menu. */
+    Boolean wrapModeNoneForced;         /* wrap mode forced to None
+                                           (large file mode) */
     Boolean opened;                     /* Set to true when the window is opened */
     Boolean mapped;
 } WindowInfo;

@@ -51,13 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef VMS
-#include "../util/VMSparam.h"
-#else
-#ifndef __MVS__
 #include <sys/param.h>
-#endif
-#endif /*VMS*/
 
 #include <Xm/Xm.h>
 #include <X11/keysym.h>
@@ -1052,9 +1046,7 @@ void UpdateUserMenus(WindowInfo *window)
     /* update user menus, which are shared over all documents, only
        if language mode was changed */
     if (window->userMenuCache->umcLanguageMode != window->languageMode) {
-#ifndef VMS
         updateMenu(window, SHELL_CMDS);
-#endif
         updateMenu(window, MACRO_CMDS);
 
         /* remember language mode assigned to shared user menus */
@@ -1091,10 +1083,8 @@ void DimSelectionDepUserMenuItems(WindowInfo *window, int sensitive)
     if (!IsTopDocument(window))
     	return;
 	
-#ifndef VMS
     dimSelDepItemsInMenu(window->shellMenuPane, ShellMenuItems,
 	    NShellMenuItems, sensitive);
-#endif /*VMS*/
     dimSelDepItemsInMenu(window->macroMenuPane, MacroMenuItems,
 	    NMacroMenuItems, sensitive);
     dimSelDepItemsInMenu(window->bgMenuPane, BGMenuItems,
@@ -1236,7 +1226,6 @@ void UpdateUserMenuInfo(void)
 ** Search through the shell menu and execute the first command with menu item
 ** name "itemName".  Returns True on successs and False on failure.
 */
-#ifndef VMS
 int DoNamedShellMenuCmd(WindowInfo *window, const char *itemName, int fromMacro)
 {
     int i;
@@ -1255,7 +1244,6 @@ int DoNamedShellMenuCmd(WindowInfo *window, const char *itemName, int fromMacro)
     }
     return False;
 }
-#endif /*VMS*/
 
 /*
 ** Search through the Macro or background menu and execute the first command

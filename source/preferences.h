@@ -257,6 +257,19 @@ int GetNumColorProfiles(void);
 char* WriteColorProfilesString(void);
 
 
+void SetPrefUndoPurgeLimit(int limit);
+int GetPrefUndoPurgeLimit(void);
+void SetPrefUndoPurgeTrimTo(int limit);
+int GetPrefUndoPurgeTrimTo(void);
+void SetPrefUndoWorryLimit(int limit);
+int GetPrefUndoWorryLimit(void);
+void SetPrefUndoWorryTrimTo(int limit);
+int GetPrefUndoWorryTrimTo(void);
+void SetPrefUndoOpLimit(int limit);
+int GetPrefUndoOpLimit(void);
+void SetPrefUndoOpTrimTo(int limit);
+int GetPrefUndoOpTrimTo(void);
+
 char* ChangeFontSize(const char *name, int newsize);
 
 ColorList ParseColorList(const char *str, size_t len);

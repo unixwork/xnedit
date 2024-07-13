@@ -242,6 +242,9 @@ struct _textDisp {
                                            line in some functions, when it
                                            contains the cursor */
     graphicExposeTranslationEntry *graphicsExposeQueue;
+    
+    size_t cacheNoWrappingWidth;        /* Min width with no line wrapping */
+    Boolean cacheNoWrapping;            /* Currently no line wrapping */
 };
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
@@ -312,6 +315,8 @@ int TextDCountForwardNLines(const textDisp* textD, int startPos,
 int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines);
 int TextDCountLines(textDisp *textD, int startPos, int endPos,
     	int startPosIsLineStart);
+int TextDCountLinesW(textDisp *textD, int startPos, int endPos,
+    	int startPosIsLineStart, Boolean *retWrapped);
 void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
 	unsigned char **pp_bgClass, XftColor bgPixelDefault);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
@@ -339,10 +344,6 @@ void FontUnref(NFont *font);
 
 XftColor PixelToColor(Widget w, Pixel p);
 XftColor RGBToColor(short r, short g, short b);
-
-#ifdef VMS /* VMS linker doesn't like long names (>31 chars) */
-#define TextDImposeGraphicsExposeTranslation TextDGraphicsExposeTranslation
-#endif /* VMS */
 
 void TextDImposeGraphicsExposeTranslation(textDisp *textD, int *xOffset, int *yOffset);
 Boolean TextDPopGraphicExposeQueueEntry(textDisp *textD);

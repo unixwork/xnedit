@@ -136,7 +136,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -lXm -lXt -lX11 -lm -lXrender `pkg-config --libs xft fontconfig`
+LIBS= -lXm -lXt -lX11 -lm -lpthread -lXrender `pkg-config --libs xft fontconfig`
 
 # Additional CDE Flags
 # CFLAGS+= -DCDE -I/usr/dt/include

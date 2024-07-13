@@ -57,12 +57,6 @@
 #endif
 #endif
 
-#ifdef VMS
-#include <types.h>
-#include <unixio.h>
-#include <file.h>
-#endif /*VMS*/
-
 #include <X11/Intrinsic.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
@@ -85,6 +79,7 @@
 #include <Xm/FileSB.h>
 #include <Xm/ScrolledW.h>
 #include <Xm/PrimitiveP.h>
+#include <Xm/TextF.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -1300,7 +1295,7 @@ int GetIntTextWarn(Widget text, int *value, const char *fieldName, int warnBlank
 }
 
 char* TextGetStringUtf8(Widget text) {
-    char *string = XmTextGetString(text);
+    char *string = XmTextFieldGetString(text);
     if(!string || strlen(string) == 0) {
         return string;
     }

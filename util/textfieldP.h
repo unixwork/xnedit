@@ -48,10 +48,12 @@ extern TextFieldClassRec nTextFieldClassRec;
 typedef struct TextFieldPart {
     XtCallbackList valueChangedCB;
     XtCallbackList focusCB;
+    XtCallbackList losingFocusCB;
     XtCallbackList activateCB;
     
     int            hasFocus;
     
+    char           *renderTable;
     NFont          *font;    
     XIM            xim;
     XIC            xic;

@@ -32,7 +32,7 @@
 
 /* Maximum length in characters of a tab or control character expansion
    of a single buffer character */
-#define MAX_EXP_CHAR_LEN 120
+#define MAX_EXP_CHAR_LEN 256
 
 typedef struct _RangesetTable RangesetTable;
 
@@ -121,6 +121,7 @@ const char *BufAsStringCleaned(textBuffer *buf, EscSeqArray **esc);
 void BufReintegrateEscSeq(textBuffer *buf, EscSeqArray *escseq);
 void BufSetAll(textBuffer *buf, const char *text);
 char* BufGetRange(const textBuffer* buf, int start, int end);
+const char* BufGetRange2(const textBuffer* buf, ssize_t start, ssize_t end, char **free_str);
 char BufGetCharacter(const textBuffer* buf, int pos);
 wchar_t BufGetCharacterW(const textBuffer *buf, int pos);
 FcChar32 BufGetCharacter32(const textBuffer* buf, int pos, int *charlen);
