@@ -265,7 +265,7 @@ static void cancelTimeOut(XtIntervalId *timer);
 static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 
 static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
-static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb);
+static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct *cb);
 static void reloadCB(Widget w, Widget mainWin, void *callData);
 static void windowStructureNotifyEventEH(
         Widget widget,
@@ -899,7 +899,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 
 
     XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
-                 (XtCallbackProc)jumpToEncErrorCB, window);
+                 (XtCallbackProc)jumpToEncErrorCB, mainWin);
     
     Widget btnClose = XtVaCreateManagedWidget(
             "ibarbutton",
@@ -5953,8 +5953,13 @@ static void closeInfoBarCB(Widget w, Widget mainWin, void *callData)
     showStatsForm(window);
 }
 
-static void jumpToEncErrorCB(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb)
+static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct *cb)
 {
+    WindowInfo *window = GetTopDocument(mainWin);
+    if(!window) {
+        return;
+    }
+    
     if(cb->item_position >= window->numEncErrors) {
         return;
     }
