@@ -803,7 +803,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
         if(colorProfile->styleType == 1) \
           p->color = LightenColor(p->color); \
       } \
-      p->font = FontOfNamedStyle(window, pat->style); \
+      p->font = FontOfNamedStyle(colorProfile, window, pat->style); \
     } while (0)
 
     /* PLAIN_STYLE (pass 1) */

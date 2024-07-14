@@ -1440,7 +1440,7 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
 ** This routine must only be called with a valid styleName (call
 ** NamedStyleExists to find out whether styleName is valid).
 */
-NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
+NFont *FontOfNamedStyle(ColorProfile *colorProfile, WindowInfo *window, const char *styleName)
 {   
     // TODO: this function is just a workaround and not fully converted to Xft
     int styleNo=lookupNamedStyle(window->colorProfile, styleName);
@@ -1449,7 +1449,7 @@ NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
     
     if (styleNo<0)
         return window->font;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     if (fontNum == BOLD_FONT)
     	font = window->boldFont;
     else if (fontNum == ITALIC_FONT)
@@ -1469,7 +1469,7 @@ int FontOfNamedStyleIsBold(ColorProfile *colorProfile, char *styleName)
     
     if (styleNo<0)
         return 0;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     return (fontNum == BOLD_FONT || fontNum == BOLD_ITALIC_FONT);
 }
 
@@ -1479,7 +1479,7 @@ int FontOfNamedStyleIsItalic(ColorProfile *colorProfile, char *styleName)
     
     if (styleNo<0)
         return 0;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     return (fontNum == ITALIC_FONT || fontNum == BOLD_ITALIC_FONT);
 }
 
@@ -1494,7 +1494,7 @@ char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
     
     if (styleNo<0)
         return "black";
-    return HighlightStyles[styleNo]->color;
+    return colorProfile->styles[styleNo]->color;
 }
 
 /*
@@ -1506,7 +1506,7 @@ char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 
     if (styleNo<0)
         return "";
-    return HighlightStyles[styleNo]->bgColor;
+    return colorProfile->styles[styleNo]->bgColor;
 }
 
 /*
@@ -3991,9 +3991,9 @@ static int lookupNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
     int i;
     
-    for (i = 0; i < NHighlightStyles; i++)
+    for (i = 0; i < colorProfile->numStyles; i++)
     {
-        if (!strcmp(styleName, HighlightStyles[i]->name))
+        if (!strcmp(styleName, colorProfile->styles[i]->name))
         {
             return i;
         }
