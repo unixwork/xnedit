@@ -58,6 +58,7 @@ typedef struct _ColorProfile {
     char     *rainbowColorList;
 
     Boolean  colorsLoaded;
+    Boolean  stylesLoaded;
 
     XftColor textFgColor;
     XftColor textBgColor;
@@ -80,6 +81,7 @@ typedef struct _ColorProfile {
                    // 2: custom      custom color profile text styles (styles allocated)
     highlightStyleRec **styles;
     size_t numStyles;
+    size_t stylesAlloc;
 
     char     *resourceFile;
     int      windowThemeVariant; // 0: undefined, 1: light, 2: dark

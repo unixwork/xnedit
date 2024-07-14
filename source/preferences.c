@@ -911,8 +911,44 @@ static PrefDescripRec PrefDescrip[] = {
         ADD_5_2_STYLES
         ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
-    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "",
-     &TempStringPrefs.colorProfileStyles, NULL, False},
+    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "Test:Plain:black:Plain\n\
+    	Test:Comment:gray20:Italic\n\
+    	Test:Keyword:white:Bold\n\
+        Test:Operator:white:Bold\n\
+        Test:Bracket:white:Bold\n\
+    	Test:Storage Type:white:Bold\n\
+    	Test:Storage Type1:white:Bold\n\
+    	Test:String:white:Plain\n\
+    	Test:String1:white:Plain\n\
+    	Test:String2:white:Bold\n\
+    	Test:Preprocessor:white:Plain\n\
+    	Test:Preprocessor1:white:Plain\n\
+        Test:Preprocessor2:white:Bold\n\
+    	Test:Character Const:white:Plain\n\
+    	Test:Numeric Const:white:Plain\n\
+    	Test:Identifier:white:Plain\n\
+    	Test:Identifier1:white:Plain\n\
+        Test:Identifier2:white:Plain\n\
+ 	Test:Subroutine:white:Plain\n\
+	Test:Subroutine1:white:Plain\n\
+   	Test:Ada Attributes:white:Bold\n\
+	Test:Label:white:Italic\n\
+	Test:Flag:white:Bold\n\
+    	Test:Text Comment:white:Italic\n\
+    	Test:Text Key:white:Bold\n\
+	Test:Text Key1:white:Plain\n\
+    	Test:Text Arg:white:Bold\n\
+    	Test:Text Arg1:white:Bold\n\
+	Test:Text Arg2:white:Plain\n\
+    	Test:Text Escape:white:Bold\n\
+	Test:LaTeX Math:white:Plain\n\
+        Test:Pointer:white:Bold\n\
+        Test:Regex:white:Bold\n\
+        Test:Warning:white:Italic\n\
+        Test:Emphasis:white:Italic\n\
+        Test:Strong:white:Bold\n\
+        Test:Header:white:Bold",
+        &TempStringPrefs.colorProfileStyles, NULL, False},
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
         "C:Default\n\
 	C++:Default\n\
@@ -1485,6 +1521,13 @@ static void translatePrefFormats(int convertOld, int fileVer)
     	NEditFree(TempStringPrefs.highlight);
 	TempStringPrefs.highlight = NULL;
     }
+    if (TempStringPrefs.colorProfiles != NULL) {
+        ParseColorProfiles(TempStringPrefs.colorProfiles);
+        NEditFree(TempStringPrefs.colorProfiles);
+        TempStringPrefs.colorProfiles = NULL;
+    } else {
+        ParseColorProfiles("");
+    }
     if (TempStringPrefs.styles != NULL) {
         LoadStylesString(TempStringPrefs.styles, False);
         NEditFree(TempStringPrefs.styles);
@@ -1512,13 +1555,6 @@ static void translatePrefFormats(int convertOld, int fileVer)
 	LoadSmartIndentCommonString(TempStringPrefs.smartIndentCommon);
 	NEditFree(TempStringPrefs.smartIndentCommon);
 	TempStringPrefs.smartIndentCommon = NULL;
-    }
-    if (TempStringPrefs.colorProfiles != NULL) {
-        ParseColorProfiles(TempStringPrefs.colorProfiles);
-        NEditFree(TempStringPrefs.colorProfiles);
-        TempStringPrefs.colorProfiles = NULL;
-    } else {
-        ParseColorProfiles("");
     }
     if(TempStringPrefs.filter) {
         ParseFilterSettings(TempStringPrefs.filter);
@@ -1597,6 +1633,7 @@ void SaveNEditPrefs(Widget parent, int quietly)
     TempStringPrefs.highlight = WriteHighlightString();
     TempStringPrefs.language = writeLanguageModesString();
     TempStringPrefs.styles = WriteStylesString();
+    TempStringPrefs.colorProfileStyles = WriteColorProfileStylesString();
     TempStringPrefs.smartIndent = WriteSmartIndentString();
     TempStringPrefs.smartIndentCommon = WriteSmartIndentCommonString();
     TempStringPrefs.colorProfiles = WriteColorProfilesString();
@@ -2464,6 +2501,18 @@ ColorProfile* GetDefaultColorProfile(void) {
 ColorProfile* GetColorProfiles(void) 
 {
     return colorProfiles;
+}
+
+ColorProfile* GetColorProfile(const char *name)
+{
+    ColorProfile *cp = colorProfiles;
+    while(cp) {
+        if(!strcmp(cp->name, name)) {
+            return cp;
+        }
+        cp = cp->next;
+    }
+    return NULL;
 }
 
 char* GetPrefDefaultColorProfileName(void) {

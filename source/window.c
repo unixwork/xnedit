@@ -2577,7 +2577,9 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         LoadColorProfileResources(display, profile);
     }
     
-    ColorProfileLoadHighlightStyles(profile);
+    if(!profile->stylesLoaded) {
+        ColorProfileLoadHighlightStyles(profile);
+    }
     
     profile->colorsLoaded = TRUE;
 }

@@ -43,6 +43,7 @@ int LoadHighlightString(char *inString, int convertOld);
 char *WriteHighlightString(void);
 int LoadStylesString(char *inString, Boolean profile);
 char *WriteStylesString(void);
+char *WriteColorProfileStylesString(void);
 void EditHighlightStyles(const char *initialStyle);
 void EditHighlightPatterns(WindowInfo *window);
 void UpdateLanguageModeMenu(void);

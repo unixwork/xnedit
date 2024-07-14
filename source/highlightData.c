@@ -1104,9 +1104,8 @@ void ColorProfileLoadHighlightStyles(ColorProfile *profile)
     if(profile->styleType != 2) {
         profile->styles = HighlightStyles;
         profile->numStyles = NHighlightStyles;
-    } else {
-        // TODO: get custom styles
     }
+    profile->stylesLoaded = True;
 }
 
 /*
@@ -1118,7 +1117,7 @@ int LoadStylesString(char *inString, Boolean profile)
 {    
     char *errMsg, *fontStr;
     char *inPtr = inString;
-    char *profileName = NULL;
+    ColorProfile *colorProfile = NULL;
     highlightStyleRec *hs;
     int i;
 
@@ -1130,80 +1129,107 @@ int LoadStylesString(char *inString, Boolean profile)
 	/* Allocate a language mode structure in which to store the info. */
 	hs = (highlightStyleRec *)NEditMalloc(sizeof(highlightStyleRec));
 
-    /* read profile name */
-    if(profile) {
-        profileName = ReadSymbolicField(&inPtr);
-        if(!profileName) {
-            return styleError(inString,inPtr, "profile name required");
-        }
-    }
-
-	/* read style name */
-	hs->name = ReadSymbolicField(&inPtr);
-	if (hs->name == NULL)
-    	    return styleError(inString,inPtr, "style name required");
-	if (!SkipDelimiter(&inPtr, &errMsg)) {
-	    NEditFree(hs->name);
-	    NEditFree(hs);
-    	    return styleError(inString,inPtr, errMsg);
-    	}
-    	
-    	/* read color */
-	hs->color = ReadSymbolicField(&inPtr);
-	if (hs->color == NULL) {
-	    NEditFree(hs->name);
-	    NEditFree(hs);
-    	    return styleError(inString,inPtr, "color name required");
-	}
-        hs->bgColor = NULL;
-        if (SkipOptSeparator('/', &inPtr)) {
-    	    /* read bgColor */
-	    hs->bgColor = ReadSymbolicField(&inPtr); /* no error if fails */
-    	}
-	if (!SkipDelimiter(&inPtr, &errMsg)) {
-	    freeHighlightStyleRec(hs);
-    	    return styleError(inString,inPtr, errMsg);
-    	}
-    	
-	/* read the font type */
-	fontStr = ReadSymbolicField(&inPtr);
-	for (i=0; i<N_FONT_TYPES; i++) {
-	    if (!strcmp(FontTypeNames[i], fontStr)) {
-	    	hs->font = i;
-	    	break;
-	    }
-	}
-	if (i == N_FONT_TYPES) {
-	    NEditFree(fontStr);
-	    freeHighlightStyleRec(hs);
-	    return styleError(inString, inPtr, "unrecognized font type");
-	}
-	NEditFree(fontStr);
-
-    /* pattern set was read correctly, add/change it in the list */
-    if(!profile) {
-        for (i=0; i<NHighlightStyles; i++) {
-            if (!strcmp(HighlightStyles[i]->name, hs->name)) {
-                freeHighlightStyleRec(HighlightStyles[i]);
-                HighlightStyles[i] = hs;
-                break;
+        /* read profile name */
+        if(profile) {
+            char *profileName = ReadSymbolicField(&inPtr);
+            if(!profileName) {
+                return styleError(inString,inPtr, "profile name required");
+            }
+            colorProfile = GetColorProfile(profileName);
+            if(!colorProfile) {
+                fprintf(stderr, "XNEdit: Unknown color profile '%s' in styles string\n", profileName);
+                NEditFree(profileName);
+                return False;
+            }
+            NEditFree(profileName);
+            if (!SkipDelimiter(&inPtr, &errMsg)) {
+                NEditFree(hs);
+                return styleError(inString,inPtr, errMsg);
             }
         }
 
-        if (i == NHighlightStyles) {
-            HighlightStyles[NHighlightStyles++] = hs;
-            if (NHighlightStyles > MAX_HIGHLIGHT_STYLES)
-                return styleError(inString, inPtr,
-                                  "maximum allowable number of styles exceeded");
-        }
-    } else {
-        // TODO
-    }
+        /* read style name */
+        hs->name = ReadSymbolicField(&inPtr);
+        if (hs->name == NULL) {
+            NEditFree(hs);
+            return styleError(inString,inPtr, "style name required");
+        }  
 
-    /* if the string ends here, we're done */
+        if (!SkipDelimiter(&inPtr, &errMsg)) {
+            NEditFree(hs->name);
+            NEditFree(hs);
+            return styleError(inString,inPtr, errMsg);
+        }
+
+        /* read color */
+        hs->color = ReadSymbolicField(&inPtr);
+        if (hs->color == NULL) {
+            NEditFree(hs->name);
+            NEditFree(hs);
+            return styleError(inString,inPtr, "color name required");
+        }
+        hs->bgColor = NULL;
+        if (SkipOptSeparator('/', &inPtr)) {
+            /* read bgColor */
+            hs->bgColor = ReadSymbolicField(&inPtr); /* no error if fails */
+        }
+        if (!SkipDelimiter(&inPtr, &errMsg)) {
+            freeHighlightStyleRec(hs);
+            return styleError(inString,inPtr, errMsg);
+        }
+
+        /* read the font type */
+        fontStr = ReadSymbolicField(&inPtr);
+        for (i=0; i<N_FONT_TYPES; i++) {
+            if (!strcmp(FontTypeNames[i], fontStr)) {
+                hs->font = i;
+                break;
+            }
+        }
+        if (i == N_FONT_TYPES) {
+            NEditFree(fontStr);
+            freeHighlightStyleRec(hs);
+            return styleError(inString, inPtr, "unrecognized font type");
+        }
+        NEditFree(fontStr);
+
+        /* pattern set was read correctly, add/change it in the list */
+        if(!profile) {
+            for (i=0; i<NHighlightStyles; i++) {
+                if (!strcmp(HighlightStyles[i]->name, hs->name)) {
+                    freeHighlightStyleRec(HighlightStyles[i]);
+                    HighlightStyles[i] = hs;
+                    break;
+                }
+            }
+
+            if (i == NHighlightStyles) {
+                HighlightStyles[NHighlightStyles++] = hs;
+                if (NHighlightStyles > MAX_HIGHLIGHT_STYLES) {
+                    return styleError(inString, inPtr,
+                                      "maximum allowable number of styles exceeded");
+                }
+            }
+        } else {
+            if(colorProfile->numStyles == colorProfile->stylesAlloc) {
+                if(colorProfile->stylesAlloc == 0) {
+                    colorProfile->stylesAlloc = 64;
+                } else {
+                    colorProfile->stylesAlloc += 16;
+                }
+                colorProfile->styles = NEditRealloc(
+                        colorProfile->styles,
+                        colorProfile->stylesAlloc * sizeof(highlightStyleRec));
+            }
+            colorProfile->styles[colorProfile->numStyles++] = hs;
+            
+        }
+
+        /* if the string ends here, we're done */
    	inPtr += strspn(inPtr, " \t\n");
-    	if (*inPtr == '\0')
-    	    return True;
+    	if (*inPtr == '\0') {
+            return True;
+        }
     }
 
     return False;
@@ -1214,17 +1240,18 @@ int LoadStylesString(char *inString, Boolean profile)
 ** all of the highlight styles information from the stored highlight style
 ** list (HighlightStyles) for this NEdit session.
 */
-char *WriteStylesString(void)
+static int createStylesString(textBuffer *outBuf, highlightStyleRec **styles, int nstyles, const char *colorProfileName)
 {
     int i;
-    char *outStr;
-    textBuffer *outBuf;
     highlightStyleRec *style;
     
-    outBuf = BufCreate();
-    for (i=0; i<NHighlightStyles; i++) {
-    	style = HighlightStyles[i];
+    for (i=0; i<nstyles; i++) {
+    	style = styles[i];
     	BufInsert(outBuf, outBuf->length, "\t");
+        if(colorProfileName) {
+            BufInsert(outBuf, outBuf->length, colorProfileName);
+            BufInsert(outBuf, outBuf->length, ":");
+        }
     	BufInsert(outBuf, outBuf->length, style->name);
     	BufInsert(outBuf, outBuf->length, ":");
     	BufInsert(outBuf, outBuf->length, style->color);
@@ -1237,8 +1264,33 @@ char *WriteStylesString(void)
     	BufInsert(outBuf, outBuf->length, "\\n\\\n");
     }
     
+    return i;
+}
+
+char *WriteStylesString(void)
+{
+    textBuffer *outBuf = BufCreate();
+    int i = createStylesString(outBuf, HighlightStyles, NHighlightStyles, NULL);
     /* Get the output, and lop off the trailing newlines */
-    outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
+    char *outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
+    BufFree(outBuf);
+    return outStr;
+}
+
+char *WriteColorProfileStylesString(void)
+{
+    textBuffer *outBuf = BufCreate();
+    int i = 0;
+    
+    ColorProfile *cp = GetColorProfiles();
+    while(cp) {
+        if(cp->styleType == 2) {
+            i += createStylesString(outBuf, cp->styles, cp->numStyles, cp->name);
+        }
+        cp = cp->next;
+    }
+    /* Get the output, and lop off the trailing newlines */
+    char *outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
     BufFree(outBuf);
     return outStr;
 }
