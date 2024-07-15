@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Apr 23, 2024 (Do NOT edit!)
+                 Generated on Jul 15, 2024 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2024 Mark Edel                                            *
@@ -5491,23 +5491,19 @@ static char * htxt_distribution [] = {
 "Copyright (C) 2021, Red Hat, Inc. ",
 "GPL-2.0-only ",
 "\n\n",
-"EditorConfig ",
+"EditorConfig glob matching ",
 "\n\n",
-"Copyright (c) 2011-2013 EditorConfig Team, including Hong Xu and Trey Hunner ",
+"Copyright 2024 Mike Becker - All rights reserved. ",
 "\n\n",
-"Copyright (c) 2014 Hong Xu <hong AT topbug DOT net> ",
+"Redistribution and use in source and binary forms, with or without ",
+"modification, are permitted provided that the following conditions are met: ",
 "\n\n",
-"All rights reserved. ",
+"1. Redistributions of source code must retain the above copyright ",
+"notice, this list of conditions and the following disclaimer. ",
 "\n\n",
-"Redistribution and use in source and binary forms, with or without modification, ",
-"are permitted provided that the following conditions are met: ",
-"\n\n",
-"1. Redistributions of source code must retain the above copyright notice, this list of ",
-"conditions and the following disclaimer. ",
-"\n\n",
-"2. Redistributions in binary form must reproduce the above copyright notice, this list ",
-"of conditions and the following disclaimer in the documentation and/or other materials ",
-"provided with the distribution. ",
+"2. Redistributions in binary form must reproduce the above copyright ",
+"notice, this list of conditions and the following disclaimer in the ",
+"documentation and/or other materials provided with the distribution. ",
 "\n\n",
 "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" ",
 "AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE ",
@@ -5867,4 +5863,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev aa74660 2024-04-21\n";
+static const char * NEditVersion = "XNEdit rev 5683a3f 2024-07-14\n";
