@@ -270,17 +270,13 @@ static Boolean XftFontConvert(
 }
 
 static void textfield_class_init(void) {
-    XtSetTypeConverter(XmRString, textTXftFont, XftFontConvert, NULL, 0, XtCacheNone, NULL); // TODO: cache, destructor
+    XtSetTypeConverter(XmRString, textTXftFont, XftFontConvert, NULL, 0, XtCacheNone, NULL);
 }
 
 Widget XNECreateTextField(Widget parent, char *name, ArgList arglist, Cardinal argcount) {
     return XtCreateWidget(name, textfieldWidgetClass, parent, arglist, argcount);
 }
 
-
-void myaction() {
-    
-}
 
 void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_args) {
     TextFieldWidget tf = (TextFieldWidget)neww;
@@ -1001,7 +997,7 @@ static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
         XSetICFocus(tf->textfield.xic);
     }
     
-    //       focus/losingFocus events
+    // focus/losingFocus events
     XmAnyCallbackStruct cb;
     cb.reason = XmCR_FOCUS;
     cb.event = event;
@@ -1200,41 +1196,6 @@ static void tfSelection(TextFieldWidget tf, int *start, int *end, int *startX, i
 
 static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
     tfSelection(tf, start, end, NULL, NULL);
-    
-    /*
-    int s = 0;
-    int e = -1;
-    
-    const unsigned char *buf = (unsigned char*)tf->textfield.buffer;
-    int length = tf->textfield.length;
-    
-    int i;
-    int pos = 0;
-    int charlen = 1;
-    for(i=0;i<=length;i+=charlen) {
-        charlen = i < length ? Utf8CharLen(buf + i) : 1;
-        if(tf->textfield.selStart == pos) {
-            s = i;
-        }
-        if(tf->textfield.selEnd == pos) {
-            e = i;
-        }
-        
-        pos++;
-    }
-    if(e == -1) {
-        e = tf->textfield.length;
-    }
-    
-    if(s > e) {
-        int tmp = s;
-        s = e;
-        e = tmp;
-    }
-    
-    if(start) *start = s;
-    if(end)   *end = e;
-    */
 }
 
 static void tfSetSelection(TextFieldWidget tf, int from, int to) {
