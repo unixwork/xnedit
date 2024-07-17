@@ -97,13 +97,13 @@ if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) t
          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
          chmod +x linuxdeploy-x86_64.AppImage
       fi
-      linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
+      ./linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
+      ./linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
       echo ""
       mv ${APP}-*x86_64.AppImage ${APP}-${date}-x86_64.AppImage
       ls -l ${APP}-*-x86_64.AppImage
@@ -115,13 +115,13 @@ if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) t
          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage"
          chmod +x linuxdeploy-i386.AppImage
       fi
-      linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
+      ./linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
+      ./linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
       echo ""
       mv ${APP}-*i386.AppImage ${APP}-${date}-i386.AppImage
       ls -l ${APP}-*-i386.AppImage
