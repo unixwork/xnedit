@@ -1690,7 +1690,6 @@ void TextDMakeInsertPosVisible(textDisp *textD)
 */
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos)
 {
-    printf("TextDPreferredColumn\n");
     int column;
 
     /* Find the position of the start of the line.  Use the line starts array
@@ -4108,7 +4107,6 @@ static int findWrapRange(textDisp *textD, const char *deletedText, int pos,
     	   or the end of the buffer, that's far enough */
     	int nlc = wrappedLineCounter(textD, buf, lineStart, buf->length, 1, True, 0,
     	    	&retPos, &retLines, &retLineStart, &retLineEnd, NULL);
-        //printf("nl %d    %d < %d < %d\n", nlc, lineStart, pos, retLineEnd);
         if(pos == retLineEnd) {
             nl = 1;
         }
