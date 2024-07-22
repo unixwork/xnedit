@@ -160,10 +160,10 @@ static void releaseGC(Widget w, GC gc);
 static void resetClipRectangles(textDisp *textD);
 static int visLineLength(textDisp *textD, int visLineNum);
 static void measureDeletedLines(textDisp *textD, int pos, int nDeleted);
-static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
+static int  findWrapRange(textDisp *textD, const char *deletedText, int pos,
         int nInserted, int nDeleted, int *modRangeStart, int *modRangeEnd,
         int *linesInserted, int *linesDeleted);
-static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
+static int  wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
         int startPos, int maxPos, int maxLines,
         Boolean startPosIsLineStart, int styleBufOffset,
         int* retPos, int* retLines, int* retLineStart, int* retLineEnd,
@@ -2058,6 +2058,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     int oldFirstChar = textD->firstChar;
     int scrolled, origCursorPos = textD->cursor->cursorPos;
     int wrapModStart, wrapModEnd;
+    int redrawLN = False;
     
     /* buffer modification cancels vertical cursor motion column */
     if (nInserted != 0 || nDeleted != 0)
@@ -2066,8 +2067,16 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
     /* Count the number of lines inserted and deleted, and in the case
        of continuous wrap mode, how much has changed */
     if (textD->continuousWrap) {
-    	findWrapRange(textD, deletedText, pos, nInserted, nDeleted,
+    	redrawLN = findWrapRange(textD, deletedText, pos, nInserted, nDeleted,
     	    	&wrapModStart, &wrapModEnd, &linesInserted, &linesDeleted);
+        if(!redrawLN && nDeleted > 0) {
+            for(int i=0;i<nDeleted;i++) {
+                if(deletedText[i] == '\n') {
+                    redrawLN = 1;
+                    break;
+                }
+            }
+        }
     } else {
 	linesInserted = nInserted == 0 ? 0 :
     		BufCountLines(buf, pos, pos + nInserted);
@@ -2169,7 +2178,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
            results in at least two lines being redrawn). */
         // for some reason, a simple insert of one character always results
         // in linesInserted > 2
-	if (linesInserted > 2) redrawLineNumbers(textD, textD->top, textD->height, True);
+        if (linesInserted > 2 || redrawLN) redrawLineNumbers(textD, textD->top, textD->height, True);
     } else { /* linesInserted != linesDeleted */
     	endDispPos = textD->lastChar + 1;
     	if (origCursorPos >= pos) {
@@ -4055,7 +4064,7 @@ static int visLineLength(textDisp *textD, int visLineNum)
 ** both for delimiting where the line starts need to be recalculated, and
 ** for deciding what part of the text to redisplay.
 */
-static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
+static int findWrapRange(textDisp *textD, const char *deletedText, int pos,
     	int nInserted, int nDeleted, int *modRangeStart, int *modRangeEnd,
     	int *linesInserted, int *linesDeleted)
 {
@@ -4065,6 +4074,7 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     int *lineStarts = textD->lineStarts;
     int countFrom, countTo, lineStart, adjLineStart, i;
     int visLineNum = 0, nLines = 0;
+    int nl = 0;
     
     /*
     ** Determine where to begin searching: either the previous newline, or
@@ -4096,8 +4106,12 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     	
     	/* advance to the next line.  If the line ended in a real newline
     	   or the end of the buffer, that's far enough */
-    	wrappedLineCounter(textD, buf, lineStart, buf->length, 1, True, 0,
+    	int nlc = wrappedLineCounter(textD, buf, lineStart, buf->length, 1, True, 0,
     	    	&retPos, &retLines, &retLineStart, &retLineEnd, NULL);
+        //printf("nl %d    %d < %d < %d\n", nlc, lineStart, pos, retLineEnd);
+        if(pos == retLineEnd) {
+            nl = 1;
+        }
     	if (retPos >= buf->length) {
     	    countTo = buf->length;
     	    *modRangeEnd = countTo;
@@ -4179,9 +4193,9 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     if (textD->suppressResync) {
 	*linesDeleted = textD->nLinesDeleted;
 	textD->suppressResync = 0;
-	return;
+        return nl;
     }
-
+    
     length = (pos-countFrom) + nDeleted +(countTo-(pos+nInserted));
     deletedTextBuf = BufCreatePreallocated(length);
     if (pos > countFrom)
@@ -4199,6 +4213,8 @@ static void findWrapRange(textDisp *textD, const char *deletedText, int pos,
     BufFree(deletedTextBuf);
     *linesDeleted = retLines;
     textD->suppressResync = 0;
+    
+    return nl;
 }
 
 /*
@@ -4295,7 +4311,7 @@ static void measureDeletedLines(textDisp *textD, int pos, int nDeleted)
 **   retLineEnd:    End position of the last line traversed
 **   retWrap        Was any line wrapped
 */
-static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
+static int wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
         int startPos, int maxPos, int maxLines,
         Boolean startPosIsLineStart, int styleBufOffset,
         int* retPos, int* retLines, int* retLineStart, int* retLineEnd,
@@ -4304,6 +4320,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     int lineStart, newLineStart = 0, b, p, colNum, wrapMargin;
     int maxWidth, width, countPixels, i, foundBreak;
     int nLines = 0, tabDist = textD->buffer->tabDist;
+    int nl = 0;
     FcChar32 c;
     char nullSubsChar = textD->buffer->nullSubsChar;
     if(retWrap) {
@@ -4346,12 +4363,13 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	/* If the character was a newline, count the line and start over,
     	   otherwise, add it to the width and column counts */
     	if ((char)c == '\n') {
+            nl = 1;
     	    if (p >= maxPos) {
     		*retPos = maxPos;
     		*retLines = nLines;
     		*retLineStart = lineStart;
     		*retLineEnd = maxPos;
-    		return;
+    		return nl;
     	    }
     	    nLines++;
     	    if (nLines >= maxLines) {
@@ -4359,7 +4377,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     		*retLines = nLines;
     		*retLineStart = p + 1;
     		*retLineEnd = p;
-    		return;
+    		return nl;
     	    }
     	    lineStart = p + 1;
     	    colNum = 0;
@@ -4411,7 +4429,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     		*retLineStart = maxPos < newLineStart ? lineStart :
     		    	newLineStart;
     		*retLineEnd = maxPos;
-    		return;
+    		return nl;
     	    }
     	    nLines++;
     	    if (nLines >= maxLines) {
@@ -4419,7 +4437,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     		*retLines = nLines;
     		*retLineStart = lineStart;
     		*retLineEnd = foundBreak ? b : p;
-    		return;
+    		return nl;
     	    }
     	    lineStart = newLineStart;
     	}
@@ -4430,6 +4448,7 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     *retLines = nLines;
     *retLineStart = lineStart;
     *retLineEnd = buf->length;
+    return nl;
 }
 
 /*
