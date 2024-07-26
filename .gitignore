@@ -32,4 +32,5 @@ util/Makefile.freebsd
 util/Makefile.macosx
 util/Makefile.macos
 util/check_lin_tif
+gmon.out
 .idea
