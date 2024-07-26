@@ -44,6 +44,10 @@ EL/Fedora:
 
     dnf install gcc make pkgconf motif-devel
 
+openSUSE:
+
+    zypper install gcc make pkg-config motif-devel
+
 Arch:
 
     pacman -S gcc make pkgconf openmotif
