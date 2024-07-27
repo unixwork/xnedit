@@ -97,6 +97,8 @@ static void TFDelete(TextFieldWidget tf, int from, int to);
 
 static void wordbounds(TextFieldWidget tf, int index, int *out_wleft, int *out_wright);
 
+static Dimension tfCalcHeight(TextFieldWidget tf);
+
 static Atom aTargets;
 static Atom aUtf8String;
 
@@ -299,12 +301,16 @@ void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_arg
     
     tf->textfield.blinkProcId = 0;
     tf->textfield.cursorOn = 0;
-    
+       
     if(aTargets == 0) {
         aTargets = XInternAtom(XtDisplay(request), "TARGETS", 0);
     }
     if(aUtf8String == 0) {
         aUtf8String = XInternAtom(XtDisplay(request), "UTF8_STRING", 0);
+    }
+    
+    if(tf->textfield.font) {
+        tf->core.height = tfCalcHeight(tf);
     }
 }
 
@@ -398,7 +404,7 @@ void textfield_realize(Widget widget, XtValueMask *mask, XSetWindowAttributes *a
     if(!text->textfield.font) {
         text->textfield.font = defaultFont;
     }
-    
+       
     textfield_recalc_size((TextFieldWidget)widget);
     (coreClassRec.core_class.realize)(widget, mask, attributes);
     
@@ -638,13 +644,17 @@ Boolean textfield_acceptfocus(Widget widget, Time *time) {
     return 0;
 }
 
+static Dimension tfCalcHeight(TextFieldWidget tf) {
+    NFont *font = tf->textfield.font;
+    Dimension height = font->fonts->font->ascent + font->fonts->font->descent;
+    height += 2*(tf->primitive.highlight_thickness + tf->primitive.shadow_thickness) + 2*TF_VPADDING;
+    return height;
+}
 
 void textfield_recalc_size(TextFieldWidget w) {
     NFont *font = w->textfield.font;
-    int height = font->fonts->font->ascent + font->fonts->font->descent;
+    int height = tfCalcHeight(w);
     int width = w->core.width;
-    
-    height += 2*(w->primitive.highlight_thickness + w->primitive.shadow_thickness) + 2*TF_VPADDING;
     
     XtMakeResizeRequest((Widget)w, width, height, NULL, NULL);
 }
