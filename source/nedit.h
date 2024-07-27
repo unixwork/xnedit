@@ -158,7 +158,7 @@ typedef struct _UndoInfo {
     int		endPos;
     int 	oldLen;
     char	*oldText;
-    short       numOp;                  /* Number of undo records for this
+    short       numOp;                  /* Number of undo records
                                            for this operation.
                                            */
     char	inUndo;			/* flag to indicate undo command on

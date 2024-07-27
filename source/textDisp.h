@@ -116,7 +116,11 @@ typedef struct _textCursor {
     int cursorPosCacheLeft;
     int cursorPosCacheRight;
     int cursorPreferredCol;
-    int x;
+    int x;                 /* X, Y pos. of last drawn cursor 
+                              Note: these are used for *drawing*
+                              and are not generally reliable
+                              for finding the insert position's
+                              x/y coordinates! */
     int y;
 } textCursor;
 
@@ -131,11 +135,6 @@ struct _textDisp {
     size_t mcursorSize;
     size_t mcursorSizeReal;
     int cursorOn;
-    /*int cursorX, cursorY;*/		/* X, Y pos. of last drawn cursor 
-                                            Note: these are used for *drawing*
-                                            and are not generally reliable
-                                            for finding the insert position's
-                                            x/y coordinates! */
     int cursorToHint;			/* Tells the buffer modified callback
     					   where to move the cursor, to reduce
     					   the number of redraw calls */
@@ -191,9 +190,9 @@ struct _textDisp {
     
     XftColor fgPixel, bgPixel;		/* Foreground/Background colors */
     XftColor selectFGPixel,		/* Foreground select color */
-          selectBGPixel;   		/* Background select color */
-    XftColor highlightFGPixel,             /* Highlight colors are used when */
-          highlightBGPixel;             /*    flashing matching parens    */
+             selectBGPixel;   		/* Background select color */
+    XftColor highlightFGPixel,          /* Highlight colors are used when */
+             highlightBGPixel;          /*    flashing matching parens    */
     XftColor lineNumFGPixel;   	    	/* Color for drawing line numbers */
     XftColor lineNumBGPixel;               /* Background color for line numbers */
     XftColor lineHighlightBGPixel;         /* BG for highlighted cursor line */
