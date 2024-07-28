@@ -48,6 +48,7 @@ void SetFileDialogDefaultPattern(char *pattern);
 void SetGetEFTextFieldRemoval(int state);
 
 int OverrideFileDialog(Widget parent, const char *filename);
+void FileOpenErrorDialog(Widget parent, const char *filename);
 
 Widget CreateFormatButtons(
         Widget form,

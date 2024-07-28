@@ -32,6 +32,8 @@
 #include <fnmatch.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <Xm/PrimitiveP.h>
 #include <X11/CoreP.h>
@@ -1785,7 +1787,18 @@ static void filedialog_setshowhidden(
 static void filedilalog_ok_end(FileDialogData *data)
 {
     struct stat s;
-    if(data->type == FILEDIALOG_SAVE && !stat(data->selectedPath, &s)) {
+    
+    if(data->type == FILEDIALOG_OPEN) {
+        // check if the file can be opened
+        int fd = open(data->selectedPath, O_RDONLY);
+        if(fd == -1) {
+            FileOpenErrorDialog(data->shell, data->selectedPath);
+            return;
+        } else {
+            close(fd);
+        }
+        
+    } else if(data->type == FILEDIALOG_SAVE && !stat(data->selectedPath, &s)) {
         if(OverrideFileDialog(data->shell, FileName(data->selectedPath)) != 1) {
             return;
         }
@@ -2818,7 +2831,6 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
                     }
                 }
             }
-            
         }
     } else {
         data.status = FILEDIALOG_CANCEL;

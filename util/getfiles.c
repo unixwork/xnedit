@@ -742,6 +742,14 @@ int OverrideFileDialog(Widget parent, const char *filename)
     return ret;
 }
 
+
+void FileOpenErrorDialog(Widget parent, const char *filename)
+{
+    createErrorDialog(parent);
+    doErrorDialog("Error: can't open %s ", filename);
+    return;
+}
+
 static int doYesNoDialog(const char *filename)
 {
     char string[255];
