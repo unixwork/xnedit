@@ -38,14 +38,11 @@
 int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);
 int GetNewFilename(Widget parent, char *promptString, FileSelection *file, 
         char *defaultName);
-int HandleCustomExistFileSB(Widget existFileSB, char *filename);
-int HandleCustomNewFileSB(Widget newFileSB, char *filename, char *defaultName);
 char *GetFileDialogDefaultDirectory(void);
 char *GetFileDialogDefaultPattern(void);
 void SetFileDialogDefaultDirectory(char *dir);
 char* GetDefaultDirectoryStr(void);
 void SetFileDialogDefaultPattern(char *pattern);
-void SetGetEFTextFieldRemoval(int state);
 
 int OverrideFileDialog(Widget parent, const char *filename);
 void FileOpenErrorDialog(Widget parent, const char *filename);

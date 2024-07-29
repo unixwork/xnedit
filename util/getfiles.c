@@ -208,10 +208,6 @@ directories shown in the \"Files\" field.  The default filter of \
 
 /*                    Local Callback Routines and variables                */
 
-static void newFileOKCB(Widget w, Boolean *client_data,
-	       XmFileSelectionBoxCallbackStruct *call_data);
-static void newFileCancelCB(Widget w, Boolean *client_data, caddr_t 
-               call_data);
 static void newHelpCB(Widget w, Widget helpPanel, caddr_t call_data);
 static void createYesNoDialog(Widget parent);
 static void createErrorDialog(Widget parent);
@@ -229,9 +225,6 @@ static void helpDismissCB(Widget w, Widget helpPanel, caddr_t call_data);
 static void makeListTypeable(Widget listW);
 static void listCharEH(Widget w, XtPointer callData, XEvent *event,
 	Boolean *continueDispatch);
-static void replacementDirSearchProc(Widget w, XtPointer searchData);
-static void replacementFileSearchProc(Widget w, XtPointer searchData);
-static void sortWidgetList(Widget listWidget);
 static int compareXmStrings(const void *string1, const void *string2);
 
 static int  SelectResult = GFN_CANCEL;  /*  Initialize results as cancel   */
@@ -322,283 +315,6 @@ int GetNewFilename(Widget parent, char *promptString, FileSelection *file,
     return FileDialog(parent, promptString, file, FILEDIALOG_SAVE, defaultName);
 }
 
-/*
-** HandleCustomExistFileSB
-**
-** Manage a customized file selection box for opening existing files.
-** Use this if you want to change the standard file selection dialog
-** from the defaults provided in GetExistingFilename, but still
-** want take advantage of the button processing, help messages, and
-** file checking of GetExistingFilename.
-**
-**  Arguments:
-**
-**	Widget  existFileSB   - your custom file selection box widget id
-**	char *  filename      - a string to receive the selected filename
-**				(this string will not be altered if the
-**				user pressed the cancel button)	
-**
-**  Returns:	GFN_OK	      - file was selected and OK button pressed	
-**		GFN_CANCEL    - Cancel button pressed and no returned file
-**
-*/
-int HandleCustomExistFileSB(Widget existFileSB, char *filename)
-{
-    Boolean   done_with_dialog=False; /* ok to destroy dialog flag	   */
-    char      *fileString;            /* C string for file selected        */
-    char      *dirString;             /* C string for dir of file selected */
-    XmString  cFileString;            /* compound string for file selected */
-    XmString  cDir;	              /* compound directory selected	   */
-    XmString  cPattern;               /* compound filter pattern	   */
-    Widget    help;		      /* help window form dialog	   */
-#if XmVersion < 1002
-    int       i;
-#endif
-
-    XtAddCallback(existFileSB, XmNokCallback, (XtCallbackProc)existOkCB,
-    	    &done_with_dialog);
-    XtAddCallback(existFileSB, XmNcancelCallback, (XtCallbackProc)existCancelCB,
-	    &done_with_dialog);
-    AddMotifCloseCallback(XtParent(existFileSB), (XtCallbackProc)existCancelCB,
-	    &done_with_dialog);
-    help = createPanelHelp(existFileSB, HelpExist, "Selecting Files to Open");
-    createErrorDialog(existFileSB);
-    XtAddCallback(existFileSB, XmNhelpCallback, (XtCallbackProc)existHelpCB,
-    	    (char *)help);
-    if (DefaultDirectory != NULL || DefaultPattern != NULL)
-    	XtVaSetValues(existFileSB, XmNdirectory, DefaultDirectory,
-    		XmNpattern, DefaultPattern, NULL);
-#ifndef SGI_CUSTOM
-    makeListTypeable(XmFileSelectionBoxGetChild(existFileSB,XmDIALOG_LIST));
-    makeListTypeable(XmFileSelectionBoxGetChild(existFileSB,XmDIALOG_DIR_LIST));
-#if XmVersion >= 1002
-    XtVaSetValues(existFileSB, XmNinitialFocus, XtParent(
-    	    XmFileSelectionBoxGetChild(existFileSB, XmDIALOG_LIST)), NULL);
-#endif
-#endif
-    ManageDialogCenteredOnPointer(existFileSB);
-
-#ifndef SGI_CUSTOM
-    /* Typing in the directory list is dependent on the list being in the
-       same form of alphabetical order expected by the character processing
-       routines.  As of about 1.2.3, some Motif libraries seem to have a
-       different idea of ordering than is usual for Unix directories.
-       To sort them properly, we have to patch the directory and file
-       searching routines to re-sort the lists when they change */
-    XtVaGetValues(existFileSB, XmNdirSearchProc, &OrigDirSearchProc,
-    	    XmNfileSearchProc, &OrigFileSearchProc, NULL);
-    XtVaSetValues(existFileSB, XmNdirSearchProc, replacementDirSearchProc,
-    	    XmNfileSearchProc, replacementFileSearchProc, NULL);
-    sortWidgetList(XmFileSelectionBoxGetChild(existFileSB, XmDIALOG_DIR_LIST));
-    sortWidgetList(XmFileSelectionBoxGetChild(existFileSB, XmDIALOG_LIST));
-#if XmVersion < 1002
-    /* To give file list initial focus, revoke default button status for
-       the "OK" button.  Dynamic defaulting will restore it as the default
-       button after the keyboard focus is established.  Note the voodoo
-       below: calling XmProcess traversal extra times (a recommendation from
-       OSF technical support) somehow succeedes in giving the file list focus */
-    XtVaSetValues(existFileSB, XmNdefaultButton, NULL, NULL);
-    for (i=1; i<30; i++)
-    	XmProcessTraversal(XmFileSelectionBoxGetChild(existFileSB,
-    		XmDIALOG_LIST), XmTRAVERSE_CURRENT);
-#endif
-#endif /* SGI_CUSTOM */
-
-    while (!done_with_dialog)
-        XtAppProcessEvent(XtWidgetToApplicationContext(existFileSB), XtIMAll);
-    
-    if (SelectResult == GFN_OK) {
-	XtVaGetValues(existFileSB, XmNdirSpec, &cFileString, XmNdirectory,
-		&cDir, XmNpattern, &cPattern, NULL);
-	/* Undocumented: file selection box widget allocates copies of these
-	   strings on getValues calls.  I have risked freeing them to avoid
-	   memory leaks, since I assume other developers have made this same
-	   realization, therefore OSF can't easily go back and change it */
-	if (DefaultDirectory != NULL) XmStringFree(DefaultDirectory);
-	if (DefaultPattern != NULL) XmStringFree(DefaultPattern);
-	DefaultDirectory = cDir;
-	DefaultPattern = cPattern;
-	XmStringGetLtoR(cFileString, XmSTRING_DEFAULT_CHARSET, &fileString);
-        /* Motif 2.x seem to contain a bug that causes it to return only 
-           the relative name of the file in XmNdirSpec when XmNpathMode is set
-           to XmPATH_MODE_RELATIVE (through X resources), although the man
-           page states that it always returns the full path name. We can
-           easily work around this by checking that the first character of the
-           file name is a `/'. */
-#ifdef VMS
-       /* VMS  won't return `/' as the 1st character of the full file spec.
-         `:' terminates the device name and is not allowed elsewhere */
-        if (strchr(fileString, ':') != NULL) {
-#else
-        if (fileString[0] == '/') {
-#endif        /* VMS */
-	    /* The directory name is already present in the file name or
-	       the user entered a full path name. */
-	    strcpy(filename, fileString);
-	} else {
-	    /* Concatenate the directory name and the file name */
-   	    XmStringGetLtoR(cDir, XmSTRING_DEFAULT_CHARSET, &dirString);
-	    strcpy(filename, dirString);
-	    strcat(filename, fileString);
-  	    NEditFree(dirString);
-	}
-	XmStringFree(cFileString);
-	NEditFree(fileString);
-    }
-    /* Destroy the dialog _shell_ iso. the dialog. Normally, this shouldn't
-       be necessary as the shell is destroyed automatically when the dialog
-       is. However, due to a bug in various Lesstif versions, the latter 
-       messes up the grab cascades and leaves new windows without grabs, such
-       that they appear to be frozen. */
-    XtDestroyWidget(XtParent(existFileSB));
-    return SelectResult;
-}
-
-
-/*
-** HandleCustomNewFileSB
-**
-** Manage a customized file selection box for opening new files.
-**
-**  Arguments:
-**
-**	Widget  newFileSB     - your custom file selection box widget id
-**	char *  filename      - a string to receive the selected filename
-**				(this string will not be altered if the
-**				user pressed the cancel button)	
-**  	char*	defaultName   - default name to be pre-entered in filename
-**  	    	    	    	text field.
-**
-**  Returns:	GFN_OK	      - file was selected and OK button pressed	
-**		GFN_CANCEL    - Cancel button pressed and no returned file
-**
-*/
-int HandleCustomNewFileSB(Widget newFileSB, char *filename, char *defaultName)
-{
-    Boolean   done_with_dialog=False; /* ok to destroy dialog flag	   */
-    Widget    help;		      /* help window form dialog	   */
-    XmString  cFileString;            /* compound string for file selected */
-    XmString  cDir;	              /* compound directory selected	   */
-    XmString  cPattern;               /* compound filter pattern	   */
-    char      *fileString;            /* C string for file selected        */
-    char      *dirString;             /* C string for dir of file selected */
-#if XmVersion < 1002
-    int       i;
-#endif
-
-    XtAddCallback(newFileSB, XmNokCallback, (XtCallbackProc)newFileOKCB,
-    	    &done_with_dialog);
-    XtAddCallback(newFileSB, XmNcancelCallback, (XtCallbackProc)newFileCancelCB,
-	    &done_with_dialog);
-
-#ifndef SGI_CUSTOM
-    makeListTypeable(XmFileSelectionBoxGetChild(newFileSB,XmDIALOG_LIST));
-    makeListTypeable(XmFileSelectionBoxGetChild(newFileSB,XmDIALOG_DIR_LIST));
-#endif
-    if (DefaultDirectory != NULL || DefaultPattern != NULL)
-    	XtVaSetValues(newFileSB, XmNdirectory, DefaultDirectory,
-    		XmNpattern, DefaultPattern, NULL);
-    help = createPanelHelp(newFileSB, HelpNew, "Saving a File");
-    createYesNoDialog(newFileSB);
-    createErrorDialog(newFileSB);
-    XtAddCallback(newFileSB, XmNhelpCallback, (XtCallbackProc)newHelpCB, 
-    	    (char *)help);
-#if XmVersion >= 1002
-#ifndef REAL_SGI_CUSTOM
-    XtVaSetValues(newFileSB, XmNinitialFocus, 
-    	    XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_TEXT), NULL);
-#else /* REAL_SGI_CUSTOM */
-    { Widget finder = XmFileSelectionBoxGetChild(newFileSB, SgDIALOG_FINDER);
-      if ( finder != NULL )
-    	  XtVaSetValues(newFileSB, XmNinitialFocus, finder, NULL);
-    }
-#endif
-#endif
-    ManageDialogCenteredOnPointer(newFileSB);
-
-#ifndef SGI_CUSTOM
-#if XmVersion < 1002
-    /* To give filename text initial focus, revoke default button status for
-       the "OK" button.  Dynamic defaulting will restore it as the default
-       button after the keyboard focus is established.  Note the voodoo
-       below: calling XmProcess traversal FOUR times (a recommendation from
-       OSF technical support) somehow succeedes in changing the focus */
-    XtVaSetValues(newFileSB, XmNdefaultButton, NULL, NULL);
-    for (i=1; i<30; i++)
-    	XmProcessTraversal(XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_TEXT),
-	    XmTRAVERSE_CURRENT);
-#endif
-
-    /* Typing in the directory list is dependent on the list being in the
-       same form of alphabetical order expected by the character processing
-       routines.  As of about 1.2.3, some Motif libraries seem to have a
-       different idea of ordering than is usual for Unix directories.
-       To sort them properly, we have to patch the directory and file
-       searching routines to re-sort the lists when they change */
-    XtVaGetValues(newFileSB, XmNdirSearchProc, &OrigDirSearchProc,
-    	    XmNfileSearchProc, &OrigFileSearchProc, NULL);
-    XtVaSetValues(newFileSB, XmNdirSearchProc, replacementDirSearchProc,
-    	    XmNfileSearchProc, replacementFileSearchProc, NULL);
-    sortWidgetList(XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_DIR_LIST));
-    sortWidgetList(XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_LIST));
-#endif /* SGI_CUSTOM */
-
-    /* Delay the setting of the default name till after the replacement of 
-       the search procedures. Otherwise the field is cleared again by certain
-       *tif implementations */
-    if (defaultName != NULL) {
-	Widget nameField = XmFileSelectionBoxGetChild(newFileSB, XmDIALOG_TEXT);
-#ifdef LESSTIF_VERSION
-        /* Workaround for Lesstif bug (0.93.94 and possibly other versions): 
-           if a proportional font is used for the text field and text is
-           inserted while the dialog is managed, Lesstif crashes because it
-           tries to access a non-existing selection. By creating a temporary 
-           dummy selection, the crash is avoided. */
-        XmTextFieldSetSelection(nameField, 0, 1, CurrentTime);
-	XmTextInsert(nameField, XmTextGetLastPosition(nameField), defaultName);
-        XmTextFieldSetSelection(nameField, 0, 0, CurrentTime);
-#else
-	XmTextInsert(nameField, XmTextGetLastPosition(nameField), defaultName);
-#endif
-    }
-
-    while (!done_with_dialog)
-        XtAppProcessEvent (XtWidgetToApplicationContext(newFileSB), XtIMAll);
-
-    if (SelectResult == GFN_OK) {
-	/* See note in existing file routines about freeing the values
-	   obtained in the following call */
-	XtVaGetValues(newFileSB, XmNdirSpec, &cFileString, XmNdirectory,
-		&cDir, XmNpattern, &cPattern, NULL);
-	if (DefaultDirectory != NULL) XmStringFree(DefaultDirectory);
-	if (DefaultPattern != NULL) XmStringFree(DefaultPattern);
-	DefaultDirectory = cDir;
-	DefaultPattern = cPattern;
-	XmStringGetLtoR(cFileString, XmSTRING_DEFAULT_CHARSET, &fileString);
-	/* See note in existing file routines about Motif 2.x bug. */
-#ifdef VMS
-	/* VMS  won't return `/' as the 1st character of the full file spec.
-	 `:' terminates the device name and is not allowed elsewhere */
-	if (strchr(fileString, ':') != NULL) {
-#else
-	if (fileString[0] == '/') {
-#endif /* VMS */
-	    /* The directory name is already present in the file name or
-	       the user entered a full path name. */
-	    strcpy(filename, fileString);
-	} else {
-	    /* Concatenate the directory name and the file name */
-   	    XmStringGetLtoR(cDir, XmSTRING_DEFAULT_CHARSET, &dirString);
-	    strcpy(filename, dirString);
-	    strcat(filename, fileString);
-  	    NEditFree(dirString);
-	}
-	XmStringFree(cFileString);
-	NEditFree(fileString);
-    }
-    XtDestroyWidget(newFileSB);
-    return SelectResult;
-}
 
 /*
 ** Return current default directory used by GetExistingFilename.
@@ -624,6 +340,8 @@ char *GetFileDialogDefaultDirectory(void)
 */
 char *GetFileDialogDefaultPattern(void)
 {
+    // TODO: implement for the new filedialog
+    
     char *string;
     
     if (DefaultPattern == NULL)
@@ -661,21 +379,11 @@ char* GetDefaultDirectoryStr(void)
 */
 void SetFileDialogDefaultPattern(char *pattern)
 {
+    // TODO: implement for the new filedialog
+    
     if (DefaultPattern != NULL)
     	XmStringFree(DefaultPattern);
     DefaultPattern = pattern==NULL ? NULL : XmStringCreateSimple(pattern);
-}
-
-/*
-** Turn on or off the text fiend in the GetExistingFilename file selection
-** box, where users can enter the filename by typing.  This is redundant
-** with typing in the list, and leads users who are new to nedit to miss
-** the more powerful feature in favor of changing the focus and typing
-** in the text field.
-*/
-void SetGetEFTextFieldRemoval(int state)
-{
-    RemoveRedundantTextField = state;
 }
 
 /*
@@ -799,109 +507,6 @@ static void doErrorDialog(const char *errorString, const char *filename)
 	XtAppProcessEvent (XtWidgetToApplicationContext(ErrorDialog), XtIMAll);
     
     XtUnmanageChild(ErrorDialog);
-}
-
-static void newFileOKCB(Widget	w, Boolean *client_data, 
-                 XmFileSelectionBoxCallbackStruct *call_data)
-
-{
-    char *filename;                   /* name of chosen file             */
-    int  fd;                          /* file descriptor                 */
-    int  length;		      /* length of file name		 */
-    int  response;		      /* response to dialog		 */
-    struct stat buf;		      /* status from fstat		 */
-    
-    XmStringGetLtoR(call_data->value, XmSTRING_DEFAULT_CHARSET, &filename);
-    SelectResult = GFN_OK;
-    length = strlen(filename);
-    if (length == 0 || filename[length-1] == '/') {
-    	doErrorDialog("Please supply a name for the file", NULL);
-	NEditFree(filename);
-    	return;
-    }
-
-#ifdef VMS
-    if (strchr(filename,';') && (fd = open(filename, O_RDONLY, 0)) != -1) {
-#else  /* not VMS*/
-    if ((fd = open(filename, O_RDONLY, 0)) != -1) {     /* exists */
-#endif /*VMS*/
-	fstat(fd, &buf);
-        close(fd);
-	if (buf.st_mode & S_IFDIR) {
-            doErrorDialog("Error: %s is a directory", filename);
-	    NEditFree(filename);
-	    return;
-	}
-        response = doYesNoDialog(filename);
-#ifdef VMS
-	if (response) {
-            if (access(filename, 2) != 0) { /* have write/delete access? */
-		doErrorDialog("Error: can't overwrite %s ", filename);
-		NEditFree(filename);
-		return;
-	    }
-	} else {
-#else
-        if (!response) {
-#endif /*VMS*/
-             return;
-	}
-    } else {
-	if ((fd = creat(filename, PERMS)) == -1) {
-            doErrorDialog("Error: can't create %s ", filename);
-	    NEditFree(filename);
-	    return;
-	} else {
-	    close(fd);
-            remove(filename);
-	}
-    }
-    NEditFree(filename);
-    *client_data = True;			    /* done with dialog */
-}
-
-
-static void newFileCancelCB(Widget w, Boolean *client_data, caddr_t call_data)
-{
-    SelectResult = GFN_CANCEL;
-    *client_data = True;
-}
-
-static void newHelpCB(Widget w, Widget helpPanel, caddr_t call_data)
-{
-    ManageDialogCenteredOnPointer(helpPanel);
-}
-
-static void existOkCB(Widget w, Boolean * client_data,
-	       XmFileSelectionBoxCallbackStruct *call_data)
-{
-    char *filename;                   /* name of chosen file             */
-    int  fd;                          /* file descriptor                 */
-    int  length;		      /* length of file name		 */
-    
-    XmStringGetLtoR(call_data->value, XmSTRING_DEFAULT_CHARSET, &filename);
-    SelectResult = GFN_OK;
-    length = strlen(filename);
-    if (length == 0 || filename[length-1] == '/') {
-    	doErrorDialog("Please select a file to open", NULL);
-    	NEditFree(filename);
-    	return;
-    } else    if ((fd = open(filename, O_RDONLY,0))  == -1) {
-    	doErrorDialog("Error: can't open %s ", filename);
-    	NEditFree(filename);
-        return;
-    } else
-    	close(fd);
-    NEditFree(filename);
-    	
-    *client_data = True;		/* done with dialog		*/
-}
-
-
-static void existCancelCB(Widget w, Boolean * client_data, caddr_t call_data)
-{
-    SelectResult = GFN_CANCEL;
-    *client_data = True;		/* done with dialog		*/
 }
 
 static void yesNoOKCB(Widget w, caddr_t client_data, caddr_t call_data)
@@ -1070,92 +675,6 @@ static void listCharEH(Widget w, XtPointer callData, XEvent *event,
     	XmListSetBottomPos(w, selectPos+2 <= nItems ? selectPos+2 : 0);
     /* For LessTif 0.89.9. Obsolete now? */
     XmListSelectPos(w, selectPos, True);
-}
-
-/*
-** Replacement directory and file search procedures for the file selection
-** box to re-sort the items in a standard order.  This is a patch, and not
-** a very good one, for the problem that in some Motif versions, the directory
-** list is sorted differently, such that typing of filenames fails because
-** it expects strcmp alphabetical order, as opposed to strcasecmp.  Most
-** users prefer the old ordering, which is what this enforces, but if
-** ifdefs can be found that will correctly predict the ordering and adjust
-** listCharEH above, instead of resorting to re-sorting, it should be done.
-** This obviously wastes valuable time as the selection box is popping up
-** and should be removed.  These routines also leak memory like a seive,
-** because Motif's inconsistent treatment of memory in list widgets does
-** not allow us to free lists that we pass in, and most Motif versions
-** don't clean it up properly.
-*/
-static void replacementDirSearchProc(Widget w, XtPointer searchData)
-{
-    Boolean updated;
-    
-    /* Call the original search procedure to do the actual search */
-    (*OrigDirSearchProc)(w, searchData);
-    /* Refreshing a list clears the keystroke history, even if no update. */
-    nKeystrokes = 0;
-    XtVaGetValues(w, XmNlistUpdated, &updated, NULL);
-    if (!updated)
-    	return;
-    	
-    /* Sort the items in the list */
-    sortWidgetList(XmFileSelectionBoxGetChild(w, XmDIALOG_DIR_LIST));
-}
-
-static void replacementFileSearchProc(Widget w, XtPointer searchData)
-{
-    Boolean updated;
-    
-    /* Call the original search procedure to do the actual search */
-    (*OrigFileSearchProc)(w, searchData);
-    /* Refreshing a list clears the keystroke history, even if no update. */
-    nKeystrokes = 0;
-    XtVaGetValues(w, XmNlistUpdated, &updated, NULL);
-    if (!updated)
-    	return;
-    	
-    /* Sort the items in the list */
-    sortWidgetList(XmFileSelectionBoxGetChild(w, XmDIALOG_LIST));
-}
-
-/*
-** Sort the items in a list widget "listWidget"
-*/
-static void sortWidgetList(Widget listWidget)
-{
-    XmString *items, *sortedItems;
-    int nItems, i;
-    
-    /* OpenMotif 2.3 will crash if we try to replace the items, when they
-       are selected. This function is only called when we refresh the
-       contents anyway. */
-    XmListDeselectAllItems(listWidget);
-    XtVaGetValues(listWidget, XmNitems, &items, XmNitemCount, &nItems, NULL);
-    sortedItems = (XmString *)NEditMalloc(sizeof(XmString) * nItems);
-    for (i=0; i<nItems; i++)
-    	sortedItems[i] = XmStringCopy(items[i]);
-    qsort(sortedItems, nItems, sizeof(XmString), compareXmStrings);
-    XmListReplaceItemsPos(listWidget, sortedItems, nItems, 1);
-    for (i=0; i<nItems; i++)
-    	XmStringFree(sortedItems[i]);
-    NEditFree((char *)sortedItems);
-}
-
-/*
-** Compare procedure for qsort for sorting a list of XmStrings
-*/
-static int compareXmStrings(const void *string1, const void *string2)
-{
-    char *s1, *s2;
-    int result;
-    
-    XmStringGetLtoR(*(XmString *)string1, XmSTRING_DEFAULT_CHARSET, &s1);
-    XmStringGetLtoR(*(XmString *)string2, XmSTRING_DEFAULT_CHARSET, &s2);
-    result = strcmp(s1, s2);
-    NEditFree(s1);
-    NEditFree(s2);
-    return result;
 }
 
 

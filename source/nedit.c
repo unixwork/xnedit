@@ -620,7 +620,6 @@ int main(int argc, char **argv)
     LoadPrintPreferences(XtDatabase(TheDisplay), APP_NAME, APP_CLASS, True);
     SetDeleteRemap(GetPrefMapDelete());
     SetPointerCenteredDialogs(GetPrefRepositionDialogs());
-    SetGetEFTextFieldRemoval(!GetPrefStdOpenDialog());
     
     /* Set up action procedures for menu item commands */
     InstallMenuActions(context);
