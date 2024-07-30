@@ -51,6 +51,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
 
 const char ** FileDialogDefaultEncodings(void);
 
+char* FileDialogGetFilter(void);
+void FileDialogSetFilter(const char *filterStr);
+
 #ifdef __cplusplus
 }
 #endif

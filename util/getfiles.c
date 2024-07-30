@@ -99,7 +99,6 @@ enum yesNoValues {ynNone, ynYes, ynNo};
 
 /* Saved default directory and pattern from last successful call */
 static XmString DefaultDirectory = NULL;
-static XmString DefaultPattern = NULL;
 
 static char* DefaultDirectoryStr = NULL;
 
@@ -333,24 +332,6 @@ char *GetFileDialogDefaultDirectory(void)
 }
 
 /*
-** Return current default match pattern used by GetExistingFilename.
-** Can return NULL if no default pattern has been set (meaning use
-** a pattern matching all files in the directory) String must be
-** freed by the caller using NEditFree.
-*/
-char *GetFileDialogDefaultPattern(void)
-{
-    // TODO: implement for the new filedialog
-    
-    char *string;
-    
-    if (DefaultPattern == NULL)
-    	return NULL;
-    XmStringGetLtoR(DefaultPattern, XmSTRING_DEFAULT_CHARSET, &string);
-    return string;
-}
-
-/*
 ** Set the current default directory to be used by GetExistingFilename.
 ** "dir" can be passed as NULL to clear the current default directory
 ** and use the application's working directory instead.
@@ -370,20 +351,6 @@ void SetFileDialogDefaultDirectory(char *dir)
 char* GetDefaultDirectoryStr(void)
 {
     return DefaultDirectoryStr;
-}
-
-/*
-** Set the current default match pattern to be used by GetExistingFilename.
-** "pattern" can be passed as NULL as the equivalent a pattern matching
-** all files in the directory.
-*/
-void SetFileDialogDefaultPattern(char *pattern)
-{
-    // TODO: implement for the new filedialog
-    
-    if (DefaultPattern != NULL)
-    	XmStringFree(DefaultPattern);
-    DefaultPattern = pattern==NULL ? NULL : XmStringCreateSimple(pattern);
 }
 
 /*

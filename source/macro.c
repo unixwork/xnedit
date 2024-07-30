@@ -53,6 +53,7 @@
 #include "../util/fileUtils.h"
 #include "../util/utils.h"
 #include "../util/getfiles.h"
+#include "../util/filedialog.h"
 #include "highlight.h"
 #include "highlightData.h"
 #include "rangeset.h"
@@ -3428,9 +3429,9 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     }
 
     /*  Set filter (saving original for later)  */
-    orgFilter = GetFileDialogDefaultPattern();
+    orgFilter = FileDialogGetFilter();
     if ('\0' != filter[0]) {
-        SetFileDialogDefaultPattern(filter);
+        FileDialogSetFilter(filter);
     }
 
     /*  Fork to one of the worker methods from util/getfiles.c.
@@ -3444,7 +3445,7 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
 
     /*  Reset original values and free temps  */
     SetFileDialogDefaultDirectory(orgDefaultPath);
-    SetFileDialogDefaultPattern(orgFilter);
+    FileDialogSetFilter(orgFilter);
     NEditFree(orgDefaultPath);
     NEditFree(orgFilter);
 

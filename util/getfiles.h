@@ -39,10 +39,8 @@ int GetExistingFilename(Widget parent, char *promptString, FileSelection *file);
 int GetNewFilename(Widget parent, char *promptString, FileSelection *file, 
         char *defaultName);
 char *GetFileDialogDefaultDirectory(void);
-char *GetFileDialogDefaultPattern(void);
 void SetFileDialogDefaultDirectory(char *dir);
 char* GetDefaultDirectoryStr(void);
-void SetFileDialogDefaultPattern(char *pattern);
 
 int OverrideFileDialog(Widget parent, const char *filename);
 void FileOpenErrorDialog(Widget parent, const char *filename);

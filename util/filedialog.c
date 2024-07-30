@@ -2852,3 +2852,18 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
 const char ** FileDialogDefaultEncodings(void) {
     return (const char **)default_encodings;
 }
+
+char* FileDialogGetFilter(void) {
+    if(LastFilter) {
+        return LastFilter;
+    } else {
+        return NEditStrdup("*");
+    }
+}
+
+void FileDialogSetFilter(const char *filterStr) {
+    if(LastFilter) {
+        NEditFree(LastFilter);
+    }
+    LastFilter = filterStr ? NEditStrdup(filterStr) : NULL;
+}
