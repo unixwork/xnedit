@@ -1019,7 +1019,7 @@ static void cleanupLists(FileDialogData *data)
 
 static void filedialog_check_iofilters(FileDialogData *data, const char *path)
 {
-    if(!path) {
+    if(!path || !data->iofilter) {
         return;
     }
     
