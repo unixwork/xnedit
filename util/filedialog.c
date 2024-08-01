@@ -2809,27 +2809,39 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             int bomVal = 0;
             int xattrVal = 0;
             int wrapVal = 0;
-            XtVaGetValues(data.bom, XmNset, &bomVal, NULL);
-            XtVaGetValues(data.xattr, XmNset, &xattrVal, NULL);
-            XtVaGetValues(data.wrap, XmNset, &wrapVal, NULL);
+            if(data.bom) {
+                XtVaGetValues(data.bom, XmNset, &bomVal, NULL);
+            }
+            if(data.xattr) {
+                XtVaGetValues(data.xattr, XmNset, &xattrVal, NULL);
+            }
+            if(data.wrap) {
+                XtVaGetValues(data.wrap, XmNset, &wrapVal, NULL);
+            }
+            
             file->writebom = bomVal;
             file->setxattr = xattrVal;
             file->addwrap = wrapVal;
             
-            int formatVal = 0;
-            XtVaGetValues(data.unixFormat, XmNset, &formatVal, NULL);
-            if(formatVal) {
-                file->format = UNIX_FILE_FORMAT;
-            } else {
-                XtVaGetValues(data.dosFormat, XmNset, &formatVal, NULL);
+            
+            if(data.unixFormat) {
+                int formatVal = 0;
+                XtVaGetValues(data.unixFormat, XmNset, &formatVal, NULL);
                 if(formatVal) {
-                    file->format = DOS_FILE_FORMAT;
+                    file->format = UNIX_FILE_FORMAT;
                 } else {
-                    XtVaGetValues(data.macFormat, XmNset, &formatVal, NULL);
+                    XtVaGetValues(data.dosFormat, XmNset, &formatVal, NULL);
                     if(formatVal) {
-                        file->format = MAC_FILE_FORMAT;
+                        file->format = DOS_FILE_FORMAT;
+                    } else {
+                        XtVaGetValues(data.macFormat, XmNset, &formatVal, NULL);
+                        if(formatVal) {
+                            file->format = MAC_FILE_FORMAT;
+                        }
                     }
                 }
+            } else {
+                file->format = 0;
             }
         }
     } else {
