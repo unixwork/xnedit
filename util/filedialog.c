@@ -2383,80 +2383,114 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     Widget bottomWidget = separator;
     
     if(type == FILEDIALOG_SAVE) { 
-        n = 0;
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, separator); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
-        createFilterWidgets(&data, file->filter, form, args, n);
-        
-        n = 0;
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, separator); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNrightWidget, data.iofilter); n++;
-        XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
-        //XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
-        //XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
-        data.name = XNECreateText(form, "textfield", args, n);
-        XtManageChild(data.name);
-        XtAddCallback(data.name, XmNactivateCallback,
-                 (XtCallbackProc)filedialog_ok, &data);
-        if(defaultName) {
-            XNETextSetString(data.name, (char*)defaultName);
-        }
-        
-        n = 0;
-        str = XmStringCreateSimple("Filter");
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, data.name); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNleftWidget, data.name); n++;
-        XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNlabelString, str); n++;
-        Widget filterLabel = XmCreateLabel(form, "label", args, n);
-        XtManageChild(filterLabel);
-        XmStringFree(str);
-        
-        n = 0;
-        str = XmStringCreateSimple("New File Name");
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, data.name); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNlabelString, str); n++;
-        Widget nameLabel = XmCreateLabel(form, "label", args, n);
-        XtManageChild(nameLabel);
-        XmStringFree(str);
+        if(file->extraoptions) {
+            n = 0;
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, separator); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+            createFilterWidgets(&data, file->filter, form, args, n);
 
-        n = 0;
-        str = XmStringCreateSimple("Add line breaks where wrapped");
-        XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
-        XtSetArg(args[n], XmNbottomWidget, nameLabel); n++;
-        XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
-        XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
-        XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
-        XtSetArg(args[n], XmNmnemonic, 'A'); n++;
-        XtSetArg(args[n], XmNlabelString, str); n++;
-        data.wrap = XmCreateToggleButton(form, "addWrap", args, n);
-        XtManageChild(data.wrap);
-        XmStringFree(str);
+            n = 0;
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, separator); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNrightWidget, data.iofilter); n++;
+            XtSetArg(args[n], XmNrightOffset, WIDGET_SPACING); n++;
+            //XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+            //XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
+            data.name = XNECreateText(form, "textfield", args, n);
+            XtManageChild(data.name);
+            XtAddCallback(data.name, XmNactivateCallback,
+                     (XtCallbackProc)filedialog_ok, &data);
+            if(defaultName) {
+                XNETextSetString(data.name, (char*)defaultName);
+            }
 
-        Widget formatBtns = CreateFormatButtons(
-                form,
-                data.wrap,
-                file->format,
-                &data.unixFormat,
-                &data.dosFormat,
-                &data.macFormat);
-        
-        bottomWidget = formatBtns;
+            n = 0;
+            str = XmStringCreateSimple("Filter");
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, data.name); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNleftWidget, data.name); n++;
+            XtSetArg(args[n], XmNleftOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            Widget filterLabel = XmCreateLabel(form, "label", args, n);
+            XtManageChild(filterLabel);
+            XmStringFree(str);
+
+            n = 0;
+            str = XmStringCreateSimple("New File Name");
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, data.name); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            Widget nameLabel = XmCreateLabel(form, "label", args, n);
+            XtManageChild(nameLabel);
+            XmStringFree(str);
+
+            n = 0;
+            str = XmStringCreateSimple("Add line breaks where wrapped");
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, nameLabel); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNmnemonic, 'A'); n++;
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            data.wrap = XmCreateToggleButton(form, "addWrap", args, n);
+            XtManageChild(data.wrap);
+            XmStringFree(str);
+
+            Widget formatBtns = CreateFormatButtons(
+                    form,
+                    data.wrap,
+                    file->format,
+                    &data.unixFormat,
+                    &data.dosFormat,
+                    &data.macFormat);
+
+            bottomWidget = formatBtns;
+        } else {
+            n = 0;
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, separator); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNrightOffset, WINDOW_SPACING); n++;
+            //XtSetArg(args[n], XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET); n++;
+            //XtSetArg(args[n], XmNtopWidget, data.iofilter); n++;
+            data.name = XNECreateText(form, "textfield", args, n);
+            XtManageChild(data.name);
+            XtAddCallback(data.name, XmNactivateCallback,
+                     (XtCallbackProc)filedialog_ok, &data);
+            if(defaultName) {
+                XNETextSetString(data.name, (char*)defaultName);
+            }
+            
+            n = 0;
+            str = XmStringCreateSimple("New File Name");
+            XtSetArg(args[n], XmNbottomAttachment, XmATTACH_WIDGET); n++;
+            XtSetArg(args[n], XmNbottomWidget, data.name); n++;
+            XtSetArg(args[n], XmNbottomOffset, WIDGET_SPACING); n++;
+            XtSetArg(args[n], XmNleftAttachment, XmATTACH_FORM); n++;
+            XtSetArg(args[n], XmNleftOffset, WINDOW_SPACING); n++;
+            XtSetArg(args[n], XmNlabelString, str); n++;
+            Widget nameLabel = XmCreateLabel(form, "label", args, n);
+            XtManageChild(nameLabel);
+            XmStringFree(str);
+            
+            bottomWidget = nameLabel;
+        } 
     }
     
     n = 0;
@@ -2469,7 +2503,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     Widget enc = XmCreateRowColumn(form, "enc", args, n);
     XtManageChild(enc);
     
-    if(file->setenc) {
+    if(file->extraoptions) {
         n = 0;
         str = XmStringCreateSimple("Encoding:");
         XtSetArg(args[n], XmNlabelString, str); n++;
@@ -2782,7 +2816,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         
         file->filter = data.selected_filter ? NEditStrdup(data.selected_filter->name) : NULL;
         
-        if(file->setenc) {
+        if(file->extraoptions) {
             int encPos;
             XtVaGetValues(data.encoding, XmNselectedPosition, &encPos, NULL);
             if(type == FILEDIALOG_OPEN) {

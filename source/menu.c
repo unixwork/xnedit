@@ -3000,7 +3000,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     
     FileSelection file;
     memset(&file, 0, sizeof(FileSelection));
-    file.setenc = True;
+    file.extraoptions = True;
     file.writebom = window->bom;
     file.format = window->fileFormat;
     if(strlen(window->encoding) > 0) {

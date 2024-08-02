@@ -1497,7 +1497,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     FileSelection newFile;
     if (!file) {
         memset(&newFile, 0, sizeof(FileSelection));
-        newFile.setenc = True;
+        newFile.extraoptions = True;
         newFile.encoding = strlen(window->encoding) > 0 ? window->encoding : NULL;
         newFile.format = window->fileFormat;
         newFile.writebom = window->bom;
