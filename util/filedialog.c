@@ -2900,16 +2900,10 @@ const char ** FileDialogDefaultEncodings(void) {
 }
 
 char* FileDialogGetFilter(void) {
-    if(LastFilter) {
-        return LastFilter;
-    } else {
-        return NEditStrdup("*");
-    }
+    return NEditStrdup(LastFilter ? LastFilter : "*");
 }
 
 void FileDialogSetFilter(const char *filterStr) {
-    if(LastFilter) {
-        NEditFree(LastFilter);
-    }
+    NEditFree(LastFilter);
     LastFilter = filterStr ? NEditStrdup(filterStr) : NULL;
 }
