@@ -82,7 +82,8 @@ enum fontTypes {PLAIN_FONT, ITALIC_FONT, BOLD_FONT, BOLD_ITALIC_FONT};
 static const char *FontTypeNames[N_FONT_TYPES] =
    {"Plain", "Italic", "Bold", "Bold Italic"};
 
-char *currentColorProfileName = NULL;
+static char *currentColorProfileName = NULL;
+static int currentColorProfileStyleType = 0;
 
 static int styleError(const char *stringStart, const char *stoppedAt,
        const char *message);
@@ -164,6 +165,7 @@ static struct {
     Widget managedListW;
     highlightStyleRec **highlightStyleList;
     int nHighlightStyles;
+    char   *colorProfileName;
 } HSDialog = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0};
 
 /* Highlight dialog information */
@@ -1099,6 +1101,11 @@ void SetColorProfileName(const char *profileName)
     currentColorProfileName = profileName ? NEditStrdup(profileName) : NULL;
 }
 
+void SetColorProfileStyleType(int profileStyleType)
+{
+    currentColorProfileStyleType = profileStyleType;
+}
+
 void ColorProfileLoadHighlightStyles(ColorProfile *profile)
 {
     if(profile->styleType != 2) {
@@ -1219,7 +1226,7 @@ int LoadStylesString(char *inString, Boolean profile)
                 }
                 colorProfile->styles = NEditRealloc(
                         colorProfile->styles,
-                        colorProfile->stylesAlloc * sizeof(highlightStyleRec));
+                        colorProfile->stylesAlloc * sizeof(highlightStyleRec*));
             }
             colorProfile->styles[colorProfile->numStyles++] = hs;
             
@@ -1943,14 +1950,27 @@ void EditHighlightStyles(const char *initialStyle)
     	return;
     }
     
+    int hsDiagNHighlightStyles = NHighlightStyles;
+    highlightStyleRec **hsDiagHighlightStyles = HighlightStyles;
+    if(currentColorProfileName && currentColorProfileStyleType == 2) {
+        HSDialog.colorProfileName = NEditStrdup(currentColorProfileName);
+        ColorProfile *colorProfile = GetColorProfile(currentColorProfileName);
+        if(colorProfile && colorProfile->styles) {
+            hsDiagNHighlightStyles = colorProfile->numStyles;
+            hsDiagHighlightStyles = colorProfile->styles;
+        }
+    } else {
+        HSDialog.colorProfileName = NULL;
+    }
+    
     /* Copy the list of highlight style information to one that the user
        can freely edit (via the dialog and managed-list code) */
     HSDialog.highlightStyleList = (highlightStyleRec **)NEditMalloc(
     	    sizeof(highlightStyleRec *) * MAX_HIGHLIGHT_STYLES);
-    for (i=0; i<NHighlightStyles; i++)
-    	HSDialog.highlightStyleList[i] =
-    	copyHighlightStyleRec(HighlightStyles[i]);
-    HSDialog.nHighlightStyles = NHighlightStyles;
+    for (i=0; i<hsDiagNHighlightStyles; i++) {
+        HSDialog.highlightStyleList[i] = copyHighlightStyleRec(hsDiagHighlightStyles[i]);
+    }	
+    HSDialog.nHighlightStyles = hsDiagNHighlightStyles;
     
     /* Create a form widget in an application shell */
     ac = 0;
@@ -1970,7 +1990,7 @@ void EditHighlightStyles(const char *initialStyle)
     "To modify the properties of an existing highlight style, select the name\n\
     from the list on the left.  Select \"New\" to add a new style to the list.";
     
-    if(currentColorProfileName) {
+    if(currentColorProfileName && currentColorProfileStyleType == 2) {
         size_t topLblStrLen = strlen(topLblStr);
         size_t currentColorProfileNameLen = strlen(currentColorProfileName);
         size_t tlStrAlloc = currentColorProfileNameLen + topLblStrLen + 20;
@@ -2229,9 +2249,11 @@ static void hsDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     int i;
     
-    for (i=0; i<HSDialog.nHighlightStyles; i++)
-    	freeHighlightStyleRec(HSDialog.highlightStyleList[i]);
+    for (i=0; i<HSDialog.nHighlightStyles; i++) {
+        freeHighlightStyleRec(HSDialog.highlightStyleList[i]);
+    }	
     NEditFree(HSDialog.highlightStyleList);
+    NEditFree(HSDialog.colorProfileName);
 }
 
 static void hsOkCB(Widget w, XtPointer clientData, XtPointer callData)
@@ -2525,23 +2547,56 @@ static int updateHSList(void)
     int i;
     
     /* Get the current contents of the dialog fields */
-    if (!UpdateManagedList(HSDialog.managedListW, True))
-    	return False;
+    if (!UpdateManagedList(HSDialog.managedListW, True)) {
+        return False;
+    }
+    
+    ColorProfile *colorProfile = NULL;
+    if(HSDialog.colorProfileName) {
+        colorProfile = GetColorProfile(HSDialog.colorProfileName);
+        if(!colorProfile) {
+            DialogF(DF_ERR, HSDialog.shell, 1, "Error",
+                            "Color Profile %s not found",
+                            "OK", HSDialog.colorProfileName);
+            return False;
+        }
+    }
+    
+    size_t nstyles = NHighlightStyles;
+    highlightStyleRec **styleList = HighlightStyles;
+    if(colorProfile) {
+        if(HSDialog.nHighlightStyles > colorProfile->stylesAlloc) {
+            colorProfile->stylesAlloc = HSDialog.nHighlightStyles;
+            colorProfile->styles = NEditRealloc(
+                    colorProfile->styles,
+                    colorProfile->stylesAlloc * sizeof(highlightStyleRec*));
+        }
+        nstyles = colorProfile->numStyles;
+        styleList = colorProfile->styles;
+    }
     
     /* Replace the old highlight styles list with the new one from the dialog */
-    for (i=0; i<NHighlightStyles; i++)
-    	freeHighlightStyleRec(HighlightStyles[i]);
-    for (i=0; i<HSDialog.nHighlightStyles; i++)
-    	HighlightStyles[i] =
+    for (i=0; i<nstyles; i++) {
+        freeHighlightStyleRec(styleList[i]);
+    }
+    for (i=0; i<HSDialog.nHighlightStyles; i++) {
+        styleList[i] =
     	    	copyHighlightStyleRec(HSDialog.highlightStyleList[i]);
-    NHighlightStyles = HSDialog.nHighlightStyles;
+    }
+    
+    if(colorProfile) {
+        colorProfile->numStyles = HSDialog.nHighlightStyles;
+    } else {
+        NHighlightStyles = HSDialog.nHighlightStyles;
+    }
     
     /* If a syntax highlighting dialog is up, update its menu */
     updateHighlightStyleMenu();
     
     /* Redisplay highlighted windows which use changed style(s) */
-    for (window=WindowList; window!=NULL; window=window->next)
-    	UpdateHighlightStyles(window, True);
+    for (window=WindowList; window!=NULL; window=window->next) {
+        UpdateHighlightStyles(window, True);
+    }
     
     /* Note that preferences have been changed */
     MarkPrefsChanged();

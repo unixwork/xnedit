@@ -6792,7 +6792,8 @@ static void colorDialogSelectProfile(colorDialog *cd, int index)
     
     // temporarily change the profile name for the text drawing style dialog
     ColorProfile *cp = &cd->colorProfiles[index];
-    SetColorProfileName(cp->styleType == 2 ? cp->name : NULL);
+    SetColorProfileName(cp->name);
+    SetColorProfileStyleType(cp->styleType);
 }
 
 static void colorDialogProfileSelected(
@@ -6974,6 +6975,7 @@ static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButto
         type = 2;
     }
     cd->colorProfiles[cd->selectedProfile].styleType = type;
+    SetColorProfileStyleType(type);
 }
 
 /* 
@@ -8015,8 +8017,9 @@ void ParseColorProfiles(const char *str)
         defaultColorProfile = defaultProfile;
     }
     
-    if(strcmp(defaultColorProfile->name, "default") != 0 && defaultColorProfile->styleType == 2) {
+    if(strcmp(defaultColorProfile->name, "default") != 0) {
         SetColorProfileName(defaultColorProfile->name);
+        SetColorProfileStyleType(defaultColorProfile->styleType);
     }
 }
 
