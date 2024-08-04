@@ -568,6 +568,7 @@ typedef struct _WindowInfo {
     void    	*shellCmdData;  	/* when a shell command is executing,
     	    	    	    	    	   info. about it, otherwise, NULL */
     void    	*macroCmdData;  	/* same for macro commands */
+    Boolean     macroBlocking;          /* blocking macro command running */
     void    	*smartIndentData;   	/* compiled macros for smart indent */
     Atom	fileClosedAtom;         /* Atom used to tell nc that the file is closed */
     int    	languageMode;	    	/* identifies language mode currently

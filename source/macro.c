@@ -1044,6 +1044,9 @@ void AbortMacroCommand(WindowInfo *window)
     if (window->macroCmdData == NULL)
     	return;
     
+    if (window->macroBlocking)
+        return;
+    
     /* If there's both a macro and a shell command executing, the shell command
        must have been called from the macro.  When called from a macro, shell
        commands don't put up cancellation controls of their own, but rely
@@ -3436,12 +3439,14 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
 
     /*  Fork to one of the worker methods from util/getfiles.c.
         (This should obviously be refactored.)  */
+    window->macroBlocking = True;
     FileSelection getfile = { NULL, NULL };
     if (0 == strcmp(mode, "exist")) {
         gfnResult = GetExistingFilename(window->shell, title, &getfile);
     } else {
         gfnResult = GetNewFilename(window->shell, title, &getfile, defaultName);
     }   /*  Invalid values are weeded out above.  */ 
+    window->macroBlocking = False;
 
     /*  Reset original values and free temps  */
     SetFileDialogDefaultDirectory(orgDefaultPath);
