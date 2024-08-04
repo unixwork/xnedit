@@ -313,6 +313,10 @@ typedef struct {
     Widget styleCustomW;
     Widget styleGreyPctW;
     Widget styleColorPctW;
+    Widget styleXResW;
+    Widget styleWMDefaultW;
+    Widget styleWMLightW;
+    Widget styleWMDarkW;
     
     ColorProfile *colorProfiles;
     size_t numColorProfiles;
@@ -2543,7 +2547,7 @@ void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
     to->rainbowColorList = NEditStrdup(from->rainbowColorList);
     to->resourceFile = from->resourceFile ? NEditStrdup(from->resourceFile) : NULL;
     to->styleType = from->styleType;
-    
+    to->windowThemeVariant = from->windowThemeVariant;
     to->orig = from;
 }
 
@@ -2574,7 +2578,7 @@ char* WriteColorProfilesString(void)
                     buf,
                     4096,
                     "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
-                    "ansi:{%s},rainbow:{%s},styles:{%d}%s%s%s%s",
+                    "ansi:{%s},rainbow:{%s},styles:{%d},wm:{%d}%s%s%s%s",
                     profile->name,
                     profile->textFg,
                     profile->textBg,
@@ -2589,6 +2593,7 @@ char* WriteColorProfilesString(void)
                     profile->ansiColorList,
                     profile->rainbowColorList,
                     profile->styleType,
+                    profile->windowThemeVariant,
                     profile->resourceFile ? ",res:{" : "",
                     profile->resourceFile ? profile->resourceFile : "",
                     profile->resourceFile ? "}" : "",
@@ -6273,6 +6278,7 @@ static void updateColors(colorDialog *cd)
         prefProfile->rainbowColorList = NEditStrdup(profile->rainbowColorList);
         prefProfile->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
         prefProfile->styleType = profile->styleType;
+        prefProfile->windowThemeVariant = profile->windowThemeVariant;
 
         prefProfile->colorsLoaded = FALSE;
                
@@ -6978,6 +6984,22 @@ static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButto
     SetColorProfileStyleType(type);
 }
 
+static void colorDialogThemeVariantChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
+{
+    if(!tb->set) {
+        return; // ignore unset events
+    }
+    
+    int themeVariant = 0;
+    if(w == cd->styleWMLightW) {
+        themeVariant = 1;
+    } else if(w == cd->styleWMDarkW) {
+        themeVariant = 2;
+    }
+    
+    cd->colorProfiles[cd->selectedProfile].windowThemeVariant = themeVariant;
+}
+
 /* 
  * Code for the dialog itself
  */
@@ -7423,7 +7445,8 @@ void ChooseColors(WindowInfo *window)
     tabForm = cd->tabForms[3];
     s1 = XmStringCreateLocalized("Text drawing styles can be adjusted for a color profile.\n"
                                  "Lightened Colors: Increase brightness to improve visibility against dark backgrounds.\n"
-                                 "Custom Styles: Implement custom drawing styles by manually adjusting settings in the Text Drawing Styles menu.");
+                                 "Custom Styles: Implement custom drawing styles by manually adjusting settings\n"
+                                 "in the Text Drawing Styles menu.");
     Widget stInfoLabel = XtVaCreateManagedWidget("stInfoLabel",
             xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_FORM,
@@ -7501,8 +7524,97 @@ void ChooseColors(WindowInfo *window)
             NULL);
     XtAddCallback(stOpenStyleSettings, XmNactivateCallback,
                  (XtCallbackProc)colorDialogOpenStylesSettings, NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("X Resource File");
+    Widget xresLabel = XtVaCreateManagedWidget("stXResLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stOpenStyleSettings,
+            XmNleftOffset, 6,
+            XmNtopOffset, 16,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+    
+    cd->styleXResW = XtVaCreateManagedWidget("stXResText",
+            xmTextWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, xresLabel,
+            XmNleftOffset, 6,
+            XmNrightOffset, 6,
+            XmNtopOffset, 6,
+            NULL);
+    XmTextSetString(cd->styleXResW, sp->resourceFile);
+    
+    s1 = XmStringCreateLocalized("Window Title Bar (GTK Theme Variant)");
+    Widget stThemeVariantLabel = XtVaCreateManagedWidget("stThemeVariantLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, cd->styleXResW,
+            XmNleftOffset, 6,
+            XmNtopOffset, 16,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+    
+    Widget wmRadioRC = XtVaCreateManagedWidget("style_radiobuttons",
+            xmRowColumnWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stThemeVariantLabel,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNradioBehavior, True,
+            XmNpacking, XmPACK_COLUMN,
+    	    XmNnumColumns, 3,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Default");
+    cd->styleWMDefaultW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 0 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMDefaultW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
 
-    // TODO: style preview drawing area
+    s1 = XmStringCreateLocalized("Light");
+    cd->styleWMLightW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 1 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMLightW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Dark");
+    cd->styleWMDarkW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 2 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMDarkW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
+    
+
+    // TODO: style preview area
     
     /* Set initial values */
     loadColors(cd);
@@ -7643,6 +7755,18 @@ static void saveColorProfileSettings(colorDialog *cd)
     profile->ansiColorList = ansiColorList;
     
     profile->modified = TRUE;
+    
+    /*
+     * Tab 4: Style Settings
+     */
+    char *resourceFile = XmTextGetString(cd->styleXResW);
+    NEditFree(profile->resourceFile);
+    if(resourceFile && strlen(resourceFile) > 0) {
+        profile->resourceFile = resourceFile;
+    } else {
+        profile->resourceFile = NULL;
+        XtFree(resourceFile);
+    }
 }
 
 static void indentRainbowDialogLoadColors(colorDialog *cd)
@@ -7740,6 +7864,12 @@ static void loadColorProfileStyleSettings(colorDialog *cd)
     XtVaSetValues(cd->styleDefaultW, XmNset, sp->styleType == 0 ? 1 : 0, NULL);
     XtVaSetValues(cd->styleLightenW, XmNset, sp->styleType == 1 ? 1 : 0, NULL);
     XtVaSetValues(cd->styleCustomW, XmNset, sp->styleType == 2 ? 1 : 0, NULL);
+    
+    XmTextSetString(cd->styleXResW, sp->resourceFile);
+    
+    XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleWMDarkW, XmNset, sp->windowThemeVariant == 2 ? 1 : 0, NULL);
 }
 
 
@@ -7921,6 +8051,17 @@ static ColorProfile* ParseColorProfile(const char *str, size_t len)
                 profile->resourceFile = NEditMalloc(sectionColorsLen+1);
                 memcpy(profile->resourceFile, sectionColors, sectionColorsLen);
                 profile->resourceFile[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "wm", sectionNameLen)) {
+                // wm value is 0, 1 or 2
+                if(sectionColorsLen == 1) {
+                    // profile->windowThemeVariant is initialized with 0, we only
+                    // need to check if the new value is 1 or 2
+                    if(sectionColors[0] == '1') {
+                        profile->windowThemeVariant = 1;
+                    } else if(sectionColors[0] == '2') {
+                        profile->windowThemeVariant = 2;
+                    }
+                }
             } else {
                 fprintf(stderr, "XNEdit: Error: cannot parse color profile %s: unknown str '%.*s'\n", profile->name, (int)sectionNameLen, sectionName);
             }
