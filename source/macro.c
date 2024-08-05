@@ -3457,10 +3457,10 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     result->tag = STRING_TAG;
     if (GFN_OK == gfnResult) {
         /*  Got a string, copy it to the result  */
-        printf("refactore me: macro.c\n");
         if (!AllocNStringNCpy(&result->val.str, getfile.path, MAXPATHLEN)) {
             M_FAILURE("failed to allocate return value: %s");
         }
+        NEditFree(getfile.path);
     } else {
         /* User cancelled.  Return "" */
         result->val.str.rep = PERM_ALLOC_STR("");
