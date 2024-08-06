@@ -61,6 +61,7 @@ Solaris/OpenIndiana:
     pkg install gcc make pkgconf motif
 
 Cygwin:
+
     setup-x86_64.exe -qP gcc-g++,make,git,pkg-config,libX11-devel,libXt-devel,libXm-devel,libXrender-devel,libXft-devel,libiconv-devel,libfontconfig-devel,motif,bison
 
 To build XNEdit from source, run make from XNEdit's root directory and specify
