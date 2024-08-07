@@ -2282,9 +2282,23 @@ static int clipboardToStringMS(WindowInfo *window, DataValue *argList, int nArgs
     if (nArgs != 0)
     	return wrongNArgsErr(errMsg);
     
-    /* Ask if there's a string in the clipboard, and get its length */
-    if (SpinClipboardInquireLength(TheDisplay, XtWindow(window->shell), "STRING",
-    	    &length) != ClipboardSuccess) {
+    // Ask if there's a string in the clipboard, and get its length
+    // try UTF8_STRING first, if it isn't available, try STRING 
+    char *format_name = "UTF8_STRING";
+    int res = ClipboardNoData;
+    for(int i=0;i<2;i++) {
+        res = SpinClipboardInquireLength(
+                TheDisplay,
+                XtWindow(window->shell),
+                format_name,
+                &length);
+        if(res == ClipboardSuccess) {
+            break;
+        }
+        format_name = "STRING";
+    }
+    
+    if (res != ClipboardSuccess) {
     	result->tag = STRING_TAG;
     	result->val.str.rep = PERM_ALLOC_STR("");
     	result->val.str.len = 0;
@@ -2301,7 +2315,7 @@ static int clipboardToStringMS(WindowInfo *window, DataValue *argList, int nArgs
     AllocNString(&result->val.str, (int)length + 1);
 
     /* Copy the clipboard contents to the string */
-    if (SpinClipboardRetrieve(TheDisplay, XtWindow(window->shell), "STRING",
+    if (SpinClipboardRetrieve(TheDisplay, XtWindow(window->shell), format_name,
     	    result->val.str.rep, length, &retLength, &id) != ClipboardSuccess) {
     	retLength = 0;
         /*
