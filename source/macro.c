@@ -2263,10 +2263,11 @@ static int stringToClipboardMS(WindowInfo *window, DataValue *argList, int nArgs
     XmStringFree(s);
     if (stat != ClipboardSuccess)
     	return True;
-    if (SpinClipboardCopy(TheDisplay, XtWindow(window->textArea), itemID, "STRING",
-    	    string, strlen(string), 0, NULL) != ClipboardSuccess) {
-        SpinClipboardEndCopy(TheDisplay, XtWindow(window->textArea), itemID);      
-    	return True;
+    char *format = "UTF8_STRING";
+    for(int i=0;i<2;i++) {
+        (void)SpinClipboardCopy(TheDisplay, XtWindow(window->textArea), itemID, format,
+                string, strlen(string), 0, NULL);
+        format = "STRING";
     }
     SpinClipboardEndCopy(TheDisplay, XtWindow(window->textArea), itemID);
     return True;
