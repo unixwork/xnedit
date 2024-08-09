@@ -598,7 +598,7 @@ void TextDSetBoldItalicFont(textDisp *textD, NFont *boldItalicFont)
 
 int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
 {
-    int fontWidth = textD->font->maxWidth;
+    int fontWidth = textD->font->minWidth;
     int i;
 
     if (considerStyles) {
