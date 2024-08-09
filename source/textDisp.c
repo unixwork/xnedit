@@ -609,7 +609,6 @@ int TextDMinFontWidth(textDisp *textD, Boolean considerStyles)
             }
         }
     }
-    return(fontWidth);
     return fontWidth;
 }
 
@@ -626,7 +625,7 @@ int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles)
             }
         }
     }
-    return(fontWidth);
+    return fontWidth;
 }
 
 /*
