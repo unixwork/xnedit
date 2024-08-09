@@ -381,7 +381,6 @@ static int cmpStrPtr(const void *strA, const void *strB);
 static void setWindowSizeDefault(int rows, int cols);
 static void updateWindowSizeMenus(void);
 static void updateWindowSizeMenu(WindowInfo *win);
-static int strCaseCmp(const char *str1, const char *str2);
 static int compareWindowNames(const void *windowA, const void *windowB);
 static void bgMenuPostAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
@@ -3042,9 +3041,9 @@ static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     FileSelection file;
     memset(&file, 0, sizeof(FileSelection));
     file.path = args[0];
-    file.writebom = *nArgs > 1 && !strCaseCmp(args[1], "writebom") ? 1 : 0;
-    file.setxattr = *nArgs > 2 && !strCaseCmp(args[2], "setxattr") ? 1 : 0;
-    file.addwrap = *nArgs > 3 && !strCaseCmp(args[3], "wrapped") ? 1 : 0;
+    file.writebom = *nArgs > 1 && !strcasecmp(args[1], "writebom") ? 1 : 0;
+    file.setxattr = *nArgs > 2 && !strcasecmp(args[2], "setxattr") ? 1 : 0;
+    file.addwrap = *nArgs > 3 && !strcasecmp(args[3], "wrapped") ? 1 : 0;
     file.format = *nArgs > 4 ? atoi(args[4]) : UNIX_FILE_FORMAT;
     file.encoding = *nArgs > 5 ? args[5] : NULL;
     file.filter = *nArgs > 6 ? args[6] : NULL;
@@ -3443,7 +3442,7 @@ static void findIncrAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     	return;
     }
     for (i=1; i<(int)*nArgs; i++)
-    	if (!strCaseCmp(args[i], "continued"))
+    	if (!strcasecmp(args[i], "continued"))
     	    continued = TRUE;
     SearchAndSelectIncremental(WidgetToWindow(w),
 	    searchDirection(1, args, nArgs), args[0],
@@ -5296,9 +5295,9 @@ static int searchDirection(int ignoreArgs, String *args, Cardinal *nArgs)
     int i;
     
     for (i=ignoreArgs; i<(int)*nArgs; i++) {
-    	if (!strCaseCmp(args[i], "forward"))
+    	if (!strcasecmp(args[i], "forward"))
     	    return SEARCH_FORWARD;
-    	if (!strCaseCmp(args[i], "backward"))
+    	if (!strcasecmp(args[i], "backward"))
     	    return SEARCH_BACKWARD;
     }
     return SEARCH_FORWARD;
@@ -5315,9 +5314,9 @@ static int searchKeepDialogs(int ignoreArgs, String *args, Cardinal *nArgs)
     int i;
     
     for (i=ignoreArgs; i<(int)*nArgs; i++) {
-    	if (!strCaseCmp(args[i], "keep"))
+    	if (!strcasecmp(args[i], "keep"))
     	    return TRUE;
-    	if (!strCaseCmp(args[i], "nokeep"))
+    	if (!strcasecmp(args[i], "nokeep"))
     	    return FALSE;
     }
     return GetPrefKeepSearchDlogs();
@@ -5334,9 +5333,9 @@ static int searchWrap(int ignoreArgs, String *args, Cardinal *nArgs)
     int i;
     
     for (i=ignoreArgs; i<(int)*nArgs; i++) {
-    	if (!strCaseCmp(args[i], "wrap"))
+    	if (!strcasecmp(args[i], "wrap"))
     	    return(TRUE);
-    	if (!strCaseCmp(args[i], "nowrap"))
+    	if (!strcasecmp(args[i], "nowrap"))
     	    return(FALSE);
     }
     return GetPrefSearchWraps();
@@ -5417,25 +5416,6 @@ static void unloadTipsFileCB(Widget w, char *name, caddr_t callData)
     params[0] = name;
     XtCallActionProc(WidgetToWindow(menu)->lastFocus, "unload_tips_file",
 	    ((XmAnyCallbackStruct *)callData)->event, params, 1);
-}
-
-/*
-** strCaseCmp compares its arguments and returns 0 if the two strings
-** are equal IGNORING case differences.  Otherwise returns 1.
-*/
-static int strCaseCmp(const char *str1, const char *str2)
-{
-    const char *c1, *c2;
-    
-    for (c1=str1, c2=str2; *c1!='\0' && *c2!='\0'; c1++, c2++)
-    	if (toupper((unsigned char)*c1) != toupper((unsigned char)*c2))
-    	    return 1;
-    if (*c1 == *c2) {
-        return(0);
-	 }
-    else {
-        return(1);
-	 }
 }
 
 /*
