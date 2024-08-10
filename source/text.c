@@ -262,7 +262,6 @@ static void cursorBlinkTimerProc(XtPointer clientData, XtIntervalId *id);
 static int hasKey(const char *key, const String *args, const Cardinal *nArgs);
 static int max(int i1, int i2);
 static int min(int i1, int i2);
-static int strCaseCmp(const char *str1, const char *str2);
 static void ringIfNecessary(Boolean silent, Widget w);
 
 static XftColor defaultAnsiColors[16];
@@ -5111,7 +5110,7 @@ static int hasKey(const char *key, const String *args, const Cardinal *nArgs)
     int i;
     
     for (i=0; i<(int)*nArgs; i++)
-    	if (!strCaseCmp(args[i], key))
+    	if (!strcasecmp(args[i], key))
     	    return True;
     return False;
 }
@@ -5124,27 +5123,6 @@ static int max(int i1, int i2)
 static int min(int i1, int i2)
 {
     return i1 <= i2 ? i1 : i2;
-}
-
-/*
-** strCaseCmp compares its arguments and returns 0 if the two strings
-** are equal IGNORING case differences.  Otherwise returns 1.
-*/
-
-static int strCaseCmp(const char *str1, const char *str2)
-{
-    unsigned const char *c1 = (unsigned const char*) str1;
-    unsigned const char *c2 = (unsigned const char*) str2;
-    
-    for (; *c1!='\0' && *c2!='\0'; c1++, c2++)
-    	if (toupper(*c1) != toupper(*c2))
-    	    return 1;
-    if (*c1 == *c2) {
-        return(0);
-    }
-    else {
-        return(1);
-    }
 }
 
 static void ringIfNecessary(Boolean silent, Widget w)

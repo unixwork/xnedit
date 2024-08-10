@@ -347,7 +347,6 @@ static int readSearchArgs(DataValue *argList, int nArgs, int*searchDirection,
 	int *searchType, int *wrap, char **errMsg);
 static int wrongNArgsErr(char **errMsg);
 static int tooFewArgsErr(char **errMsg);
-static int strCaseCmp(char *str1, char *str2);
 static int readIntArg(DataValue dv, int *result, char **errMsg);
 static int readStringArg(DataValue dv, char **result, char *stringStorage,
     	char **errMsg);
@@ -3865,7 +3864,7 @@ static int stringCompareMS(WindowInfo *window, DataValue *argList, int nArgs,
         compareResult = (compareResult > 0) ? 1 : ((compareResult < 0) ? -1 : 0);
     }
     else {
-        compareResult = strCaseCmp(leftStr, rightStr);
+        compareResult = strcasecmp(leftStr, rightStr);
     }
     result->tag = INT_TAG;
     result->val.n = compareResult;
@@ -5691,36 +5690,6 @@ static int tooFewArgsErr(char **errMsg)
 {
     *errMsg = "Too few arguments to function %s";
     return False;
-}
-
-/*
-** strCaseCmp compares its arguments and returns 0 if the two strings
-** are equal IGNORING case differences.  Otherwise returns 1 or -1
-** depending on relative comparison.
-*/
-static int strCaseCmp(char *str1, char *str2)
-{
-    char *c1, *c2;
-
-    for (c1 = str1, c2 = str2;
-            (*c1 != '\0' && *c2 != '\0')
-                    && toupper((unsigned char)*c1) == toupper((unsigned char)*c2);
-            ++c1, ++c2)
-    {
-    }
-
-    if (((unsigned char)toupper((unsigned char)*c1))
-            > ((unsigned char)toupper((unsigned char)*c2)))
-    {
-        return(1);
-    } else if (((unsigned char)toupper((unsigned char)*c1))
-            < ((unsigned char)toupper((unsigned char)*c2)))
-    {
-        return(-1);
-    } else
-    {
-        return(0);
-    }
 }
 
 /*
