@@ -207,8 +207,6 @@ static int forwardRegexSearch(const char *string, const char *searchString, int 
 static int backwardRegexSearch(const char *string, const char *searchString, int wrap,
 	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
         int *searchExtentFW, const char *delimiters, int defaultFlags);
-static void upCaseString(char *outString, const char *inString);
-static void downCaseString(char *outString, const char *inString);
 static void resetFindTabGroup(WindowInfo *window);
 static void resetReplaceTabGroup(WindowInfo *window);
 static int searchMatchesSelection(WindowInfo *window, const char *searchString,
@@ -4403,8 +4401,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
         strcpy(ucString, searchString);
         strcpy(lcString, searchString);
     } else {
-    	upCaseString(ucString, searchString);
-    	downCaseString(lcString, searchString);
+    	UpCaseString(ucString, searchString);
+    	DownCaseString(lcString, searchString);
     }
 
     if (direction == SEARCH_FORWARD) {
@@ -4484,8 +4482,8 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
         strcpy(ucString, searchString);
         strcpy(lcString, searchString);
     } else {
-    	upCaseString(ucString, searchString);
-    	downCaseString(lcString, searchString);
+    	UpCaseString(ucString, searchString);
+    	DownCaseString(lcString, searchString);
     }
 
     if (direction == SEARCH_FORWARD) {
@@ -4649,7 +4647,7 @@ static int check_len(const char *in, int len) {
     return len;
 }
 
-static void changeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_len) {
+void ChangeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_len) {
     mbstate_t state;
     memset(&state, 0, sizeof(mbstate_t));
     wchar_t w = 0;
@@ -4673,7 +4671,7 @@ static void changeCase(const char *in, char *out, int makeUpper, int *in_len, in
     memcpy(out, src_buf, clen);
 }
 
-static void upCaseString(char *outString, const char *inString)
+void UpCaseString(char *outString, const char *inString)
 {
     char *outPtr;
     const char *inPtr;
@@ -4683,7 +4681,7 @@ static void upCaseString(char *outString, const char *inString)
             *outPtr = toupper((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
-            changeCase(inPtr, outPtr, True, &in_len, &out_len);
+            ChangeCase(inPtr, outPtr, True, &in_len, &out_len);
             inPtr += in_len - 1;
             outPtr += out_len - 1;
         }
@@ -4692,7 +4690,7 @@ static void upCaseString(char *outString, const char *inString)
     *outPtr = 0;
 }
 
-static void downCaseString(char *outString, const char *inString)
+void DownCaseString(char *outString, const char *inString)
 {
     char *outPtr;
     const char *inPtr;
@@ -4702,7 +4700,7 @@ static void downCaseString(char *outString, const char *inString)
             *outPtr = tolower((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
-            changeCase(inPtr, outPtr, False, &in_len, &out_len);
+            ChangeCase(inPtr, outPtr, False, &in_len, &out_len);
             inPtr += in_len - 1;
             outPtr += out_len - 1;
         }

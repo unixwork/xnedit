@@ -2213,8 +2213,7 @@ static int toupperMS(WindowInfo *window, DataValue *argList, int nArgs,
     /* Allocate a new string and copy an uppercased version of the string it */
     result->tag = STRING_TAG;
     AllocNString(&result->val.str, length + 1);
-    for (i=0; i<length; i++)
-    	result->val.str.rep[i] = toupper((unsigned char)string[i]);
+    UpCaseString(result->val.str.rep, string);
     return True;
 }
 
@@ -2234,8 +2233,7 @@ static int tolowerMS(WindowInfo *window, DataValue *argList, int nArgs,
     /* Allocate a new string and copy an lowercased version of the string it */
     result->tag = STRING_TAG;
     AllocNString(&result->val.str, length + 1);
-    for (i=0; i<length; i++)
-    	result->val.str.rep[i] = tolower((unsigned char)string[i]);
+    DownCaseString(result->val.str.rep, string);
     return True;
 }
 
