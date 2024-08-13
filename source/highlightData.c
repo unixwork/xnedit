@@ -2186,12 +2186,12 @@ static void *hsGetDisplayedCB(void *oldItem, int explicitRequest, int *abort,
         {
             return oldItem == NULL
                     ? NULL
-                    : (void *)copyHighlightStyleRec((highlightStyleRec *)oldItem);
+                    : copyHighlightStyleRec((highlightStyleRec *)oldItem);
         }
     }
 
     /* Do readHSDialogFields again without "silent" mode to display warning */
-    hs = readHSDialogFields(False);
+    (void)readHSDialogFields(False);
     *abort = True;
     return NULL;
 }
@@ -3339,7 +3339,7 @@ static void *getDisplayedCB(void *oldItem, int explicitRequest, int *abort,
     }
 
     /* Do readDialogFields again without "silent" mode to display warning */
-    pat = readDialogFields(False);
+    (void)readDialogFields(False);
     *abort = True;
     return NULL;
 }
