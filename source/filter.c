@@ -45,7 +45,6 @@ static size_t numFilters;
 
 typedef struct {
     Widget shell;
-    WindowInfo *window;
     Widget managedListW;
     Widget nameW;
     Widget patternW;
@@ -573,8 +572,8 @@ static IOFilter* ParseFilterStr(char *str, int len)
     if(cmdoutlen <= 0) {
         return NULL;
     }
-    str += cmdinlen + 1;
-    len -= cmdinlen + 1;
+    //str += cmdoutlen + 1;
+    //len -= cmdoutlen + 1;
     
     IOFilter *filter = NEditMalloc(sizeof(IOFilter));
     filter->name = valuedup(name, namelen);
