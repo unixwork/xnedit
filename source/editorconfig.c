@@ -139,14 +139,14 @@ ECFile* ECLoadContent(const char *path) {
     return ecf;
 }
 
-static char* ec_strdup(char *str, int len) {
+static char* ec_strdup(const char *str, int len) {
     char *newstr = malloc(len+1);
     newstr[len] = 0;
     memcpy(newstr, str, len);
     return newstr;
 }
 
-static char* ec_strnchr(char *str, int len, char c) {
+static const char* ec_strnchr(const char *str, int len, char c) {
     for(int i=0;i<len;i++) {
         if(str[i] == c) {
             return str+i;
@@ -160,7 +160,7 @@ static ECSection* create_section(char *name, int len) {
     memset(sec, 0, sizeof(ECSection));
     
     if(name && len > 0) {
-        char *s = ec_strnchr(name, len, '/');
+        const char *s = ec_strnchr(name, len, '/');
         if(!s) {
             // add **/
             int newlen = len+3;
@@ -351,14 +351,14 @@ int ECParse(ECFile *ec) {
     return 0;
 }
 
-static int ec_getbool(char *v) {
+static int ec_getbool(const char *v) {
     if(v && (v[0] == 't' || v[0] == 'T')) {
         return 1;
     }
     return 0;
 }
 
-static int ec_getint(char *str, int *value) {
+static int ec_getint(const char *str, int *value) {
     char *end;
     errno = 0;
     long val = strtol(str, &end, 0);
