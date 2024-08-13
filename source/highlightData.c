@@ -2174,7 +2174,7 @@ static void *hsGetDisplayedCB(void *oldItem, int explicitRequest, int *abort,
     /* If there are no problems reading the data, just return it */
     hs = readHSDialogFields(True);
     if (hs != NULL)
-    	return (void *)hs;
+    	return hs;
     
     /* If there are problems, and the user didn't ask for the fields to be
        read, give more warning */
