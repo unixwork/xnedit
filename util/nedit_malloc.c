@@ -88,3 +88,11 @@ char *NEditStrdup(const char *str)
     memcpy(new_str,str,len+1);
     return new_str;
 }
+
+char *NEditStrndup(const char *str, size_t len)
+{
+    char *newstr = malloc(len+1);
+    newstr[len] = 0;
+    memcpy(newstr, str, len);
+    return newstr;
+}

@@ -35,6 +35,10 @@
 #include "../util/pathutils.h"
 #include "../util/ec_glob.h"
 
+#include "../util/nedit_malloc.h"
+
+#define ec_strdup NEditStrndup
+
 #define EC_BUFSIZE 4096
 
 #define ISCOMMENT(c) (c == ';' || c == '#' ? 1 : 0)
@@ -137,13 +141,6 @@ ECFile* ECLoadContent(const char *path) {
     ecf->length = len;
     
     return ecf;
-}
-
-static char* ec_strdup(const char *str, int len) {
-    char *newstr = malloc(len+1);
-    newstr[len] = 0;
-    memcpy(newstr, str, len);
-    return newstr;
 }
 
 static const char* ec_strnchr(const char *str, int len, char c) {

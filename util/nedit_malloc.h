@@ -10,4 +10,6 @@ void NEditFree(void *ptr);
 char *NEditStrdup(const char *str);
 #define NEditNew(type) ((type *) NEditMalloc(sizeof(type)))
 
+char *NEditStrndup(const char *str, size_t len);
+
 #endif

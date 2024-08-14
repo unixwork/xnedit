@@ -500,14 +500,6 @@ static int valueListNext(char *str, int len)
     return len;
 }
 
-static char *valuedup(char *str, int len)
-{
-    char *newvalue = NEditMalloc(len+1);
-    newvalue[len] = '\0';
-    memcpy(newvalue, str, len);
-    return newvalue;
-}
-
 static char* create_ec_pattern(char *pattern)
 {
     if(!pattern) {
@@ -576,11 +568,11 @@ static IOFilter* ParseFilterStr(char *str, int len)
     //len -= cmdoutlen + 1;
     
     IOFilter *filter = NEditMalloc(sizeof(IOFilter));
-    filter->name = valuedup(name, namelen);
-    filter->pattern = valuedup(pattern, patternlen);
-    filter->ext = valuedup(ext, extlen);
-    filter->cmdin = valuedup(cmdin, cmdinlen);
-    filter->cmdout = valuedup(cmdout, cmdoutlen);
+    filter->name = NEditStrndup(name, namelen);
+    filter->pattern = NEditStrndup(pattern, patternlen);
+    filter->ext = NEditStrndup(ext, extlen);
+    filter->cmdin = NEditStrndup(cmdin, cmdinlen);
+    filter->cmdout = NEditStrndup(cmdout, cmdoutlen);
     filter->ec_pattern = create_ec_pattern(filter->pattern);
     return filter;
 }
