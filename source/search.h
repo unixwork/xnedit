@@ -48,8 +48,8 @@ int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
 int SearchAndSelectSame(WindowInfo *window, int direction, int searchWrap);
 int SearchAndSelectIncremental(WindowInfo *window, int direction,
 	const char *searchString, int searchType, int searchWrap, int continued);
-void SearchForSelected(WindowInfo *window, int direction, int searchWrap,
-    int searchType, Time time);
+void SearchForSelected(WindowInfo *window, int direction, int searchType,
+    int searchWrap, Time time);
 int SearchAndReplace(WindowInfo *window, int direction, const char *searchString,
 	const char *replaceString, int searchType, int searchWrap);
 int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString,
