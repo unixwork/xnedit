@@ -104,8 +104,8 @@ AR=ar
 #                   all other headers in each .c source file.
 #                   Only useful for developers.
 #
-# XNE_TEXTFIELD     Enable alternative text field widget for search/replace.
-#                   The new widget has improved unicode support.
+# DISABLE_XNE_TEXTFIELD   Disable the new XNE textfield in some dialogs
+#                   and use the old Motif textfield.
 #
 # CDE               Enable drag'n'drop support for CDE. This requires
 #                   additional CDE CFLAGS/LDFLAGS.

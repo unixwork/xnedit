@@ -24,11 +24,7 @@
 #define XNE_TEXTFIELD_H
 
 
-#ifndef XNE_TEXTFIELD
-#define USE_XM_TEXTFIELD
-#endif
-
-#ifndef USE_XM_TEXTFIELD
+#ifndef DISABLE_XNE_TEXTFIELD
 #define XNEtextfieldWidgetClass                 textfieldWidgetClass
 
 #define XNECreateText(parent,name,args,count)   XNECreateTextField(parent,name,args,count)
