@@ -281,8 +281,6 @@ static int bckError(WindowInfo *window, const char *errString, const char *file)
 static int fileWasModifiedExternally(WindowInfo *window);
 static const char *errorString(void);
 static void addWrapNewlines(WindowInfo *window);
-static void setFormatCB(Widget w, XtPointer clientData, XtPointer callData);
-static void addWrapCB(Widget w, XtPointer clientData, XtPointer callData);
 static int cmpWinAgainstFile(WindowInfo *window, const char *fileName);
 static int min(int i1, int i2);
 static void modifiedWindowDestroyedCB(Widget w, XtPointer clientData,
@@ -2610,22 +2608,11 @@ static const char *errorString(void)
 
 
 /*
-** Callback procedure for File Format toggle buttons.  Format is stored
-** in userData field of widget button
-*/
-static void setFormatCB(Widget w, XtPointer clientData, XtPointer callData)
-{
-    if (XmToggleButtonGetState(w)) {
-        XtPointer userData;
-        XtVaGetValues(w, XmNuserData, &userData, NULL);
-        *(int*) clientData = (int) (intptr_t) userData;
-    }
-}
-
-/*
 ** Callback procedure for toggle button requesting newlines to be inserted
 ** to emulate continuous wrapping.
 */
+// TODO: reimplement this error message in the new filedialog
+/*
 static void addWrapCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     int resp;
@@ -2654,6 +2641,7 @@ static void addWrapCB(Widget w, XtPointer clientData, XtPointer callData)
         *addWrap = False;
     }
 }
+*/
 
 /*
 ** Change a window created in NEdit's continuous wrap mode to the more

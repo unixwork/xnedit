@@ -1464,7 +1464,7 @@ int TextDLineAndColToPos(textDisp *textD, int lineNum, int column)
 */
 int TextDPositionToXY(textDisp *textD, int pos, int *x, int *y)
 {
-    int charIndex, lineStartPos, fontHeight, lineLen, isMB;
+    int charIndex, lineStartPos, fontHeight, lineLen;
     int visLineNum, charLen, outIndex, xStep, charStyle, inc;
     FcChar32 expandedChar[MAX_EXP_CHAR_LEN];
     FcChar32 uc;
@@ -3076,7 +3076,6 @@ static int charWidth4(const textDisp* textD, const FcChar32* string,
 { 
     if(string[0] == 0) return 0; // special case for ansi coloring
     
-    FcChar32 c = string[0];
     int strWidth = 0;
     if(fontList->minWidth == fontList->maxWidth && string[0] < 128) {
         strWidth += fontList->minWidth * length;

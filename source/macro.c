@@ -2200,7 +2200,7 @@ static int substringMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int toupperMS(WindowInfo *window, DataValue *argList, int nArgs,
     	DataValue *result, char **errMsg)
 {
-    int i, length;
+    int length;
     char stringStorage[TYPE_INT_STR_SIZE(int)], *string;
     
     /* Validate arguments and convert to int */
@@ -2220,7 +2220,7 @@ static int toupperMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int tolowerMS(WindowInfo *window, DataValue *argList, int nArgs,
     	DataValue *result, char **errMsg)
 {
-    int i, length;
+    int length;
     char stringStorage[TYPE_INT_STR_SIZE(int)], *string;
     
     /* Validate arguments and convert to int */

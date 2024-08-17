@@ -219,7 +219,7 @@ void Redo(WindowInfo *window)
     if (window->redo == NULL)
     	return;
     
-    int numOp = redo ? redo->numOp : 0;
+    int numOp = redo->numOp;
     int redoCount = 1;
     int isBatch = 0;
     size_t *cursors = NULL;
