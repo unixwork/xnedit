@@ -61,7 +61,7 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse);
 void PrintWindow(WindowInfo *window, int selectedOnly);
 void PrintString(const char *string, int length, Widget parent, const char *jobName);
 int WriteBackupFile(WindowInfo *window);
-int IncludeFile(WindowInfo *window, const char *name);
+int IncludeFile(WindowInfo *window, const char *name, const char *encoding, const char *filter_name);
 int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file);
 int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     	int *fileFormat);

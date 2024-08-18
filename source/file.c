@@ -287,6 +287,8 @@ static void modifiedWindowDestroyedCB(Widget w, XtPointer clientData,
     XtPointer callData);
 static void forceShowLineNumbers(WindowInfo *window);
 
+static const char* getEncodingAttribute(const char *path, char **free_ptr);
+
 
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
         const char *languageMode, const char *defaultPath)
@@ -825,38 +827,8 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     stream = filestream_open_r(window->shell, fp, filter_cmd);
     
     char *enc_attr = NULL;
-    
     if(!encoding) {
-        ssize_t attrlen = 0;
-        enc_attr = xattr_get(fullname, "charset", &attrlen);
-        /* enc_attr is NOT null-terminated */
-        if(enc_attr) {
-            if(attrlen > 0) {
-                char *enc_attr_str = NEditMalloc(attrlen + 1);
-                memcpy(enc_attr_str, enc_attr, attrlen);
-                enc_attr_str[attrlen] = '\0';
-                
-                // trim the encoding string
-                char *enc_trim = enc_attr_str;
-                size_t etlen = attrlen;
-                while(etlen > 0 && isspace(*enc_trim)) {
-                    enc_trim++;
-                    etlen--;
-                }
-                while(etlen > 0 && isspace(enc_trim[etlen-1])) {
-                    etlen--;
-                }
-                enc_trim[etlen] = '\0';
-                
-                encoding = enc_trim;
-                free(enc_attr);
-                // keep the original pointer for NEditFree
-                enc_attr = enc_attr_str;
-            } else {
-                free(enc_attr);
-                enc_attr = NULL;
-            }
-        }
+        encoding = getEncodingAttribute(fullname, &enc_attr);
     }
     
     int checkBOM = 1;
@@ -1251,13 +1223,15 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     return TRUE;
 }   
 
-int IncludeFile(WindowInfo *window, const char *name)
+int IncludeFile(WindowInfo *window, const char *name, const char *encoding, const char *filter_name)
 {
     struct stat statbuf;
     int fileLen, readLen;
     char *fileString;
     FILE *fp = NULL;
-
+    FileStream *stream = NULL;
+    char buf[IO_BUFSIZE];
+    
     /* Open the file */
     fp = fopen(name, "rb");
     if (fp == NULL)
@@ -1284,28 +1258,251 @@ int IncludeFile(WindowInfo *window, const char *name)
         return FALSE;
     }
     fileLen = statbuf.st_size;
- 
+
+    IOFilter* filter = GetFilterFromName(filter_name);
+    char *filter_cmd = NULL;
+    if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
+        filter_cmd = filter->cmdin;
+    }
+    stream = filestream_open_r(window->shell, fp, filter_cmd);
+    
+    char *enc_attr = NULL;
+    if(!encoding) {
+        encoding = getEncodingAttribute(name, &enc_attr);
+    }
+    
+    int checkBOM = 1;
+    int checkEncoding = 0;
+    if(encoding) {
+        /* check if the encoding string starts with UTF */
+        if(strlen(encoding) < 3) {
+            /* no UTF encoding */
+            checkBOM = 0;
+        } else {
+            char encpre[4];
+            encpre[0] = encoding[0];
+            encpre[1] = encoding[1];
+            encpre[2] = encoding[2];
+            encpre[3] = 0;
+            if(strcasecmp(encpre, "UTF")) {
+                // encoding doesn't start with "UTF" -> no BOM
+                checkBOM = 0;
+            }
+        }
+        if(!strcasecmp(encoding, "GB18030")) {
+            checkBOM = 1; /* GB18030 is unicode and could have a BOM */
+        }
+    } else {
+        /* file has no extended attributes, use locale charset */
+        encoding = GetPrefDefaultCharset();
+        checkEncoding = 1;
+    }
+    
+    
+    char *setEncoding = NULL;
+    int hasBOM = 0;
+    if(checkBOM) {
+        /* read Byte Order Mark */
+        int bom = 0;
+        size_t r = filestream_read(buf, 4, stream);
+        do {
+            if(r >= 4) {
+                bom = 4;
+                if(!memcmp(buf, bom_utf32be, 4)) {
+                    setEncoding = "UTF-32BE";
+                    hasBOM = TRUE;
+                    break;
+                } else if(!memcmp(buf, bom_utf32le, 4)) {
+                    setEncoding = "UTF-32LE";
+                    hasBOM = TRUE;
+                    break;
+                } else if(!memcmp(buf, bom_gb18030, 4)) {
+                    setEncoding = "GB18030";
+                    hasBOM = TRUE;
+                    break;
+                } else if(!memcmp(buf, bom_utfebcdic, 4)) {
+                    setEncoding = "UTF-EBCDIC";
+                    hasBOM = TRUE;
+                    break;
+                }
+            }
+            if(r >= 3) {
+                bom = 3;
+                if(!memcmp(buf, bom_utf8, 3)) {
+                    setEncoding = "UTF-8";
+                    hasBOM = TRUE;
+                    break;
+                }
+            }
+            if(r >= 2) {
+                bom = 2;
+                if(!memcmp(buf, bom_utf16be, 2)) {
+                    setEncoding = "UTF-16BE";
+                    hasBOM = TRUE;
+                    break;
+                } else if(!memcmp(buf, bom_utf16le, 2)) {
+                    setEncoding = "UTF-16LE";
+                    hasBOM = TRUE;
+                    break;
+                }
+            }
+            bom = 0;
+        } while (0);
+        filestream_reset(stream, bom);
+    }
+    if(setEncoding) {
+        encoding = setEncoding;
+        checkEncoding = 0;
+    }
+    
+    if(checkEncoding) {
+        size_t r = filestream_read(buf, IO_BUFSIZE, stream);
+        const char *newEnc = DetectEncoding(buf, r, encoding);
+        if(newEnc && newEnc != encoding) {
+            encoding = newEnc;
+        }
+        filestream_reset(stream, 0);
+    }
+    
     /* allocate space for the whole contents of the file */
-    fileString = (char *)NEditMalloc(fileLen+1);  /* +1 = space for null */
+    size_t strAlloc = fileLen;
+    fileString = (char *)malloc(strAlloc+1);  /* +1 = space for null */
     if (fileString == NULL)
     {
         DialogF(DF_ERR, window->shell, 1, "Error opening File",
                 "File is too large to include", "OK");
-        fclose(fp);
+        filestream_close(stream);
+        NEditFree(enc_attr);
         return FALSE;
     }
-
-    /* read the file into fileString and terminate with a null */
-    readLen = fread(fileString, sizeof(char), fileLen, fp);
-    if (ferror(fp))
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Error reading %s:\n%s", "OK", name, errorString());
-        fclose(fp);
-        NEditFree(fileString);
-        return FALSE;
+    
+    iconv_t ic = NULL;
+    ConvertFunc strconv = copyBytes;
+    if(encoding) {
+        ic = iconv_open("UTF-8", encoding);
+        if(ic == (iconv_t) -1) {
+            filestream_close(stream);
+            char *format = "File cannot be converted from %s to UTF8";
+            size_t msglen = strlen(format) + strlen(encoding) + 4;
+            char *msgbuf = NEditMalloc(msglen);
+            snprintf(msgbuf, msglen, format, encoding);
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    msgbuf, "OK");
+            NEditFree(msgbuf);
+            window->filenameSet = TRUE;
+            if(enc_attr) {
+                free(enc_attr);
+            }
+            free(fileString);
+            return FALSE;
+        }
+        strconv = (ConvertFunc)iconv;
+        NEditFree(enc_attr);
     }
-    fileString[readLen] = 0;
+    
+    
+    size_t numEncErrors = 0;
+    size_t allocEncErrors = ENC_ERROR_LIST_LEN;
+    
+    int err = 0;
+    int skipped = 0;
+    size_t r = 0;
+    readLen = 0;
+    char *outStr = fileString;
+    size_t prev = 0;
+    while((r = filestream_read(buf+prev, IO_BUFSIZE-prev, stream)) > 0 && !err) {
+        char *str = buf;
+        size_t inleft = prev + r;
+        size_t outleft = strAlloc - readLen;   
+        prev = 0;  
+        while(inleft > 0) { 
+            size_t w = outleft;
+            size_t rc = strconv(ic, &str, &inleft, &outStr, &outleft);
+            w = w - outleft;
+            readLen += w;
+            
+            if(rc == (size_t)-1) {
+                /* iconv wants more bytes */
+                int extendBuf = 0;
+                switch(errno) {
+                    default: err = 1; break;
+                    case EILSEQ: {
+                        if(inleft > 0) {
+                            // replace with unicode replacement char
+                            if(outleft < 3) {
+                                // jump to extendBuf
+                                // next strconv run will try to convert
+                                // the same character, but this time
+                                // we have the space to store the
+                                // unicode replacement character
+                                extendBuf = 1;
+                                break;
+                            }
+                            
+                            outStr[0] = 0xEF;
+                            outStr[1] = 0xBF;
+                            outStr[2] = 0xBD;
+                            
+                            numEncErrors++;
+                            
+                            outStr += 3;
+                            outleft -= 3;
+                            readLen += 3;
+                            
+                            str++;
+                            inleft--;
+                            
+                            skipped++;
+                        }
+                        break;
+                    }
+                    case EINVAL: {
+                        memcpy(buf, str, inleft); 
+                        prev = inleft;
+                        inleft = 0;
+                        break;
+                    }
+                    case E2BIG: {
+                        extendBuf = 1;
+                        break;
+                    }
+                }
+                
+                if(extendBuf) {
+                    // either strconv needs more space, or
+                    // the unicode replacement character couldn't be stored
+                    // -> extend buffer
+                    strAlloc += 512;
+                    size_t outpos = outStr - fileString;
+                    fileString = realloc(fileString, strAlloc + 1);
+                    if(!fileString) {
+                        err = 1;
+                        break;
+                    }
+                    outStr = fileString + outpos;
+                    outleft = strAlloc - readLen;
+                }
+                
+                if(err) {
+                    break;
+                }
+            }
+        }
+    }
+    
+    if(ic) {
+        iconv_close(ic);
+    }
+    
+    if(skipped > 0) {
+        int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
+                "%d non-convertible characters skipped\n"
+    		"Include anyway?", "NO", "YES",
+                skipped);
+        if(btn == 1) {
+            err = TRUE;
+        }
+    }
     
     /* Detect and convert DOS and Macintosh format files */
     switch (FormatOfFile(fileString)) {
@@ -1328,7 +1525,7 @@ int IncludeFile(WindowInfo *window, const char *name)
     }
  
     /* close the file */
-    if (fclose(fp) != 0)
+    if (filestream_close(stream) != 0)
     {
         /* unlikely error */
         DialogF(DF_WARN, window->shell, 1, "Error opening File",
@@ -2869,4 +3066,47 @@ const char * DetectEncoding(const char *buf, size_t len, const char *def) {
     }
     
     return def;
+}
+
+/*
+ * If available, get the charset xattr value
+ */
+static const char* getEncodingAttribute(const char *path, char **free_ptr)
+{
+    char *enc_attr = NULL;
+    const char *encoding = NULL;
+    
+    ssize_t attrlen = 0;
+    enc_attr = xattr_get(path, "charset", &attrlen);
+    /* enc_attr is NOT null-terminated */
+    if(enc_attr) {
+        if(attrlen > 0) {
+            char *enc_attr_str = NEditMalloc(attrlen + 1);
+            memcpy(enc_attr_str, enc_attr, attrlen);
+            enc_attr_str[attrlen] = '\0';
+
+            // trim the encoding string
+            char *enc_trim = enc_attr_str;
+            size_t etlen = attrlen;
+            while(etlen > 0 && isspace(*enc_trim)) {
+                enc_trim++;
+                etlen--;
+            }
+            while(etlen > 0 && isspace(enc_trim[etlen-1])) {
+                etlen--;
+            }
+            enc_trim[etlen] = '\0';
+
+            encoding = enc_trim;
+            free(enc_attr);
+            // keep the original pointer for NEditFree
+            enc_attr = enc_attr_str;
+        } else {
+            free(enc_attr);
+            enc_attr = NULL;
+        }
+    }
+    
+    *free_ptr = enc_attr;
+    return encoding;
 }

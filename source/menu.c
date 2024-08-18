@@ -3116,7 +3116,9 @@ static void includeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     	fprintf(stderr, "xnedit: include action requires file argument\n");
     	return;
     }
-    IncludeFile(WidgetToWindow(w), args[0]);
+    char *encoding = *nArgs > 1 ? args[1] : NULL;
+    char *filter = *nArgs > 2 ? args[2] : NULL;
+    IncludeFile(WidgetToWindow(w), args[0], encoding, filter);
 }
 
 static void loadMacroDialogAP(Widget w, XEvent *event, String *args,
