@@ -1223,52 +1223,93 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     return TRUE;
 }   
 
-int IncludeFile(WindowInfo *window, const char *name, const char *encoding, const char *filter_name)
+int GetFileContent(Widget shell, const char *path, const char *encoding, const char *filter_name, FileContent *content)
 {
-    struct stat statbuf;
-    int fileLen, readLen;
-    char *fileString;
-    FILE *fp = NULL;
-    FileStream *stream = NULL;
+    memset(content, 0, sizeof(FileContent));
+    
+    off_t fileLen, readLen;
+    char *fileString, *c;
     char buf[IO_BUFSIZE];
+    FILE *fp = NULL;
+    FileStream *stream = NULL;;
+    int fd;
+    int resp;
+    int err;
+    
+    char encoding_buffer[MAX_ENCODING_LENGTH];
+    if(encoding) {
+        size_t enclen = strlen(encoding);
+        if(enclen >= MAX_ENCODING_LENGTH) {
+            enclen = MAX_ENCODING_LENGTH-1;
+        }
+        memcpy(encoding_buffer, encoding, enclen);
+        encoding_buffer[enclen] = 0;
+        encoding = encoding_buffer;
+    } else {
+        encoding_buffer[0] = 0;
+    }
+    encoding = encoding_buffer[0] != '\0' ? encoding_buffer : NULL;
+    
     
     /* Open the file */
-    fp = fopen(name, "rb");
-    if (fp == NULL)
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Could not open %s:\n%s", "OK", name, errorString());
-        return FALSE;
+    fp = fopen(path, "rb+");
+    if(!fp) {
+        fp = fopen(path, "rb");
+        if(fp) {
+            /* File is read only */
+            content->readonly = 1;
+        } else {
+            content->err = errno;
+            return 1;
+        }
     }
     
-    /* Get the length of the file */
-    if (fstat(fileno(fp), &statbuf) != 0)
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Error opening %s", "OK", name);
+    /* Get the length of the file, the protection mode, and the time of the
+       last modification to the file */
+    if (fstat(fileno(fp), &content->statbuf) != 0) {
         fclose(fp);
-        return FALSE;
+        content->err = errno;
+        return 1;
     }
 
-    if (S_ISDIR(statbuf.st_mode))
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Can't open directory %s", "OK", name);
+    if (S_ISDIR(content->statbuf.st_mode)) {
         fclose(fp);
-        return FALSE;
+        content->isdir = 1;
+        return 1;
     }
-    fileLen = statbuf.st_size;
-
+    
+#ifdef S_ISBLK
+    if (S_ISBLK(content->statbuf.st_mode)) {
+        fclose(fp);
+        content->isblk = 1;
+        return 1;
+    }
+#endif
+    
+    fileLen = content->statbuf.st_size;
+    
+    // create stream object (optionally with filter)
     IOFilter* filter = GetFilterFromName(filter_name);
     char *filter_cmd = NULL;
     if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
         filter_cmd = filter->cmdin;
     }
-    stream = filestream_open_r(window->shell, fp, filter_cmd);
+    stream = filestream_open_r(shell, fp, filter_cmd);
     
-    char *enc_attr = NULL;
+    // check if the file has the 'charset' exnteded attribute
     if(!encoding) {
-        encoding = getEncodingAttribute(name, &enc_attr);
+        char *enc_attr = NULL;
+        const char *xattr_charset = getEncodingAttribute(path, &enc_attr);
+        if(xattr_charset) {
+            size_t enclen = strlen(xattr_charset);
+            if(enclen >= MAX_ENCODING_LENGTH) {
+                enclen = MAX_ENCODING_LENGTH-1;
+            }
+            memcpy(encoding_buffer, xattr_charset, enclen);
+            encoding_buffer[enclen] = 0;
+            encoding = encoding_buffer;
+        }
+        free(enc_attr);
     }
     
     int checkBOM = 1;
@@ -1297,7 +1338,6 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
         encoding = GetPrefDefaultCharset();
         checkEncoding = 1;
     }
-    
     
     char *setEncoding = NULL;
     int hasBOM = 0;
@@ -1364,16 +1404,13 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
         filestream_reset(stream, 0);
     }
     
-    /* allocate space for the whole contents of the file */
+    /* Allocate space for the whole contents of the file (unfortunately) */
     size_t strAlloc = fileLen;
-    fileString = (char *)malloc(strAlloc+1);  /* +1 = space for null */
-    if (fileString == NULL)
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "File is too large to include", "OK");
+    fileString = malloc(strAlloc + 1); /* +1 = space for null */
+    if (fileString == NULL) {
         filestream_close(stream);
-        NEditFree(enc_attr);
-        return FALSE;
+        content->allocerror = 1;
+        return 1;
     }
     
     iconv_t ic = NULL;
@@ -1382,29 +1419,26 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
         ic = iconv_open("UTF-8", encoding);
         if(ic == (iconv_t) -1) {
             filestream_close(stream);
-            char *format = "File cannot be converted from %s to UTF8";
-            size_t msglen = strlen(format) + strlen(encoding) + 4;
-            char *msgbuf = NEditMalloc(msglen);
-            snprintf(msgbuf, msglen, format, encoding);
-            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
-                    msgbuf, "OK");
-            NEditFree(msgbuf);
-            window->filenameSet = TRUE;
-            if(enc_attr) {
-                free(enc_attr);
-            }
             free(fileString);
-            return FALSE;
+            return 1;
         }
         strconv = (ConvertFunc)iconv;
-        NEditFree(enc_attr);
+        
+        /* set final encoding */
+        size_t len = strlen(encoding);
+        if(len+1 >= MAX_ENCODING_LENGTH) {
+            fprintf(stderr, "Error: Encoding string too large\n");
+            len = MAX_ENCODING_LENGTH-1;
+        }
+        memcpy(content->encoding, encoding, len);
+        content->encoding[len] = 0;
     }
     
-    
+    EncError *encErrors = NEditCalloc(ENC_ERROR_LIST_LEN, sizeof(EncError));
     size_t numEncErrors = 0;
     size_t allocEncErrors = ENC_ERROR_LIST_LEN;
     
-    int err = 0;
+    err = 0;
     int skipped = 0;
     size_t r = 0;
     readLen = 0;
@@ -1443,7 +1477,15 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
                             outStr[1] = 0xBF;
                             outStr[2] = 0xBD;
                             
+                            // add unconvertible character to the error list
+                            if(numEncErrors >= allocEncErrors) {
+                                allocEncErrors += 16;
+                                encErrors = NEditRealloc(encErrors, allocEncErrors * sizeof(EncError));
+                            }
+                            encErrors[numEncErrors].c = (unsigned char)*str;
+                            encErrors[numEncErrors].pos = outStr - fileString;
                             numEncErrors++;
+                            
                             
                             outStr += 3;
                             outleft -= 3;
@@ -1490,59 +1532,105 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
         }
     }
     
+    if (filestream_close(stream) != 0) {
+        content->closeerror = 1;
+        content->err = errno;
+    }
+    fileString[readLen] = 0;
+    
     if(ic) {
         iconv_close(ic);
     }
     
-    if(skipped > 0) {
+    content->hasBOM = hasBOM;
+    content->skipped = skipped;
+    
+    /* Detect and convert DOS and Macintosh format files */
+    if (GetPrefForceOSConversion()) {
+        content->fileFormat = FormatOfFile(fileString);
+        int rLen = readLen;
+        if (content->fileFormat == DOS_FILE_FORMAT) {
+            ConvertFromDosFileString(fileString, &rLen, NULL);
+        } else if (content->fileFormat == MAC_FILE_FORMAT) {
+            ConvertFromMacFileString(fileString, rLen);
+        }
+        readLen = rLen;
+    }
+    
+    content->content = fileString;
+    content->length = readLen;
+    
+    return 0;
+}
+        
+int IncludeFile(WindowInfo *window, const char *name, const char *encoding, const char *filter_name)
+{
+    int err = 0;
+    
+    /* Open the file */
+    FileContent content;
+    if(GetFileContent(window->shell, name, encoding, filter_name, &content)) {
+        int filenameSet = window->filenameSet;
+        if(content.isdir) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                    "Can't open directory %s", "OK", name);
+            window->filenameSet = filenameSet;
+        } else if(content.isblk) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                    "Can't open block device %s", "OK", name);
+            window->filenameSet = filenameSet;
+        } else if(content.allocerror) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    "File is too large to include", "OK");
+            window->filenameSet = filenameSet;
+        } else if(content.iconverror) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            char *format = "File cannot be converted from %s to UTF8";
+            size_t msglen = strlen(format) + strlen(encoding) + 4;
+            char *msgbuf = NEditMalloc(msglen);
+            snprintf(msgbuf, msglen, format, encoding);
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    msgbuf, "OK");
+            NEditFree(msgbuf);
+            window->filenameSet = filenameSet;
+        } else {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    "Unknown error", "OK");
+            window->filenameSet = filenameSet;
+        }
+        return 0;
+    }
+    
+    if(content.skipped > 0) {
         int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
     		"Include anyway?", "NO", "YES",
-                skipped);
+                content.skipped);
         if(btn == 1) {
             err = TRUE;
         }
     }
     
-    /* Detect and convert DOS and Macintosh format files */
-    switch (FormatOfFile(fileString)) {
-        case DOS_FILE_FORMAT:
-            ConvertFromDosFileString(fileString, &readLen, NULL);
-            break;
-        case MAC_FILE_FORMAT:
-            ConvertFromMacFileString(fileString, readLen);
-            break;
-        default:
-            /*  Default is Unix, no conversion necessary.  */
-            break;
-    }
-    
     /* If the file contained ascii nulls, re-map them */
-    if (!BufSubstituteNullChars(fileString, readLen, window->buffer))
+    if (!BufSubstituteNullChars(content.content, content.length, window->buffer))
     {
         DialogF(DF_ERR, window->shell, 1, "Error opening File",
                 "Too much binary data in file", "OK");
-    }
- 
-    /* close the file */
-    if (filestream_close(stream) != 0)
-    {
-        /* unlikely error */
-        DialogF(DF_WARN, window->shell, 1, "Error opening File",
-                "Unable to close file", "OK");
-        /* we read it successfully, so continue */
     }
     
     /* insert the contents of the file in the selection or at the insert
        position in the window if no selection exists */
     if (window->buffer->primary.selected)
-    	BufReplaceSelected(window->buffer, fileString);
+    	BufReplaceSelected(window->buffer, content.content);
     else
-    	BufInsert(window->buffer, TextGetCursorPos(window->lastFocus),
-    		fileString);
+    	BufInsert(window->buffer, TextGetCursorPos(window->lastFocus), content.content);
 
-    /* release the memory that holds fileString */
-    NEditFree(fileString);
+    NEditFree(content.content);
+    NEditFree(content.enc_errors);
 
     return TRUE;
 }

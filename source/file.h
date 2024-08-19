@@ -47,6 +47,26 @@ typedef struct DefaultEncoding {
     char *encoding;
 } DefaultEncoding;
 
+typedef struct FileContent {
+    struct stat statbuf;
+    char      *content;
+    size_t    length;
+    int       readonly;
+    int       hasBOM;
+    int       fileFormat;
+    int       isdir;
+    int       isblk;
+    int       allocerror;
+    int       iconverror;
+    int       closeerror;
+    int       skipped;
+    int       err;
+    EncError  *enc_errors;
+    size_t    num_enc_errors;
+    char      encoding[MAX_ENCODING_LENGTH];
+} FileContent;
+
+
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
         const char *languageMode, const char *defaultPath);
 WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
@@ -71,5 +91,7 @@ void UniqueUntitledName(char *name);
 void CheckForChangesToFile(WindowInfo *window);
 
 const char * DetectEncoding(const char *buf, size_t len, const char *def);
+
+int GetFileContent(Widget shell, const char *path, const char *encoding, const char *filter_name, FileContent *content);
 
 #endif /* NEDIT_FILE_H_INCLUDED */
