@@ -1232,8 +1232,6 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
     char buf[IO_BUFSIZE];
     FILE *fp = NULL;
     FileStream *stream = NULL;;
-    int fd;
-    int resp;
     int err;
     
     char encoding_buffer[MAX_ENCODING_LENGTH];
@@ -1459,7 +1457,7 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
                 /* iconv wants more bytes */
                 int extendBuf = 0;
                 switch(errno) {
-                    default: err = 1; break;
+                    default: err = 1; content->iconverror = 1; break;
                     case EILSEQ: {
                         if(inleft > 0) {
                             // replace with unicode replacement char
@@ -1541,7 +1539,7 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
     if(ic) {
         iconv_close(ic);
     }
-    
+       
     content->hasBOM = hasBOM;
     content->skipped = skipped;
     
@@ -1557,10 +1555,17 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
         readLen = rLen;
     }
     
-    content->content = fileString;
-    content->length = readLen;
+    if(err) {
+        free(fileString);
+        free(encErrors);
+    } else {
+        content->content = fileString;
+        content->length = readLen;
+        content->enc_errors = encErrors;
+        content->num_enc_errors = numEncErrors;
+    }
     
-    return 0;
+    return err;
 }
         
 int IncludeFile(WindowInfo *window, const char *name, const char *encoding, const char *filter_name)
