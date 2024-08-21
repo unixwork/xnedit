@@ -1619,21 +1619,24 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
             err = TRUE;
         }
     }
-    
-    /* If the file contained ascii nulls, re-map them */
-    if (!BufSubstituteNullChars(content.content, content.length, window->buffer))
-    {
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Too much binary data in file", "OK");
+     
+    if(!err) {
+        /* If the file contained ascii nulls, re-map them */
+        if (!BufSubstituteNullChars(content.content, content.length, window->buffer))
+        {
+            DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                    "Too much binary data in file", "OK");
+        } else {
+            /* insert the contents of the file in the selection or at the insert
+                position in the window if no selection exists */
+            if (window->buffer->primary.selected) {
+                BufReplaceSelected(window->buffer, content.content);
+            } else {
+                BufInsert(window->buffer, TextGetCursorPos(window->lastFocus), content.content);
+            }  
+        }
     }
     
-    /* insert the contents of the file in the selection or at the insert
-       position in the window if no selection exists */
-    if (window->buffer->primary.selected)
-    	BufReplaceSelected(window->buffer, content.content);
-    else
-    	BufInsert(window->buffer, TextGetCursorPos(window->lastFocus), content.content);
-
     NEditFree(content.content);
     NEditFree(content.enc_errors);
 
