@@ -762,7 +762,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         } else if(content.allocerror) {
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
-                    "File is too large to include", "OK");
+                    "File is too large to edit", "OK");
             window->filenameSet = TRUE;
         } else if(content.iconverror) {
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
