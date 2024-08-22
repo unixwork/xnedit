@@ -677,15 +677,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
      const char *encoding, const char *filter_name, int flags)
 {
     char fullname[MAXPATHLEN];
-    struct stat statbuf;
-    int fileLen, readLen;
-    char *fileString, *c;
-    char buf[IO_BUFSIZE];
-    FILE *fp = NULL;
-    FileStream *stream = NULL;;
-    int fd;
     int resp;
-    int err;
     
     // make sure, encoding doesn't point to window->encoding
     char encoding_buffer[MAX_ENCODING_LENGTH];
@@ -713,238 +705,66 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     strcpy(fullname, path);
     strcat(fullname, name);
     
-    /* Open the file */
-#ifndef DONT_USE_ACCESS  
-                   /* The only advantage of this is if you use clearcase,
-    	    	      which messes up the mtime of files opened with r+,
-		      even if they're never actually written.
-		      To avoid requiring special builds for clearcase users,
-		      this is now the default. */
-    {
-	if ((fp = fopen(fullname, "r")) != NULL) {
-    	    if(access(fullname, W_OK) != 0)
-                SET_PERM_LOCKED(window->lockReasons, TRUE);
-#else
-    fp = fopen(fullname, "rb+");
-    if (fp == NULL) {
-    	/* Error opening file or file is not writeable */
-	fp = fopen(fullname, "rb");
-	if (fp != NULL) {
-	    /* File is read only */
-            SET_PERM_LOCKED(window->lockReasons, TRUE);
-#endif
-	} else if (flags & CREATE && errno == ENOENT) {
-	    /* Give option to create (or to exit if this is the only window) */
-	    if (!(flags & SUPPRESS_CREATE_WARN)) {
+    FileContent content;
+    if(GetFileContent(window->shell, name, encoding, filter_name, &content)) {
+        if(content.err == ENOENT && flags & CREATE) {
+            /* Give option to create (or to exit if this is the only window) */
+            if (!(flags & SUPPRESS_CREATE_WARN)) {
                 /* on Solaris 2.6, and possibly other OSes, dialog won't 
 		   show if parent window is iconized. */
                 RaiseShellWindow(window->shell, False);
-
+                
                 /* ask user for next action if file not found */
                 if (WindowList == window && window->next == NULL) {
                     resp = DialogF(DF_WARN, window->shell, 3, "New File",
                             "Can't open %s:\n%s", "New File", "Cancel",
-                            "Exit NEdit", fullname, errorString());
-                } 
-	        else {
+                            "Exit NEdit", fullname, strerror(content.err));
+                } else {
                     resp = DialogF(DF_WARN, window->shell, 2, "New File",
                             "Can't open %s:\n%s", "New File", "Cancel", fullname,
-                            errorString());
+                            strerror(content.err));
                 }
-
+                
                 if (resp == 2) {
                     return FALSE;
-                } 
-                else if (resp == 3) {
+                } else if (resp == 3) {
                     exit(EXIT_SUCCESS);
                 }
             }
-        
+            
             /* Test if new file can be created */
+            int fd;
             if ((fd = creat(fullname, 0666)) == -1) {
                 DialogF(DF_ERR, window->shell, 1, "Error creating File",
                         "Can't create %s:\n%s", "OK", fullname, errorString());
                 return FALSE;
-            } 
-	    else {
+            } else {
                 close(fd);
                 remove(fullname);
             }
-
-	    SetWindowModified(window, FALSE);
+            
+            SetWindowModified(window, FALSE);
             if ((flags & PREF_READ_ONLY) != 0) {
                 SET_USER_LOCKED(window->lockReasons, TRUE);
             }
 	    UpdateWindowReadOnly(window);
 	    return TRUE;
-        }
-	else {
-            /* A true error */
+        } else if(content.isdir) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                    "Could not open %s%s:\n%s", "OK", path, name,
-                    errorString());
-            return FALSE;
-        }
-    }
-     
-    /* Get the length of the file, the protection mode, and the time of the
-       last modification to the file */
-    if (fstat(fileno(fp), &statbuf) != 0) {
-        fclose(fp);
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Error opening %s", "OK", name);
-        window->filenameSet = TRUE;
-        return FALSE;
-    }
-
-    if (S_ISDIR(statbuf.st_mode)) {
-        fclose(fp);
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Can't open directory %s", "OK", name);
-        window->filenameSet = TRUE;
-        return FALSE;
-    }
-
-#ifdef S_ISBLK
-    if (S_ISBLK(statbuf.st_mode)) {
-        fclose(fp);
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        DialogF(DF_ERR, window->shell, 1, "Error opening File",
-                "Can't open block device %s", "OK", name);
-        window->filenameSet = TRUE;
-        return FALSE;
-    }
-#endif
-    fileLen = statbuf.st_size;
-    
-    IOFilter* filter = GetFilterFromName(filter_name);
-    char *filter_cmd = NULL;
-    if(filter && filter->cmdin && strlen(filter->cmdin) > 0) {
-        filter_cmd = filter->cmdin;
-    }
-    stream = filestream_open_r(window->shell, fp, filter_cmd);
-    
-    char *enc_attr = NULL;
-    if(!encoding) {
-        encoding = getEncodingAttribute(fullname, &enc_attr);
-    }
-    
-    int checkBOM = 1;
-    int checkEncoding = 0;
-    if(encoding) {
-        /* check if the encoding string starts with UTF */
-        if(strlen(encoding) < 3) {
-            /* no UTF encoding */
-            checkBOM = 0;
-        } else {
-            char encpre[4];
-            encpre[0] = encoding[0];
-            encpre[1] = encoding[1];
-            encpre[2] = encoding[2];
-            encpre[3] = 0;
-            if(strcasecmp(encpre, "UTF")) {
-                // encoding doesn't start with "UTF" -> no BOM
-                checkBOM = 0;
-            }
-        }
-        if(!strcasecmp(encoding, "GB18030")) {
-            checkBOM = 1; /* GB18030 is unicode and could have a BOM */
-        }
-    } else {
-        /* file has no extended attributes, use locale charset */
-        encoding = GetPrefDefaultCharset();
-        checkEncoding = 1;
-    }
-    
-    char *setEncoding = NULL;
-    int hasBOM = 0;
-    if(checkBOM) {
-        /* read Byte Order Mark */
-        int bom = 0;
-        size_t r = filestream_read(buf, 4, stream);
-        do {
-            if(r >= 4) {
-                bom = 4;
-                if(!memcmp(buf, bom_utf32be, 4)) {
-                    setEncoding = "UTF-32BE";
-                    hasBOM = TRUE;
-                    break;
-                } else if(!memcmp(buf, bom_utf32le, 4)) {
-                    setEncoding = "UTF-32LE";
-                    hasBOM = TRUE;
-                    break;
-                } else if(!memcmp(buf, bom_gb18030, 4)) {
-                    setEncoding = "GB18030";
-                    hasBOM = TRUE;
-                    break;
-                } else if(!memcmp(buf, bom_utfebcdic, 4)) {
-                    setEncoding = "UTF-EBCDIC";
-                    hasBOM = TRUE;
-                    break;
-                }
-            }
-            if(r >= 3) {
-                bom = 3;
-                if(!memcmp(buf, bom_utf8, 3)) {
-                    setEncoding = "UTF-8";
-                    hasBOM = TRUE;
-                    break;
-                }
-            }
-            if(r >= 2) {
-                bom = 2;
-                if(!memcmp(buf, bom_utf16be, 2)) {
-                    setEncoding = "UTF-16BE";
-                    hasBOM = TRUE;
-                    break;
-                } else if(!memcmp(buf, bom_utf16le, 2)) {
-                    setEncoding = "UTF-16LE";
-                    hasBOM = TRUE;
-                    break;
-                }
-            }
-            bom = 0;
-        } while (0);
-        filestream_reset(stream, bom);
-    }
-    if(setEncoding) {
-        encoding = setEncoding;
-        checkEncoding = 0;
-    }
-    
-    if(checkEncoding) {
-        size_t r = filestream_read(buf, IO_BUFSIZE, stream);
-        const char *newEnc = DetectEncoding(buf, r, encoding);
-        if(newEnc && newEnc != encoding) {
-            encoding = newEnc;
-        }
-        filestream_reset(stream, 0);
-    }
-    
-    
-    /* Allocate space for the whole contents of the file (unfortunately) */
-    size_t strAlloc = fileLen;
-    fileString = (char *)malloc(strAlloc + 1); /* +1 = space for null */
-    if (fileString == NULL) {
-        filestream_close(stream);
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        DialogF(DF_ERR, window->shell, 1, "Error while opening File",
-                "File is too large to edit", "OK");
-        window->filenameSet = TRUE;
-        if(enc_attr) {
-            free(enc_attr);
-        }
-        return FALSE;
-    }
-    
-    iconv_t ic = NULL;
-    ConvertFunc strconv = copyBytes;
-    if(encoding) {
-        ic = iconv_open("UTF-8", encoding);
-        if(ic == (iconv_t) -1) {
-            filestream_close(stream);
+                    "Can't open directory %s", "OK", name);
+            window->filenameSet = TRUE;
+        } else if(content.isblk) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                    "Can't open block device %s", "OK", name);
+            window->filenameSet = TRUE;
+        } else if(content.allocerror) {
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            DialogF(DF_ERR, window->shell, 1, "Error while opening File",
+                    "File is too large to include", "OK");
+            window->filenameSet = TRUE;
+        } else if(content.iconverror) {
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             char *format = "File cannot be converted from %s to UTF8";
             size_t msglen = strlen(format) + strlen(encoding) + 4;
@@ -954,144 +774,24 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     msgbuf, "OK");
             NEditFree(msgbuf);
             window->filenameSet = TRUE;
-            if(enc_attr) {
-                free(enc_attr);
-            }
-            free(fileString);
+        } else {
+            /* A true error */
+            DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                    "Could not open %s%s:\n%s", "OK", path, name,
+                    strerror(content.err));
             return FALSE;
         }
-        strconv = (ConvertFunc)iconv;
-        
-        /* store encoding in window */
-        SetEncoding(window, encoding);
-        encoding = window->encoding[0] == '\0' ? window->encoding : NULL;
-        
-        if(enc_attr) {
-            free(enc_attr);
-        }
-    }
-    
-    EncError *encErrors = NEditCalloc(ENC_ERROR_LIST_LEN, sizeof(EncError));
-    size_t numEncErrors = 0;
-    size_t allocEncErrors = ENC_ERROR_LIST_LEN;
-    
-    err = 0;
-    int skipped = 0;
-    size_t r = 0;
-    readLen = 0;
-    char *outStr = fileString;
-    size_t prev = 0;
-    while((r = filestream_read(buf+prev, IO_BUFSIZE-prev, stream)) > 0 && !err) {
-        char *str = buf;
-        size_t inleft = prev + r;
-        size_t outleft = strAlloc - readLen;   
-        prev = 0;  
-        while(inleft > 0) { 
-            size_t w = outleft;
-            size_t rc = strconv(ic, &str, &inleft, &outStr, &outleft);
-            w = w - outleft;
-            readLen += w;
-            
-            if(rc == (size_t)-1) {
-                /* iconv wants more bytes */
-                int extendBuf = 0;
-                switch(errno) {
-                    default: err = 1; break;
-                    case EILSEQ: {
-                        if(inleft > 0) {
-                            // replace with unicode replacement char
-                            if(outleft < 3) {
-                                // jump to extendBuf
-                                // next strconv run will try to convert
-                                // the same character, but this time
-                                // we have the space to store the
-                                // unicode replacement character
-                                extendBuf = 1;
-                                break;
-                            }
-                            
-                            outStr[0] = 0xEF;
-                            outStr[1] = 0xBF;
-                            outStr[2] = 0xBD;
-                            
-                            // add unconvertible character to the error list
-                            if(numEncErrors >= allocEncErrors) {
-                                allocEncErrors += 16;
-                                encErrors = NEditRealloc(encErrors, allocEncErrors * sizeof(EncError));
-                            }
-                            encErrors[numEncErrors].c = (unsigned char)*str;
-                            encErrors[numEncErrors].pos = outStr - fileString;
-                            numEncErrors++;
-                            
-                            
-                            outStr += 3;
-                            outleft -= 3;
-                            readLen += 3;
-                            
-                            str++;
-                            inleft--;
-                            
-                            skipped++;
-                        }
-                        break;
-                    }
-                    case EINVAL: {
-                        memcpy(buf, str, inleft); 
-                        prev = inleft;
-                        inleft = 0;
-                        break;
-                    }
-                    case E2BIG: {
-                        extendBuf = 1;
-                        break;
-                    }
-                }
-                
-                if(extendBuf) {
-                    // either strconv needs more space, or
-                    // the unicode replacement character couldn't be stored
-                    // -> extend buffer
-                    strAlloc += 512;
-                    size_t outpos = outStr - fileString;
-                    fileString = realloc(fileString, strAlloc + 1);
-                    if(!fileString) {
-                        err = 1;
-                        break;
-                    }
-                    outStr = fileString + outpos;
-                    outleft = strAlloc - readLen;
-                }
-                
-                if(err) {
-                    break;
-                }
-            }
-        }
-    }
-    
-    if(ic) {
-        iconv_close(ic);
+        return 0;
     }
     
     SET_ENCODING_LOCKED(window->lockReasons, FALSE);
+    if(content.readonly) {
+        SET_PERM_LOCKED(window->lockReasons, TRUE);
+    }
     
-    int show_err = TRUE;
     int show_infobar = FALSE;
     int lock_enc_error = FALSE;
-    if(skipped > 0) {
-        /*
-        window->filenameSet = FALSE; // Temp. prevent check for changes.
-        int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
-                "%d non-convertible characters skipped\n"
-    		"Open anyway?", "NO", "YES",
-                skipped);
-        window->filenameSet = TRUE;
-        if(btn == 1) {
-            show_err = FALSE;
-            err = TRUE;
-        }
-        */
-        
+    if(content.skipped > 0) {
         char *lockmsg = "";
         if(GetPrefLockEncodingError()) {
             lockmsg = ": file locked to prevent accidental changes";
@@ -1100,81 +800,50 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
         
         char msgbuf[256];
-        snprintf(msgbuf, 256, "%d non-convertible characters skipped%s", skipped, lockmsg);
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped%s", content.skipped, lockmsg);
         
         show_infobar = TRUE;
         SetEncodingInfoBarLabel(window, msgbuf);
-        SetEncErrors(window, encErrors, numEncErrors);
+        SetEncErrors(window, content.enc_errors, content.num_enc_errors);
     } else {
         SetEncodingInfoBarLabel(window, "No conversion errors");
         SetEncErrors(window, NULL, 0);
-        NEditFree(encErrors);
-    }
-    
-    if (err || ferror(fp)) {
-        filestream_close(stream);
-        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
-        if(show_err) {
-             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
-                "Error reading %s:\n%s", "OK", name, errorString());
-        }
-        window->filenameSet = TRUE;
-        NEditFree(fileString);
-        return FALSE;
-    }
-    fileString[readLen] = 0;
-    
-    /* Close the file */
-    if (filestream_close(stream) != 0) {
-        /* unlikely error */
-        DialogF(DF_WARN, window->shell, 1, "Error while opening File",
-                "Unable to close file", "OK");
-        /* we read it successfully, so continue */
+        NEditFree(content.enc_errors);
     }
     
     SetFilter(window, filter_name);
     
     /* bom in the window */
-    window->bom = hasBOM;
+    window->bom = content.hasBOM;
 
     /* Any errors that happen after this point leave the window in a 
         "broken" state, and thus RevertToSaved will abandon the window if
         window->fileMissing is FALSE and doOpen fails. */    
-    window->fileMode = statbuf.st_mode;
-    window->fileUid = statbuf.st_uid;
-    window->fileGid = statbuf.st_gid;
-    window->lastModTime = statbuf.st_mtime;
-    window->device = statbuf.st_dev;
-    window->inode = statbuf.st_ino;
+    window->fileMode = content.statbuf.st_mode;
+    window->fileUid = content.statbuf.st_uid;
+    window->fileGid = content.statbuf.st_gid;
+    window->lastModTime = content.statbuf.st_mtime;
+    window->device = content.statbuf.st_dev;
+    window->inode = content.statbuf.st_ino;
     window->fileMissing = FALSE;
-
-    /* Detect and convert DOS and Macintosh format files */
-    if (GetPrefForceOSConversion()) {
-        window->fileFormat = FormatOfFile(fileString);
-        if (window->fileFormat == DOS_FILE_FORMAT) {
-            ConvertFromDosFileString(fileString, &readLen, NULL);
-        } else if (window->fileFormat == MAC_FILE_FORMAT) {
-            ConvertFromMacFileString(fileString, readLen);
-        }
-    }
     
     /* Disable continuous wrapping if the file is too big */
-    if(readLen > DISABLE_WRAPPING_THRESHOLD) {
+    if(content.length > DISABLE_WRAPPING_THRESHOLD) {
         SetAutoWrap(window, NO_WRAP);
         window->wrapModeNoneForced = True;
     }
     
     /* Display the file contents in the text widget */
     window->ignoreModify = True;
-    BufSetAll(window->buffer, fileString);
+    BufSetAll(window->buffer, content.content);
     window->ignoreModify = False;
     
     /* Check that the length that the buffer thinks it has is the same
        as what we gave it.  If not, there were probably nuls in the file.
        Substitute them with another character.  If that is impossible, warn
        the user, make the file read-only, and force a substitution */
-    if (window->buffer->length != readLen) {
-        if (!BufSubstituteNullChars(fileString, readLen, window->buffer)) {
+    if (window->buffer->length != content.length) {
+        if (!BufSubstituteNullChars(content.content, content.length, window->buffer)) {
             resp = DialogF(DF_ERR, window->shell, 2, "Error while opening File",
                     "Too much binary data in file.  You may view\n"
                     "it, but not modify or re-save its contents.", "View",
@@ -1184,7 +853,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             }
 
             SET_TMBD_LOCKED(window->lockReasons, TRUE);
-            for (c = fileString; c < &fileString[readLen]; c++) {
+            for (char *c = content.content; c < &content.content[content.length]; c++) {
                 if (*c == '\0') {
                     *c = (char) 0xfe;
                 }
@@ -1192,12 +861,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             window->buffer->nullSubsChar = (char) 0xfe;
         }
         window->ignoreModify = True;
-        BufSetAll(window->buffer, fileString);
+        BufSetAll(window->buffer, content.content);
         window->ignoreModify = False;
     }
 
     /* Release the memory that holds fileString */
-    NEditFree(fileString);
+    NEditFree(content.content);
 
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {
