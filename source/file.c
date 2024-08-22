@@ -695,15 +695,25 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     CLEAR_ALL_LOCKS(window->lockReasons);
     
     /* Update the window data structure */
-    strcpy(window->filename, name);
-    strcpy(window->path, path);
+    size_t name_len = strlen(name);
+    size_t path_len = strlen(path);
+    if(name_len + path_len >= MAXPATHLEN-1) {
+        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
+        DialogF(DF_ERR, window->shell, 1, "Error opening File",
+                "Path too long", "OK");
+        window->filenameSet = TRUE;
+        return False;
+    } 
+    
+    memcpy(window->filename, name, name_len+1);
+    memcpy(window->path, path, path_len+1);
     window->encoding[0] = '\0';
     window->filenameSet = TRUE;
     window->fileMissing = TRUE;
 
     /* Get the full name of the file */
-    strcpy(fullname, path);
-    strcat(fullname, name);
+    memcpy(fullname, path, path_len);
+    memcpy(fullname+path_len, name, name_len+1);
     
     FileContent content;
     if(GetFileContent(window->shell, fullname, encoding, filter_name, &content)) {
