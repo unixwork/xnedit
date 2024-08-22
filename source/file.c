@@ -706,7 +706,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     strcat(fullname, name);
     
     FileContent content;
-    if(GetFileContent(window->shell, name, encoding, filter_name, &content)) {
+    if(GetFileContent(window->shell, fullname, encoding, filter_name, &content)) {
         if(content.err == ENOENT && flags & CREATE) {
             /* Give option to create (or to exit if this is the only window) */
             if (!(flags & SUPPRESS_CREATE_WARN)) {
@@ -783,6 +783,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         }
         return 0;
     }
+    SetEncoding(window, content.encoding);
     
     SET_ENCODING_LOCKED(window->lockReasons, FALSE);
     if(content.readonly) {
