@@ -824,8 +824,8 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     
     SetFilter(window, filter_name);
     
-    /* bom in the window */
     window->bom = content.hasBOM;
+    window->fileFormat = content.fileFormat;
 
     /* Any errors that happen after this point leave the window in a 
         "broken" state, and thus RevertToSaved will abandon the window if
