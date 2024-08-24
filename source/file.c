@@ -287,7 +287,7 @@ static void modifiedWindowDestroyedCB(Widget w, XtPointer clientData,
     XtPointer callData);
 static void forceShowLineNumbers(WindowInfo *window);
 
-static const char* getEncodingAttribute(const char *path, char **free_ptr);
+static char* getEncodingAttribute(const char *path);
 
 
 WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
@@ -976,8 +976,7 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
     
     // check if the file has the 'charset' exnteded attribute
     if(!encoding) {
-        char *enc_attr = NULL;
-        const char *xattr_charset = getEncodingAttribute(path, &enc_attr);
+        char *xattr_charset = getEncodingAttribute(path);
         if(xattr_charset) {
             size_t enclen = strlen(xattr_charset);
             if(enclen >= MAX_ENCODING_LENGTH) {
@@ -986,8 +985,8 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
             memcpy(encoding_buffer, xattr_charset, enclen);
             encoding_buffer[enclen] = 0;
             encoding = encoding_buffer;
+            NEditFree(xattr_charset);
         }
-        free(enc_attr);
     }
     
     int checkBOM = 1;
@@ -2847,22 +2846,22 @@ const char * DetectEncoding(const char *buf, size_t len, const char *def) {
 /*
  * If available, get the charset xattr value
  */
-static const char* getEncodingAttribute(const char *path, char **free_ptr)
+static char* getEncodingAttribute(const char *path)
 {
     char *enc_attr = NULL;
-    const char *encoding = NULL;
     
     ssize_t attrlen = 0;
     enc_attr = xattr_get(path, "charset", &attrlen);
-    /* enc_attr is NOT null-terminated */
+    /* enc_attr is null-terminated */
     if(enc_attr) {
-        if(attrlen > 0) {
-            char *enc_attr_str = NEditMalloc(attrlen + 1);
-            memcpy(enc_attr_str, enc_attr, attrlen);
-            enc_attr_str[attrlen] = '\0';
-
-            // trim the encoding string
-            char *enc_trim = enc_attr_str;
+        if(attrlen == 0) {
+            free(enc_attr);
+            return NULL;
+        }
+        
+        // check if we need to trim the value
+        if(isspace(enc_attr[0]) || isspace(enc_attr[attrlen-1])) {
+            char *enc_trim = enc_attr;
             size_t etlen = attrlen;
             while(etlen > 0 && isspace(*enc_trim)) {
                 enc_trim++;
@@ -2872,17 +2871,20 @@ static const char* getEncodingAttribute(const char *path, char **free_ptr)
                 etlen--;
             }
             enc_trim[etlen] = '\0';
-
-            encoding = enc_trim;
+            
+            if(etlen == 0) {
+                free(enc_attr);
+                return NULL;
+            }
+            
+            char *enc_str = malloc(attrlen + 1);
+            if(enc_str) {
+                memcpy(enc_str, enc_trim, etlen+1);
+            }
             free(enc_attr);
-            // keep the original pointer for NEditFree
-            enc_attr = enc_attr_str;
-        } else {
-            free(enc_attr);
-            enc_attr = NULL;
+            enc_attr = enc_str;
         }
     }
     
-    *free_ptr = enc_attr;
-    return encoding;
+    return enc_attr;
 }
