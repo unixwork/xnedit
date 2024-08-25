@@ -119,5 +119,5 @@ void SetEncoding(WindowInfo *window, const char *encoding);
 void SetFilter(WindowInfo *window, const char *filter);
 void SetZoom(WindowInfo *window, int step);
 void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors);
-void ReloadWindowResources(WindowInfo *window);
+void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar);
 #endif /* NEDIT_WINDOW_H_INCLUDED */

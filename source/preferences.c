@@ -5681,11 +5681,21 @@ static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData
         return;
     }
     
-    SetColorProfile(window, cp);
-    XrmSetDatabase(XtDisplay(window->shell), cp->db);
+    int updateRes = !ColorProfileResourceDBEqual(currentCP, cp);
     
-    if(!ColorProfileResourceDBEqual(currentCP, cp)) {
-        ReloadWindowResources(window);
+    Widget shell = window->shell;
+    for (WindowInfo *win = WindowList; win != NULL; win = win->next) {
+        if(win->shell == shell) { 
+            SetColorProfile(win, cp);
+            if(updateRes) {
+                ReloadWindowResources(win, False);
+            }
+        }
+    }
+    
+    XrmSetDatabase(XtDisplay(window->shell), cp->db);
+    if(updateRes) {
+        ReloadWindowResources(window, True);
     }
 }
 
@@ -6374,7 +6384,7 @@ static void updateColors(colorDialog *cd)
         ColorProfile *cp = window->colorProfile;  
         SetColorProfile(window, setProfile);
         XrmSetDatabase(XtDisplay(window->shell), setProfile->db);
-        ReloadWindowResources(window);
+        ReloadWindowResources(window, True);
     }
 }
 

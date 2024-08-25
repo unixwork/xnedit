@@ -4261,7 +4261,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(LINENO_BG_COLOR),
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
-    SetColorProfile(window, GetDefaultColorProfile());
+    SetColorProfile(window, shellWindow->colorProfile);
     // TODO: remove XtVaSetValues here, changing the color profile is enough
     XtVaSetValues(window->textArea,
           textNansiColorList, window->ansiColorList, NULL);
@@ -6352,7 +6352,7 @@ static void RecreateTextareaScrollbar(Widget textArea)
     }
 }
 
-void ReloadWindowResources(WindowInfo *window)
+void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
 {
     CPDummyWindow dw;
     dw.shell = CreateWidget(TheAppShell, "textShell", topLevelShellWidgetClass, NULL, 0);
@@ -6368,8 +6368,10 @@ void ReloadWindowResources(WindowInfo *window)
     dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
     dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
 
-    UpdateWidgetValues(window->menuBar, dw.menubar);
-    RecreateMenuBar(window->mainWin, window->menuBar, window, True);
+    if(updateMenuBar) {
+        UpdateWidgetValues(window->menuBar, dw.menubar);
+        RecreateMenuBar(window->mainWin, window->menuBar, window, True);
+    }
 
     UpdateWidgetValues(window->mainWin, dw.mainWin);
     Widget winForm = XtParent(window->iSearchForm);
