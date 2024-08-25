@@ -622,7 +622,7 @@ regexp * CompileRE (const char *exp, char **errorText, int defaultFlags) {
 
          /* Allocate memory. */
 
-         comp_regex = (regexp *) NEditMalloc (sizeof (regexp) + Reg_Size);
+         comp_regex = (regexp *) malloc (sizeof (regexp) + Reg_Size);
 
          if (comp_regex == NULL) REG_FAIL ("out of memory in `CompileRE\'");
 
@@ -2769,7 +2769,7 @@ int ExecRE(regexp *prog, const char* string, const char* end, int reverse,
 
    if (Num_Braces > 0) {
       Brace =
-         (brace_counts *) NEditMalloc (sizeof (brace_counts) * (size_t) Num_Braces);
+         (brace_counts *) malloc (sizeof (brace_counts) * (size_t) Num_Braces);
 
       if (Brace == NULL) {
          reg_error ("out of memory in `ExecRE\'");

@@ -163,7 +163,7 @@ char * ConvertRE (const char *exp, char **errorText) {
          /* Allocate memory. */
 
          Convert_Str =
-            (unsigned char *) NEditMalloc(sizeof (unsigned char) * Convert_Size);
+            (unsigned char *) malloc(sizeof (unsigned char) * Convert_Size);
 
          if (Convert_Str == NULL) {
             CONVERT_FAIL ("out of memory in `ConvertRE\'");

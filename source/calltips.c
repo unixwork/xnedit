@@ -202,7 +202,7 @@ static char *expandAllTabs( char *text, int tab_width ) {
 
     /* Allocate the new string */
     len = strlen( text ) + ( tab_width - 1 )*nTabs;
-    textCpy = (char*)NEditMalloc( len + 1 );
+    textCpy = (char*)malloc( len + 1 );
     if( !textCpy ) {
         fprintf(stderr, 
                 "xnedit: Out of heap memory in expandAllTabs!\n");

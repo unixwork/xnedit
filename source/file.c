@@ -2050,7 +2050,7 @@ static int writeBckVersion(WindowInfo *window)
     }
 
     /* Allocate I/O buffer */
-    io_buffer = (char*) NEditMalloc(IO_BUFFER_SIZE);
+    io_buffer = (char*) malloc(IO_BUFFER_SIZE);
     if (NULL == io_buffer) {
         close(in_fd);
         close(out_fd);

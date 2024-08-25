@@ -1412,7 +1412,7 @@ static void showMatchingCalltip( Widget parent, int i )
     }
     /* 5. Copy the calltip to a string */
     tipLen = endPos - startPos;
-    message = (char*)NEditMalloc(tipLen+1);  /* +1 = space for null */
+    message = (char*)malloc(tipLen+1);  /* +1 = space for null */
     if (message == NULL)
     {
         DialogF(DF_ERR, parent, 1, "Out of Memory",

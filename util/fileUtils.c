@@ -608,7 +608,7 @@ int ConvertToDosFileString(char **fileString, int *length)
     }
     
     /* Allocate the new string */
-    outString = (char*)NEditMalloc(outLength + 1);
+    outString = (char*)malloc(outLength + 1);
     if (outString == NULL)
 	return FALSE;
     
