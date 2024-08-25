@@ -6323,6 +6323,7 @@ static void updateColors(colorDialog *cd)
     
     // update windows
     for (window = WindowList; window != NULL; window = window->next) {
+        ColorProfile *cp = window->colorProfile;  
         SetColorProfile(window, setProfile);
         XrmSetDatabase(XtDisplay(window->shell), setProfile->db);
         ReloadWindowResources(window);
@@ -6894,6 +6895,7 @@ static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
     if(cd->selectedProfile == 0) {
         DialogF(DF_ERR, w, 1, "Error",
                 "The default color profile cannot be removed.", "OK");
+        return;
     }
     
     ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];

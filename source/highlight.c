@@ -2493,17 +2493,25 @@ static int getFontHeight(WindowInfo *window)
 
 XftColor LightenColor(XftColor color)
 {
-    float red = color.color.red / 65535.f;
-    float green = color.color.green / 65535.f;
-    float blue =  color.color.blue / 65535.f;
+    int r = color.color.red;
+    int g = color.color.green;
+    int b = color.color.blue;
     
-    int r, g, b;
-    r = color.color.red + 0x8000;
-    g = color.color.green + 0x8000;
-    b = color.color.blue + 0x8000;
-    if(r > 0xFFFF) r = 0xFFFF;
-    if(g > 0xFFFF) g = 0xFFFF;
-    if(b > 0xFFFF) b = 0xFFFF;
+    // check if the color is black/white/grey
+    // in that case we inverse the color
+    if(abs(r-g) < 5 && abs(g-b) < 5) {
+        r = 0xFFFF - r;
+        g = 0xFFFF - g;
+        b = 0xFFFF - b;
+    } else {
+        // increase brightness but keep color tone
+        r = r + 0x8000;
+        g = g + 0x8000;
+        b = b + 0x8000;
+        if(r > 0xFFFF) r = 0xFFFF;
+        if(g > 0xFFFF) g = 0xFFFF;
+        if(b > 0xFFFF) b = 0xFFFF;
+    }
     
     color.color.red = r;
     color.color.green = g;

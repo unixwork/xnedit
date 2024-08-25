@@ -645,7 +645,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
         XtVaGetValues(menuBar, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
         for(int i=0;i<numChildren;i++) {
             XtUnmanageChild(children[i]);
-            XtDestroyWidget(children[i]);
+            //XtDestroyWidget(children[i]);
         }
     }
 

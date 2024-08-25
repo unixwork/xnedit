@@ -2565,13 +2565,18 @@ static int updateHSList(void)
     size_t nstyles = NHighlightStyles;
     highlightStyleRec **styleList = HighlightStyles;
     if(colorProfile) {
+        if(colorProfile->stylesAlloc == 0) {
+            colorProfile->styles = NULL;
+            nstyles = 0;
+        } else {
+            nstyles = colorProfile->numStyles;
+        }
         if(HSDialog.nHighlightStyles > colorProfile->stylesAlloc) {
             colorProfile->stylesAlloc = HSDialog.nHighlightStyles;
             colorProfile->styles = NEditRealloc(
                     colorProfile->styles,
                     colorProfile->stylesAlloc * sizeof(highlightStyleRec*));
         }
-        nstyles = colorProfile->numStyles;
         styleList = colorProfile->styles;
     }
     

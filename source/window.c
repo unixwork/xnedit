@@ -6213,6 +6213,8 @@ typedef struct CPDummyWindow {
     Widget textfield1;
     Widget textfield2;
     Widget textfield3;
+    Widget scrollbar;
+    Widget folder;
 } CPDummyWindow;
 
 static void clearCompositeWidget(Widget w)
@@ -6232,7 +6234,8 @@ static void UpdateWidgetValues(Widget dst, Widget src)
         return; // textWidgetClass is updated separately
     }
 
-    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor, selectBG, selectFG, troughColor;
+    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor;
+    Pixel selectBG, selectFG, troughColor, blankBackground, inactiveBackground, inactiveForeground;
     Dimension shadowThickness, highlightThickness;
     XtVaGetValues(src,
             XmNbackground, &background,
@@ -6246,6 +6249,9 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNselectBackground, &selectBG,
             XmNselectForeground, &selectFG,
             XmNtroughColor, &troughColor,
+            XmNblankBackground, &blankBackground,
+            XmNinactiveBackground, &inactiveBackground,
+            XmNinactiveForeground, &inactiveForeground,
             NULL);
     
     XtVaSetValues(dst,
@@ -6260,6 +6266,9 @@ static void UpdateWidgetValues(Widget dst, Widget src)
             XmNselectBackground, selectBG,
             XmNselectForeground, selectFG,
             XmNtroughColor, troughColor,
+            XmNblankBackground, blankBackground,
+            XmNinactiveBackground, inactiveBackground,
+            XmNinactiveForeground, inactiveForeground,
             NULL);
 }
 
@@ -6269,8 +6278,8 @@ static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *tem
 {
     UpdateWidgetValues(parent, src);
 
-    Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3 };
-    size_t numSrcWidgets = 6;
+    Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3, template->scrollbar };
+    size_t numSrcWidgets = 7;
     
     WidgetList children = NULL;
     Cardinal numChildren = 0;
@@ -6314,8 +6323,9 @@ static void RecreateTextareaScrollbar(Widget textArea)
     // unmanage and destroy
     XtUnmanageChild(oldHscrollbar);
     XtUnmanageChild(oldVscrollbar);
-    XtDestroyWidget(oldHscrollbar);
-    XtDestroyWidget(oldVscrollbar);
+    // when the old scrollbar is destroyed, the new scrollbar doesn't work correctly
+    //XtDestroyWidget(oldHscrollbar);
+    //XtDestroyWidget(oldVscrollbar);
 
     // create new scrollbars
     Widget newHscrollbar = XtVaCreateManagedWidget(
@@ -6354,6 +6364,8 @@ void ReloadWindowResources(WindowInfo *window)
     dw.textfield1 = XmCreateTextField(dw.form, "textfield1", NULL, 0);
     dw.textfield2 = XmCreateText(dw.form, "textfield2", NULL, 0);
     dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
+    dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
+    dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
 
     UpdateWidgetValues(window->menuBar, dw.menubar);
     RecreateMenuBar(window->mainWin, window->menuBar, window, True);
@@ -6365,19 +6377,20 @@ void ReloadWindowResources(WindowInfo *window)
     UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
     clearCompositeWidget(window->iSearchForm);
     createSearchForm(window);
-
+    
+    Widget tabbar = window->tabBar;
+    Widget tabform = XtParent(tabbar);
+    UpdateWidgetValues(tabform, dw.form);
+    
     UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
-    UpdateWidgetsHierarchy(window->tabBar, dw.form, &dw);
+    UpdateWidgetsHierarchy(window->tabBar, dw.folder, &dw);
     UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);
 
-    RecreateTextareaScrollbar(window->textArea);
+    //RecreateTextareaScrollbar(window->textArea);
     /* Update any additional panes */
-    for (int i=0; i<window->nPanes; i++) {
-        RecreateTextareaScrollbar(window->textPanes[i]);
-    }
-
-
-
+    //for (int i=0; i<window->nPanes; i++) {
+    //    RecreateTextareaScrollbar(window->textPanes[i]);
+    //}
 
     XtDestroyWidget(dw.shell);
 }

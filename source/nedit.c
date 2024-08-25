@@ -572,7 +572,7 @@ int main(int argc, char **argv)
 	exit(EXIT_FAILURE);
     }
     
-    defaultResourceDB = XrmGetDatabase(TheDisplay);
+    defaultResourceDB = XtScreenDatabase(DefaultScreenOfDisplay(TheDisplay)); //XrmGetDatabase(TheDisplay);
     
     /* Enable Xdnd */
     XdndInit(TheDisplay, context, dndOpenFileCB, NULL);
