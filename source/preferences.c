@@ -915,6 +915,7 @@ static PrefDescripRec PrefDescrip[] = {
         ADD_5_2_STYLES
         ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
+#ifndef DISABLE_COLORPROFILES
     {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "Test:Plain:black:Plain\n\
     	Test:Comment:gray20:Italic\n\
     	Test:Keyword:white:Bold\n\
@@ -953,6 +954,7 @@ static PrefDescripRec PrefDescrip[] = {
         Test:Strong:white:Bold\n\
         Test:Header:white:Bold",
         &TempStringPrefs.colorProfileStyles, NULL, False},
+#endif
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
         "C:Default\n\
 	C++:Default\n\
@@ -990,6 +992,7 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.ansiColorList, NULL, True},
     {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
       &PrefData.ansiColors, NULL, True},
+#ifndef DISABLE_COLORPROFILES
     {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING,
        "Test:colors:{black;white;black;rgb:cc/cc/cc;white;red;#4a4a4a;rgb:f2/f2/f2;black;rgb:ee/ee/ee},"
        "ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},"
@@ -998,6 +1001,7 @@ static PrefDescripRec PrefDescrip[] = {
 	NULL, True},
     {"defaultColorProfile", "DefaultColorProfile", PREF_ALLOC_STRING, "default",
         &PrefData.defaultColorProfile, NULL, True},
+#endif
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -6521,7 +6525,12 @@ static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
         return;
     }
     
-    for(int i=0;i<4;i++) {
+#ifdef DISABLE_COLORPROFILES
+    int numtabs = 3;
+#else
+    int numtabs = 4;
+#endif
+    for(int i=0;i<numtabs;i++) {
         if(cd->tabs[i] != w) {
             XmToggleButtonSetState(cd->tabs[i], False, False);
             XtUnmanageChild(cd->tabForms[i]);
@@ -7070,6 +7079,7 @@ void ChooseColors(WindowInfo *window)
     }
     cd->colorProfiles[0].modified = TRUE;
     
+#ifndef DISABLE_COLORPROFILES
     Widget colorProfileForm = XtVaCreateManagedWidget("colorProfileForm", xmFormWidgetClass, form,
             XmNtopAttachment, XmATTACH_FORM,
             XmNleftAttachment, XmATTACH_FORM,
@@ -7137,14 +7147,21 @@ void ChooseColors(WindowInfo *window)
     XtAddCallback(colorProfileNew, XmNactivateCallback,
                  (XtCallbackProc)colorDialogProfileNew, cd);
     
+#endif
+    
     /* tabs */
     cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNrightPosition, 33,
+#else
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 25,
             XmNtopOffset, 10,
+#endif
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 25,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNset, True,
@@ -7152,30 +7169,41 @@ void ChooseColors(WindowInfo *window)
             NULL);
     XmStringFree(s1);
     cd->tabs[1] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNrightPosition, 66,
+#else
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 50,
             XmNtopOffset, 10,
+#endif
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[0],
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 50,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("Indent Rainbow"),
             NULL);
     XmStringFree(s1);
     cd->tabs[2] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNrightPosition, 100,
+#else
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 75,
             XmNtopOffset, 10,
+#endif
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[1],
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 75,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("ANSI Colors"),
             NULL);
+#ifndef DISABLE_COLORPROFILES
     cd->tabs[3] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, colorProfileForm,
@@ -7188,10 +7216,11 @@ void ChooseColors(WindowInfo *window)
             XmNlabelString, s1 = XmStringCreateSimple("Styles"),
             NULL);
     XmStringFree(s1);
+    XtAddCallback(cd->tabs[3], XmNvalueChangedCallback, selectColorTab, cd);
+#endif
     XtAddCallback(cd->tabs[0], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
-    XtAddCallback(cd->tabs[3], XmNvalueChangedCallback, selectColorTab, cd);
     
     topW = cd->tabs[0];
       
@@ -8106,10 +8135,14 @@ void ParseColorProfiles(const char *str)
     
     size_t len = strlen(str);
     
+#ifdef DISABLE_COLORPROFILES
+    char *defaultProfileName = "default";
+#else
     char *defaultProfileName = GetPrefDefaultColorProfileName();
     if(!defaultProfileName) {
         defaultProfileName = "default";
     }
+#endif
        
     // each line contains one color profile
     // parse each line and add the profiles to a linked list

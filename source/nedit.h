@@ -150,6 +150,11 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 /* disable language mode threshold (128mb) */
 #define DISABLE_LANG_THRESHOLD 0x8000000
 
+/* disable colorprofiles by default for now */
+#ifndef ENABLE_COLORPROFILES
+#define DISABLE_COLORPROFILES
+#endif
+
 /* Record on undo list */
 typedef struct _UndoInfo {
     struct _UndoInfo *next;		/* pointer to the next undo record */
@@ -514,6 +519,7 @@ typedef struct _WindowInfo {
     NFont       *boldItalicFont;
     
     ColorProfile *colorProfile;
+    Boolean     colorProfileSet;
     
     Boolean     resizeOnFontChange;
     
