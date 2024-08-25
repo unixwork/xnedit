@@ -7010,6 +7010,7 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
     ColorProfileCopySettings(&cd->colorProfiles[cd->selectedProfile], newProfile);
     NEditFree(newProfile->name);
     newProfile->name = NEditStrdup(profileName);
+    newProfile->orig = NULL;
     
     XmString s = XmStringCreateSimple(profileName);
     XmComboBoxAddItem(cd->profileDropDown, s, -1, False);
