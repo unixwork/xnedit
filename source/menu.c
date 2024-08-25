@@ -1115,6 +1115,9 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
 	    'I', doActionCB, "set_incremental_search_line", GetPrefISearchLine(), FULL);
     window->lineNumsItem = createMenuToggle(menuPane, "lineNumbers", "Show Line Numbers", 'N',
     	    doActionCB, "set_show_line_numbers", GetPrefLineNums(), SHORT);
+#ifndef DISABLE_COLORPROFILES
+    CreateColorProfilesSubMenu(window, menuPane, "colorProfile", "Color Profile", 'C');
+#endif
     CreateLanguageModeSubMenu(window, menuPane, "languageMode",
     	    "Language Mode", 'L');
     subPane = createMenu(menuPane, "autoIndent", "Auto Indent",

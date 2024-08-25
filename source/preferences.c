@@ -916,43 +916,7 @@ static PrefDescripRec PrefDescrip[] = {
         ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
 #ifndef DISABLE_COLORPROFILES
-    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "Test:Plain:black:Plain\n\
-    	Test:Comment:gray20:Italic\n\
-    	Test:Keyword:white:Bold\n\
-        Test:Operator:white:Bold\n\
-        Test:Bracket:white:Bold\n\
-    	Test:Storage Type:white:Bold\n\
-    	Test:Storage Type1:white:Bold\n\
-    	Test:String:white:Plain\n\
-    	Test:String1:white:Plain\n\
-    	Test:String2:white:Bold\n\
-    	Test:Preprocessor:white:Plain\n\
-    	Test:Preprocessor1:white:Plain\n\
-        Test:Preprocessor2:white:Bold\n\
-    	Test:Character Const:white:Plain\n\
-    	Test:Numeric Const:white:Plain\n\
-    	Test:Identifier:white:Plain\n\
-    	Test:Identifier1:white:Plain\n\
-        Test:Identifier2:white:Plain\n\
- 	Test:Subroutine:white:Plain\n\
-	Test:Subroutine1:white:Plain\n\
-   	Test:Ada Attributes:white:Bold\n\
-	Test:Label:white:Italic\n\
-	Test:Flag:white:Bold\n\
-    	Test:Text Comment:white:Italic\n\
-    	Test:Text Key:white:Bold\n\
-	Test:Text Key1:white:Plain\n\
-    	Test:Text Arg:white:Bold\n\
-    	Test:Text Arg1:white:Bold\n\
-	Test:Text Arg2:white:Plain\n\
-    	Test:Text Escape:white:Bold\n\
-	Test:LaTeX Math:white:Plain\n\
-        Test:Pointer:white:Bold\n\
-        Test:Regex:white:Bold\n\
-        Test:Warning:white:Italic\n\
-        Test:Emphasis:white:Italic\n\
-        Test:Strong:white:Bold\n\
-        Test:Header:white:Bold",
+    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "",
         &TempStringPrefs.colorProfileStyles, NULL, False},
 #endif
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
@@ -993,12 +957,8 @@ static PrefDescripRec PrefDescrip[] = {
     {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
       &PrefData.ansiColors, NULL, True},
 #ifndef DISABLE_COLORPROFILES
-    {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING,
-       "Test:colors:{black;white;black;rgb:cc/cc/cc;white;red;#4a4a4a;rgb:f2/f2/f2;black;rgb:ee/ee/ee},"
-       "ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},"
-       "rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},"
-       "res:{test.res}", &TempStringPrefs.colorProfiles,
-	NULL, True},
+    {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING, "",
+        &TempStringPrefs.colorProfiles, NULL, True},
     {"defaultColorProfile", "DefaultColorProfile", PREF_ALLOC_STRING, "default",
         &PrefData.defaultColorProfile, NULL, True},
 #endif
@@ -1382,6 +1342,7 @@ static char *createExtString(char **extensions, int nExtensions);
 static char **readExtensionList(char **inPtr, int *nExtensions);
 static void updateLanguageModeSubmenu(WindowInfo *window);
 static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData);
+static void updateColorProfilesMenu(WindowInfo *window);
 static int modeError(languageModeRec *lm, const char *stringStart,
 	const char *stoppedAt, const char *message);
 static void lmDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -2553,6 +2514,12 @@ void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
     to->styleType = from->styleType;
     to->windowThemeVariant = from->windowThemeVariant;
     to->orig = from;
+}
+
+int ColorProfileResourceDBEqual(ColorProfile *c1, ColorProfile *c2) {
+    char *s1 = c1->resourceFile ? c1->resourceFile : "";
+    char *s2 = c2->resourceFile ? c2->resourceFile : "";
+    return !strcmp(s1, s2);
 }
 
 int GetNumColorProfiles(void)
@@ -5679,6 +5646,79 @@ static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData)
     XtCallActionProc(window->textArea, "set_language_mode", NULL, params, 1);
 }
 
+void CreateColorProfilesSubMenu(WindowInfo *window, const Widget parent,
+        const char *name, const char *label, char mnemonic)
+{
+    XmString string = XmStringCreateSimple((char*) label);
+
+    window->colorProfileMenuPane = XtVaCreateManagedWidget(name,
+            xmCascadeButtonGadgetClass, parent,
+            XmNlabelString, string,
+            XmNmnemonic, mnemonic,
+            XmNsubMenuId, NULL,
+            NULL);
+    XmStringFree(string);
+    
+    updateColorProfilesMenu(window);
+}
+
+static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    if (!XmToggleButtonGetState(w)) {
+        return;
+    }
+    
+    WindowInfo *window = clientData;
+    ColorProfile *cp;
+    XtVaGetValues(w, XmNuserData, &cp, NULL);
+    if(!cp) {
+        return;
+    }
+    
+    ColorProfile *currentCP = window->colorProfile;  
+    
+    if(cp == currentCP) {
+        return;
+    }
+    
+    SetColorProfile(window, cp);
+    XrmSetDatabase(XtDisplay(window->shell), cp->db);
+    
+    if(!ColorProfileResourceDBEqual(currentCP, cp)) {
+        ReloadWindowResources(window);
+    }
+}
+
+static void updateColorProfilesMenu(WindowInfo *window)
+{
+    XmString s1;
+    Widget menu;
+    Arg args[1] = {{XmNradioBehavior, (XtArgVal)True}};
+    
+    /* Destroy and re-create the menu pane */
+    XtVaGetValues(window->colorProfileMenuPane, XmNsubMenuId, &menu, NULL);
+    if (menu) {
+        XtDestroyWidget(menu);
+    }
+    menu = CreatePulldownMenu(XtParent(window->colorProfileMenuPane), "colorProfiles", args, 1);
+    
+    ColorProfile *cp = colorProfiles;
+    while(cp) {
+        Widget menuItem = XtVaCreateManagedWidget("colorProfileMenuItem",
+            	xmToggleButtonGadgetClass, menu, 
+            	XmNlabelString, s1=XmStringCreateSimple(cp->name),
+   		XmNuserData, (void *)cp,
+    		XmNset, window->colorProfile == cp, NULL);
+        XmStringFree(s1);
+	XtAddCallback(menuItem, XmNvalueChangedCallback, setColorProfileCB, window);
+        
+        cp = cp->next;
+    }
+    
+    XtVaSetValues(window->colorProfileMenuPane, XmNsubMenuId, menu, NULL);
+}
+
+
 /*
 ** Skip a delimiter and it's surrounding whitespace
 */
@@ -6250,6 +6290,10 @@ static void updateColors(colorDialog *cd)
         if(!prefProfile) {
             prefProfile = NEditMalloc(sizeof(ColorProfile));
             memset(prefProfile, 0, sizeof(ColorProfile));
+        }
+        
+        if(!ColorProfileResourceDBEqual(prefProfile, profile)) {
+            prefProfile->resDBLoaded = FALSE;
         }
         
         NEditFree(prefProfile->name);

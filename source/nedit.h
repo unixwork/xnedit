@@ -362,6 +362,7 @@ typedef struct _WindowInfo {
     Widget	replaceFindAgainItem;
     Widget 	replaceAgainItem;
     Widget      gotoSelItem;
+    Widget      colorProfileMenuPane;
     Widget	langModeCascade;
     Widget	findDefItem;
     Widget	showTipItem;
@@ -519,7 +520,6 @@ typedef struct _WindowInfo {
     NFont       *boldItalicFont;
     
     ColorProfile *colorProfile;
-    Boolean     colorProfileSet;
     
     Boolean     resizeOnFontChange;
     

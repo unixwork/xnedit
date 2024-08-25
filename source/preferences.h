@@ -211,6 +211,8 @@ Widget CreateLanguageModeMenu(Widget parent, XtCallbackProc cbProc,
 void SetLangModeMenu(Widget optMenu, const char *modeName);
 void CreateLanguageModeSubMenu(WindowInfo* window, const Widget parent,
         const char* name, const char* label, char mnemonic);
+void CreateColorProfilesSubMenu(WindowInfo *window, const Widget parent,
+        const char *name, const char *label, char mnemonic);
 void SetPrefFindReplaceUsesSelection(int state);
 int GetPrefFindReplaceUsesSelection(void);
 int GetPrefStickyCaseSenseBtn(void);
@@ -252,6 +254,7 @@ char* GetPrefDefaultColorProfileName(void);
 void SetPrefDefaultColorProfileName(const char *str);
 
 void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to);
+int ColorProfileResourceDBEqual(ColorProfile *c1, ColorProfile *c2);
 
 int GetNumColorProfiles(void);
 

@@ -329,6 +329,7 @@ void LoadColorProfileResources(Display *display, ColorProfile *profile)
     } else {
         profile->db = GetDefaultResourceDB();
     }
+    profile->resDBLoaded = True;
 }
 
 static Pixmap isrcFind = 0;
@@ -2573,7 +2574,7 @@ static void LoadColorProfile(Widget w, ColorProfile *profile)
         free(ansiColors.liststr);
     }
     
-    if(!profile->db) {
+    if(!profile->db || !profile->resDBLoaded) {
         LoadColorProfileResources(display, profile);
     }
     

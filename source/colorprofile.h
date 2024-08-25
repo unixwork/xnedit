@@ -59,6 +59,7 @@ typedef struct _ColorProfile {
 
     Boolean  colorsLoaded;
     Boolean  stylesLoaded;
+    Boolean  resDBLoaded;
 
     XftColor textFgColor;
     XftColor textBgColor;
