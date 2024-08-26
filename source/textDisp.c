@@ -1905,8 +1905,12 @@ int TextDCountLinesW(textDisp *textD, int startPos, int endPos,
     int retLines, retPos, retLineStart, retLineEnd;
     
     /* If we're not wrapping use simple (and more efficient) BufCountLines */
-    if (!textD->continuousWrap)
-    	return BufCountLines(textD->buffer, startPos, endPos);
+    if (!textD->continuousWrap) {
+        if(retWrapped) {
+            *retWrapped = 0;
+        }
+        return BufCountLines(textD->buffer, startPos, endPos);
+    }
     
     wrappedLineCounter(textD, textD->buffer, startPos, endPos, INT_MAX,
 	    startPosIsLineStart, 0, &retPos, &retLines, &retLineStart,
