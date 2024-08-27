@@ -311,8 +311,6 @@ typedef struct {
     Widget styleDefaultW;
     Widget styleLightenW;
     Widget styleCustomW;
-    Widget styleGreyPctW;
-    Widget styleColorPctW;
     Widget styleXResW;
     //Widget styleWMDefaultW;
     //Widget styleWMLightW;
@@ -7534,7 +7532,7 @@ void ChooseColors(WindowInfo *window)
     /*
      * Tab 4: Styles
      */
-    tabForm = cd->tabForms[3];
+    tabForm = cd->tabForms[3]; 
     s1 = XmStringCreateLocalized("Text drawing styles can be adjusted for a color profile.\n"
                                  "Lightened Colors: Increase brightness to improve visibility against dark backgrounds.\n"
                                  "Custom Styles: Implement custom drawing styles by manually adjusting settings\n"
@@ -7618,7 +7616,7 @@ void ChooseColors(WindowInfo *window)
                  (XtCallbackProc)colorDialogOpenStylesSettings, NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("X Resource File");
+    s1 = XmStringCreateLocalized("X Resource File (absolute path or a path relative to XNEDIT_HOME)");
     Widget xresLabel = XtVaCreateManagedWidget("stXResLabel",
             xmLabelGadgetClass, tabForm,
             XmNleftAttachment, XmATTACH_FORM,
@@ -7709,6 +7707,14 @@ void ChooseColors(WindowInfo *window)
                 (XtCallbackProc) colorDialogThemeVariantChanged,
                 cd);
     */
+    
+    if(cd->selectedProfile == 0) {
+        // disable settings that are not available for the default profile
+        XtSetSensitive(cd->styleXResW, False);
+        XtSetSensitive(cd->styleDefaultW, False);
+        XtSetSensitive(cd->styleLightenW, False);
+        XtSetSensitive(cd->styleCustomW, False);
+    }
 
     // TODO: style preview area
     
@@ -7962,6 +7968,12 @@ static void loadColorProfileStyleSettings(colorDialog *cd)
     XtVaSetValues(cd->styleCustomW, XmNset, sp->styleType == 2 ? 1 : 0, NULL);
     
     XmTextSetString(cd->styleXResW, sp->resourceFile);
+    
+    Boolean enableStyleSettings = cd->selectedProfile != 0;
+    XtSetSensitive(cd->styleXResW, enableStyleSettings);
+    XtSetSensitive(cd->styleDefaultW, enableStyleSettings);
+    XtSetSensitive(cd->styleLightenW, enableStyleSettings);
+    XtSetSensitive(cd->styleCustomW, enableStyleSettings);
     
     //XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
     //XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
