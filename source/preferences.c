@@ -314,9 +314,9 @@ typedef struct {
     Widget styleGreyPctW;
     Widget styleColorPctW;
     Widget styleXResW;
-    Widget styleWMDefaultW;
-    Widget styleWMLightW;
-    Widget styleWMDarkW;
+    //Widget styleWMDefaultW;
+    //Widget styleWMLightW;
+    //Widget styleWMDarkW;
     
     ColorProfile *colorProfiles;
     size_t numColorProfiles;
@@ -5683,20 +5683,24 @@ static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData
     
     int updateRes = !ColorProfileResourceDBEqual(currentCP, cp);
     
+    LoadColorProfile(window->textArea, cp);
+    if(updateRes) {
+        XrmSetDatabase(XtDisplay(window->shell), cp->db);
+    }
+    
+    Boolean updateMenuBar = True;
     Widget shell = window->shell;
     for (WindowInfo *win = WindowList; win != NULL; win = win->next) {
         if(win->shell == shell) { 
             SetColorProfile(win, cp);
             if(updateRes) {
-                ReloadWindowResources(win, False);
+                ReloadWindowResources(win, updateMenuBar);
+                updateMenuBar = False;
             }
         }
     }
     
-    XrmSetDatabase(XtDisplay(window->shell), cp->db);
-    if(updateRes) {
-        ReloadWindowResources(window, True);
-    }
+    SetWindowGtkThemeVariant(XtDisplay(shell), XtWindow(shell), cp->windowThemeVariant);
 }
 
 static void updateColorProfilesMenu(WindowInfo *window)
@@ -7050,6 +7054,7 @@ static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButto
     SetColorProfileStyleType(type);
 }
 
+/*
 static void colorDialogThemeVariantChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
 {
     if(!tb->set) {
@@ -7065,6 +7070,7 @@ static void colorDialogThemeVariantChanged(Widget w, colorDialog *cd, XmToggleBu
     
     cd->colorProfiles[cd->selectedProfile].windowThemeVariant = themeVariant;
 }
+*/
 
 /* 
  * Code for the dialog itself
@@ -7636,6 +7642,10 @@ void ChooseColors(WindowInfo *window)
             NULL);
     XmTextSetString(cd->styleXResW, sp->resourceFile);
     
+    // This is deprecated before it was deployed, because Gnome removed
+    // support for _GTK_THEME_VARIANT
+    // Maybe in the future this can be used
+    /*
     s1 = XmStringCreateLocalized("Window Title Bar (GTK Theme Variant)");
     Widget stThemeVariantLabel = XtVaCreateManagedWidget("stThemeVariantLabel",
             xmLabelGadgetClass, tabForm,
@@ -7698,7 +7708,7 @@ void ChooseColors(WindowInfo *window)
                 XmNvalueChangedCallback,
                 (XtCallbackProc) colorDialogThemeVariantChanged,
                 cd);
-    
+    */
 
     // TODO: style preview area
     
@@ -7953,9 +7963,9 @@ static void loadColorProfileStyleSettings(colorDialog *cd)
     
     XmTextSetString(cd->styleXResW, sp->resourceFile);
     
-    XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
-    XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
-    XtVaSetValues(cd->styleWMDarkW, XmNset, sp->windowThemeVariant == 2 ? 1 : 0, NULL);
+    //XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
+    //XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
+    //XtVaSetValues(cd->styleWMDarkW, XmNset, sp->windowThemeVariant == 2 ? 1 : 0, NULL);
 }
 
 

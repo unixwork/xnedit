@@ -2505,7 +2505,7 @@ void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *te
     FontSelSetColors(textFgC, textBgPix);
 }
 
-static void LoadColorProfile(Widget w, ColorProfile *profile)
+void LoadColorProfile(Widget w, ColorProfile *profile)
 {
     Colormap     cmap;
     Pixel        foreground;
@@ -6388,12 +6388,6 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
     UpdateWidgetsHierarchy(window->tabBar, dw.folder, &dw);
     UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);
-
-    //RecreateTextareaScrollbar(window->textArea);
-    /* Update any additional panes */
-    //for (int i=0; i<window->nPanes; i++) {
-    //    RecreateTextareaScrollbar(window->textPanes[i]);
-    //}
 
     XtDestroyWidget(dw.shell);
 }

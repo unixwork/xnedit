@@ -345,7 +345,7 @@ void RealizeWithoutForcingPosition(Widget shell)
     XtVaSetValues(shell, XmNmappedWhenManaged, mappedWhenManaged, NULL);
     
     if(GetWindowDarkTheme()) {
-        EnableWindowDarkTheme(XtDisplay(shell), XtWindow(shell));
+        SetWindowGtkThemeVariant(XtDisplay(shell), XtWindow(shell), 2);
     }
     
     XdndEnable(shell);
@@ -847,7 +847,7 @@ void ManageDialogCenteredOnPointer(Widget dialogChild)
     XtVaSetValues(shell, XmNmappedWhenManaged, mappedWhenManaged, NULL);
     
     if(GetWindowDarkTheme()) {
-        EnableWindowDarkTheme(XtDisplay(shell), XtWindow(shell));
+        SetWindowGtkThemeVariant(XtDisplay(shell), XtWindow(shell), 2);
     }
 }
 
@@ -2546,17 +2546,23 @@ int IsUtf8Locale(void) {
     return FALSE;
 }
 
-void EnableWindowDarkTheme(Display *dp, Window window)
+void SetWindowGtkThemeVariant(Display *dp, Window window, int theme)
 {
     Atom atom = XInternAtom(dp, "_GTK_THEME_VARIANT", False);
     Atom type = XInternAtom(dp, "UTF8_STRING", False);
-    XChangeProperty(
+    
+    if(theme == 0) {
+        XDeleteProperty(dp, window, atom);
+    } else {
+        const char *themeStr = theme == 1 ? "light" : "dark";
+        XChangeProperty(
             dp, 
             window, 
             atom,
             type,
             8,
             PropModeReplace,
-            (unsigned char*)"dark",
+            (unsigned char*)themeStr,
             4);
+    }
 }
