@@ -44,8 +44,7 @@
 #endif
 
 #define DEFAULT_NEDIT_HOME ".xnedit"
-
-static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history", "search.history"};
+static char* plainFileNames[N_FILE_TYPES] = {"nedit.rc", "autoload.nm", "nedit.history", "search.history", ""};
 
 static void buildFilePath(char* fullPath, const char* dir, const char* file);
 static Boolean isDir(const char* file);

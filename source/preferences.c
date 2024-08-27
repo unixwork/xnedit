@@ -88,6 +88,7 @@
 #include <Xm/Separator.h>
 #include <Xm/ScrolledW.h>
 #include <Xm/ArrowB.h>
+#include <Xm/ComboBox.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -126,6 +127,9 @@ static char *SearchMethodStrings[] = {
 	"LiteralWord", "CaseSenseWord", "RegExpNoCase", 
 	NULL
 };
+
+static ColorProfile *colorProfiles;
+static ColorProfile *defaultColorProfile;
 
 #ifdef REPLACE_SCOPE
 /* enumerated default scope for replace dialog if a selection exists when
@@ -234,8 +238,10 @@ typedef struct {
     Widget shell;
     WindowInfo *window;
     
-    Widget tabs[3];
-    Widget tabForms[3];
+    Widget profileDropDown;
+    
+    Widget tabs[4];
+    Widget tabForms[4];
     
     // general colors
     Widget textFgW;
@@ -300,6 +306,19 @@ typedef struct {
     Widget ansiBrightCyanErrW;
     Widget ansiBrightWhiteW;
     Widget ansiBrightWhiteErrW;
+
+    // styles
+    Widget styleDefaultW;
+    Widget styleLightenW;
+    Widget styleCustomW;
+    Widget styleXResW;
+    //Widget styleWMDefaultW;
+    //Widget styleWMLightW;
+    //Widget styleWMDarkW;
+    
+    ColorProfile *colorProfiles;
+    size_t numColorProfiles;
+    int selectedProfile;
 } colorDialog;
 
 /* IndentColor dialog information */
@@ -369,6 +388,8 @@ static struct prefData {
     NFont *boldFont;
     NFont *italicFont;
     NFont *boldItalicFont;
+    
+    char *defaultColorProfile;
     
     char *iconSize;
     int closeIconSize;
@@ -448,9 +469,11 @@ static struct {
     char *highlight;
     char *language;
     char *styles;
+    char *colorProfileStyles;
     char *smartIndent;
     char *smartIndentCommon;
     char *shell;
+    char *colorProfiles;
     char *filter;
 } TempStringPrefs;
 
@@ -890,6 +913,10 @@ static PrefDescripRec PrefDescrip[] = {
         ADD_5_2_STYLES
         ADD_6_1_STYLES,
 	&TempStringPrefs.styles, NULL, True},
+#ifndef DISABLE_COLORPROFILES
+    {"colorProfileStyles", "colorProfileStyles", PREF_ALLOC_STRING, "",
+        &TempStringPrefs.colorProfileStyles, NULL, False},
+#endif
     {"smartIndentInit", "SmartIndentInit", PREF_ALLOC_STRING,
         "C:Default\n\
 	C++:Default\n\
@@ -927,6 +954,12 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.ansiColorList, NULL, True},
     {"ansiColors", "AnsiColors", PREF_BOOLEAN, "False",
       &PrefData.ansiColors, NULL, True},
+#ifndef DISABLE_COLORPROFILES
+    {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING, "",
+        &TempStringPrefs.colorProfiles, NULL, True},
+    {"defaultColorProfile", "DefaultColorProfile", PREF_ALLOC_STRING, "default",
+        &PrefData.defaultColorProfile, NULL, True},
+#endif
     {"backlightChars", "BacklightChars", PREF_BOOLEAN, "False",
       &PrefData.backlightChars, NULL, True},
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
@@ -1294,7 +1327,10 @@ static void colorApplyCB  (Widget w, XtPointer clientData, XtPointer callData);
 static void colorCloseCB(Widget w, XtPointer clientData, XtPointer callData);
 static void indentRainbowDialogLoadColors(colorDialog *cd);
 static void loadAnsiColors(colorDialog *cd);
-
+static void loadColors(colorDialog *cd);
+static void loadColorProfileStyleSettings(colorDialog *cd);
+static void clearRainbowColors(colorDialog *cd);
+static void saveColorProfileSettings(colorDialog *cd);
 static void updateRainbowColors(indentColorDialog *cd);
 
 static int matchLanguageMode(WindowInfo *window);
@@ -1304,6 +1340,7 @@ static char *createExtString(char **extensions, int nExtensions);
 static char **readExtensionList(char **inPtr, int *nExtensions);
 static void updateLanguageModeSubmenu(WindowInfo *window);
 static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData);
+static void updateColorProfilesMenu(WindowInfo *window);
 static int modeError(languageModeRec *lm, const char *stringStart,
 	const char *stoppedAt, const char *message);
 static void lmDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -1451,10 +1488,25 @@ static void translatePrefFormats(int convertOld, int fileVer)
     	NEditFree(TempStringPrefs.highlight);
 	TempStringPrefs.highlight = NULL;
     }
+    if (TempStringPrefs.colorProfiles != NULL) {
+        ParseColorProfiles(TempStringPrefs.colorProfiles);
+        NEditFree(TempStringPrefs.colorProfiles);
+        TempStringPrefs.colorProfiles = NULL;
+    } else {
+        ParseColorProfiles("");
+    }
     if (TempStringPrefs.styles != NULL) {
-	LoadStylesString(TempStringPrefs.styles);
-    	NEditFree(TempStringPrefs.styles);
-	TempStringPrefs.styles = NULL;
+        LoadStylesString(TempStringPrefs.styles, False);
+        NEditFree(TempStringPrefs.styles);
+        TempStringPrefs.styles = NULL;
+    }
+    if (TempStringPrefs.colorProfileStyles != NULL) {
+        if(strlen(TempStringPrefs.colorProfileStyles) > 0) {
+            LoadStylesString(TempStringPrefs.colorProfileStyles, True);
+            PrefDescrip[7].save = True;
+        }
+        NEditFree(TempStringPrefs.colorProfileStyles);
+        TempStringPrefs.colorProfileStyles = NULL;
     }
     if (TempStringPrefs.language != NULL) {
 	loadLanguageModesString(TempStringPrefs.language, fileVer);
@@ -1476,7 +1528,6 @@ static void translatePrefFormats(int convertOld, int fileVer)
         NEditFree(TempStringPrefs.filter);
         TempStringPrefs.filter = NULL;
     }
-    
     if (PrefData.iconSize) {
         parseIconSize(PrefData.iconSize);
     }
@@ -1549,8 +1600,10 @@ void SaveNEditPrefs(Widget parent, int quietly)
     TempStringPrefs.highlight = WriteHighlightString();
     TempStringPrefs.language = writeLanguageModesString();
     TempStringPrefs.styles = WriteStylesString();
+    TempStringPrefs.colorProfileStyles = WriteColorProfileStylesString();
     TempStringPrefs.smartIndent = WriteSmartIndentString();
     TempStringPrefs.smartIndentCommon = WriteSmartIndentCommonString();
+    TempStringPrefs.colorProfiles = WriteColorProfilesString();
     TempStringPrefs.filter = WriteFilterString();
     strcpy(PrefData.fileVersion, PREF_FILE_VERSION);
 
@@ -1569,6 +1622,17 @@ void SaveNEditPrefs(Widget parent, int quietly)
     NEditFree(TempStringPrefs.styles);
     NEditFree(TempStringPrefs.smartIndent);
     NEditFree(TempStringPrefs.smartIndentCommon);
+    NEditFree(TempStringPrefs.colorProfiles);
+    
+    TempStringPrefs.shellCmds = NULL;
+    TempStringPrefs.macroCmds = NULL;
+    TempStringPrefs.bgMenuCmds = NULL;
+    TempStringPrefs.highlight = NULL;
+    TempStringPrefs.language = NULL;
+    TempStringPrefs.styles = NULL;
+    TempStringPrefs.smartIndent = NULL;
+    TempStringPrefs.smartIndentCommon = NULL;
+    TempStringPrefs.colorProfiles = NULL;
     NEditFree(TempStringPrefs.filter);
     
     PrefsHaveChanged = False;
@@ -2395,6 +2459,135 @@ void SetPrefLockEncodingError(int state)
 int GetPrefLockEncodingError(void)
 {
     return PrefData.lockEncodingError;
+}
+
+ColorProfile* GetDefaultColorProfile(void) {
+    return defaultColorProfile;
+}
+
+ColorProfile* GetColorProfiles(void) 
+{
+    return colorProfiles;
+}
+
+ColorProfile* GetColorProfile(const char *name)
+{
+    ColorProfile *cp = colorProfiles;
+    while(cp) {
+        if(!strcmp(cp->name, name)) {
+            return cp;
+        }
+        cp = cp->next;
+    }
+    return NULL;
+}
+
+char* GetPrefDefaultColorProfileName(void) {
+    return PrefData.defaultColorProfile;
+}
+
+void SetPrefDefaultColorProfileName(const char *str) {
+    if(PrefData.defaultColorProfile) NEditFree(PrefData.defaultColorProfile);
+    PrefData.defaultColorProfile = NEditStrdup(str);
+    PrefsHaveChanged = True;
+}
+
+
+void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
+{
+    to->name = NEditStrdup(from->name);
+    to->textFg = NEditStrdup(from->textFg);
+    to->textBg = NEditStrdup(from->textBg);
+    to->selectFg = NEditStrdup(from->selectFg);
+    to->selectBg = NEditStrdup(from->selectBg);
+    to->hiliteFg = NEditStrdup(from->hiliteFg);
+    to->hiliteBg = NEditStrdup(from->hiliteBg);
+    to->lineNoFg = NEditStrdup(from->lineNoFg);
+    to->lineNoBg = NEditStrdup(from->lineNoBg);
+    to->cursorFg = NEditStrdup(from->cursorFg);
+    to->lineHiBg = NEditStrdup(from->lineHiBg);
+    to->ansiColorList = NEditStrdup(from->ansiColorList);
+    to->rainbowColorList = NEditStrdup(from->rainbowColorList);
+    to->resourceFile = from->resourceFile ? NEditStrdup(from->resourceFile) : NULL;
+    to->styleType = from->styleType;
+    to->windowThemeVariant = from->windowThemeVariant;
+    to->orig = from;
+}
+
+int ColorProfileResourceDBEqual(ColorProfile *c1, ColorProfile *c2) {
+    char *s1 = c1->resourceFile ? c1->resourceFile : "";
+    char *s2 = c2->resourceFile ? c2->resourceFile : "";
+    return !strcmp(s1, s2);
+}
+
+int GetNumColorProfiles(void)
+{
+    int n = 0;
+    ColorProfile *p = colorProfiles;
+    while(p) {
+        n++;
+        p = p->next;
+    }
+    return n;
+}
+
+char* WriteColorProfilesString(void)
+{
+    // skip default profile
+    ColorProfile *profile = colorProfiles->next;
+    
+    size_t alloc = GetNumColorProfiles() * 512;
+    size_t size = 0;
+    char *out = NEditMalloc(alloc);
+    
+    while(profile) {
+        if(!profile->removed) {
+            char buf[4096];
+            int len = snprintf(
+                    buf,
+                    4096,
+                    "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
+                    "ansi:{%s},rainbow:{%s},styles:{%d},wm:{%d}%s%s%s%s",
+                    profile->name,
+                    profile->textFg,
+                    profile->textBg,
+                    profile->selectFg,
+                    profile->selectBg,
+                    profile->hiliteFg,
+                    profile->hiliteBg,
+                    profile->lineNoFg,
+                    profile->lineNoBg,
+                    profile->cursorFg,
+                    profile->lineHiBg,
+                    profile->ansiColorList,
+                    profile->rainbowColorList,
+                    profile->styleType,
+                    profile->windowThemeVariant,
+                    profile->resourceFile ? ",res:{" : "",
+                    profile->resourceFile ? profile->resourceFile : "",
+                    profile->resourceFile ? "}" : "",
+                    profile->next ? "\\n\\\n" : ""
+                    );
+            if(len < 1024) {
+                if(size + len >= alloc) {
+                    alloc += len + 256;
+                    out = NEditRealloc(out, alloc);
+                }
+                memcpy(out+size, buf, len);
+                size += len;
+            }
+        }
+        
+        profile = profile->next;
+    }
+    
+    if(size >= alloc) {
+        alloc++;
+        out = NEditRealloc(out, alloc);
+    }
+    out[size] = 0;
+    
+    return out;
 }
 
 void SetPrefUndoPurgeLimit(int limit)
@@ -5451,6 +5644,93 @@ static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData)
     XtCallActionProc(window->textArea, "set_language_mode", NULL, params, 1);
 }
 
+void CreateColorProfilesSubMenu(WindowInfo *window, const Widget parent,
+        const char *name, const char *label, char mnemonic)
+{
+    XmString string = XmStringCreateSimple((char*) label);
+
+    window->colorProfileMenuPane = XtVaCreateManagedWidget(name,
+            xmCascadeButtonGadgetClass, parent,
+            XmNlabelString, string,
+            XmNmnemonic, mnemonic,
+            XmNsubMenuId, NULL,
+            NULL);
+    XmStringFree(string);
+    
+    updateColorProfilesMenu(window);
+}
+
+static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    if (!XmToggleButtonGetState(w)) {
+        return;
+    }
+    
+    WindowInfo *window = clientData;
+    ColorProfile *cp;
+    XtVaGetValues(w, XmNuserData, &cp, NULL);
+    if(!cp) {
+        return;
+    }
+    
+    ColorProfile *currentCP = window->colorProfile;  
+    
+    if(cp == currentCP) {
+        return;
+    }
+    
+    int updateRes = !ColorProfileResourceDBEqual(currentCP, cp);
+    
+    LoadColorProfile(window->textArea, cp);
+    if(updateRes) {
+        XrmSetDatabase(XtDisplay(window->shell), cp->db);
+    }
+    
+    Boolean updateMenuBar = True;
+    Widget shell = window->shell;
+    for (WindowInfo *win = WindowList; win != NULL; win = win->next) {
+        if(win->shell == shell) { 
+            SetColorProfile(win, cp);
+            if(updateRes) {
+                ReloadWindowResources(win, updateMenuBar);
+                updateMenuBar = False;
+            }
+        }
+    }
+    
+    SetWindowGtkThemeVariant(XtDisplay(shell), XtWindow(shell), cp->windowThemeVariant);
+}
+
+static void updateColorProfilesMenu(WindowInfo *window)
+{
+    XmString s1;
+    Widget menu;
+    Arg args[1] = {{XmNradioBehavior, (XtArgVal)True}};
+    
+    /* Destroy and re-create the menu pane */
+    XtVaGetValues(window->colorProfileMenuPane, XmNsubMenuId, &menu, NULL);
+    if (menu) {
+        XtDestroyWidget(menu);
+    }
+    menu = CreatePulldownMenu(XtParent(window->colorProfileMenuPane), "colorProfiles", args, 1);
+    
+    ColorProfile *cp = colorProfiles;
+    while(cp) {
+        Widget menuItem = XtVaCreateManagedWidget("colorProfileMenuItem",
+            	xmToggleButtonGadgetClass, menu, 
+            	XmNlabelString, s1=XmStringCreateSimple(cp->name),
+   		XmNuserData, (void *)cp,
+    		XmNset, window->colorProfile == cp, NULL);
+        XmStringFree(s1);
+	XtAddCallback(menuItem, XmNvalueChangedCallback, setColorProfileCB, window);
+        
+        cp = cp->next;
+    }
+    
+    XtVaSetValues(window->colorProfileMenuPane, XmNsubMenuId, menu, NULL);
+}
+
+
 /*
 ** Skip a delimiter and it's surrounding whitespace
 */
@@ -6009,133 +6289,105 @@ static void updateColors(colorDialog *cd)
 {
     WindowInfo *window;
     
-    /*
-     * Tab 1: General
-     */
-    char    *textFg = XmTextGetString(cd->textFgW),
-            *textBg = XmTextGetString(cd->textBgW),
-            *selectFg = XmTextGetString(cd->selectFgW),
-            *selectBg = XmTextGetString(cd->selectBgW),
-            *hiliteFg = XmTextGetString(cd->hiliteFgW),
-            *hiliteBg = XmTextGetString(cd->hiliteBgW),
-            *lineNoFg = XmTextGetString(cd->lineNoFgW),
-            *lineNoBg = XmTextGetString(cd->lineNoBgW),
-            *cursorFg = XmTextGetString(cd->cursorFgW),
-            *cursorLineBg = XmTextGetString(cd->cursorLineBgW);
-
-    SetPrefColorName(TEXT_FG_COLOR  , textFg  );
-    SetPrefColorName(TEXT_BG_COLOR  , textBg  );
-    SetPrefColorName(SELECT_FG_COLOR, selectFg);
-    SetPrefColorName(SELECT_BG_COLOR, selectBg);
-    SetPrefColorName(HILITE_FG_COLOR, hiliteFg);
-    SetPrefColorName(HILITE_BG_COLOR, hiliteBg);
-    SetPrefColorName(LINENO_FG_COLOR, lineNoFg);
-    SetPrefColorName(LINENO_BG_COLOR, lineNoBg);
-    SetPrefColorName(CURSOR_FG_COLOR, cursorFg);
-    SetPrefColorName(CURSOR_LINE_BG_COLOR, cursorLineBg);
+    saveColorProfileSettings(cd);
     
-    /*
-     * Tab 2: Indent Rainbow Colors
-     */
-    size_t alloc = cd->numIndentRainbowColors * 10;
-    char *irStr = NEditMalloc(alloc);
-    int pos = 0;
+    ColorProfile *setProfile = NULL;
     
-    for(int i=0;i<cd->numIndentRainbowColors;i++) {
-        char *ir = XmTextGetString(cd->indentRainbowColors[i].textfield);
-        size_t ir_len = strlen(ir);
-        if(pos + ir_len + 2 >= alloc) {
-            alloc += 4 * ir_len;
-            irStr = NEditRealloc(irStr, alloc);
+    // update color profiles
+    ColorProfile *first = NULL;
+    ColorProfile *prev = NULL;
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        ColorProfile *profile = &cd->colorProfiles[i];
+        ColorProfile *prefProfile = profile->orig;
+        if(!prefProfile) {
+            prefProfile = NEditMalloc(sizeof(ColorProfile));
+            memset(prefProfile, 0, sizeof(ColorProfile));
         }
-        memcpy(irStr+pos, ir, ir_len);
-        pos += ir_len;
-        irStr[pos] = ';';
-        pos++;
-        XtFree(ir);
+        
+        if(!ColorProfileResourceDBEqual(prefProfile, profile)) {
+            prefProfile->resDBLoaded = FALSE;
+        }
+        
+        NEditFree(prefProfile->name);
+        NEditFree(prefProfile->textFg);
+        NEditFree(prefProfile->textBg);
+        NEditFree(prefProfile->selectFg);
+        NEditFree(prefProfile->selectBg);
+        NEditFree(prefProfile->hiliteFg);
+        NEditFree(prefProfile->hiliteBg);
+        NEditFree(prefProfile->lineNoFg);
+        NEditFree(prefProfile->lineNoBg);
+        NEditFree(prefProfile->cursorFg);
+        NEditFree(prefProfile->lineHiBg);
+        NEditFree(prefProfile->ansiColorList);
+        NEditFree(prefProfile->rainbowColorList);
+        NEditFree(prefProfile->resourceFile);
+
+        prefProfile->name = NEditStrdup(profile->name);
+        prefProfile->textFg = NEditStrdup(profile->textFg);
+        prefProfile->textBg = NEditStrdup(profile->textBg);
+        prefProfile->selectFg = NEditStrdup(profile->selectFg);
+        prefProfile->selectBg = NEditStrdup(profile->selectBg);
+        prefProfile->hiliteFg = NEditStrdup(profile->hiliteFg);
+        prefProfile->hiliteBg = NEditStrdup(profile->hiliteBg);
+        prefProfile->lineNoFg = NEditStrdup(profile->lineNoFg);
+        prefProfile->lineNoBg = NEditStrdup(profile->lineNoBg);
+        prefProfile->cursorFg = NEditStrdup(profile->cursorFg);
+        prefProfile->lineHiBg = NEditStrdup(profile->lineHiBg);
+        prefProfile->ansiColorList = NEditStrdup(profile->ansiColorList);
+        prefProfile->rainbowColorList = NEditStrdup(profile->rainbowColorList);
+        prefProfile->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
+        prefProfile->styleType = profile->styleType;
+        prefProfile->windowThemeVariant = profile->windowThemeVariant;
+
+        prefProfile->colorsLoaded = FALSE;
+               
+        if(i == cd->selectedProfile) {
+            setProfile = prefProfile;
+        }
+
+        if(prev) {
+            prev->next = prefProfile;
+        } else {
+            first = prefProfile;
+        }
+        prev = prefProfile;
     }
     
-    if(pos > 0 && irStr[pos-1] == ';') {
-        irStr[pos-1] = '\0';
+    // update default profile
+    ColorProfile defaultProfile = cd->colorProfiles[0];
+    SetPrefColorName(TEXT_FG_COLOR  , defaultProfile.textFg  );
+    SetPrefColorName(TEXT_BG_COLOR  , defaultProfile.textBg  );
+    SetPrefColorName(SELECT_FG_COLOR, defaultProfile.selectFg);
+    SetPrefColorName(SELECT_BG_COLOR, defaultProfile.selectBg);
+    SetPrefColorName(HILITE_FG_COLOR, defaultProfile.hiliteFg);
+    SetPrefColorName(HILITE_BG_COLOR, defaultProfile.hiliteBg);
+    SetPrefColorName(LINENO_FG_COLOR, defaultProfile.lineNoFg);
+    SetPrefColorName(LINENO_BG_COLOR, defaultProfile.lineNoBg);
+    SetPrefColorName(CURSOR_FG_COLOR, defaultProfile.cursorFg);
+    SetPrefColorName(CURSOR_LINE_BG_COLOR, defaultProfile.lineHiBg);
+    SetPrefIndentRainbowColors(defaultProfile.rainbowColorList);
+    SetPrefAnsiColorList(defaultProfile.ansiColorList); 
+    
+    // TODO: free previous color profiles that are not in use
+    
+    colorProfiles = first;
+    
+    if(!setProfile) {
+        // should not happen but this makes it extra safe
+        setProfile = first;
     }
     
-    SetPrefIndentRainbowColors(irStr);
-    
-    /*
-     * Tab 3: ANSI Colors
-     */
-    char *ansiBlack = XmTextGetString(cd->ansiBlackW);
-    char *ansiRed = XmTextGetString(cd->ansiRedW);
-    char *ansiGreen = XmTextGetString(cd->ansiGreenW);
-    char *ansiYellow = XmTextGetString(cd->ansiYellowW);
-    char *ansiBlue = XmTextGetString(cd->ansiBlueW);
-    char *ansiMagenta = XmTextGetString(cd->ansiMagentaW);
-    char *ansiCyan = XmTextGetString(cd->ansiCyanW);
-    char *ansiWhite = XmTextGetString(cd->ansiWhiteW);
-    char *ansiBrightBlack = XmTextGetString(cd->ansiBrightBlackW);
-    char *ansiBrightRed = XmTextGetString(cd->ansiBrightRedW);
-    char *ansiBrightGreen = XmTextGetString(cd->ansiBrightGreenW);
-    char *ansiBrightYellow = XmTextGetString(cd->ansiBrightYellowW);
-    char *ansiBrightBlue = XmTextGetString(cd->ansiBrightBlueW);
-    char *ansiBrightMagenta = XmTextGetString(cd->ansiBrightMagentaW);
-    char *ansiBrightCyan = XmTextGetString(cd->ansiBrightCyanW);
-    char *ansiBrightWhite = XmTextGetString(cd->ansiBrightWhiteW);
-    
-    size_t len = strlen(ansiBlack) + strlen(ansiRed) + strlen(ansiGreen) + strlen(ansiYellow)
-               + strlen(ansiBlue) + strlen(ansiMagenta) + strlen(ansiCyan) + strlen(ansiWhite)
-               + strlen(ansiBrightBlack) + strlen(ansiBrightRed) + strlen(ansiBrightGreen) + strlen(ansiBrightYellow)
-               + strlen(ansiBrightBlue) + strlen(ansiBrightMagenta) + strlen(ansiBrightCyan) + strlen(ansiBrightWhite)
-               + 16;
-    char *ansiColorList = NEditMalloc(len);
-    snprintf(ansiColorList, len, "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
-            ansiBlack, ansiRed, ansiGreen, ansiYellow,
-            ansiBlue, ansiMagenta, ansiCyan, ansiWhite,
-            ansiBrightBlack, ansiBrightRed, ansiBrightGreen, ansiBrightYellow,
-            ansiBrightBlue, ansiBrightMagenta, ansiBrightCyan, ansiBrightWhite);
-    
-    SetPrefAnsiColorList(ansiColorList);
-    
+    SetPrefDefaultColorProfileName(setProfile->name);
+    defaultColorProfile = setProfile;
     
     // update windows
     for (window = WindowList; window != NULL; window = window->next) {
-        SetColors(window, textFg, textBg, selectFg, selectBg, hiliteFg, 
-                hiliteBg, lineNoFg, lineNoBg, cursorFg, cursorLineBg);
-        SetIndentRainbowColors(window, irStr);
-        SetAnsiColorList(window, ansiColorList);
+        ColorProfile *cp = window->colorProfile;  
+        SetColorProfile(window, setProfile);
+        XrmSetDatabase(XtDisplay(window->shell), setProfile->db);
+        ReloadWindowResources(window, True);
     }
-    
-    // cleanup
-    // general
-    NEditFree(textFg);
-    NEditFree(textBg);
-    NEditFree(selectFg);
-    NEditFree(selectBg);
-    NEditFree(hiliteFg);
-    NEditFree(hiliteBg);
-    NEditFree(lineNoFg);
-    NEditFree(lineNoBg);
-    NEditFree(cursorFg);
-    NEditFree(cursorLineBg);
-    // indent rainbow
-    NEditFree(irStr);
-    // ansi
-    NEditFree(ansiBlack);
-    NEditFree(ansiRed);
-    NEditFree(ansiGreen);
-    NEditFree(ansiYellow);
-    NEditFree(ansiBlue);
-    NEditFree(ansiMagenta);
-    NEditFree(ansiCyan);
-    NEditFree(ansiWhite);
-    NEditFree(ansiBrightBlack);
-    NEditFree(ansiBrightRed);
-    NEditFree(ansiBrightGreen);
-    NEditFree(ansiBrightYellow);
-    NEditFree(ansiBrightBlue);
-    NEditFree(ansiBrightMagenta);
-    NEditFree(ansiBrightCyan);
-    NEditFree(ansiBrightWhite);
-    NEditFree(ansiColorList);
 }
 
 
@@ -6148,6 +6400,8 @@ static void colorDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
     colorDialog *cd = (colorDialog *)clientData;
 
     cd->window->colorDialog = NULL;
+    
+    // TODO: free stuff
     NEditFree(cd);
 }
 
@@ -6327,7 +6581,12 @@ static void selectColorTab(Widget w, XtPointer clientData, XtPointer callData)
         return;
     }
     
-    for(int i=0;i<3;i++) {
+#ifdef DISABLE_COLORPROFILES
+    int numtabs = 3;
+#else
+    int numtabs = 4;
+#endif
+    for(int i=0;i<numtabs;i++) {
         if(cd->tabs[i] != w) {
             XmToggleButtonSetState(cd->tabs[i], False, False);
             XtUnmanageChild(cd->tabForms[i]);
@@ -6589,6 +6848,228 @@ static void addRainbowColor(colorDialog *cd, const char *value)
     addAddBtn(cd);
 }
 
+static void colorDialogSelectProfile(colorDialog *cd, int index)
+{
+    saveColorProfileSettings(cd);
+    
+    cd->selectedProfile = index;
+    
+    clearRainbowColors(cd);
+    
+    loadColors(cd);
+    loadAnsiColors(cd);
+    loadColorProfileStyleSettings(cd);
+
+    indentRainbowDialogLoadColors(cd);
+    
+    // temporarily change the profile name for the text drawing style dialog
+    ColorProfile *cp = &cd->colorProfiles[index];
+    SetColorProfileName(cp->name);
+    SetColorProfileStyleType(cp->styleType);
+}
+
+static void colorDialogProfileSelected(
+        Widget w,
+        colorDialog *cd,
+        XmComboBoxCallbackStruct *cb)
+{
+    colorDialogSelectProfile(cd, cb->item_position);
+}
+
+static void colorDialogUpdateProfileList(colorDialog *cd)
+{
+    XmStringTable profileList = NEditCalloc(cd->numColorProfiles, sizeof(XmString));
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        profileList[i] = XmStringCreateLocalized(cd->colorProfiles[i].name);
+    }
+    
+    XtVaSetValues(cd->profileDropDown, XmNitems, profileList, XmNitemCount, cd->numColorProfiles, NULL);
+    XmComboBoxSelectItem(cd->profileDropDown, profileList[cd->selectedProfile]);
+    NEditFree(profileList);
+}
+
+static Boolean colorDialogCheckProfileName(colorDialog *cd, const char *name)
+{
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        if(!strcmp(cd->colorProfiles[i].name, name)) {
+            return False;
+        }
+    }
+    return True;
+}
+
+static Boolean colorDialogCheckProfileNameChars(colorDialog *cd, const char *name)
+{
+    size_t len = strlen(name);
+    for(int i=0;i<len;i++) {
+        char c = name[i];
+        if(c == '\\' || c == ',' || c == ';') {
+            DialogF(DF_ERR, cd->shell, 1, "Error",
+                    "Character '%c' is not allowed in profile names.", "OK", c);
+            return False;
+        }
+    }
+    return True;
+}
+
+
+static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
+{
+    if(cd->selectedProfile == 0) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The default color profile cannot be renamed.", "OK");
+        return;
+    }
+    
+    char profileName[DF_MAX_PROMPT_LENGTH];
+    profileName[0] = 0;
+    
+    int response = DialogF(
+            DF_PROMPT,
+            w,
+            2,
+            "Rename Profile", "New Profile Name:",
+            profileName,
+            "OK",
+            "Cancel");
+    
+    if(response == 2 || strlen(profileName) == 0) {
+        return;
+    }
+    
+    // check profile name
+    if(!colorDialogCheckProfileName(cd, profileName)) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The profile name '%s' is already in use.", "OK", profileName);
+        return;
+    }
+    if(!colorDialogCheckProfileNameChars(cd, profileName)) {
+        return;
+    }
+    
+    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    
+    NEditFree(profile->name);
+    profile->name = NEditStrdup(profileName);
+    
+    colorDialogUpdateProfileList(cd);
+}
+
+static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
+{
+    if(cd->selectedProfile == 0) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The default color profile cannot be removed.", "OK");
+        return;
+    }
+    
+    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    if(profile->orig) {
+        profile->orig->removed = True;
+    }
+    ColorProfileFreeContent(profile);
+    
+    if(cd->selectedProfile+1 < cd->numColorProfiles) {
+        int len = cd->numColorProfiles - cd->selectedProfile - 1;
+        ColorProfile *dst = cd->colorProfiles + cd->selectedProfile;
+        ColorProfile *src = dst + 1;
+        memmove(
+                dst,
+                src,
+                len * sizeof(ColorProfile));
+    }
+    cd->numColorProfiles--;
+    cd->selectedProfile--;
+    
+    colorDialogUpdateProfileList(cd);
+}
+
+static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
+{
+    char profileName[DF_MAX_PROMPT_LENGTH];
+    profileName[0] = 0;
+    
+    int response = DialogF(
+            DF_PROMPT,
+            w,
+            2,
+            "Create Profile", "Profile Name:",
+            profileName,
+            "OK",
+            "Cancel");
+    
+    if(response == 2 || strlen(profileName) == 0) {
+        return;
+    }
+    
+    // check profile name
+    if(!colorDialogCheckProfileName(cd, profileName)) {
+        DialogF(DF_ERR, w, 1, "Error",
+                "The profile name '%s' is already in use.", "OK", profileName);
+        return;
+    }
+    if(!colorDialogCheckProfileNameChars(cd, profileName)) {
+        return;
+    }
+    
+    cd->numColorProfiles++;
+    cd->colorProfiles = NEditRealloc(cd->colorProfiles, cd->numColorProfiles * sizeof(ColorProfile));
+    
+    ColorProfile *newProfile = &cd->colorProfiles[cd->numColorProfiles-1];
+    memset(newProfile, 0, sizeof(ColorProfile));
+    
+    // copy default values
+    ColorProfileCopySettings(&cd->colorProfiles[cd->selectedProfile], newProfile);
+    NEditFree(newProfile->name);
+    newProfile->name = NEditStrdup(profileName);
+    newProfile->orig = NULL;
+    
+    XmString s = XmStringCreateSimple(profileName);
+    XmComboBoxAddItem(cd->profileDropDown, s, -1, False);
+    XmComboBoxSelectItem(cd->profileDropDown, s);
+    colorDialogSelectProfile(cd, cd->numColorProfiles-1);
+    XmStringFree(s);
+}
+
+static void colorDialogOpenStylesSettings(Widget w, colorDialog *cd, XtPointer c)
+{
+    EditHighlightStyles(NULL);
+}
+
+static void colorDialogTextStyleChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
+{
+    if(!tb->set) {
+        return; // ignore unset events
+    }
+
+    int type = 0;
+    if(w == cd->styleLightenW) {
+        type = 1;
+    } else if(w == cd->styleCustomW) {
+        type = 2;
+    }
+    cd->colorProfiles[cd->selectedProfile].styleType = type;
+    SetColorProfileStyleType(type);
+}
+
+/*
+static void colorDialogThemeVariantChanged(Widget w, colorDialog *cd, XmToggleButtonCallbackStruct *tb)
+{
+    if(!tb->set) {
+        return; // ignore unset events
+    }
+    
+    int themeVariant = 0;
+    if(w == cd->styleWMLightW) {
+        themeVariant = 1;
+    } else if(w == cd->styleWMDarkW) {
+        themeVariant = 2;
+    }
+    
+    cd->colorProfiles[cd->selectedProfile].windowThemeVariant = themeVariant;
+}
+*/
+
 /* 
  * Code for the dialog itself
  */
@@ -6623,12 +7104,123 @@ void ChooseColors(WindowInfo *window)
     AddMotifCloseCallback(XtParent(form), colorCloseCB, cd);
     XtAddCallback(form, XmNdestroyCallback, colorDestroyCB, cd);
     
-    /* tabs */
-    cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+    /* color profile selection */
+    /*
+    s1 = XmStringCreateSimple("Color Profile");
+    Widget profileLabel = XtVaCreateManagedWidget("colorProfileLabel", xmLabelWidgetClass, form,
             XmNtopAttachment, XmATTACH_FORM,
             XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_POSITION,
+            XmNlabelString, s1,
+            XmNtopOffset, 10,
+            NULL);
+    XmStringFree(s1);
+    */
+    
+    int nProfiles = GetNumColorProfiles();
+    
+    cd->colorProfiles = NEditCalloc(nProfiles, sizeof(ColorProfile));
+    cd->numColorProfiles = nProfiles;
+    cd->selectedProfile = 0;
+    
+    XmStringTable cgProfileList = NEditCalloc(nProfiles, sizeof(XmString));
+    ColorProfile *profile = GetColorProfiles();
+    int i = 0;
+    while(profile) {
+        if(profile == defaultColorProfile) {
+            cd->selectedProfile = i;
+        }
+        
+        ColorProfileCopySettings(profile, &cd->colorProfiles[i]);
+        
+        cgProfileList[i] = XmStringCreateLocalized(profile->name);
+        profile = profile->next;
+        i++;
+    }
+    cd->colorProfiles[0].modified = TRUE;
+    
+#ifndef DISABLE_COLORPROFILES
+    Widget colorProfileForm = XtVaCreateManagedWidget("colorProfileForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(args[ac], XmNleftAttachment, XmATTACH_FORM); ac++;
+    //XtSetArg(args[ac], XmNleftWidget, profileLabel); ac++;
+    XtSetArg(args[ac], XmNitems, cgProfileList); ac++;
+    XtSetArg(args[ac], XmNitemCount, nProfiles); ac++;
+    XtSetArg(args[ac], XmNcolumns, 20); ac++;
+    XtSetArg(args[ac], XmNhighlightThickness, 2); ac++;
+    cd->profileDropDown = XmCreateDropDownList(colorProfileForm, "combobox", args, ac);
+    XtManageChild(cd->profileDropDown);
+    NEditFree(cgProfileList);
+    
+    s1 = XmStringCreateLocalized(defaultColorProfile->name);
+    XmComboBoxSelectItem(cd->profileDropDown, s1);
+    XmStringFree(s1);
+    
+    XtAddCallback(cd->profileDropDown, XmNselectionCallback,(XtCallbackProc)colorDialogProfileSelected, cd);
+    
+    s1 = XmStringCreateSimple("Rename");
+    Widget colorProfileRename = XtVaCreateManagedWidget("colorProfileRename", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->profileDropDown,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNdefaultButtonShadowThickness 	, 0,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileRename, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileRename, cd);
+    
+    s1 = XmStringCreateSimple("Remove");
+    Widget colorProfileRemove = XtVaCreateManagedWidget("colorProfileRename", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, colorProfileRename,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileRemove, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileRemove, cd);
+
+    s1 = XmStringCreateSimple("New");
+    Widget colorProfileNew = XtVaCreateManagedWidget("colorProfilNew", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, colorProfileRemove,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfileNew, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileNew, cd);
+    
+#endif
+    
+    /* tabs */
+    cd->tabs[0] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
+            XmNtopAttachment, XmATTACH_FORM,
             XmNrightPosition, 33,
+#else
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 25,
+            XmNtopOffset, 10,
+#endif
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_POSITION,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNset, True,
@@ -6636,26 +7228,55 @@ void ChooseColors(WindowInfo *window)
             NULL);
     XmStringFree(s1);
     cd->tabs[1] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
             XmNtopAttachment, XmATTACH_FORM,
+            XmNrightPosition, 66,
+#else
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 50,
+            XmNtopOffset, 10,
+#endif
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[0],
             XmNrightAttachment, XmATTACH_POSITION,
-            XmNrightPosition, 66,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("Indent Rainbow"),
             NULL);
     XmStringFree(s1);
     cd->tabs[2] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+#ifdef DISABLE_COLORPROFILES
             XmNtopAttachment, XmATTACH_FORM,
+            XmNrightPosition, 100,
+#else
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorProfileForm,
+            XmNrightPosition, 75,
+            XmNtopOffset, 10,
+#endif
             XmNleftAttachment, XmATTACH_WIDGET,
             XmNleftWidget, cd->tabs[1],
-            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_POSITION,
             XmNfillOnSelect, True,
             XmNindicatorOn, False,
             XmNlabelString, s1 = XmStringCreateSimple("ANSI Colors"),
             NULL);
+#ifndef DISABLE_COLORPROFILES
+    cd->tabs[3] = XtVaCreateManagedWidget("tabButton", xmToggleButtonWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, colorProfileForm,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, cd->tabs[2],
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNfillOnSelect, True,
+            XmNindicatorOn, False,
+            XmNlabelString, s1 = XmStringCreateSimple("Styles"),
+            NULL);
     XmStringFree(s1);
+    XtAddCallback(cd->tabs[3], XmNvalueChangedCallback, selectColorTab, cd);
+#endif
     XtAddCallback(cd->tabs[0], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[1], XmNvalueChangedCallback, selectColorTab, cd);
     XtAddCallback(cd->tabs[2], XmNvalueChangedCallback, selectColorTab, cd);
@@ -6746,8 +7367,16 @@ void ChooseColors(WindowInfo *window)
             XmNbottomWidget, sepW,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
-            NULL);  
-        
+            NULL);
+    cd->tabForms[3] = XtVaCreateWidget("styleForm", xmFormWidgetClass, form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topW,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, sepW,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            NULL);
+
     /*
      * Tab 1: Generral
      */
@@ -6900,18 +7529,197 @@ void ChooseColors(WindowInfo *window)
     
     loadAnsiColors(cd);
 
+    /*
+     * Tab 4: Styles
+     */
+    tabForm = cd->tabForms[3]; 
+    s1 = XmStringCreateLocalized("Text drawing styles can be adjusted for a color profile.\n"
+                                 "Lightened Colors: Increase brightness to improve visibility against dark backgrounds.\n"
+                                 "Custom Styles: Implement custom drawing styles by manually adjusting settings\n"
+                                 "in the Text Drawing Styles menu.");
+    Widget stInfoLabel = XtVaCreateManagedWidget("stInfoLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_FORM,
+            //XmNrightAttachment, XmATTACH_FORM,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+
+    Widget radioRC = XtVaCreateManagedWidget("style_radiobuttons",
+            xmRowColumnWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stInfoLabel,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNradioBehavior, True,
+            XmNpacking, XmPACK_COLUMN,
+    	    XmNnumColumns, 3,
+            NULL);
+
+    ColorProfile *sp = &cd->colorProfiles[cd->selectedProfile];
+
+    s1 = XmStringCreateLocalized("Default Styles");
+    cd->styleDefaultW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 0 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleDefaultW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Lightened Colors");
+    cd->styleLightenW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 1 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleLightenW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Custom Styles");
+    cd->styleCustomW = XtVaCreateManagedWidget("stDefaultRB",
+            xmToggleButtonWidgetClass, radioRC,
+            XmNlabelString, s1,
+            XmNset, sp->styleType == 2 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleCustomW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogTextStyleChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Text Drawing Styles...");
+    Widget stOpenStyleSettings = XtVaCreateManagedWidget("stOpenButton",
+            xmPushButtonWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, radioRC,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNlabelString, s1,
+            NULL);
+    XtAddCallback(stOpenStyleSettings, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogOpenStylesSettings, NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("X Resource File (absolute path or a path relative to XNEDIT_HOME)");
+    Widget xresLabel = XtVaCreateManagedWidget("stXResLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stOpenStyleSettings,
+            XmNleftOffset, 6,
+            XmNtopOffset, 16,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+    
+    cd->styleXResW = XtVaCreateManagedWidget("stXResText",
+            xmTextWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, xresLabel,
+            XmNleftOffset, 6,
+            XmNrightOffset, 6,
+            XmNtopOffset, 6,
+            NULL);
+    XmTextSetString(cd->styleXResW, sp->resourceFile);
+    
+    // This is deprecated before it was deployed, because Gnome removed
+    // support for _GTK_THEME_VARIANT
+    // Maybe in the future this can be used
+    /*
+    s1 = XmStringCreateLocalized("Window Title Bar (GTK Theme Variant)");
+    Widget stThemeVariantLabel = XtVaCreateManagedWidget("stThemeVariantLabel",
+            xmLabelGadgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, cd->styleXResW,
+            XmNleftOffset, 6,
+            XmNtopOffset, 16,
+            XmNlabelString, s1,
+            NULL);
+    XmStringFree(s1);
+    
+    Widget wmRadioRC = XtVaCreateManagedWidget("style_radiobuttons",
+            xmRowColumnWidgetClass, tabForm,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, stThemeVariantLabel,
+            XmNleftOffset, 6,
+            XmNtopOffset, 6,
+            XmNradioBehavior, True,
+            XmNpacking, XmPACK_COLUMN,
+    	    XmNnumColumns, 3,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Default");
+    cd->styleWMDefaultW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 0 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMDefaultW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Light");
+    cd->styleWMLightW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 1 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMLightW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
+
+    s1 = XmStringCreateLocalized("Dark");
+    cd->styleWMDarkW = XtVaCreateManagedWidget("stWMDefaultRB",
+            xmToggleButtonWidgetClass, wmRadioRC,
+            XmNlabelString, s1,
+            XmNset, sp->windowThemeVariant == 2 ? 1 : 0,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(
+                cd->styleWMDarkW,
+                XmNvalueChangedCallback,
+                (XtCallbackProc) colorDialogThemeVariantChanged,
+                cd);
+    */
+    
+    if(cd->selectedProfile == 0) {
+        // disable settings that are not available for the default profile
+        XtSetSensitive(cd->styleXResW, False);
+        XtSetSensitive(cd->styleDefaultW, False);
+        XtSetSensitive(cd->styleLightenW, False);
+        XtSetSensitive(cd->styleCustomW, False);
+    }
+
+    // TODO: style preview area
     
     /* Set initial values */
-    XmTextSetString(cd->textFgW,   GetPrefColorName(TEXT_FG_COLOR  ));
-    XmTextSetString(cd->textBgW,   GetPrefColorName(TEXT_BG_COLOR  ));
-    XmTextSetString(cd->selectFgW, GetPrefColorName(SELECT_FG_COLOR));
-    XmTextSetString(cd->selectBgW, GetPrefColorName(SELECT_BG_COLOR));
-    XmTextSetString(cd->hiliteFgW, GetPrefColorName(HILITE_FG_COLOR));
-    XmTextSetString(cd->hiliteBgW, GetPrefColorName(HILITE_BG_COLOR));
-    XmTextSetString(cd->lineNoFgW, GetPrefColorName(LINENO_FG_COLOR));
-    XmTextSetString(cd->lineNoBgW, GetPrefColorName(LINENO_BG_COLOR));
-    XmTextSetString(cd->cursorFgW, GetPrefColorName(CURSOR_FG_COLOR));
-    XmTextSetString(cd->cursorLineBgW, GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    loadColors(cd);
     
     /* Handle mnemonic selection of buttons and focus to dialog */
     AddDialogMnemonicHandler(form, FALSE);
@@ -6942,7 +7750,7 @@ static void updateRainbowColors(indentColorDialog *cd)
     WindowInfo *window;
     for (window = WindowList; window != NULL; window = window->next)
     {
-        SetIndentRainbowColors(window, colors);
+        SetIndentRainbowColors_Deprecated(window, colors);
     }
     
     SetPrefIndentRainbowColors(colors);
@@ -6950,10 +7758,122 @@ static void updateRainbowColors(indentColorDialog *cd)
     XtFree(colors);
 }
 
+static void clearRainbowColors(colorDialog *cd)
+{
+    WidgetList children;
+    int numChildren;
+    XtVaGetValues(cd->btnForm, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    
+    // remove children
+    for(int i=0;i<numChildren;i++) {
+        XtUnmanageChild(children[i]);
+        XtDestroyWidget(children[i]);
+    }
+    
+    //NEditFree(cd->indentRainbowColors);
+    //cd->indentRainbowColors = NULL;
+    cd->numIndentRainbowColors = 0;
+    
+    cd->addBtn = NULL;
+    addAddBtn(cd);
+}
+
+static void saveColorProfileSettings(colorDialog *cd)
+{
+    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    
+    /*
+     * Tab 1: General
+     */
+    profile->textFg = XmTextGetString(cd->textFgW),
+    profile->textBg = XmTextGetString(cd->textBgW),
+    profile->selectFg = XmTextGetString(cd->selectFgW),
+    profile->selectBg = XmTextGetString(cd->selectBgW),
+    profile->hiliteFg = XmTextGetString(cd->hiliteFgW),
+    profile->hiliteBg = XmTextGetString(cd->hiliteBgW),
+    profile->lineNoFg = XmTextGetString(cd->lineNoFgW),
+    profile->lineNoBg = XmTextGetString(cd->lineNoBgW),
+    profile->cursorFg = XmTextGetString(cd->cursorFgW),
+    profile->lineHiBg = XmTextGetString(cd->cursorLineBgW);
+    
+    /*
+     * Tab 2: Indent Rainbow Colors
+     */
+    size_t alloc = cd->numIndentRainbowColors * 10;
+    char *irStr = NEditMalloc(alloc);
+    int pos = 0;
+    
+    for(int i=0;i<cd->numIndentRainbowColors;i++) {
+        char *ir = XmTextGetString(cd->indentRainbowColors[i].textfield);
+        size_t ir_len = strlen(ir);
+        if(pos + ir_len + 2 >= alloc) {
+            alloc += 4 * ir_len;
+            irStr = NEditRealloc(irStr, alloc);
+        }
+        memcpy(irStr+pos, ir, ir_len);
+        pos += ir_len;
+        irStr[pos] = ';';
+        pos++;
+        XtFree(ir);
+    }
+    
+    if(pos > 0 && irStr[pos-1] == ';') {
+        irStr[pos-1] = '\0';
+    }
+    profile->rainbowColorList = irStr;
+    
+    /*
+     * Tab 3: ANSI Colors
+     */
+    char *ansiBlack = XmTextGetString(cd->ansiBlackW);
+    char *ansiRed = XmTextGetString(cd->ansiRedW);
+    char *ansiGreen = XmTextGetString(cd->ansiGreenW);
+    char *ansiYellow = XmTextGetString(cd->ansiYellowW);
+    char *ansiBlue = XmTextGetString(cd->ansiBlueW);
+    char *ansiMagenta = XmTextGetString(cd->ansiMagentaW);
+    char *ansiCyan = XmTextGetString(cd->ansiCyanW);
+    char *ansiWhite = XmTextGetString(cd->ansiWhiteW);
+    char *ansiBrightBlack = XmTextGetString(cd->ansiBrightBlackW);
+    char *ansiBrightRed = XmTextGetString(cd->ansiBrightRedW);
+    char *ansiBrightGreen = XmTextGetString(cd->ansiBrightGreenW);
+    char *ansiBrightYellow = XmTextGetString(cd->ansiBrightYellowW);
+    char *ansiBrightBlue = XmTextGetString(cd->ansiBrightBlueW);
+    char *ansiBrightMagenta = XmTextGetString(cd->ansiBrightMagentaW);
+    char *ansiBrightCyan = XmTextGetString(cd->ansiBrightCyanW);
+    char *ansiBrightWhite = XmTextGetString(cd->ansiBrightWhiteW);
+    
+    size_t len = strlen(ansiBlack) + strlen(ansiRed) + strlen(ansiGreen) + strlen(ansiYellow)
+               + strlen(ansiBlue) + strlen(ansiMagenta) + strlen(ansiCyan) + strlen(ansiWhite)
+               + strlen(ansiBrightBlack) + strlen(ansiBrightRed) + strlen(ansiBrightGreen) + strlen(ansiBrightYellow)
+               + strlen(ansiBrightBlue) + strlen(ansiBrightMagenta) + strlen(ansiBrightCyan) + strlen(ansiBrightWhite)
+               + 16;
+    char *ansiColorList = NEditMalloc(len);
+    snprintf(ansiColorList, len, "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+            ansiBlack, ansiRed, ansiGreen, ansiYellow,
+            ansiBlue, ansiMagenta, ansiCyan, ansiWhite,
+            ansiBrightBlack, ansiBrightRed, ansiBrightGreen, ansiBrightYellow,
+            ansiBrightBlue, ansiBrightMagenta, ansiBrightCyan, ansiBrightWhite);
+    
+    profile->ansiColorList = ansiColorList;
+    
+    profile->modified = TRUE;
+    
+    /*
+     * Tab 4: Style Settings
+     */
+    char *resourceFile = XmTextGetString(cd->styleXResW);
+    NEditFree(profile->resourceFile);
+    if(resourceFile && strlen(resourceFile) > 0) {
+        profile->resourceFile = resourceFile;
+    } else {
+        profile->resourceFile = NULL;
+        XtFree(resourceFile);
+    }
+}
 
 static void indentRainbowDialogLoadColors(colorDialog *cd)
 {
-    char *colorList = cd->window->indentRainbowColors;
+    char *colorList = cd->colorProfiles[cd->selectedProfile].rainbowColorList;
     size_t len = colorList ? strlen(colorList) : 0;
     
     char *colors = malloc(len + 1);
@@ -7002,8 +7922,7 @@ static void loadAnsiColors(colorDialog *cd)
 {
     char *colors[16];
     
-    char *colorList = GetPrefAnsiColorList();
-    char *colorListStr = ParseAnsiColorList(colors, colorList);
+    char *colorListStr = ParseAnsiColorList(colors, cd->colorProfiles[cd->selectedProfile].ansiColorList);
     
     XmTextSetString(cd->ansiBlackW, colors[0]);
     XmTextSetString(cd->ansiRedW, colors[1]);
@@ -7024,6 +7943,337 @@ static void loadAnsiColors(colorDialog *cd)
    
     
     NEditFree(colorListStr);
+}
+
+static void loadColors(colorDialog *cd)
+{
+    ColorProfile *selectedProfile = &cd->colorProfiles[cd->selectedProfile];
+    XmTextSetString(cd->textFgW,   selectedProfile->textFg);
+    XmTextSetString(cd->textBgW,   selectedProfile->textBg);
+    XmTextSetString(cd->selectFgW, selectedProfile->selectFg);
+    XmTextSetString(cd->selectBgW, selectedProfile->selectBg);
+    XmTextSetString(cd->hiliteFgW, selectedProfile->hiliteFg);
+    XmTextSetString(cd->hiliteBgW, selectedProfile->hiliteBg);
+    XmTextSetString(cd->lineNoFgW, selectedProfile->lineNoFg);
+    XmTextSetString(cd->lineNoBgW, selectedProfile->lineNoBg);
+    XmTextSetString(cd->cursorFgW, selectedProfile->cursorFg);
+    XmTextSetString(cd->cursorLineBgW, selectedProfile->lineHiBg);
+}
+
+static void loadColorProfileStyleSettings(colorDialog *cd)
+{
+    ColorProfile *sp = &cd->colorProfiles[cd->selectedProfile];
+    XtVaSetValues(cd->styleDefaultW, XmNset, sp->styleType == 0 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleLightenW, XmNset, sp->styleType == 1 ? 1 : 0, NULL);
+    XtVaSetValues(cd->styleCustomW, XmNset, sp->styleType == 2 ? 1 : 0, NULL);
+    
+    XmTextSetString(cd->styleXResW, sp->resourceFile);
+    
+    Boolean enableStyleSettings = cd->selectedProfile != 0;
+    XtSetSensitive(cd->styleXResW, enableStyleSettings);
+    XtSetSensitive(cd->styleDefaultW, enableStyleSettings);
+    XtSetSensitive(cd->styleLightenW, enableStyleSettings);
+    XtSetSensitive(cd->styleCustomW, enableStyleSettings);
+    
+    //XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
+    //XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
+    //XtVaSetValues(cd->styleWMDarkW, XmNset, sp->windowThemeVariant == 2 ? 1 : 0, NULL);
+}
+
+
+ColorList ParseColorList(const char *str, size_t len)
+{
+    ColorList list = { NULL, NULL, 0 };
+    
+    // copy str
+    list.liststr = NEditMalloc(len+1);
+    memcpy(list.liststr, str, len);
+    list.liststr[len] = 0;
+    
+    size_t alloc = 16;
+    list.colors = NEditCalloc(alloc, sizeof(char*));
+    
+    // parse str
+    int b = 0;
+    for(int i=0;i<=len;i++) {
+        char c = list.liststr[i];
+        if(c == ';' || c == '\0') {
+            if(list.ncolors >= alloc) {
+                alloc += 8;
+                list.colors = NEditRealloc(list.colors, alloc * sizeof(char*));
+            }
+            
+            list.colors[list.ncolors++] = list.liststr+b;
+            list.liststr[i] = '\0';
+            b = i+1;
+        }
+    }
+    
+    return list;
+}
+
+void ColorProfileDestroy(ColorProfile *profile)
+{
+    ColorProfileFreeContent(profile);
+    NEditFree(profile);
+}
+
+void ColorProfileFreeContent(ColorProfile *profile)
+{
+    NEditFree(profile->name);
+    NEditFree(profile->textFg);
+    NEditFree(profile->textBg);
+    NEditFree(profile->selectFg);
+    NEditFree(profile->hiliteFg);
+    NEditFree(profile->hiliteBg);
+    NEditFree(profile->lineNoFg);
+    NEditFree(profile->lineNoBg);
+    NEditFree(profile->cursorFg);
+    NEditFree(profile->lineHiBg);
+    NEditFree(profile->ansiColorList);
+    NEditFree(profile->rainbowColorList);
+    NEditFree(profile->resourceFile);
+}
+
+static int GetCgProfileName(const char *str, size_t len, const char **out_name, size_t *out_namelen)
+{
+    const char *name = str;
+    size_t namelen = 0;
+    for(int i=0;i<len;i++) {
+        if(str[i] == ':') {
+            namelen = i;
+            break;
+        }
+    }
+    while(namelen > 0 && isspace(*name)) {
+        name++;
+        namelen--;
+    }
+    if(namelen == 0) {
+        return 0;
+    }
+    
+    *out_name = name;
+    *out_namelen = namelen;
+    
+    return 1;
+}
+
+static int GetCgProfileSection(const char *str, size_t len, const char **sectionName, size_t *sectionNameLen, const char **list, size_t *listlen)
+{
+    if(!GetCgProfileName(str, len, sectionName, sectionNameLen)) {
+        return 0;
+    }
+    
+    const char *listStr = str + *sectionNameLen + 1;
+    size_t remainingLen = len - (listStr - str);
+    size_t listStrLen = 0;
+    
+    if(remainingLen == 0 || listStr[0] != '{') {
+        return 0;
+    }
+    
+    // find '}'
+    for(int i=0;i<remainingLen;i++) {
+        if(listStr[i] == '}') {
+            listStrLen = i+1;
+            break;
+        }
+    }
+    
+    if(listStrLen <= 2) {
+        // empty list str
+        return 0;
+    }
+    
+    *list = listStr+1;
+    *listlen = listStrLen-2;
+    
+    return (listStr - str) + listStrLen;
+}
+
+static ColorProfile* ParseColorProfile(const char *str, size_t len)
+{
+    // get profile name
+    const char *name = str;
+    size_t namelen = 0;
+    if(!GetCgProfileName(str, len, &name, &namelen)) {
+        return NULL;
+    }
+    
+    // get sections
+    const char *remaining = name + namelen + 1;
+    size_t remainingLen = len - (remaining - str);
+    
+    int err = 0;
+    ColorProfile *profile = NEditMalloc(sizeof(ColorProfile));
+    memset(profile, 0, sizeof(ColorProfile));
+    profile->name = NEditMalloc(namelen+1);
+    memcpy(profile->name, name, namelen);
+    profile->name[namelen] = 0;
+    
+    while(remainingLen > 0) {
+        const char *sectionName = NULL;
+        size_t sectionNameLen = 0;
+        const char *sectionColors = NULL;
+        size_t sectionColorsLen = 0;
+        
+        int sectionLen = GetCgProfileSection(remaining, remainingLen, &sectionName, &sectionNameLen, &sectionColors, &sectionColorsLen);
+        if(sectionLen > 0) {
+            
+            // parse colors
+            if(!strncmp(sectionName, "colors", sectionNameLen)) {
+                ColorList colors = ParseColorList(sectionColors, sectionColorsLen);
+                profile->textFg = NEditStrdup(colors.ncolors >= 1 ? colors.colors[0] : GetPrefColorName(TEXT_FG_COLOR));
+                profile->textBg = NEditStrdup(colors.ncolors >= 2 ? colors.colors[1] : GetPrefColorName(TEXT_BG_COLOR));
+                profile->selectFg = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(SELECT_FG_COLOR));
+                profile->selectBg = NEditStrdup(colors.ncolors >= 4 ? colors.colors[3] : GetPrefColorName(SELECT_BG_COLOR));
+                profile->hiliteFg = NEditStrdup(colors.ncolors >= 5 ? colors.colors[4] : GetPrefColorName(HILITE_FG_COLOR));
+                profile->hiliteBg = NEditStrdup(colors.ncolors >= 6 ? colors.colors[5] : GetPrefColorName(HILITE_BG_COLOR));
+                profile->lineNoFg = NEditStrdup(colors.ncolors >= 7 ? colors.colors[6] : GetPrefColorName(LINENO_FG_COLOR));
+                profile->lineNoBg = NEditStrdup(colors.ncolors >= 8 ? colors.colors[7] : GetPrefColorName(LINENO_BG_COLOR));
+                profile->cursorFg = NEditStrdup(colors.ncolors >= 9 ? colors.colors[8] : GetPrefColorName(CURSOR_FG_COLOR));
+                profile->lineHiBg = NEditStrdup(colors.ncolors >= 10 ? colors.colors[9] : GetPrefColorName(CURSOR_LINE_BG_COLOR));
+                free(colors.liststr);
+                free(colors.colors);
+            } else if(!strncmp(sectionName, "ansi", sectionNameLen)) {
+                profile->ansiColorList = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->ansiColorList, sectionColors, sectionColorsLen);
+                profile->ansiColorList[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "rainbow", sectionNameLen)) {
+                profile->rainbowColorList = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->rainbowColorList, sectionColors, sectionColorsLen);
+                profile->rainbowColorList[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "styles", sectionNameLen)) {
+                // the styles value is either 0, 1 or 2
+                if(sectionColorsLen == 1) {
+                    // profile->styleType is initialized with 0, we only
+                    // need to check if the new value is 1 or 2
+                    if(sectionColors[0] == '1') {
+                        profile->styleType = 1;
+                    } else if(sectionColors[0] == '2') {
+                        profile->styleType = 2;
+                    }
+                }
+            } else if(!strncmp(sectionName, "res", sectionNameLen)) {
+                profile->resourceFile = NEditMalloc(sectionColorsLen+1);
+                memcpy(profile->resourceFile, sectionColors, sectionColorsLen);
+                profile->resourceFile[sectionColorsLen] = 0;
+            } else if(!strncmp(sectionName, "wm", sectionNameLen)) {
+                // wm value is 0, 1 or 2
+                if(sectionColorsLen == 1) {
+                    // profile->windowThemeVariant is initialized with 0, we only
+                    // need to check if the new value is 1 or 2
+                    if(sectionColors[0] == '1') {
+                        profile->windowThemeVariant = 1;
+                    } else if(sectionColors[0] == '2') {
+                        profile->windowThemeVariant = 2;
+                    }
+                }
+            } else {
+                fprintf(stderr, "XNEdit: Error: cannot parse color profile %s: unknown str '%.*s'\n", profile->name, (int)sectionNameLen, sectionName);
+            }
+            
+            if(!profile->rainbowColorList) {
+                profile->rainbowColorList = NEditStrdup(GetPrefIndentRainbowColors());
+            }
+            if(!profile->ansiColorList) {
+                profile->ansiColorList = NEditStrdup(GetPrefAnsiColorList());
+            }   
+            
+            // next section
+            remaining += sectionLen;
+            remainingLen -= sectionLen;
+            
+            // skip ',' before next section
+            if(remainingLen > 0 && remaining[0] == ',') {
+                remainingLen--;
+                remaining++;
+            }
+        } else {
+            err = 1;
+            break;
+        }
+    }
+    
+    if(err) {
+        ColorProfileDestroy(profile);
+        profile = NULL;
+    }
+    
+    
+    return profile;
+}
+
+void ParseColorProfiles(const char *str)
+{
+    ColorProfile *profilesListBegin = NULL;
+    ColorProfile *profilesListEnd = NULL;
+    
+    size_t len = strlen(str);
+    
+#ifdef DISABLE_COLORPROFILES
+    char *defaultProfileName = "default";
+#else
+    char *defaultProfileName = GetPrefDefaultColorProfileName();
+    if(!defaultProfileName) {
+        defaultProfileName = "default";
+    }
+#endif
+       
+    // each line contains one color profile
+    // parse each line and add the profiles to a linked list
+    int lineStart = 0;
+    for(int i=0;i<=len;i++) {
+        if(i == len || str[i] == '\n') {
+            ColorProfile *colorProfile = ParseColorProfile(str+lineStart, i-lineStart);
+            lineStart = i+1;
+            
+            if(colorProfile) {
+                if(!strcmp(colorProfile->name, defaultProfileName)) {
+                    defaultColorProfile = colorProfile;
+                }
+                
+                if(profilesListEnd) {
+                    profilesListEnd->next = colorProfile;
+                    profilesListEnd = colorProfile;
+                } else {
+                    profilesListBegin = colorProfile;
+                    profilesListEnd = colorProfile;
+                }
+            }
+        }
+    }
+    
+    // TODO: add default color profile
+    ColorProfile *defaultProfile = NEditMalloc(sizeof(ColorProfile));
+    memset(defaultProfile, 0, sizeof(ColorProfile));
+    
+    defaultProfile->name = NEditStrdup("default");
+    defaultProfile->textFg = NEditStrdup(GetPrefColorName(TEXT_FG_COLOR));
+    defaultProfile->textBg = NEditStrdup(GetPrefColorName(TEXT_BG_COLOR));
+    defaultProfile->selectFg = NEditStrdup(GetPrefColorName(SELECT_FG_COLOR));
+    defaultProfile->selectBg = NEditStrdup(GetPrefColorName(SELECT_BG_COLOR));
+    defaultProfile->hiliteFg = NEditStrdup(GetPrefColorName(HILITE_FG_COLOR));
+    defaultProfile->hiliteBg = NEditStrdup(GetPrefColorName(HILITE_BG_COLOR));
+    defaultProfile->lineNoFg = NEditStrdup(GetPrefColorName(LINENO_FG_COLOR));
+    defaultProfile->lineNoBg = NEditStrdup(GetPrefColorName(LINENO_BG_COLOR));
+    defaultProfile->cursorFg = NEditStrdup(GetPrefColorName(CURSOR_FG_COLOR));
+    defaultProfile->lineHiBg = NEditStrdup( GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    defaultProfile->rainbowColorList = NEditStrdup(GetPrefIndentRainbowColors());
+    defaultProfile->ansiColorList = NEditStrdup(GetPrefAnsiColorList());
+    
+    defaultProfile->next = profilesListBegin;
+    
+    colorProfiles = defaultProfile;
+    if(!defaultColorProfile) {
+        defaultColorProfile = defaultProfile;
+    }
+    
+    if(strcmp(defaultColorProfile->name, "default") != 0) {
+        SetColorProfileName(defaultColorProfile->name);
+        SetColorProfileStyleType(defaultColorProfile->styleType);
+    }
 }
 
 /*

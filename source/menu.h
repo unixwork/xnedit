@@ -36,6 +36,7 @@
 #define TEMPORARY_MENU_ITEM (XtPointer)2
 
 Widget CreateMenuBar(Widget parent, WindowInfo *window);
+Widget RecreateMenuBar(Widget parent, Widget menubar, WindowInfo *window, Boolean clear);
 void InstallMenuActions(XtAppContext context);
 XtActionsRec *GetMenuActions(int *nActions);
 void InvalidateWindowMenus(void);

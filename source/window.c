@@ -54,6 +54,7 @@
 #include "windowTitle.h"
 #include "interpret.h"
 #include "rangeset.h"
+#include "highlightData.h"
 #include "../util/clearcase.h"
 #include "../util/misc.h"
 #include "../util/fileUtils.h"
@@ -211,6 +212,7 @@ extern void _XmDismissTearOff(Widget, XtPointer, XtPointer);
 static void hideTooltip(Widget tab);
 static Pixmap createBitmapWithDepth(Widget w, char *data, unsigned int width,
 	unsigned int height);
+static void createSearchForm(WindowInfo *window);
 static WindowInfo *getNextTabWindow(WindowInfo *window, int direction,
         int crossWin, int wrap);
 static Widget addTab(Widget folder, const char *string);
@@ -279,6 +281,61 @@ static const Dimension XT_IGNORE_PPOSITION = 32767;
 static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
 
+static Bool CopyDBEntry(
+    XrmDatabase	*db,
+    XrmBindingList bindings,
+    XrmQuarkList quarks,
+    XrmRepresentation *type,
+    XrmValuePtr value,
+    XPointer data)
+{
+    XrmDatabase newDB = (XrmDatabase)data;
+    XrmQPutResource(&newDB, bindings, quarks, *type, value);
+    return 0;
+}
+
+void LoadColorProfileResources(Display *display, ColorProfile *profile)
+{
+    if(profile->resourceFile) {
+        const char *fpath;
+        char *fpathFree = NULL;
+        if(profile->resourceFile[0] == '/') {
+            fpath = profile->resourceFile;
+        } else {
+            const char *xneditHome = GetRCFileName(XNEDIT_HOME);
+            size_t xneditHomeLen = strlen(xneditHome);
+            size_t resFileLen = strlen(profile->resourceFile);
+            fpathFree = NEditMalloc(xneditHomeLen + resFileLen + 1);
+            memcpy(fpathFree, xneditHome, xneditHomeLen);
+            memcpy(fpathFree+xneditHomeLen, profile->resourceFile, resFileLen);
+            fpathFree[xneditHomeLen+resFileLen] = 0;
+            fpath = fpathFree;
+        }
+        
+        XrmDatabase defaultDB = GetDefaultResourceDB();
+        XrmDatabase newDB = XrmGetStringDatabase("");
+        XrmQuark empty = NULLQUARK;
+        XrmEnumerateDatabase(defaultDB, &empty, &empty, XrmEnumAllLevels, CopyDBEntry, (XPointer) newDB);
+        
+        XrmDatabase resFileDB = XrmGetFileDatabase(fpath);
+        if(resFileDB) {
+            XrmMergeDatabases(resFileDB, &newDB);
+        } // TODO: else error 
+        
+        NEditFree(fpathFree);
+        
+        profile->db = newDB;
+        
+    } else {
+        profile->db = GetDefaultResourceDB();
+    }
+    profile->resDBLoaded = True;
+}
+
+static Pixmap isrcFind = 0;
+static Pixmap isrcClear = 0;
+static Pixmap closeTabPixmap = 0;
+
 /*
 ** Create a new editor window
 */
@@ -296,14 +353,18 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     char newGeometry[MAX_GEOM_STRING_LEN];
     unsigned int rows, cols;
     int x = 0, y = 0, bitmask, showTabBar, state;
-
-    static Pixmap isrcFind = 0;
-    static Pixmap isrcClear = 0;
-    static Pixmap closeTabPixmap = 0;
-
+    
+    // Before creating any UI widgets, load custom color profile X resources 
+    ColorProfile *colorProfile = GetDefaultColorProfile();
+    if(!colorProfile->db) {
+        LoadColorProfileResources(TheDisplay, colorProfile);
+    }
+    XrmSetDatabase(TheDisplay, colorProfile->db);
+    
     /* Allocate some memory for the new window data structure */
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     window->opened = False;
+    window->colorProfile = colorProfile;
     window->wrapModeNoneForced = False;
     
     /* initialize window structure */
@@ -544,170 +605,30 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        
     window->iSearchForm = XtVaCreateWidget("iSearchForm", 
        	    xmFormWidgetClass, statsAreaForm,
-	    XmNshadowThickness, 0,
-	    XmNleftAttachment, XmATTACH_FORM,
-	    XmNleftOffset, STAT_SHADOW_THICKNESS,
-	    XmNtopAttachment, XmATTACH_FORM,
-	    XmNtopOffset, STAT_SHADOW_THICKNESS,
-	    XmNrightAttachment, XmATTACH_FORM,
-	    XmNrightOffset, STAT_SHADOW_THICKNESS,
-	    XmNbottomOffset, STAT_SHADOW_THICKNESS, NULL);
+        XmNshadowThickness, 0,
+        XmNleftAttachment, XmATTACH_FORM,
+        XmNleftOffset, STAT_SHADOW_THICKNESS,
+        XmNtopAttachment, XmATTACH_FORM,
+        XmNtopOffset, STAT_SHADOW_THICKNESS,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNrightOffset, STAT_SHADOW_THICKNESS,
+        XmNbottomOffset, STAT_SHADOW_THICKNESS, NULL);
     if(window->showISearchLine)
         XtManageChild(window->iSearchForm);
-
-    /* Disable keyboard traversal of the find, clear and toggle buttons.  We
-       were doing this previously by forcing the keyboard focus back to the
-       text widget whenever a toggle changed.  That causes an ugly focus flash
-       on screen.  It's better just not to go there in the first place. 
-       Plus, if the user really wants traversal, it's an X resource so it
-       can be enabled without too much pain and suffering. */
     
-    if (isrcFind == 0) {
-        switch(GetPrefISrcFindIconSize()) {
-            default: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_bits, isrcFind_width, isrcFind_height);
-                break;
-            }
-            case 1: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_m_bits, isrcFind_m_width, isrcFind_m_height);
-                break;
-            }
-            case 2: {
-                isrcFind = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcFind_l_bits, isrcFind_l_width, isrcFind_l_height);
-                break;
-            }
-        }
-        
-    }
-    window->iSearchFindButton = XtVaCreateManagedWidget("iSearchFindButton",
-            xmPushButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Find"),
-            XmNlabelType, XmPIXMAP,
-            XmNlabelPixmap, isrcFind,
-            XmNtraversalOn, False,
-            XmNmarginHeight, 1,
-            XmNmarginWidth, 1,
-            XmNleftAttachment, XmATTACH_FORM,
-            /* XmNleftOffset, 3, */
-            XmNleftOffset, 0,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 1,
-            NULL);
-    XmStringFree(s1);
-
-    window->iSearchCaseToggle = XtVaCreateManagedWidget("iSearchCaseToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Case"),
-            XmNset, GetPrefSearch() == SEARCH_CASE_SENSE 
-            || GetPrefSearch() == SEARCH_REGEX
-            || GetPrefSearch() == SEARCH_CASE_SENSE_WORD,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_FORM,
-            XmNmarginHeight, 0, 
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
+    createSearchForm(window);
     
-    window->iSearchRegexToggle = XtVaCreateManagedWidget("iSearchREToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("RegExp"),
-            XmNset, GetPrefSearch() == SEARCH_REGEX_NOCASE 
-            || GetPrefSearch() == SEARCH_REGEX,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchCaseToggle,
-            XmNmarginHeight, 0,
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
-    
-    window->iSearchRevToggle = XtVaCreateManagedWidget("iSearchRevToggle",
-            xmToggleButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("Rev"),
-            XmNset, False,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1, /* see openmotif note above */
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchRegexToggle,
-            XmNmarginHeight, 0,
-            XmNtraversalOn, False,
-            NULL);
-    XmStringFree(s1);
-    
-    if (isrcClear == 0) {
-        switch(GetPrefISrcClearIconSize()) {
-            default: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_bits, isrcClear_width, isrcClear_height);
-                break;
-            }
-            case 1: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_m_bits, isrcClear_m_width, isrcClear_m_height);
-                break;
-            }
-            case 2: {
-                isrcClear = createBitmapWithDepth(window->iSearchForm,
-                    (char *)isrcClear_l_bits, isrcClear_l_width, isrcClear_l_height);
-                break;
-            }
-        }
-    }
-    window->iSearchClearButton = XtVaCreateManagedWidget("iSearchClearButton",
-            xmPushButtonWidgetClass, window->iSearchForm,
-            XmNlabelString, s1=XmStringCreateSimple("<x"),
-            XmNlabelType, XmPIXMAP,
-            XmNlabelPixmap, isrcClear,
-            XmNtraversalOn, False,
-            XmNmarginHeight, 1,
-            XmNmarginWidth, 1,
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchRevToggle,
-            XmNrightOffset, 2,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 1,
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 1,
-            NULL);
-    XmStringFree(s1);
-
-    window->iSearchText = XtVaCreateManagedWidget("iSearchText",
-            XNEtextfieldWidgetClass, window->iSearchForm,
-            XmNmarginHeight, 1,
-            XmNnavigationType, XmEXCLUSIVE_TAB_GROUP,
-            XmNleftAttachment, XmATTACH_WIDGET,
-            XmNleftWidget, window->iSearchFindButton,
-            XmNrightAttachment, XmATTACH_WIDGET,
-            XmNrightWidget, window->iSearchClearButton,
-            /* XmNrightOffset, 5, */
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNtopOffset, 0, /* see openmotif note above */
-            XmNbottomAttachment, XmATTACH_FORM,
-            XmNbottomOffset, 0, NULL);
-    RemapDeleteKey(window->iSearchText);
-
-    SetISearchTextCallbacks(window);
 
     /* create the a form to house the tab bar and close-tab button */
     tabForm = XtVaCreateWidget("tabForm", 
-       	    xmFormWidgetClass, statsAreaForm,
-	    XmNmarginHeight, 0,
-	    XmNmarginWidth, 0,
-	    XmNspacing, 0,
-    	    XmNresizable, False, 
+            xmFormWidgetClass, statsAreaForm,
+        XmNmarginHeight, 0,
+        XmNmarginWidth, 0,
+        XmNspacing, 0,
+            XmNresizable, False, 
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
-	    XmNshadowThickness, 0, NULL);
+        XmNshadowThickness, 0, NULL);
 
     /* button to close top document */
     if (closeTabPixmap == 0) {
@@ -730,35 +651,35 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
         }
     }
     closeTabBtn = XtVaCreateManagedWidget("closeTabBtn",
-      	    xmPushButtonWidgetClass, tabForm,
-	    XmNmarginHeight, 0,
-	    XmNmarginWidth, 0,
-    	    XmNhighlightThickness, 0,
-	    XmNlabelType, XmPIXMAP,
-	    XmNlabelPixmap, closeTabPixmap,
-    	    XmNshadowThickness, 1,
+            xmPushButtonWidgetClass, tabForm,
+            XmNmarginHeight, 0,
+            XmNmarginWidth, 0,
+            XmNhighlightThickness, 0,
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, closeTabPixmap,
+            XmNshadowThickness, 1,
             XmNtraversalOn, False,
             XmNrightAttachment, XmATTACH_FORM,
             XmNrightOffset, 3,
             XmNbottomAttachment, XmATTACH_FORM,	    
             XmNbottomOffset, 3,
-	    NULL);
+            NULL);
     XtAddCallback(closeTabBtn, XmNactivateCallback, (XtCallbackProc)closeTabCB, 
-	    mainWin);
+            mainWin);
     
     /* create the tab bar */
     window->tabBar = XtVaCreateManagedWidget("tabBar", 
-       	    xmlFolderWidgetClass, tabForm,
-	    XmNresizePolicy, XmRESIZE_PACK,
-	    XmNleftAttachment, XmATTACH_FORM,
+            xmlFolderWidgetClass, tabForm,
+            XmNresizePolicy, XmRESIZE_PACK,
+            XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 0,
-	    XmNrightAttachment, XmATTACH_WIDGET,
-	    XmNrightWidget, closeTabBtn,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, closeTabBtn,
             XmNrightOffset, 5,
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 0,
             XmNtopAttachment, XmATTACH_FORM,
-	    NULL);
+            NULL);
 
     window->tabMenuPane = CreateTabContextMenu(window->tabBar, window);
     AddTabContextMenuAction(window->tabBar);
@@ -767,13 +688,13 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        widget to hide the 3D shadow for the manager area.
        Note: this works only on the patched XmLFolder widget */
     form = XtVaCreateWidget("form",
-	    xmFormWidgetClass, window->tabBar,
-	    XmNheight, 1,
-	    XmNresizable, False,
-	    NULL);
+        xmFormWidgetClass, window->tabBar,
+        XmNheight, 1,
+        XmNresizable, False,
+        NULL);
 
     XtAddCallback(window->tabBar, XmNactivateCallback,
-    	    raiseTabCB, NULL);
+            raiseTabCB, NULL);
 
     window->tab = addTab(window->tabBar, name);
 
@@ -819,9 +740,9 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNshadowThickness, 0,
             XmNhighlightColor, bgpix,
             XmNhighlightThickness, 0,  /* must be zero, for OM (2.1.30) to 
-	                                  aligns tatsLineColNo & statsLine */
+                                       aligns tatsLineColNo & statsLine */
             XmNmarginHeight, 1,        /* == statsLineColNo.marginHeight - 1,
-	                                  to align with statsLineColNo */
+                                      to align with statsLineColNo */
             XmNscrollHorizontal, False,
             XmNeditMode, XmSINGLE_LINE_EDIT,
             XmNeditable, False,
@@ -914,7 +835,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNhighlightThickness, 1,
             NULL);
     XtAddCallback(btnClose, XmNactivateCallback, (XtCallbackProc)closeInfoBarCB, 
-	    mainWin);
+            mainWin);
     
     s1 = XmStringCreateSimple("Reload");
     Widget btnReload = XtVaCreateManagedWidget(
@@ -932,7 +853,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNhighlightThickness, 1,
             NULL);
     XtAddCallback(btnReload, XmNactivateCallback, (XtCallbackProc)reloadCB, 
-	    mainWin);
+            mainWin);
     XmStringFree(s1);
     
     /* Create the menu bar */
@@ -966,7 +887,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->lastFocus = text;
 
     /* Set the initial colors from the globals. */
-    SetColors(window,
+    SetColors_Deprecated(window,
               GetPrefColorName(TEXT_FG_COLOR  ),
               GetPrefColorName(TEXT_BG_COLOR  ),
               GetPrefColorName(SELECT_FG_COLOR),
@@ -977,7 +898,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
               GetPrefColorName(LINENO_BG_COLOR), 
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
-    SetAnsiColorList(window, GetPrefAnsiColorList());
+    SetAnsiColorList_Deprecated(window, GetPrefAnsiColorList());
+    SetColorProfile(window, GetDefaultColorProfile());
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
@@ -1015,12 +937,12 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 
     showTabBar = GetShowTabBar(window);
     if (showTabBar)
-    	XtManageChild(tabForm);
+        XtManageChild(tabForm);
 
     manageToolBars(statsAreaForm);
 
     if (showTabBar || window->showISearchLine || 
-    	    window->showStats || window->showInfoBar)
+            window->showStats || window->showInfoBar)
     {
         XtManageChild(statsAreaForm);
     }
@@ -1060,13 +982,161 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* dim/undim Attach_Tab menu items */
     state = NDocuments(window) < NWindows();
     for(win=WindowList; win; win=win->next) {
-    	if (IsTopDocument(win)) {
-    	    XtSetSensitive(win->moveDocumentItem, state);
-    	    XtSetSensitive(win->contextMoveDocumentItem, state);
-	}
+        if (IsTopDocument(win)) {
+            XtSetSensitive(win->moveDocumentItem, state);
+            XtSetSensitive(win->contextMoveDocumentItem, state);
+        }
     }
-    
+      
     return window;
+}
+
+static void createSearchForm(WindowInfo *window)
+{
+    XmString s1;
+
+    /* Disable keyboard traversal of the find, clear and toggle buttons.  We
+       were doing this previously by forcing the keyboard focus back to the
+       text widget whenever a toggle changed.  That causes an ugly focus flash
+       on screen.  It's better just not to go there in the first place.
+       Plus, if the user really wants traversal, it's an X resource so it
+       can be enabled without too much pain and suffering. */
+
+    if (isrcFind == 0) {
+        switch(GetPrefISrcFindIconSize()) {
+            default: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_bits, isrcFind_width, isrcFind_height);
+                break;
+            }
+            case 1: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_m_bits, isrcFind_m_width, isrcFind_m_height);
+                break;
+            }
+            case 2: {
+                isrcFind = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcFind_l_bits, isrcFind_l_width, isrcFind_l_height);
+                break;
+            }
+        }
+
+    }
+    window->iSearchFindButton = XtVaCreateManagedWidget("iSearchFindButton",
+            xmPushButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Find"),
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, isrcFind,
+            XmNtraversalOn, False,
+            XmNmarginHeight, 1,
+            XmNmarginWidth, 1,
+            XmNleftAttachment, XmATTACH_FORM,
+            /* XmNleftOffset, 3, */
+            XmNleftOffset, 0,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 1,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchCaseToggle = XtVaCreateManagedWidget("iSearchCaseToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Case"),
+            XmNset, GetPrefSearch() == SEARCH_CASE_SENSE
+            || GetPrefSearch() == SEARCH_REGEX
+            || GetPrefSearch() == SEARCH_CASE_SENSE_WORD,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchRegexToggle = XtVaCreateManagedWidget("iSearchREToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("RegExp"),
+            XmNset, GetPrefSearch() == SEARCH_REGEX_NOCASE
+            || GetPrefSearch() == SEARCH_REGEX,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchCaseToggle,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchRevToggle = XtVaCreateManagedWidget("iSearchRevToggle",
+            xmToggleButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("Rev"),
+            XmNset, False,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1, /* see openmotif note above */
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchRegexToggle,
+            XmNmarginHeight, 0,
+            XmNtraversalOn, False,
+            NULL);
+    XmStringFree(s1);
+
+    if (isrcClear == 0) {
+        switch(GetPrefISrcClearIconSize()) {
+            default: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_bits, isrcClear_width, isrcClear_height);
+                break;
+            }
+            case 1: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_m_bits, isrcClear_m_width, isrcClear_m_height);
+                break;
+            }
+            case 2: {
+                isrcClear = createBitmapWithDepth(window->iSearchForm,
+                    (char *)isrcClear_l_bits, isrcClear_l_width, isrcClear_l_height);
+                break;
+            }
+        }
+    }
+    window->iSearchClearButton = XtVaCreateManagedWidget("iSearchClearButton",
+            xmPushButtonWidgetClass, window->iSearchForm,
+            XmNlabelString, s1=XmStringCreateSimple("<x"),
+            XmNlabelType, XmPIXMAP,
+            XmNlabelPixmap, isrcClear,
+            XmNtraversalOn, False,
+            XmNmarginHeight, 1,
+            XmNmarginWidth, 1,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchRevToggle,
+            XmNrightOffset, 2,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 1,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 1,
+            NULL);
+    XmStringFree(s1);
+
+    window->iSearchText = XtVaCreateManagedWidget("iSearchText",
+            XNEtextfieldWidgetClass, window->iSearchForm,
+            XmNmarginHeight, 1,
+            XmNnavigationType, XmEXCLUSIVE_TAB_GROUP,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, window->iSearchFindButton,
+            XmNrightAttachment, XmATTACH_WIDGET,
+            XmNrightWidget, window->iSearchClearButton,
+            /* XmNrightOffset, 5, */
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 0, /* see openmotif note above */
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 0, NULL);
+    RemapDeleteKey(window->iSearchText);
+
+    SetISearchTextCallbacks(window);
 }
 
 static Widget evTab;
@@ -1598,13 +1668,10 @@ void SplitPane(WindowInfo *window)
     textD = ((TextWidget)window->textArea)->text.textD;
     newTextD = ((TextWidget)text)->text.textD;
     XtVaSetValues(text,
-                XmNforeground, textD->fgPixel.pixel,
-                XmNbackground, textD->bgPixel.pixel,
+                XmNforeground, textD->colorProfile->textFgColor.pixel,
+                XmNbackground, textD->colorProfile->textBgColor.pixel,
                 NULL);
-    TextDSetColors( newTextD, &textD->fgPixel, &textD->bgPixel, 
-            &textD->selectFGPixel, &textD->selectBGPixel, &textD->highlightFGPixel,
-            &textD->highlightBGPixel, &textD->lineNumFGPixel, &textD->lineNumBGPixel,
-            &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
+    TextDSetColorProfile(newTextD, textD->colorProfile);
     
     /* Set the minimum pane height in the new pane */
     UpdateMinPaneHeights(window);
@@ -2369,7 +2436,7 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     UpdateMinPaneHeights(window);
 }
 
-void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
+void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
         const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
         const char *cursorFg, const char *lineHiBg)
@@ -2415,7 +2482,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
             XmNbackground, textBgPix,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
-    TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+    TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
             &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
             &cursorFgC, &lineHiBgC );
     /* Update any additional panes */
@@ -2425,7 +2492,7 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
                 XmNbackground, textBgPix,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
-        TextDSetColors( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
+        TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
                 &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
                 &cursorFgC, &lineHiBgC );
     }
@@ -2436,6 +2503,115 @@ void SetColors(WindowInfo *window, const char *textFg, const char *textBg,
     
     /* Update FontSel colors */
     FontSelSetColors(textFgC, textBgPix);
+}
+
+void LoadColorProfile(Widget w, ColorProfile *profile)
+{
+    Colormap     cmap;
+    Pixel        foreground;
+    int          depth;
+    XtVaGetValues(w,
+                  XtNcolormap,   &cmap,
+                  XtNdepth,      &depth,
+                  XtNforeground, &foreground,
+                  NULL);
+    
+    Display *display = XtDisplay(w);   
+    
+    int i, dummy;
+        Pixel   textFgPix   = AllocColor( w, profile->textFg, 
+                    &dummy, &dummy, &dummy),
+            textBgPix   = AllocColor( w, profile->textBg, 
+                    &dummy, &dummy, &dummy),
+            selectFgPix = AllocColor( w, profile->selectFg, 
+                    &dummy, &dummy, &dummy),
+            selectBgPix = AllocColor( w, profile->selectBg, 
+                    &dummy, &dummy, &dummy),
+            hiliteFgPix = AllocColor( w, profile->hiliteFg, 
+                    &dummy, &dummy, &dummy),
+            hiliteBgPix = AllocColor( w, profile->hiliteBg, 
+                    &dummy, &dummy, &dummy),
+            lineNoFgPix = AllocColor( w, profile->lineNoFg, 
+                    &dummy, &dummy, &dummy),
+            lineNoBgPix = AllocColor( w, profile->lineNoBg, 
+                    &dummy, &dummy, &dummy),
+            cursorFgPix = AllocColor( w, profile->cursorFg, 
+                    &dummy, &dummy, &dummy),
+            lineHiBgPix = AllocColor( w, profile->lineHiBg, 
+                    &dummy, &dummy, &dummy);
+    textDisp *textD;
+    
+    profile->textFgColor = PixelToColor(w, textFgPix);
+    profile->textBgColor = PixelToColor(w, textBgPix);
+    profile->selectFgColor = PixelToColor(w, selectFgPix);
+    profile->selectBgColor = PixelToColor(w, selectBgPix);
+    profile->hiliteFgColor = PixelToColor(w, hiliteFgPix);
+    profile->hiliteBgColor = PixelToColor(w, hiliteBgPix);
+    profile->lineNoFgColor = PixelToColor(w, lineNoFgPix);
+    profile->lineNoBgColor = PixelToColor(w, lineNoBgPix);
+    profile->cursorFgColor = PixelToColor(w, cursorFgPix);
+    profile->lineHiBgColor = PixelToColor(w, lineHiBgPix);
+    
+    if(profile->rainbowColorList) {
+        ColorList rainbowColors = ParseColorList(profile->rainbowColorList, strlen(profile->rainbowColorList));
+        profile->rainbowColors = NEditCalloc(rainbowColors.ncolors, sizeof(XftColor));
+        for(int i=0;i<rainbowColors.ncolors;i++) {
+            profile->rainbowColors[i] = ParseXftColor(display, cmap, foreground, depth, rainbowColors.colors[i]);
+        }
+        profile->numRainbowColors = rainbowColors.ncolors;
+        free(rainbowColors.colors);
+        free(rainbowColors.liststr);
+    }
+    
+    if(profile->ansiColorList) {
+        ColorList ansiColors = ParseColorList(profile->ansiColorList, strlen(profile->ansiColorList));
+        profile->ansiColors = NEditCalloc(ansiColors.ncolors, sizeof(XftColor));
+        for(int i=0;i<ansiColors.ncolors;i++) {
+            profile->ansiColors[i] = ParseXftColor(display, cmap, foreground, depth, ansiColors.colors[i]);
+        }
+        profile->numAnsiColors = ansiColors.ncolors;
+        free(ansiColors.colors);
+        free(ansiColors.liststr);
+    }
+    
+    if(!profile->db || !profile->resDBLoaded) {
+        LoadColorProfileResources(display, profile);
+    }
+    
+    if(!profile->stylesLoaded) {
+        ColorProfileLoadHighlightStyles(profile);
+    }
+    
+    profile->colorsLoaded = TRUE;
+}
+
+void SetColorProfile(WindowInfo *window, ColorProfile *profile)
+{
+    if(!profile->colorsLoaded) {
+        LoadColorProfile(window->textArea, profile);
+    }
+    window->colorProfile = profile;
+    
+    /* Update the main pane */
+    XtVaSetValues(window->textArea,
+            XmNforeground, profile->textFgColor.pixel,
+            XmNbackground, profile->textBgColor.pixel,
+            NULL);
+    textDisp *textD = ((TextWidget)window->textArea)->text.textD;
+    TextDSetColorProfile( textD, profile);
+    /* Update any additional panes */
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(window->textPanes[i],
+                XmNforeground, profile->textFgColor.pixel,
+                XmNbackground, profile->textBgColor.pixel,
+                NULL);
+        textD = ((TextWidget)window->textPanes[i])->text.textD;
+        TextDSetColorProfile( textD, profile);
+    }
+    
+    /* Redo any syntax highlighting */
+    if (window->highlightData != NULL)
+        UpdateHighlightStyles(window, True);
 }
 
 /*
@@ -3693,7 +3869,7 @@ void SetHighlightCursorLine(WindowInfo *window, Boolean state)
     }
 }
 
-void SetIndentRainbowColors(WindowInfo *window, const char *colorList)
+void SetIndentRainbowColors_Deprecated(WindowInfo *window, const char *colorList)
 {
     NEditFree(window->indentRainbowColors);
     window->indentRainbowColors = NEditStrdup(colorList);
@@ -3727,7 +3903,7 @@ void SetAnsiColors(WindowInfo *window, Boolean state)
     }
 }
 
-void SetAnsiColorList(WindowInfo *window, const char *colorList)
+void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList)
 {
     memset(window->ansiColorList, 0, sizeof(window->ansiColorList));
     
@@ -4074,7 +4250,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->lastFocus = text;
     
     /* Set the initial colors from the globals. */
-    SetColors(window,
+    SetColors_Deprecated(window,
               GetPrefColorName(TEXT_FG_COLOR  ),
               GetPrefColorName(TEXT_BG_COLOR  ),
               GetPrefColorName(SELECT_FG_COLOR),
@@ -4085,6 +4261,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
               GetPrefColorName(LINENO_BG_COLOR),
               GetPrefColorName(CURSOR_FG_COLOR),
               GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    SetColorProfile(window, shellWindow->colorProfile);
+    // TODO: remove XtVaSetValues here, changing the color profile is enough
     XtVaSetValues(window->textArea,
           textNansiColorList, window->ansiColorList, NULL);
     for (int i=0; i<window->nPanes; i++) {
@@ -5194,14 +5372,10 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
-            XtVaSetValues(text, XmNforeground, textD->fgPixel.pixel,
-                    XmNbackground, textD->bgPixel.pixel, 
+            XtVaSetValues(text, XmNforeground, textD->colorProfile->textFgColor.pixel,
+                    XmNbackground, textD->colorProfile->textBgColor.pixel, 
                     textNansiColorList, window->ansiColorList, NULL);
-            TextDSetColors(newTextD, &textD->fgPixel, &textD->bgPixel, 
-                    &textD->selectFGPixel, &textD->selectBGPixel,
-                    &textD->highlightFGPixel, &textD->highlightBGPixel,
-                    &textD->lineNumFGPixel, &textD->lineNumBGPixel,
-                    &textD->cursorFGPixel, &textD->lineHighlightBGPixel);
+            TextDSetColorProfile(newTextD, textD->colorProfile);
 	}
         
 	/* Set the minimum pane height in the new pane */
@@ -5292,7 +5466,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
-    SetIndentRainbowColors(window, orgWin->indentRainbowColors);
+    SetIndentRainbowColors_Deprecated(window, orgWin->indentRainbowColors);
     SetAnsiColors(window, orgWin->ansiColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     
@@ -6030,4 +6204,195 @@ static void windowStructureNotifyEventEH(
         updateWindowMapStatus(widget, True);
         InvalidateWindowMenus();
     }
+}
+
+
+
+typedef struct CPDummyWindow {
+    Widget shell;
+    Widget mainWin;
+    Widget form;
+    Widget menubar;
+    Widget button;
+    Widget togglebutton;
+    Widget label;
+    Widget textfield1;
+    Widget textfield2;
+    Widget textfield3;
+    Widget scrollbar;
+    Widget folder;
+} CPDummyWindow;
+
+static void clearCompositeWidget(Widget w)
+{
+    WidgetList children;
+    Cardinal numChildren;
+    XtVaGetValues(w, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    for(int i=0;i<numChildren;i++) {
+        XtUnmanageChild(children[i]);
+        XtDestroyWidget(children[i]);
+    }
+}
+
+static void UpdateWidgetValues(Widget dst, Widget src)
+{
+    if(dst->core.widget_class == textWidgetClass) {
+        return; // textWidgetClass is updated separately
+    }
+
+    Pixel background, foreground, topShadowColor, bottomShadowColor, highlightColor, armColor;
+    Pixel selectBG, selectFG, troughColor, blankBackground, inactiveBackground, inactiveForeground;
+    Dimension shadowThickness, highlightThickness;
+    XtVaGetValues(src,
+            XmNbackground, &background,
+            XmNforeground, &foreground,
+            XmNtopShadowColor, &topShadowColor,
+            XmNbottomShadowColor, &bottomShadowColor,
+            XmNhighlightColor, &highlightColor,
+            XmNarmColor, &armColor,
+            XmNshadowThickness, &shadowThickness,
+            XmNhighlightThickness, &highlightThickness,
+            XmNselectBackground, &selectBG,
+            XmNselectForeground, &selectFG,
+            XmNtroughColor, &troughColor,
+            XmNblankBackground, &blankBackground,
+            XmNinactiveBackground, &inactiveBackground,
+            XmNinactiveForeground, &inactiveForeground,
+            NULL);
+    
+    XtVaSetValues(dst,
+            XmNbackground, background,
+            XmNforeground, foreground,
+            XmNtopShadowColor, topShadowColor,
+            XmNbottomShadowColor, bottomShadowColor,
+            XmNhighlightColor, highlightColor,
+            XmNarmColor, armColor,
+            XmNshadowThickness, shadowThickness,
+            XmNhighlightThickness, highlightThickness,
+            XmNselectBackground, selectBG,
+            XmNselectForeground, selectFG,
+            XmNtroughColor, troughColor,
+            XmNblankBackground, blankBackground,
+            XmNinactiveBackground, inactiveBackground,
+            XmNinactiveForeground, inactiveForeground,
+            NULL);
+}
+
+
+
+static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *template)
+{
+    UpdateWidgetValues(parent, src);
+
+    Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3, template->scrollbar };
+    size_t numSrcWidgets = 7;
+    
+    WidgetList children = NULL;
+    Cardinal numChildren = 0;
+    XtVaGetValues(parent, XmNchildren, &children, XmNnumChildren, &numChildren, NULL);
+    for(int i=0;i<numChildren;i++) {
+        Widget dst = children[i];
+        Widget src = template->togglebutton;
+        for(int s=0;s<numSrcWidgets;s++) {
+            if(children[i]->core.widget_class == srcWidgets[s]->core.widget_class) {
+                src = srcWidgets[s];
+                break;
+            }
+        }
+        UpdateWidgetsHierarchy(dst, src, template);
+    }
+}
+
+// Destroy the current horizontal and vertical scrollbar
+// and create a new pair of scrollbars for the given textArea
+static void RecreateTextareaScrollbar(Widget textArea)
+{
+    Widget textAreaFrame = XtParent(textArea);
+    Widget textAreaScrolledWindow = XtParent(textAreaFrame);
+
+    // get the scrollbars and the current values
+    Widget oldHscrollbar = NULL;
+    Widget oldVscrollbar = NULL;
+    XtVaGetValues(textAreaScrolledWindow, XmNhorizontalScrollBar, &oldHscrollbar, XmNverticalScrollBar, &oldVscrollbar, NULL);
+    if(!oldHscrollbar || !oldVscrollbar) {
+        fprintf(stderr, "Error: cannot update scrollbars\n");
+        return;
+    }
+    int hincrement, hmin, hmax, hpageIncrement, hsliderSize;
+    int vincrement, vmin, vmax, vpageIncrement, vsliderSize;
+    XtVaGetValues(oldHscrollbar, XmNincrement, &hincrement, XmNminimum, &hmin, XmNmaximum, &hmax, XmNpageIncrement, &hpageIncrement, XmNsliderSize, &hsliderSize, NULL);
+    XtVaGetValues(oldVscrollbar, XmNincrement, &vincrement, XmNminimum, &vmin, XmNmaximum, &vmax, XmNpageIncrement, &vpageIncrement, XmNsliderSize, &vsliderSize, NULL);
+
+    int hIsManaged = XtIsManaged(oldHscrollbar);
+    int vIsManaged = XtIsManaged(oldVscrollbar);
+
+    // unmanage and destroy
+    XtUnmanageChild(oldHscrollbar);
+    XtUnmanageChild(oldVscrollbar);
+    // when the old scrollbar is destroyed, the new scrollbar doesn't work correctly
+    //XtDestroyWidget(oldHscrollbar);
+    //XtDestroyWidget(oldVscrollbar);
+
+    // create new scrollbars
+    Widget newHscrollbar = XtVaCreateManagedWidget(
+            "textHorScrollBar",
+            xmScrollBarWidgetClass, textAreaScrolledWindow, XmNorientation, XmHORIZONTAL,
+            XmNrepeatDelay, 10, NULL);
+    Widget newVscrollbar = XtVaCreateManagedWidget(
+            "textVertScrollBar",
+            xmScrollBarWidgetClass, textAreaScrolledWindow, XmNorientation, XmVERTICAL,
+            XmNrepeatDelay, 10, NULL);
+    XtVaSetValues(newHscrollbar, XmNincrement, hincrement, XmNminimum, hmin, XmNmaximum, hmax, XmNpageIncrement, hpageIncrement, XmNsliderSize, hsliderSize, NULL);
+    XtVaSetValues(newVscrollbar, XmNincrement, vincrement, XmNminimum, vmin, XmNmaximum, vmax, XmNpageIncrement, vpageIncrement, XmNsliderSize, vsliderSize, NULL);
+
+    XtVaSetValues(textAreaScrolledWindow, XmNhorizontalScrollBar,
+                  newHscrollbar, XmNverticalScrollBar, newVscrollbar, NULL);
+    XtVaSetValues(textArea, textNhScrollBar, newHscrollbar, textNvScrollBar, newVscrollbar, NULL);
+
+    if(!hIsManaged) {
+        XtUnmanageChild(newHscrollbar);
+    }
+    if(!vIsManaged) {
+        XtUnmanageChild(newVscrollbar);
+    }
+}
+
+void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
+{
+    CPDummyWindow dw;
+    dw.shell = CreateWidget(TheAppShell, "textShell", topLevelShellWidgetClass, NULL, 0);
+    dw.mainWin = XmCreateMainWindow(dw.shell, "main", NULL, 0);
+    dw.menubar = XmCreateMenuBar(dw.mainWin, "menuBar", NULL, 0);
+    dw.form = XmCreateForm(dw.mainWin, "form", NULL, 0);
+    dw.button = XmCreatePushButton(dw.form, "button", NULL, 0);
+    dw.togglebutton = XmCreateToggleButton(dw.form, "togglebutton", NULL, 0);
+    dw.label = XmCreateLabel(dw.form, "label", NULL, 0);
+    dw.textfield1 = XmCreateTextField(dw.form, "textfield1", NULL, 0);
+    dw.textfield2 = XmCreateText(dw.form, "textfield2", NULL, 0);
+    dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
+    dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
+    dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
+
+    if(updateMenuBar) {
+        UpdateWidgetValues(window->menuBar, dw.menubar);
+        RecreateMenuBar(window->mainWin, window->menuBar, window, True);
+    }
+
+    UpdateWidgetValues(window->mainWin, dw.mainWin);
+    Widget winForm = XtParent(window->iSearchForm);
+    UpdateWidgetValues(winForm, dw.form);
+
+    UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
+    clearCompositeWidget(window->iSearchForm);
+    createSearchForm(window);
+    
+    Widget tabbar = window->tabBar;
+    Widget tabform = XtParent(tabbar);
+    UpdateWidgetValues(tabform, dw.form);
+    
+    UpdateWidgetsHierarchy(window->statsLineForm, dw.form, &dw);
+    UpdateWidgetsHierarchy(window->tabBar, dw.folder, &dw);
+    UpdateWidgetsHierarchy(window->splitPane, dw.form, &dw);
+
+    XtDestroyWidget(dw.shell);
 }

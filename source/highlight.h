@@ -71,6 +71,7 @@ void UpdateHighlightStyles(WindowInfo *window, Boolean redisplay);
 int TestHighlightPatterns(patternSet *patSet);
 Pixel AllocateColor(Widget w, const char *colorName);
 void SetParseColorError(int value);
+XftColor ParseXftColor(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName);
 Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b);
 XftColor AllocXftColor(Widget w, const char *colorName);
 void* GetHighlightInfo(WindowInfo *window, int pos);
@@ -84,5 +85,7 @@ XftColor HighlightColorValueOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b);
 XftColor GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
       int *r, int *g, int *b);
+
+XftColor LightenColor(XftColor color);
 
 #endif /* NEDIT_HIGHLIGHT_H_INCLUDED */

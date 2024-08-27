@@ -107,6 +107,8 @@ static void noWarningFilter(String);
 static void showWarningFilter(String);
 static void dndOpenFileCB(Widget w, XtPointer value, XtPointer data);
 
+static XrmDatabase defaultResourceDB;
+
 WindowInfo *WindowList = NULL;
 Display *TheDisplay = NULL;
 char *ArgV0 = NULL;
@@ -569,6 +571,8 @@ int main(int argc, char **argv)
 	fputs ("XNEdit: Can't open display\n", stderr);
 	exit(EXIT_FAILURE);
     }
+    
+    defaultResourceDB = XtScreenDatabase(DefaultScreenOfDisplay(TheDisplay)); //XrmGetDatabase(TheDisplay);
     
     /* Enable Xdnd */
     XdndInit(TheDisplay, context, dndOpenFileCB, NULL);
@@ -1379,4 +1383,9 @@ static void dndOpenFileCB(Widget w, XtPointer value, XtPointer data) {
     }
     
     NEditFree(path);
+}
+
+XrmDatabase GetDefaultResourceDB(void)
+{
+    return defaultResourceDB;
 }

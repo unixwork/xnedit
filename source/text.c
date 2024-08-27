@@ -942,23 +942,18 @@ static void initialize(TextWidget request, TextWidget new)
     int fontWidth = new->text.font->minWidth;
     textLeft = fontWidth/3 + 1 +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
-    new->text.textD = TextDCreate((Widget)new, new->text.hScrollBar,
+            new->text.textD = TextDCreate((Widget)new, new->text.hScrollBar,
 	    new->text.vScrollBar, textLeft, new->text.marginHeight,
 	    new->core.width - marginWidth - textLeft,
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
 	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
 	    buf,new->text.font, new->text.boldFont, new->text.italicFont,
-            new->text.boldItalicFont,new->core.background_pixel,
-	    new->primitive.foreground, new->text.selectFGPixel,
-	    new->text.selectBGPixel, new->text.highlightFGPixel,
-	    new->text.highlightBGPixel, new->text.cursorFGPixel,
-	    new->text.lineNumFGPixel, 0, // TODO: replace 0
-          new->text.continuousWrap, new->text.wrapMargin,
-          new->text.backlightCharTypes, new->text.calltipFGPixel,
-          new->text.calltipBGPixel, 0, new->text.ansiColorList, // TODO: replace 0
-          new->text.indentRainbow, new->text.indentRainbowColors,
-          new->text.highlightCursorLine, new->text.ansiColors);
+            new->text.boldItalicFont,GetDefaultColorProfile(),
+            new->text.continuousWrap, new->text.wrapMargin,
+            new->text.backlightCharTypes, new->text.calltipFGPixel,
+            new->text.calltipBGPixel, 0, new->text.indentRainbow,
+            new->text.highlightCursorLine, new->text.ansiColors);
 
     /* Add mandatory delimiters blank, tab, and newline to the list of
        delimiters.  The memory use scheme here is that new values are
@@ -1360,7 +1355,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
     {
         TextDSetupBGClasses((Widget)new, new->text.backlightCharTypes,
                 &new->text.textD->bgClassPixel, &new->text.textD->bgClass,
-                new->text.textD->bgPixel);
+                new->text.textD->colorProfile->textBgColor);
         redraw = True;
     }
     
@@ -1380,7 +1375,7 @@ static Boolean setValues(TextWidget current, TextWidget request,
         if(current->text.indentRainbowColors) {
             NEditFree(current->text.indentRainbowColors);
         }
-        TextDSetIndentRainbowColors(new->text.textD, new->text.indentRainbowColors);
+        TextDSetIndentRainbowColors_Deprecated(new->text.textD, new->text.indentRainbowColors);
         new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
         redraw = True;
     }
@@ -1391,8 +1386,15 @@ static Boolean setValues(TextWidget current, TextWidget request,
     }
     
     if (new->text.ansiColorList != current->text.ansiColorList) {
-        TextDSetAnsiColorList(new->text.textD, new->text.ansiColorList);
+        TextDSetAnsiColorList_Deprecated(new->text.textD, new->text.ansiColorList);
         redraw = True;
+    }
+
+    if(new->text.hScrollBar != current->text.hScrollBar) {
+        new->text.textD->hScrollBar = new->text.hScrollBar;
+    }
+    if(new->text.vScrollBar != current->text.vScrollBar) {
+        new->text.textD->vScrollBar = new->text.vScrollBar;
     }
     
     return redraw;
@@ -5029,13 +5031,13 @@ void ResetCursorBlink(TextWidget textWidget, Boolean startsBlanked)
 XftColor TextGetFGColor(Widget w)
 {
     TextWidget textWidget = (TextWidget)w;
-    return textWidget->text.textD->fgPixel;
+    return textWidget->text.textD->colorProfile->textFgColor;
 }
 
 XftColor TextGetBGColor(Widget w)
 {
     TextWidget textWidget = (TextWidget)w;
-    return textWidget->text.textD->bgPixel;
+    return textWidget->text.textD->colorProfile->textBgColor;
 }
 
 int TextLookupString(

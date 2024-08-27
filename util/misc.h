@@ -147,6 +147,6 @@ char* ConvertEncoding(const char *string, const char *to, const char *from);
 char* ConvertEncodingLen(const char *string, size_t len, const char *to, const char *from);
 char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
-void EnableWindowDarkTheme(Display *dp, Window window);
+void SetWindowGtkThemeVariant(Display *dp, Window window, int theme);
 
 #endif /* NEDIT_MISC_H_INCLUDED */

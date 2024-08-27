@@ -1,6 +1,6 @@
 /*******************************************************************************
 *                                                                              *
-* highlightData.h -- Nirvana Editor Highlight Data Header File                 *
+* colorprofile.h -- Nirvana Editor Text Diplay Header File                     *
 *                                                                              *
 * Copyright 2003 The NEdit Developers                                          *
 *                                                                              *
@@ -22,40 +22,77 @@
 * Nirvana Text Editor                                                          *
 * July 31, 2001                                                                *
 *                                                                              *
+* colorprofile.h:                                                              *
+*    Author: Olaf Wintermann                                                   *
+*                                                                              *
 *******************************************************************************/
 
-#ifndef NEDIT_HIGHLIGHTDATA_H_INCLUDED
-#define NEDIT_HIGHLIGHTDATA_H_INCLUDED
+#ifndef XNEDIT_COLORPROFILE_H
+#define XNEDIT_COLORPROFILE_H
 
-#include "nedit.h"
-#include "highlight.h"
-#include "colorprofile.h"
-
+#include <X11/Xft/Xft.h>
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
 
-#include "textDisp.h"
+typedef struct {
+    char *name;
+    char *color;
+    char *bgColor;
+    int font;
+} highlightStyleRec;
 
-void SetColorProfileName(const char *profileName);
-void SetColorProfileStyleType(int profileStyleType);
-void ColorProfileLoadHighlightStyles(ColorProfile *profile);
-patternSet *FindPatternSet(const char *langModeName);
-int LoadHighlightString(char *inString, int convertOld);
-char *WriteHighlightString(void);
-int LoadStylesString(char *inString, Boolean profile);
-char *WriteStylesString(void);
-char *WriteColorProfileStylesString(void);
-void EditHighlightStyles(const char *initialStyle);
-void EditHighlightPatterns(WindowInfo *window);
-void UpdateLanguageModeMenu(void);
-int LMHasHighlightPatterns(const char *languageMode);
-NFont *FontOfNamedStyle(ColorProfile *colorProfile, WindowInfo *window, const char *styleName);
-int FontOfNamedStyleIsBold(ColorProfile *colorProfile, char *styleName);
-int FontOfNamedStyleIsItalic(ColorProfile *colorProfile, char *styleName);
-char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
-char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
-int IndexOfNamedStyle(ColorProfile *colorProfile, const char *styleName);
-int NamedStyleExists(ColorProfile *colorProfile, const char *styleName);
-void RenameHighlightPattern(const char *oldName, const char *newName);
+typedef struct _ColorProfile {
+    char     *name;
 
-#endif /* NEDIT_HIGHLIGHTDATA_H_INCLUDED */
+    char     *textFg;
+    char     *textBg;
+    char     *selectFg;
+    char     *selectBg;
+    char     *hiliteFg;
+    char     *hiliteBg;
+    char     *lineNoFg;
+    char     *lineNoBg;
+    char     *cursorFg;
+    char     *lineHiBg;
+    char     *ansiColorList;
+    char     *rainbowColorList;
+
+    Boolean  colorsLoaded;
+    Boolean  stylesLoaded;
+    Boolean  resDBLoaded;
+
+    XftColor textFgColor;
+    XftColor textBgColor;
+    XftColor selectFgColor;
+    XftColor selectBgColor;
+    XftColor hiliteFgColor;
+    XftColor hiliteBgColor;
+    XftColor lineNoFgColor;
+    XftColor lineNoBgColor;
+    XftColor cursorFgColor;
+    XftColor lineHiBgColor;
+
+    XftColor *ansiColors;
+    size_t   numAnsiColors;
+    XftColor *rainbowColors;
+    size_t   numRainbowColors;
+
+    int styleType; // 0: default     styles points to default text styles
+                   // 1: lightened   lightened default colors (styles allocated)
+                   // 2: custom      custom color profile text styles (styles allocated)
+    highlightStyleRec **styles;
+    size_t numStyles;
+    size_t stylesAlloc;
+
+    char     *resourceFile;
+    int      windowThemeVariant; // 0: undefined, 1: light, 2: dark
+    XrmDatabase db;
+
+    Boolean modified;
+    Boolean removed;
+    struct _ColorProfile *orig;
+
+    struct _ColorProfile *next;
+} ColorProfile;
+
+#endif /* XNEDIT_COLORPROFILE_H */

@@ -48,6 +48,12 @@ enum helpFonts {HELP_FONT, BOLD_HELP_FONT, ITALIC_HELP_FONT,
     H1_HELP_FONT, H2_HELP_FONT, H3_HELP_FONT, NUM_HELP_FONTS
 };
 
+typedef struct ColorList {
+    char *liststr;
+    char **colors;
+    size_t ncolors;
+} ColorList;
+
 XrmDatabase CreateNEditPrefDB(int *argcInOut, char **argvInOut);
 void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB);
 void SaveNEditPrefs(Widget parent, int quietly);
@@ -205,6 +211,8 @@ Widget CreateLanguageModeMenu(Widget parent, XtCallbackProc cbProc,
 void SetLangModeMenu(Widget optMenu, const char *modeName);
 void CreateLanguageModeSubMenu(WindowInfo* window, const Widget parent,
         const char* name, const char* label, char mnemonic);
+void CreateColorProfilesSubMenu(WindowInfo *window, const Widget parent,
+        const char *name, const char *label, char mnemonic);
 void SetPrefFindReplaceUsesSelection(int state);
 int GetPrefFindReplaceUsesSelection(void);
 int GetPrefStickyCaseSenseBtn(void);
@@ -239,6 +247,20 @@ int GetPrefISrcClearIconSize(void);
 void SetPrefLockEncodingError(int state);
 int GetPrefLockEncodingError(void);
 
+ColorProfile* GetDefaultColorProfile(void);
+ColorProfile* GetColorProfiles(void);
+ColorProfile* GetColorProfile(const char *name);
+char* GetPrefDefaultColorProfileName(void);
+void SetPrefDefaultColorProfileName(const char *str);
+
+void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to);
+int ColorProfileResourceDBEqual(ColorProfile *c1, ColorProfile *c2);
+
+int GetNumColorProfiles(void);
+
+char* WriteColorProfilesString(void);
+
+
 void SetPrefUndoPurgeLimit(int limit);
 int GetPrefUndoPurgeLimit(void);
 void SetPrefUndoPurgeTrimTo(int limit);
@@ -254,6 +276,11 @@ int GetPrefUndoOpTrimTo(void);
 
 char* ChangeFontSize(const char *name, int newsize);
 
+ColorList ParseColorList(const char *str, size_t len);
+void ColorProfileDestroy(ColorProfile *profile);
+void ColorProfileFreeContent(ColorProfile *profile);
 char* ParseAnsiColorList(char **array, const char *str);
+
+void ParseColorProfiles(const char *str);
 
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */

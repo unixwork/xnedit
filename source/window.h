@@ -32,6 +32,7 @@
 
 #include <X11/Intrinsic.h>
 
+void LoadColorProfileResources(Display *display, ColorProfile *profile);
 void AttachSessionMgrHandler(Widget appShell);
 WindowInfo *CreateWindow(const char *title, char *geometry, int iconic);
 void CloseWindow(WindowInfo *window);
@@ -50,10 +51,12 @@ void SetAutoIndent(WindowInfo *window, IndentStyle state);
 void SetShowMatching(WindowInfo *window, ShowMatchingStyle state);
 void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
 	const char *boldName, const char *boldItalicName);
-void SetColors(WindowInfo *window, const char *textFg, const char *textBg,  
+void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *textBg,  
         const char *selectFg, const char *selectBg, const char *hiliteFg, 
         const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
         const char *cursorFg, const char *lineHiBg);
+void SetColorProfile(WindowInfo *window, ColorProfile *profile);
+void LoadColorProfile(Widget w, ColorProfile *profile);
 void SetOverstrike(WindowInfo *window, int overstrike);
 void SetAutoWrap(WindowInfo *window, WrapStyle state);
 void SetAutoScroll(WindowInfo *window, int margin);
@@ -104,10 +107,10 @@ void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
 void SwitchTabs(Widget from, Widget to);
 void SetHighlightCursorLine(WindowInfo *window, Boolean state);
-void SetIndentRainbowColors(WindowInfo *window, const char *colorList);
+void SetIndentRainbowColors_Deprecated(WindowInfo *window, const char *colorList);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetAnsiColors(WindowInfo *window, Boolean state);
-void SetAnsiColorList(WindowInfo *window, const char *colorList);
+void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);
@@ -117,4 +120,5 @@ void SetEncoding(WindowInfo *window, const char *encoding);
 void SetFilter(WindowInfo *window, const char *filter);
 void SetZoom(WindowInfo *window, int step);
 void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors);
+void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar);
 #endif /* NEDIT_WINDOW_H_INCLUDED */

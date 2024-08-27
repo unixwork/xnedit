@@ -28,6 +28,7 @@
 #define NEDIT_TEXTDISP_H_INCLUDED
 
 #include "textBuf.h"
+#include "colorprofile.h"
 
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
@@ -187,29 +188,18 @@ struct _textDisp {
     GC cursorFGGC;			/* GC for drawing the cursor */
     
     XftColor styleGC;
-    
-    XftColor fgPixel, bgPixel;		/* Foreground/Background colors */
-    XftColor selectFGPixel,		/* Foreground select color */
-             selectBGPixel;   		/* Background select color */
-    XftColor highlightFGPixel,          /* Highlight colors are used when */
-             highlightBGPixel;          /*    flashing matching parens    */
-    XftColor lineNumFGPixel;   	    	/* Color for drawing line numbers */
-    XftColor lineNumBGPixel;               /* Background color for line numbers */
-    XftColor lineHighlightBGPixel;         /* BG for highlighted cursor line */
-    XftColor cursorFGPixel;
     XftColor *bgClassPixel;		/* table of colors for each BG class */
     
-    XftColor fgColor;                   /* Foreground text color */
-    XftColor selectFGColor;             /* Foreground color for selected text */
-    XftColor highlightFGColor;          /* Foreground highlighted text color */
     unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
     
     Boolean indentRainbow;
-    XftColor *indentRainbowColors;
-    int numRainbowColors;
+    //XftColor *indentRainbowColors;
+    //int numRainbowColors;
     
     Boolean ansiColors;
-    XftColor *ansiColorList;
+    //XftColor *ansiColorList;
+    
+    ColorProfile *colorProfile;
     
     Widget calltipW;                    /* The Label widget for the calltip */
     Widget calltipShell;                /* The Shell that holds the calltip */
@@ -244,12 +234,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
         NFont *font, NFont *bold, NFont *italic, NFont *boldItalic,
-        Pixel bgPixel, Pixel fgPixel, Pixel selectFGPixel,
-        Pixel selectBGPixel, Pixel highlightFGPixel, Pixel highlightBGPixel,
-        Pixel cursorFGPixel, Pixel lineNumFGPixel, Pixel lineNumBGPixel,
-        int continuousWrap, int wrapMargin, XmString bgClassString,
-        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        XftColor *ansiColorList, Boolean indentRainbow, char *indentRainbowColors,
+        ColorProfile *colorProfile, int continuousWrap, int wrapMargin,
+        XmString bgClassString, Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Pixel lineHighlightBGPixel, Boolean indentRainbow,
         Boolean highlightCursorLine, Boolean ansiColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
@@ -257,9 +244,10 @@ void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
-void TextDSetColors(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
+void TextDSetColors_Deprecated(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
         XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
         XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP);
+void TextDSetColorProfile(textDisp *textD, ColorProfile *profile);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 void TextDSetBoldFont(textDisp *textD, NFont *boldFont);
 void TextDSetItalicFont(textDisp *textD, NFont *boldFont);
@@ -321,11 +309,11 @@ int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);
 void TextDSetHighlightCursorLine(textDisp *textD, Boolean state);
 void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
-void TextDSetIndentRainbowColors(textDisp *textD, const char *colors);
+void TextDSetIndentRainbowColors_Deprecated(textDisp *textD, const char *colors);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
 textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
-void TextDSetAnsiColorList(textDisp *textD, XftColor *colors);
+void TextDSetAnsiColorList_Deprecated(textDisp *textD, XftColor *colors);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

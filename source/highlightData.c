@@ -32,6 +32,7 @@
 #endif
 
 #include "highlightData.h"
+#include "colorprofile.h"
 #include "textBuf.h"
 #include "nedit.h"
 #include "highlight.h"
@@ -81,19 +82,15 @@ enum fontTypes {PLAIN_FONT, ITALIC_FONT, BOLD_FONT, BOLD_ITALIC_FONT};
 static const char *FontTypeNames[N_FONT_TYPES] =
    {"Plain", "Italic", "Bold", "Bold Italic"};
 
-typedef struct {
-    char *name;
-    char *color;
-    char *bgColor;
-    int font;
-} highlightStyleRec;
+static char *currentColorProfileName = NULL;
+static int currentColorProfileStyleType = 0;
 
 static int styleError(const char *stringStart, const char *stoppedAt,
        const char *message);
 #if 0
 static int lookupNamedPattern(patternSet *p, char *patternName);
 #endif
-static int lookupNamedStyle(const char *styleName);
+static int lookupNamedStyle(ColorProfile *colorProfile, const char *styleName);
 static highlightPattern *readHighlightPatterns(char **inPtr, int withBraces,
        char **errMsg, int *nPatterns);
 static int readHighlightPattern(char **inPtr, char **errMsg,
@@ -168,6 +165,7 @@ static struct {
     Widget managedListW;
     highlightStyleRec **highlightStyleList;
     int nHighlightStyles;
+    char   *colorProfileName;
 } HSDialog = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0};
 
 /* Highlight dialog information */
@@ -1097,15 +1095,36 @@ static char *DefaultPatternSets[] = {
 };
 
 
+void SetColorProfileName(const char *profileName)
+{
+    NEditFree(currentColorProfileName);
+    currentColorProfileName = profileName ? NEditStrdup(profileName) : NULL;
+}
+
+void SetColorProfileStyleType(int profileStyleType)
+{
+    currentColorProfileStyleType = profileStyleType;
+}
+
+void ColorProfileLoadHighlightStyles(ColorProfile *profile)
+{
+    if(profile->styleType != 2) {
+        profile->styles = HighlightStyles;
+        profile->numStyles = NHighlightStyles;
+    }
+    profile->stylesLoaded = True;
+}
+
 /*
 ** Read a string (from the  value of the styles resource) containing highlight
 ** styles information, parse it, and load it into the stored highlight style
 ** list (HighlightStyles) for this NEdit session.
 */
-int LoadStylesString(char *inString)
+int LoadStylesString(char *inString, Boolean profile)
 {    
     char *errMsg, *fontStr;
     char *inPtr = inString;
+    ColorProfile *colorProfile = NULL;
     highlightStyleRec *hs;
     int i;
 
@@ -1117,68 +1136,110 @@ int LoadStylesString(char *inString)
 	/* Allocate a language mode structure in which to store the info. */
 	hs = (highlightStyleRec *)NEditMalloc(sizeof(highlightStyleRec));
 
-	/* read style name */
-	hs->name = ReadSymbolicField(&inPtr);
-	if (hs->name == NULL)
-    	    return styleError(inString,inPtr, "style name required");
-	if (!SkipDelimiter(&inPtr, &errMsg)) {
-	    NEditFree(hs->name);
-	    NEditFree(hs);
-    	    return styleError(inString,inPtr, errMsg);
-    	}
-    	
-    	/* read color */
-	hs->color = ReadSymbolicField(&inPtr);
-	if (hs->color == NULL) {
-	    NEditFree(hs->name);
-	    NEditFree(hs);
-    	    return styleError(inString,inPtr, "color name required");
-	}
+        /* read profile name */
+        if(profile) {
+            char *profileName = ReadSymbolicField(&inPtr);
+            if(!profileName) {
+                return styleError(inString,inPtr, "profile name required");
+            }
+            colorProfile = GetColorProfile(profileName);
+            if(!colorProfile) {
+                fprintf(stderr, "XNEdit: Unknown color profile '%s' in styles string\n", profileName);
+                NEditFree(profileName);
+                return False;
+            }
+            NEditFree(profileName);
+            if (!SkipDelimiter(&inPtr, &errMsg)) {
+                NEditFree(hs);
+                return styleError(inString,inPtr, errMsg);
+            }
+        }
+
+        /* read style name */
+        hs->name = ReadSymbolicField(&inPtr);
+        if (hs->name == NULL) {
+            NEditFree(hs);
+            return styleError(inString,inPtr, "style name required");
+        }  
+
+        if (!SkipDelimiter(&inPtr, &errMsg)) {
+            NEditFree(hs->name);
+            NEditFree(hs);
+            return styleError(inString,inPtr, errMsg);
+        }
+
+        /* read color */
+        hs->color = ReadSymbolicField(&inPtr);
+        if (hs->color == NULL) {
+            NEditFree(hs->name);
+            NEditFree(hs);
+            return styleError(inString,inPtr, "color name required");
+        }
         hs->bgColor = NULL;
         if (SkipOptSeparator('/', &inPtr)) {
-    	    /* read bgColor */
-	    hs->bgColor = ReadSymbolicField(&inPtr); /* no error if fails */
-    	}
-	if (!SkipDelimiter(&inPtr, &errMsg)) {
-	    freeHighlightStyleRec(hs);
-    	    return styleError(inString,inPtr, errMsg);
-    	}
-    	
-	/* read the font type */
-	fontStr = ReadSymbolicField(&inPtr);
-	for (i=0; i<N_FONT_TYPES; i++) {
-	    if (!strcmp(FontTypeNames[i], fontStr)) {
-	    	hs->font = i;
-	    	break;
-	    }
-	}
-	if (i == N_FONT_TYPES) {
-	    NEditFree(fontStr);
-	    freeHighlightStyleRec(hs);
-	    return styleError(inString, inPtr, "unrecognized font type");
-	}
-	NEditFree(fontStr);
+            /* read bgColor */
+            hs->bgColor = ReadSymbolicField(&inPtr); /* no error if fails */
+        }
+        if (!SkipDelimiter(&inPtr, &errMsg)) {
+            freeHighlightStyleRec(hs);
+            return styleError(inString,inPtr, errMsg);
+        }
 
-   	/* pattern set was read correctly, add/change it in the list */
-   	for (i=0; i<NHighlightStyles; i++) {
-	    if (!strcmp(HighlightStyles[i]->name, hs->name)) {
-		freeHighlightStyleRec(HighlightStyles[i]);
-		HighlightStyles[i] = hs;
-		break;
-	    }
-	}
-	if (i == NHighlightStyles) {
-	    HighlightStyles[NHighlightStyles++] = hs;
-   	    if (NHighlightStyles > MAX_HIGHLIGHT_STYLES)
-   		return styleError(inString, inPtr,
-   	    		"maximum allowable number of styles exceeded");
-	}
-	
-    	/* if the string ends here, we're done */
+        /* read the font type */
+        fontStr = ReadSymbolicField(&inPtr);
+        for (i=0; i<N_FONT_TYPES; i++) {
+            if (!strcmp(FontTypeNames[i], fontStr)) {
+                hs->font = i;
+                break;
+            }
+        }
+        if (i == N_FONT_TYPES) {
+            NEditFree(fontStr);
+            freeHighlightStyleRec(hs);
+            return styleError(inString, inPtr, "unrecognized font type");
+        }
+        NEditFree(fontStr);
+
+        /* pattern set was read correctly, add/change it in the list */
+        if(!profile) {
+            for (i=0; i<NHighlightStyles; i++) {
+                if (!strcmp(HighlightStyles[i]->name, hs->name)) {
+                    freeHighlightStyleRec(HighlightStyles[i]);
+                    HighlightStyles[i] = hs;
+                    break;
+                }
+            }
+
+            if (i == NHighlightStyles) {
+                HighlightStyles[NHighlightStyles++] = hs;
+                if (NHighlightStyles > MAX_HIGHLIGHT_STYLES) {
+                    return styleError(inString, inPtr,
+                                      "maximum allowable number of styles exceeded");
+                }
+            }
+        } else {
+            if(colorProfile->numStyles == colorProfile->stylesAlloc) {
+                if(colorProfile->stylesAlloc == 0) {
+                    colorProfile->stylesAlloc = 64;
+                } else {
+                    colorProfile->stylesAlloc += 16;
+                }
+                colorProfile->styles = NEditRealloc(
+                        colorProfile->styles,
+                        colorProfile->stylesAlloc * sizeof(highlightStyleRec*));
+            }
+            colorProfile->styles[colorProfile->numStyles++] = hs;
+            
+        }
+
+        /* if the string ends here, we're done */
    	inPtr += strspn(inPtr, " \t\n");
-    	if (*inPtr == '\0')
-    	    return True;
+    	if (*inPtr == '\0') {
+            return True;
+        }
     }
+
+    return False;
 }
 
 /*
@@ -1186,17 +1247,18 @@ int LoadStylesString(char *inString)
 ** all of the highlight styles information from the stored highlight style
 ** list (HighlightStyles) for this NEdit session.
 */
-char *WriteStylesString(void)
+static int createStylesString(textBuffer *outBuf, highlightStyleRec **styles, int nstyles, const char *colorProfileName)
 {
     int i;
-    char *outStr;
-    textBuffer *outBuf;
     highlightStyleRec *style;
     
-    outBuf = BufCreate();
-    for (i=0; i<NHighlightStyles; i++) {
-    	style = HighlightStyles[i];
+    for (i=0; i<nstyles; i++) {
+    	style = styles[i];
     	BufInsert(outBuf, outBuf->length, "\t");
+        if(colorProfileName) {
+            BufInsert(outBuf, outBuf->length, colorProfileName);
+            BufInsert(outBuf, outBuf->length, ":");
+        }
     	BufInsert(outBuf, outBuf->length, style->name);
     	BufInsert(outBuf, outBuf->length, ":");
     	BufInsert(outBuf, outBuf->length, style->color);
@@ -1209,8 +1271,33 @@ char *WriteStylesString(void)
     	BufInsert(outBuf, outBuf->length, "\\n\\\n");
     }
     
+    return i;
+}
+
+char *WriteStylesString(void)
+{
+    textBuffer *outBuf = BufCreate();
+    int i = createStylesString(outBuf, HighlightStyles, NHighlightStyles, NULL);
     /* Get the output, and lop off the trailing newlines */
-    outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
+    char *outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
+    BufFree(outBuf);
+    return outStr;
+}
+
+char *WriteColorProfileStylesString(void)
+{
+    textBuffer *outBuf = BufCreate();
+    int i = 0;
+    
+    ColorProfile *cp = GetColorProfiles();
+    while(cp) {
+        if(cp->styleType == 2) {
+            i += createStylesString(outBuf, cp->styles, cp->numStyles, cp->name);
+        }
+        cp = cp->next;
+    }
+    /* Get the output, and lop off the trailing newlines */
+    char *outStr = BufGetRange(outBuf, 0, outBuf->length - (i==1?0:4));
     BufFree(outBuf);
     return outStr;
 }
@@ -1360,15 +1447,16 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
 ** This routine must only be called with a valid styleName (call
 ** NamedStyleExists to find out whether styleName is valid).
 */
-NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
+NFont *FontOfNamedStyle(ColorProfile *colorProfile, WindowInfo *window, const char *styleName)
 {   
-    int styleNo=lookupNamedStyle(styleName);
+    // TODO: this function is just a workaround and not fully converted to Xft
+    int styleNo=lookupNamedStyle(window->colorProfile, styleName);
     int fontNum;
     NFont *font;
     
     if (styleNo<0)
         return window->font;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     if (fontNum == BOLD_FONT)
     	font = window->boldFont;
     else if (fontNum == ITALIC_FONT)
@@ -1382,23 +1470,23 @@ NFont *FontOfNamedStyle(WindowInfo *window, const char *styleName)
     return font == NULL ? window->font : font;
 }
 
-int FontOfNamedStyleIsBold(char *styleName)
+int FontOfNamedStyleIsBold(ColorProfile *colorProfile, char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName),fontNum;
+    int styleNo=lookupNamedStyle(colorProfile, styleName),fontNum;
     
     if (styleNo<0)
         return 0;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     return (fontNum == BOLD_FONT || fontNum == BOLD_ITALIC_FONT);
 }
 
-int FontOfNamedStyleIsItalic(char *styleName)
+int FontOfNamedStyleIsItalic(ColorProfile *colorProfile, char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName),fontNum;
+    int styleNo=lookupNamedStyle(colorProfile, styleName),fontNum;
     
     if (styleNo<0)
         return 0;
-    fontNum = HighlightStyles[styleNo]->font;
+    fontNum = colorProfile->styles[styleNo]->font;
     return (fontNum == ITALIC_FONT || fontNum == BOLD_ITALIC_FONT);
 }
 
@@ -1407,33 +1495,33 @@ int FontOfNamedStyleIsItalic(char *styleName)
 ** called with a valid styleName (call NamedStyleExists to find out whether
 ** styleName is valid).
 */
-char *ColorOfNamedStyle(const char *styleName)
+char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName);
+    int styleNo=lookupNamedStyle(colorProfile, styleName);
     
     if (styleNo<0)
         return "black";
-    return HighlightStyles[styleNo]->color;
+    return colorProfile->styles[styleNo]->color;
 }
 
 /*
 ** Find the background color associated with a named style.
 */
-char *BgColorOfNamedStyle(const char *styleName)
+char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    int styleNo=lookupNamedStyle(styleName);
+    int styleNo=lookupNamedStyle(colorProfile, styleName);
 
     if (styleNo<0)
         return "";
-    return HighlightStyles[styleNo]->bgColor;
+    return colorProfile->styles[styleNo]->bgColor;
 }
 
 /*
 ** Determine whether a named style exists
 */
-int NamedStyleExists(const char *styleName)
+int NamedStyleExists(ColorProfile *colorProfile, const char *styleName)
 {
-    return lookupNamedStyle(styleName) != -1;
+    return lookupNamedStyle(colorProfile, styleName) != -1;
 }
 
 /*
@@ -1862,14 +1950,27 @@ void EditHighlightStyles(const char *initialStyle)
     	return;
     }
     
+    int hsDiagNHighlightStyles = NHighlightStyles;
+    highlightStyleRec **hsDiagHighlightStyles = HighlightStyles;
+    if(currentColorProfileName && currentColorProfileStyleType == 2) {
+        HSDialog.colorProfileName = NEditStrdup(currentColorProfileName);
+        ColorProfile *colorProfile = GetColorProfile(currentColorProfileName);
+        if(colorProfile && colorProfile->styles) {
+            hsDiagNHighlightStyles = colorProfile->numStyles;
+            hsDiagHighlightStyles = colorProfile->styles;
+        }
+    } else {
+        HSDialog.colorProfileName = NULL;
+    }
+    
     /* Copy the list of highlight style information to one that the user
        can freely edit (via the dialog and managed-list code) */
     HSDialog.highlightStyleList = (highlightStyleRec **)NEditMalloc(
     	    sizeof(highlightStyleRec *) * MAX_HIGHLIGHT_STYLES);
-    for (i=0; i<NHighlightStyles; i++)
-    	HSDialog.highlightStyleList[i] =
-    	copyHighlightStyleRec(HighlightStyles[i]);
-    HSDialog.nHighlightStyles = NHighlightStyles;
+    for (i=0; i<hsDiagNHighlightStyles; i++) {
+        HSDialog.highlightStyleList[i] = copyHighlightStyleRec(hsDiagHighlightStyles[i]);
+    }	
+    HSDialog.nHighlightStyles = hsDiagNHighlightStyles;
     
     /* Create a form widget in an application shell */
     ac = 0;
@@ -1884,11 +1985,25 @@ void EditHighlightStyles(const char *initialStyle)
 	    XmNresizePolicy, XmRESIZE_NONE, NULL);
     XtAddCallback(form, XmNdestroyCallback, hsDestroyCB, NULL);
     AddMotifCloseCallback(HSDialog.shell, hsCloseCB, NULL);
+    
+    char *topLblStr = 
+    "To modify the properties of an existing highlight style, select the name\n\
+    from the list on the left.  Select \"New\" to add a new style to the list.";
+    
+    if(currentColorProfileName && currentColorProfileStyleType == 2) {
+        size_t topLblStrLen = strlen(topLblStr);
+        size_t currentColorProfileNameLen = strlen(currentColorProfileName);
+        size_t tlStrAlloc = currentColorProfileNameLen + topLblStrLen + 20;
+        char *tlStr = NEditMalloc(tlStrAlloc);
+        snprintf(tlStr, tlStrAlloc, "Color Profile: %s\n%s", currentColorProfileName, topLblStr);
+        s1=MKSTRING(tlStr);
+        free(tlStr);
+    } else {
+        s1=MKSTRING(topLblStr);
+    }
         
     topLbl = XtVaCreateManagedWidget("topLabel", xmLabelGadgetClass, form,
-    	    XmNlabelString, s1=MKSTRING(
-"To modify the properties of an existing highlight style, select the name\n\
-from the list on the left.  Select \"New\" to add a new style to the list."),
+    	    XmNlabelString, s1,
 	    XmNmnemonic, 'N',
 	    XmNtopAttachment, XmATTACH_POSITION,
 	    XmNtopPosition, 2,
@@ -2134,9 +2249,11 @@ static void hsDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     int i;
     
-    for (i=0; i<HSDialog.nHighlightStyles; i++)
-    	freeHighlightStyleRec(HSDialog.highlightStyleList[i]);
+    for (i=0; i<HSDialog.nHighlightStyles; i++) {
+        freeHighlightStyleRec(HSDialog.highlightStyleList[i]);
+    }	
     NEditFree(HSDialog.highlightStyleList);
+    NEditFree(HSDialog.colorProfileName);
 }
 
 static void hsOkCB(Widget w, XtPointer clientData, XtPointer callData)
@@ -2430,23 +2547,61 @@ static int updateHSList(void)
     int i;
     
     /* Get the current contents of the dialog fields */
-    if (!UpdateManagedList(HSDialog.managedListW, True))
-    	return False;
+    if (!UpdateManagedList(HSDialog.managedListW, True)) {
+        return False;
+    }
+    
+    ColorProfile *colorProfile = NULL;
+    if(HSDialog.colorProfileName) {
+        colorProfile = GetColorProfile(HSDialog.colorProfileName);
+        if(!colorProfile) {
+            DialogF(DF_ERR, HSDialog.shell, 1, "Error",
+                            "Color Profile %s not found",
+                            "OK", HSDialog.colorProfileName);
+            return False;
+        }
+    }
+    
+    size_t nstyles = NHighlightStyles;
+    highlightStyleRec **styleList = HighlightStyles;
+    if(colorProfile) {
+        if(colorProfile->stylesAlloc == 0) {
+            colorProfile->styles = NULL;
+            nstyles = 0;
+        } else {
+            nstyles = colorProfile->numStyles;
+        }
+        if(HSDialog.nHighlightStyles > colorProfile->stylesAlloc) {
+            colorProfile->stylesAlloc = HSDialog.nHighlightStyles;
+            colorProfile->styles = NEditRealloc(
+                    colorProfile->styles,
+                    colorProfile->stylesAlloc * sizeof(highlightStyleRec*));
+        }
+        styleList = colorProfile->styles;
+    }
     
     /* Replace the old highlight styles list with the new one from the dialog */
-    for (i=0; i<NHighlightStyles; i++)
-    	freeHighlightStyleRec(HighlightStyles[i]);
-    for (i=0; i<HSDialog.nHighlightStyles; i++)
-    	HighlightStyles[i] =
+    for (i=0; i<nstyles; i++) {
+        freeHighlightStyleRec(styleList[i]);
+    }
+    for (i=0; i<HSDialog.nHighlightStyles; i++) {
+        styleList[i] =
     	    	copyHighlightStyleRec(HSDialog.highlightStyleList[i]);
-    NHighlightStyles = HSDialog.nHighlightStyles;
+    }
+    
+    if(colorProfile) {
+        colorProfile->numStyles = HSDialog.nHighlightStyles;
+    } else {
+        NHighlightStyles = HSDialog.nHighlightStyles;
+    }
     
     /* If a syntax highlighting dialog is up, update its menu */
     updateHighlightStyleMenu();
     
     /* Redisplay highlighted windows which use changed style(s) */
-    for (window=WindowList; window!=NULL; window=window->next)
-    	UpdateHighlightStyles(window, True);
+    for (window=WindowList; window!=NULL; window=window->next) {
+        UpdateHighlightStyles(window, True);
+    }
     
     /* Note that preferences have been changed */
     MarkPrefsChanged();
@@ -3892,13 +4047,13 @@ static int lookupNamedPattern(patternSet *p, char *patternName)
 ** Find the index into the HighlightStyles array corresponding to "styleName".
 ** If styleName is not found, return -1.
 */
-static int lookupNamedStyle(const char *styleName)
+static int lookupNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
     int i;
     
-    for (i = 0; i < NHighlightStyles; i++)
+    for (i = 0; i < colorProfile->numStyles; i++)
     {
-        if (!strcmp(styleName, HighlightStyles[i]->name))
+        if (!strcmp(styleName, colorProfile->styles[i]->name))
         {
             return i;
         }
@@ -3910,9 +4065,9 @@ static int lookupNamedStyle(const char *styleName)
 /*
 ** Returns a unique number of a given style name
 */
-int IndexOfNamedStyle(const char *styleName)
+int IndexOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
-    return lookupNamedStyle(styleName);
+    return lookupNamedStyle(colorProfile, styleName);
 }
 
 /*

@@ -150,6 +150,11 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 /* disable language mode threshold (128mb) */
 #define DISABLE_LANG_THRESHOLD 0x8000000
 
+/* disable colorprofiles by default for now */
+#ifndef ENABLE_COLORPROFILES
+#define DISABLE_COLORPROFILES
+#endif
+
 /* Record on undo list */
 typedef struct _UndoInfo {
     struct _UndoInfo *next;		/* pointer to the next undo record */
@@ -260,6 +265,8 @@ typedef struct _EncError {
     int    c;
 } EncError;
 
+
+
 /* The WindowInfo structure holds the information on a Document. A number
    of 'tabbed' documents may reside within a shell window, hence some of 
    its members are of 'shell-level'; namely the find/replace dialogs, the
@@ -355,6 +362,7 @@ typedef struct _WindowInfo {
     Widget	replaceFindAgainItem;
     Widget 	replaceAgainItem;
     Widget      gotoSelItem;
+    Widget      colorProfileMenuPane;
     Widget	langModeCascade;
     Widget	findDefItem;
     Widget	showTipItem;
@@ -511,6 +519,8 @@ typedef struct _WindowInfo {
     NFont       *boldFont;
     NFont       *boldItalicFont;
     
+    ColorProfile *colorProfile;
+    
     Boolean     resizeOnFontChange;
     
     EncError    *encErrors;
@@ -616,5 +626,7 @@ extern Boolean IsServer;
 char* GetAppName(void);
 
 int XNEditDefaultCharsetIsUTF8(void);
+
+XrmDatabase GetDefaultResourceDB(void);
 
 #endif /* NEDIT_NEDIT_H_INCLUDED */

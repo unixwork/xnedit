@@ -273,7 +273,7 @@ int SavePreferences(Display *display, const char *fullName,
     /* write out the resources so they can be read by XrmGetFileDatabase */
     XtGetApplicationNameAndClass(display, &appName, &appClass);
     for (i=0; i<nRsrc; i++) {
-    	if (rsrcDescrip[i].save) {
+    	if (rsrcDescrip[i].save) {       
     	    type = rsrcDescrip[i].dataType;
     	    fprintf(fp, "%s.%s: ", appName, rsrcDescrip[i].name);
     	    if (type == PREF_STRING)
