@@ -6386,7 +6386,9 @@ static void updateColors(colorDialog *cd)
         ColorProfile *cp = window->colorProfile;  
         SetColorProfile(window, setProfile);
         XrmSetDatabase(XtDisplay(window->shell), setProfile->db);
-        ReloadWindowResources(window, True);
+        if(!ColorProfileResourceDBEqual(cp, setProfile)) {
+            ReloadWindowResources(window, True);
+        }
     }
 }
 
