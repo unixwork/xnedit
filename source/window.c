@@ -1137,6 +1137,8 @@ static void createSearchForm(WindowInfo *window)
     RemapDeleteKey(window->iSearchText);
 
     SetISearchTextCallbacks(window);
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 static Widget evTab;
@@ -2614,6 +2616,13 @@ void SetColorProfile(WindowInfo *window, ColorProfile *profile)
         UpdateHighlightStyles(window, True);
 }
 
+void EnableWindowResourceDB(WindowInfo *window)
+{
+    if(window->colorProfile && window->colorProfile->db) {
+        XrmSetDatabase(XtDisplay(window->shell), window->colorProfile->db);
+    }
+}
+
 /*
 ** Set insert/overstrike mode
 */
@@ -4084,6 +4093,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     WindowInfo *window;
     int nCols, nRows;
     
+    EnableWindowResourceDB(shellWindow);
+    
     /* Allocate some memory for the new window data structure */
     window = (WindowInfo *)NEditMalloc(sizeof(WindowInfo));
     
@@ -4325,6 +4336,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     XLowerWindow(TheDisplay, XtWindow(window->splitPane));
     XtUnmanageChild(window->splitPane);
     XtVaSetValues(window->splitPane, XmNmappedWhenManaged, True, NULL);
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
     
     return window;
 }
@@ -6372,7 +6385,7 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
     dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
     dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
-
+    
     if(updateMenuBar) {
         UpdateWidgetValues(window->menuBar, dw.menubar);
         RecreateMenuBar(window->mainWin, window->menuBar, window, True);

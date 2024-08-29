@@ -2482,6 +2482,13 @@ ColorProfile* GetColorProfile(const char *name)
     return NULL;
 }
 
+void EnableDefaultColorProfileResourceDB(Display *dp)
+{
+    if(defaultColorProfile->db) {
+        XrmSetDatabase(dp, defaultColorProfile->db);
+    }
+}
+
 char* GetPrefDefaultColorProfileName(void) {
     return PrefData.defaultColorProfile;
 }

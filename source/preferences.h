@@ -250,6 +250,7 @@ int GetPrefLockEncodingError(void);
 ColorProfile* GetDefaultColorProfile(void);
 ColorProfile* GetColorProfiles(void);
 ColorProfile* GetColorProfile(const char *name);
+void EnableDefaultColorProfileResourceDB(Display *dp);
 char* GetPrefDefaultColorProfileName(void);
 void SetPrefDefaultColorProfileName(const char *str);
 
