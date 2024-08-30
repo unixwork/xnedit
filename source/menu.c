@@ -4844,6 +4844,8 @@ static void updateWindowMenu(const WindowInfo *window)
     
     if (!IsTopDocument(window))
     	return;
+    
+    EnableWindowResourceDB(window);
 	
     /* Make a sorted list of windows */
     for (w=WindowList, nWindows=0; w!=NULL; w=w->next, nWindows++);
@@ -4922,6 +4924,8 @@ static void updateWindowMenu(const WindowInfo *window)
 	        XmNheight, height, NULL);
         XtManageChild(window->windowMenuPane);
     }
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 /*
@@ -4937,6 +4941,8 @@ static void updatePrevOpenMenu(WindowInfo *window)
     int n, index;
     XmString st1;
     char **prevOpenSorted;
+    
+    EnableWindowResourceDB(window);
 
     /*  Read history file to get entries written by other sessions.  */
     ReadNEditDB();
@@ -4984,6 +4990,8 @@ static void updatePrevOpenMenu(WindowInfo *window)
     }
                 
     NEditFree(prevOpenSorted);
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 /*
@@ -4998,6 +5006,8 @@ static void updateTagsFileMenu(WindowInfo *window)
     Cardinal nItems;
     int n;
     XmString st1;
+    
+    EnableWindowResourceDB(window);
 		
     /* Go thru all of the items in the menu and rename them to match the file
        list.  In older Motifs (particularly ibm), it was dangerous to replace
@@ -5034,6 +5044,8 @@ static void updateTagsFileMenu(WindowInfo *window)
 	XmStringFree(st1);
 	tf = tf->next;
     }
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 /*
@@ -5048,7 +5060,9 @@ static void updateTipsFileMenu(WindowInfo *window)
     Cardinal nItems;
     int n;
     XmString st1;
-		
+	
+    EnableWindowResourceDB(window);
+    
     /* Go thru all of the items in the menu and rename them to match the file
        list.  In older Motifs (particularly ibm), it was dangerous to replace
        a whole menu pane, which would be much simpler.  However, since the
@@ -5084,6 +5098,8 @@ static void updateTipsFileMenu(WindowInfo *window)
 	XmStringFree(st1);
 	tf = tf->next;
     }
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 /*

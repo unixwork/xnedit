@@ -5601,6 +5601,8 @@ static void updateLanguageModeSubmenu(WindowInfo *window)
     Widget menu, btn;
     Arg args[1] = {{XmNradioBehavior, (XtArgVal)True}};
     
+    EnableWindowResourceDB(window);
+    
     /* Destroy and re-create the menu pane */
     XtVaGetValues(window->langModeCascade, XmNsubMenuId, &menu, NULL);
     if (menu != NULL)
@@ -5625,6 +5627,8 @@ static void updateLanguageModeSubmenu(WindowInfo *window)
 	XtAddCallback(btn, XmNvalueChangedCallback, setLangModeCB, window);
     }
     XtVaSetValues(window->langModeCascade, XmNsubMenuId, menu, NULL);
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData)

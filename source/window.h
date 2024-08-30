@@ -57,7 +57,7 @@ void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *te
         const char *cursorFg, const char *lineHiBg);
 void SetColorProfile(WindowInfo *window, ColorProfile *profile);
 void LoadColorProfile(Widget w, ColorProfile *profile);
-void EnableWindowResourceDB(WindowInfo *window);
+void EnableWindowResourceDB(const WindowInfo *window);
 void SetOverstrike(WindowInfo *window, int overstrike);
 void SetAutoWrap(WindowInfo *window, WrapStyle state);
 void SetAutoScroll(WindowInfo *window, int margin);

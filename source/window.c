@@ -2616,7 +2616,7 @@ void SetColorProfile(WindowInfo *window, ColorProfile *profile)
         UpdateHighlightStyles(window, True);
 }
 
-void EnableWindowResourceDB(WindowInfo *window)
+void EnableWindowResourceDB(const WindowInfo *window)
 {
     if(window->colorProfile && window->colorProfile->db) {
         XrmSetDatabase(XtDisplay(window->shell), window->colorProfile->db);
