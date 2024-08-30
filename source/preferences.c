@@ -2482,11 +2482,18 @@ ColorProfile* GetColorProfile(const char *name)
     return NULL;
 }
 
+static Boolean defResDBEnable = True;
+
 void EnableDefaultColorProfileResourceDB(Display *dp)
 {
-    if(defaultColorProfile->db) {
+    if(defResDBEnable && defaultColorProfile->db) {
         XrmSetDatabase(dp, defaultColorProfile->db);
     }
+}
+
+void SetDefResDBEnable(Boolean set) 
+{
+    defResDBEnable = set;
 }
 
 char* GetPrefDefaultColorProfileName(void) {
@@ -5697,6 +5704,8 @@ static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData
         XrmSetDatabase(XtDisplay(window->shell), cp->db);
     }
     
+    SetDefResDBEnable(False);
+    
     Boolean updateMenuBar = True;
     Widget shell = window->shell;
     for (WindowInfo *win = WindowList; win != NULL; win = win->next) {
@@ -5710,6 +5719,8 @@ static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData
     }
     
     SetWindowGtkThemeVariant(XtDisplay(shell), XtWindow(shell), cp->windowThemeVariant);
+    
+    SetDefResDBEnable(True);
 }
 
 static void updateColorProfilesMenu(WindowInfo *window)
@@ -6392,6 +6403,8 @@ static void updateColors(colorDialog *cd)
     SetPrefDefaultColorProfileName(setProfile->name);
     defaultColorProfile = setProfile;
     
+    SetDefResDBEnable(False);
+    
     // update windows
     for (window = WindowList; window != NULL; window = window->next) {
         ColorProfile *cp = window->colorProfile;  
@@ -6401,6 +6414,8 @@ static void updateColors(colorDialog *cd)
             ReloadWindowResources(window, True);
         }
     }
+    
+    SetDefResDBEnable(True);
 }
 
 

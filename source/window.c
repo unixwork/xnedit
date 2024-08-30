@@ -6385,7 +6385,7 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
     dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
     dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
-    
+     
     if(updateMenuBar) {
         UpdateWidgetValues(window->menuBar, dw.menubar);
         RecreateMenuBar(window->mainWin, window->menuBar, window, True);
