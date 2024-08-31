@@ -5736,6 +5736,7 @@ static void updateColorProfilesMenu(WindowInfo *window)
     }
     menu = CreatePulldownMenu(XtParent(window->colorProfileMenuPane), "colorProfiles", args, 1);
     
+    int count = 0;
     ColorProfile *cp = colorProfiles;
     while(cp) {
         Widget menuItem = XtVaCreateManagedWidget("colorProfileMenuItem",
@@ -5747,9 +5748,15 @@ static void updateColorProfilesMenu(WindowInfo *window)
 	XtAddCallback(menuItem, XmNvalueChangedCallback, setColorProfileCB, window);
         
         cp = cp->next;
+        count++;
     }
     
     XtVaSetValues(window->colorProfileMenuPane, XmNsubMenuId, menu, NULL);
+    if(count > 1) {
+        XtManageChild(window->colorProfileMenuPane);
+    } else {
+        XtUnmanageChild(window->colorProfileMenuPane);
+    }
 }
 
 
@@ -6413,6 +6420,8 @@ static void updateColors(colorDialog *cd)
         if(!ColorProfileResourceDBEqual(cp, setProfile)) {
             ReloadWindowResources(window, True);
         }
+        
+        updateColorProfilesMenu(window);
     }
     
     SetDefResDBEnable(True);
