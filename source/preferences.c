@@ -6313,6 +6313,36 @@ static void showColorStatus(colorDialog *cd, Widget colorFieldW,
     XtSetMappedWhenManaged( errorLabelW, !checkColorStatus(cd, colorFieldW) );
 }
 
+// Remove profiles that are flagged as removed and return a list of all
+// removed color profiles
+static ColorProfile* clearColorProfileList(ColorProfile *cpList)
+{
+    ColorProfile *removed_begin = NULL;
+    ColorProfile *removed_end = NULL;
+    
+    // the first element can never be removed
+    // start with the second element
+    ColorProfile *prevElm = cpList;
+    ColorProfile *elm = cpList->next;
+    while(elm) {
+        if(elm->removed) {
+            prevElm->next = elm->next;
+            if(removed_end) {
+                removed_end->next = elm;
+                removed_end = elm;
+            } else {
+                removed_begin = elm;
+                removed_end = elm;
+            }
+        } else {
+            prevElm = elm;
+        }
+        elm = elm->next;
+    }
+    
+    return removed_begin;
+}
+
 /* Update the colors in the window or in the preferences */
 static void updateColors(colorDialog *cd)
 {
@@ -6401,6 +6431,8 @@ static void updateColors(colorDialog *cd)
     // TODO: free previous color profiles that are not in use
     
     colorProfiles = first;
+    
+    ColorProfile *removed = clearColorProfileList(colorProfiles);
     
     if(!setProfile) {
         // should not happen but this makes it extra safe
@@ -6887,8 +6919,6 @@ static void addRainbowColor(colorDialog *cd, const char *value)
 
 static void colorDialogSelectProfile(colorDialog *cd, int index)
 {
-    saveColorProfileSettings(cd);
-    
     cd->selectedProfile = index;
     
     clearRainbowColors(cd);
@@ -6910,6 +6940,7 @@ static void colorDialogProfileSelected(
         colorDialog *cd,
         XmComboBoxCallbackStruct *cb)
 {
+    saveColorProfileSettings(cd);
     colorDialogSelectProfile(cd, cb->item_position);
 }
 
@@ -6922,6 +6953,9 @@ static void colorDialogUpdateProfileList(colorDialog *cd)
     
     XtVaSetValues(cd->profileDropDown, XmNitems, profileList, XmNitemCount, cd->numColorProfiles, NULL);
     XmComboBoxSelectItem(cd->profileDropDown, profileList[cd->selectedProfile]);
+    for(int i=0;i<cd->numColorProfiles;i++) {
+        XmStringFree(profileList[i]);
+    }
     NEditFree(profileList);
 }
 
@@ -7018,6 +7052,7 @@ static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
     cd->numColorProfiles--;
     cd->selectedProfile--;
     
+    colorDialogSelectProfile(cd, cd->selectedProfile);
     colorDialogUpdateProfileList(cd);
 }
 
@@ -7064,6 +7099,7 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
     XmString s = XmStringCreateSimple(profileName);
     XmComboBoxAddItem(cd->profileDropDown, s, -1, False);
     XmComboBoxSelectItem(cd->profileDropDown, s);
+    saveColorProfileSettings(cd);
     colorDialogSelectProfile(cd, cd->numColorProfiles-1);
     XmStringFree(s);
 }
