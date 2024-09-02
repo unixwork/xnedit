@@ -1315,7 +1315,7 @@ static void rebuildMenu(WindowInfo *window, int menuType)
        currently displayed on top. */
     if (menuType != BG_MENU_CMDS && !IsTopDocument(window))
     	return;
-	
+    	
     /* Fetch the appropriate menu data */
     selectUserMenu(window, menuType, &menu);
 
@@ -1387,6 +1387,8 @@ static void updateMenu(WindowInfo *window, int menuType)
 {
     selectedUserMenu menu;
 
+    EnableWindowResourceDB(window);
+    
     /* Fetch the appropriate menu data */
     selectUserMenu(window, menuType, &menu);
 
@@ -1408,6 +1410,9 @@ static void updateMenu(WindowInfo *window, int menuType)
     }
 
     DimSelectionDepUserMenuItems(window, window->buffer->primary.selected);
+    
+    
+    EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));
 }
 
 /*

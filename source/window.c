@@ -6389,6 +6389,7 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     if(updateMenuBar) {
         UpdateWidgetValues(window->menuBar, dw.menubar);
         RecreateMenuBar(window->mainWin, window->menuBar, window, True);
+        refreshMenuBar(window);
     }
 
     UpdateWidgetValues(window->mainWin, dw.mainWin);
