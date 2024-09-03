@@ -3,7 +3,7 @@
  * $Id: BubbleButton.h,v 1.2 2003/12/25 06:55:07 tksoh Exp $
  *
  * Copyright (C) 1996 Free Software Foundation, Inc.
- * Copyright © 1999-2001 by the LessTif developers.
+ * Copyright Â© 1999-2001 by the LessTif developers.
  *
  * This file is part of the GNU LessTif Extension Library.
  *

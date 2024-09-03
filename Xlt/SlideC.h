@@ -3,7 +3,7 @@
  * $Id: SlideC.h,v 1.1 2003/12/23 08:34:36 tksoh Exp $
  *
  * Copyright (C) 1996 Free Software Foundation, Inc.
- * Copyright © 1999-2001 by the LessTif developers.
+ * Copyright Â© 1999-2001 by the LessTif developers.
  *
  * This file is part of the GNU LessTif Extension Library.
  *

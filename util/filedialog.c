@@ -955,6 +955,8 @@ struct FileElm {
 struct FileDialogData {
     Widget shell;
     
+    char *file_path;
+    
     Widget path;
     PathBar *pathBar;
     Widget filter;
@@ -1798,7 +1800,9 @@ static void filedilalog_ok_end(FileDialogData *data)
             close(fd);
         }
         
-    } else if(data->type == FILEDIALOG_SAVE && !stat(data->selectedPath, &s)) {
+    } else if(data->type == FILEDIALOG_SAVE && !stat(data->selectedPath, &s) &&
+             (!data->file_path || strcmp(data->file_path, data->selectedPath)))
+    {
         if(OverrideFileDialog(data->shell, FileName(data->selectedPath)) != 1) {
             return;
         }
@@ -2135,6 +2139,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     FileDialogData data;
     memset(&data, 0, sizeof(FileDialogData));
     data.type = type;
+    data.file_path = file->path;
     
     file->addwrap = FALSE;
     file->setxattr = FALSE;

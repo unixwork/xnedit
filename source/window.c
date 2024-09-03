@@ -1212,7 +1212,7 @@ static Widget addTab(Widget folder, const char *string)
 {
     Widget tooltipLabel, tab;
     XmString s1;
-
+    
     s1 = XmStringCreateSimple((char *)string);
     tab = XtVaCreateManagedWidget("tab",
 	    xrwsBubbleButtonWidgetClass, folder,
