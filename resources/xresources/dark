@@ -30,7 +30,7 @@
 *XmSelectionBox.background:	#2b2b2b
 *XmSelectionBox.foreground:	#ffffff
 
-
+*menuBar.background: #222222
 
 *XmLabel.background:	#121212
 *XmLabel.foreground:	#ffffff
@@ -87,7 +87,7 @@
 *enableThinThickness:	True
 *ScrollbarBackground:	#2b2b2b
 
-*foreground: #ffffff
+*foreground: #ff0000
 *background: #121212
 
 
@@ -96,5 +96,5 @@
 *topShadowColor: #3d3d3d
 *bottomShadowColor: #6e6e6e
 
-*defaultRT.renditionForeground: #ffffff
-*fixedRT.renditionForeground: #ffffff
+*XmLFolder.foreground: #ffffff
+*XmLGrid.foreground: #ffffff

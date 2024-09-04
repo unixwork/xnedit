@@ -1,0 +1,7 @@
+nedit*defaultRT.fontType: FONT_IS_XFT
+nedit*defaultRT.fontName: Sans
+nedit*defaultRT.fontSize:  9
+
+nedit*fixedRT.fontType: FONT_IS_XFT
+nedit*fixedRT.fontName: Monospace
+nedit*fixedRT.fontSize: 9

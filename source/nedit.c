@@ -145,7 +145,7 @@ Widget TheAppShell;
                                 "Ctrl~Alt~Meta<KeyPress>u: delete-to-start-of-line()\\n"
 
 #define NEDIT_XFT_DEFAULT_FONT "Sans"
-#define NEDIT_XFT_FIXED_FONT "Monospace:size=11"
+#define NEDIT_XFT_FIXED_FONT "Monospace"
 
 static char *fallbackResources[] = {
     /* Try to avoid Motif's horrificly ugly default colors and fonts,
@@ -590,7 +590,7 @@ int main(int argc, char **argv)
     
     
     /* Initialize TextWidget */
-    TextWidgetClassInit(TheDisplay, NEDIT_XFT_FIXED_FONT);
+    TextWidgetClassInit(TheDisplay, NEDIT_XFT_FIXED_FONT ":size=11");
 
     /* Store preferences from the command line and .nedit file, 
        and set the appropriate preferences */
