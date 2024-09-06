@@ -6234,6 +6234,7 @@ typedef struct CPDummyWindow {
     Widget textfield3;
     Widget scrollbar;
     Widget folder;
+    Widget dropdown;
 } CPDummyWindow;
 
 static void clearCompositeWidget(Widget w)
@@ -6297,8 +6298,11 @@ static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *tem
 {
     UpdateWidgetValues(parent, src);
 
-    Widget srcWidgets[] = { template->label, template->button, template->togglebutton, template->textfield1, template->textfield2, template->textfield3, template->scrollbar };
-    size_t numSrcWidgets = 7;
+    Widget srcWidgets[] = {
+        template->label, template->button, template->togglebutton,
+        template->textfield1, template->textfield2, template->textfield3,
+        template->scrollbar, template->folder, template->dropdown };
+    size_t numSrcWidgets = 9;
     
     WidgetList children = NULL;
     Cardinal numChildren = 0;
@@ -6385,6 +6389,7 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     dw.textfield3 = XNECreateTextField(dw.form, "textfield3", NULL, 0);
     dw.scrollbar = XmCreateScrollBar(dw.form, "scrollbar", NULL, 0);
     dw.folder = XtVaCreateManagedWidget("tabBar", xmlFolderWidgetClass, dw.form, NULL);
+    dw.dropdown = XtVaCreateManagedWidget("dropDown", xmComboBoxWidgetClass, dw.form, NULL);
      
     if(updateMenuBar) {
         UpdateWidgetValues(window->menuBar, dw.menubar);
@@ -6395,6 +6400,8 @@ void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
     UpdateWidgetValues(window->mainWin, dw.mainWin);
     Widget winForm = XtParent(window->iSearchForm);
     UpdateWidgetValues(winForm, dw.form);
+    
+    UpdateWidgetsHierarchy(window->encodingInfoBar, dw.form, &dw);
 
     UpdateWidgetsHierarchy(window->iSearchForm, dw.form, &dw);
     clearCompositeWidget(window->iSearchForm);
