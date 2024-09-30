@@ -662,6 +662,13 @@ void textfield_recalc_size(TextFieldWidget w) {
 
 // actions
 
+static void ownSelection(TextFieldWidget tf) {
+    if(tf->textfield.selStart != tf->textfield.selEnd && !tf->textfield.hasSelection) {
+        XtOwnSelection((Widget)tf, XA_PRIMARY, XtLastTimestampProcessed(XtDisplay((Widget)tf)), convertSelection, loseSelection, NULL);
+        tf->textfield.hasSelection = 1;
+    }
+}
+
 static void adjustSelection(TextFieldWidget tf, int x) {
     int pos = tfXToPos(tf, x);
     int index = tfPosToIndex(tf, pos);
@@ -669,6 +676,8 @@ static void adjustSelection(TextFieldWidget tf, int x) {
     tf->textfield.selEnd = index;
     tf->textfield.pos = index;
     tf->textfield.selEndX = tfIndexToX(tf, index);
+    
+    ownSelection(tf);
 }
 
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
@@ -1000,7 +1009,7 @@ static void blinkCB(XtPointer data, XtIntervalId *id) {
 static void focusInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     if(!event->xfocus.send_event) return;
-     
+       
     tf->textfield.hasFocus = 1;
     
     if(tf->textfield.xic) {
@@ -1209,21 +1218,18 @@ static void tfSelectionIndex(TextFieldWidget tf, int *start, int *end) {
 }
 
 static void tfSetSelection(TextFieldWidget tf, int from, int to) {
-    if(!tf->textfield.hasSelection) {
-        XtOwnSelection((Widget)tf, XA_PRIMARY, XtLastTimestampProcessed(XtDisplay((Widget)tf)), convertSelection, loseSelection, NULL);
-    }
-    
     if(from > to) {
         int f = from;
         from = to;
         to = f;
     }
     
-    tf->textfield.hasSelection = 1;
     tf->textfield.selStart = from;
     tf->textfield.selEnd = to > tf->textfield.length ? tf->textfield.length : to;
     tf->textfield.selStartX = tfIndexToX(tf, tf->textfield.selStart);
     tf->textfield.selEndX = tfIndexToX(tf, tf->textfield.selEnd);
+    
+    ownSelection(tf);
 }
 
 static void tfClearSelection(TextFieldWidget tf) {
