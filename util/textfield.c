@@ -159,6 +159,7 @@ static char defaultTranslations[] = "\
 <LeaveWindow>:                  enter()\n\
 s ~m ~a <Key>Tab:               PrimitivePrevTabGroup()\n\
 ~m ~a <Key>Tab:                 PrimitiveNextTabGroup()\n\
+Shift<Btn1Down>:                mouse1down(\"select\")\n\
 <Btn1Down>:                     mouse1down()\n\
 <Btn1Up>:                       mouse1up()\n\
 <Btn2Up>:                       insertPrimary()\n\
@@ -683,17 +684,45 @@ static void adjustSelection(TextFieldWidget tf, int x) {
 static void mouse1DownAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
     TextFieldWidget tf = (TextFieldWidget)w;
     
+    int select = 0;
+    if(*nArgs >= 1) {
+        if(!strcmp(args[0], "select")) {
+            select = 1;
+        }
+    }
+    
     XmProcessTraversal(w, XmTRAVERSE_CURRENT);
     
     int pos = tfXToPos(tf, event->xbutton.x);
     int index = tfPosToIndex(tf, pos);
+    int prevPos = tf->textfield.pos;
     tf->textfield.pos = index;
     
     int selStart, selEnd;
     
     Time t = event->xbutton.time;
     int multiclicktime = XtGetMultiClickTime(XtDisplay(w));
-    if(t - tf->textfield.btn1ClickPrev2 < 2*multiclicktime) {
+    if(select) {
+        if(tf->textfield.hasSelection) {
+            if(index < tf->textfield.selStart) {
+                selStart = index;
+                selEnd = tf->textfield.selEnd;
+            } else {
+                selStart = tf->textfield.selStart;
+                selEnd = index;
+            }
+        } else {
+            if(prevPos > index) {
+                selStart = index;
+                selEnd = prevPos;
+            } else {
+                selStart = prevPos;
+                selEnd = index;
+            }
+        }
+        
+        tf->textfield.dontAdjustSel = 1;
+    } else if(t - tf->textfield.btn1ClickPrev2 < 2*multiclicktime) {
         // triple click
         t = 0;
         
