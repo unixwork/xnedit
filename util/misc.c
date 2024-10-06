@@ -43,7 +43,13 @@
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+
+#ifdef __sun
+#define _XPG6
+#endif
 #include <iconv.h>
+
+
 #include <langinfo.h>
 
 #ifdef __unix__
