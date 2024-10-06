@@ -497,14 +497,36 @@ static int tfDrawString(TextFieldWidget tf, XftFont *font, XftColor *color, int 
 }
 
 static void tfDrawCursor(TextFieldWidget tf) {
-    XDrawLine(
-            XtDisplay(tf),
-            XtWindow(tf),
-            tf->textfield.cursorOn ? tf->textfield.gc : tf->textfield.gcInv,
-            tf->textfield.posX - tf->textfield.scrollX,
-            tf->textfield.textarea_yoff,
-            tf->textfield.posX - tf->textfield.scrollX,
-            tf->core.height-tf->textfield.textarea_yoff);
+    Display *dp = XtDisplay(tf);
+    Window w = XtWindow(tf);
+    int x = tf->textfield.posX - tf->textfield.scrollX;
+    int top = tf->textfield.textarea_yoff;
+    int bottom = tf->core.height-tf->textfield.textarea_yoff;
+    if(tf->textfield.hasFocus) {
+        XDrawLine(
+                dp,
+                w,
+                tf->textfield.cursorOn ? tf->textfield.gc : tf->textfield.gcInv,
+                x,
+                top,
+                x,
+                bottom);
+    } else {
+        int diff = bottom-top;
+        int max = (diff/2)+1;
+        XPoint *points = calloc(max, sizeof(XPoint));
+        int n = 0;
+        int y = top;
+        int i;
+        for(i=0;i<max && y <= bottom;i++) {
+            points[i].x = x;
+            points[i].y = y;
+            y += 2;
+        }
+        XDrawPoints(dp, w, tf->textfield.gc, points, i, CoordModeOrigin);
+        free(points);
+    }
+    
 }
 
 static void tfRedrawText(TextFieldWidget tf) {  
