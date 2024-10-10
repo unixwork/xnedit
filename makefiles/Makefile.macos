@@ -109,7 +109,13 @@ AR=libtool
 # syntax highlighting performance.   You will also often need to add locations
 # of X and/or Motif include files if they are not in the compiler's standard
 # search path.
-CFLAGS=-O2 -I/usr/x11/include -I/usr/x11/include/freetype2 -I`brew --prefix`/include/
+
+
+ifeq ($(shell [ -d /opt/local/include/X11 ] && echo 1 || echo 0), 1)
+    CFLAGS=-O2 -I/opt/local/include -I/opt/local/include/X11 -I/opt/local/include/freetype2
+else
+    CFLAGS=-O2 -I/usr/x11/include -I/usr/x11/include/freetype2 -I`brew --prefix`/include/
+endif
 
 # Flags for the library (archive) tool.  These are pretty much standard
 # across all Unix systems, but if your system is having trouble building or
@@ -127,7 +133,11 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-LIBS= -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
+ifeq ($(shell [ -d /opt/local/lib/X11 ] && echo 1 || echo 0), 1)
+    LIBS= -L/opt/local/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
+else
+    LIBS= -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
+endif
 
 # System independent part
 include Makefile.common
