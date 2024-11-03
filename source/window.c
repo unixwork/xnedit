@@ -716,7 +716,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* A separate display of the line/column number */
     window->statsLineColNo = XtVaCreateManagedWidget("statsLineColNo",
             xmLabelWidgetClass, window->statsLineForm,
-            XmNlabelString, s1=XmStringCreateSimple("L: ---  C: ---"),
+            XmNlabelString, s1=XmStringCreateSimple("S: --- L: ---  C: ---"),
             XmNshadowThickness, 0,
             XmNmarginHeight, 2,
             XmNtraversalOn, False,
@@ -3461,7 +3461,13 @@ static int updateLineNumDisp(WindowInfo* window)
 void UpdateStatsLine(WindowInfo *window)
 {
     int line, pos, colNum;
-    char *string, *format, slinecol[32];
+	int byteLength;
+	long charCount = 0;
+	long offset = 0;
+	unsigned char current;
+
+	char * selection;
+    char *string, *format, slinecol[42];
     Widget statW = window->statsLine;
     XmString xmslinecol;
 #ifdef SGI_CUSTOM
@@ -3486,13 +3492,37 @@ void UpdateStatsLine(WindowInfo *window)
         sprintf(string, "%s%s%s %d bytes", window->path, window->filename,
                 format, window->buffer->length);
         if(nCursors == 1) {
-            snprintf(slinecol, 32, "L: ---  C: ---");
+            snprintf(slinecol, 42, "S: --- L: ---  C: ---");
         } else {
             snprintf(slinecol, 32, "%d cursors", nCursors);
         }
     } else {
         if(nCursors == 1) {
-            snprintf(slinecol, 32, "L: %d  C: %d", line, colNum);
+
+		selection = GetAnySelection(window);
+		if (selection != NULL) {
+			byteLength = strlen(selection);
+			while (offset < byteLength) {
+				current = selection[offset];
+
+    			if(current >= 240) {
+					offset += 4;
+    			} else if(current >= 224) {
+        			offset += 3;
+    			} else if(current > 192) {
+					offset += 2;
+    			} else {
+					offset ++;
+				}
+					charCount++;
+			}
+
+		
+			
+            snprintf(slinecol, 42, "S: %d L: %d  C: %d", charCount, line, colNum);
+		} else {
+	        snprintf(slinecol, 32, "S: --- L: %d  C: %d", line, colNum);
+			}
         } else {
             snprintf(slinecol, 32, "%d cursors", nCursors);
         }
