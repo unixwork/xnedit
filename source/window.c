@@ -489,6 +489,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->findLastRegexCase      = TRUE;
     window->findLastLiteralCase    = FALSE;
     window->tab = NULL;
+    window->bgMenuUndoItem = NULL;
+    window->bgMenuRedoItem = NULL;
     window->device = 0;
     window->inode = 0;
 

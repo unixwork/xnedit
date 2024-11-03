@@ -511,7 +511,7 @@ static void tfDrawCursor(TextFieldWidget tf) {
                 top,
                 x,
                 bottom);
-    } else {
+    } else { 
         int diff = bottom-top;
         int max = (diff/2)+1;
         XPoint *points = calloc(max, sizeof(XPoint));
