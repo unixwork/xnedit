@@ -3520,7 +3520,7 @@ void UpdateStatsLine(WindowInfo *window)
             } else {
                 snprintf(slinecol, 42, "S: --- L: %d  C: %d", line, colNum);
             }
-            free(selection);
+            NEditFree(selection);
         } else {
             snprintf(slinecol, 42, "%d cursors", nCursors);
         }
