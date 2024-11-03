@@ -3494,37 +3494,35 @@ void UpdateStatsLine(WindowInfo *window)
         if(nCursors == 1) {
             snprintf(slinecol, 42, "S: --- L: ---  C: ---");
         } else {
-            snprintf(slinecol, 32, "%d cursors", nCursors);
+            snprintf(slinecol, 42, "%d cursors", nCursors);
         }
     } else {
         if(nCursors == 1) {
+            selection = BufGetSelectionText(window->buffer);   
+            if (selection != NULL) {
+                byteLength = strlen(selection);
+                while (offset < byteLength) {
+                    current = selection[offset];
 
-		selection = GetAnySelection(window);
-		if (selection != NULL) {
-			byteLength = strlen(selection);
-			while (offset < byteLength) {
-				current = selection[offset];
+                    if(current >= 240) {
+                        offset += 4;
+                    } else if(current >= 224) {
+                        offset += 3;
+                    } else if(current > 192) {
+                        offset += 2;
+                    } else {
+                        offset ++;
+                    }
+                    charCount++;
+                }
 
-    			if(current >= 240) {
-					offset += 4;
-    			} else if(current >= 224) {
-        			offset += 3;
-    			} else if(current > 192) {
-					offset += 2;
-    			} else {
-					offset ++;
-				}
-					charCount++;
-			}
-
-		
-			
-            snprintf(slinecol, 42, "S: %d L: %d  C: %d", charCount, line, colNum);
-		} else {
-	        snprintf(slinecol, 32, "S: --- L: %d  C: %d", line, colNum);
-			}
+                snprintf(slinecol, 42, "S: %d L: %d  C: %d", charCount, line, colNum);
+            } else {
+                snprintf(slinecol, 42, "S: --- L: %d  C: %d", line, colNum);
+            }
+            free(selection);
         } else {
-            snprintf(slinecol, 32, "%d cursors", nCursors);
+            snprintf(slinecol, 42, "%d cursors", nCursors);
         }
         if (window->showLineNumbers)
             sprintf(string, "%s%s%s byte %d of %d", window->path,
