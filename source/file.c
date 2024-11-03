@@ -510,6 +510,8 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         } else {
             SetLanguageMode(window, FindLanguageMode(languageMode), True);
         }
+    } else {
+        SetLanguageMode(window, PLAIN_LANGUAGE_MODE, True);
     }
     
     
