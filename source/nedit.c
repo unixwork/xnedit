@@ -58,6 +58,7 @@
 #include "../util/motif.h"
 #include "../util/nedit_malloc.h"
 #include "../util/xdnd.h"
+#include "filter.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -757,6 +758,17 @@ int main(int argc, char **argv)
 	    	    isTabbed = tabbed==-1? GetPrefOpenInTab() : tabbed; 
 		}
 		
+                /* determine filter */
+                size_t pathlen = strlen(pathname);
+                size_t namelen = strlen(filename);
+                char *fullpath = NEditMalloc(pathlen + namelen + 1);
+                memcpy(fullpath, pathname, pathlen);
+                memcpy(fullpath+pathlen, filename, namelen);
+                fullpath[pathlen+namelen] = '\0';
+                IOFilter *filter = GetFilterForPath(fullpath);
+                const char *filter_name = filter ? filter->name : NULL;
+                NEditFree(fullpath);
+                
 		/* Files are opened in background to improve opening speed
 		   by defering certain time  consuiming task such as syntax
 		   highlighting. At the end of the file-opening loop, the 
@@ -764,7 +776,7 @@ int main(int argc, char **argv)
 		   items. The current file may also be raised if there're
 		   macros to execute on. */
 		window = EditExistingFile(WindowList, filename, pathname, NULL,
-                        NULL, editFlags, geometry, iconic, langMode, isTabbed,
+                        filter_name, editFlags, geometry, iconic, langMode, isTabbed,
                         True);
     	    	fileSpecified = TRUE;
 		if (window) {

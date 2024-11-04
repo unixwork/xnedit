@@ -28,6 +28,7 @@
 #include "../util/misc.h"
 #include "../util/managedList.h"
 #include "../util/DialogF.h"
+#include "../util/ec_glob.h"
 
 #include "help.h"
 
@@ -656,6 +657,17 @@ IOFilter* GetFilterFromName(const char *name)
         }
     }
     return NULL;
+}
+
+IOFilter* GetFilterForPath(const char *path) {
+    IOFilter *filter = NULL;
+    for(int i=0;i<numFilters;i++) {
+        if(!ec_glob(filters[i]->ec_pattern, path)) {
+            filter = filters[i];
+            break;
+        }
+    }
+    return filter;
 }
 
 /* ----------------------------- FileStream -----------------------------*/
