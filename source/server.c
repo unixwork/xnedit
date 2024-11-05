@@ -40,9 +40,11 @@
 #include "menu.h"
 #include "preferences.h"
 #include "server_common.h"
+#include "filter.h"
 #include "../util/fileUtils.h"
 #include "../util/utils.h"
 #include "../util/misc.h"
+#include "../util/nedit_malloc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -455,6 +457,17 @@ static void processServerCommandString(char *string)
 
     	window = FindWindowWithFile(filename, pathname);
     	if (window == NULL) {
+            /* determine filter */
+            size_t pathlen = strlen(pathname);
+            size_t namelen = strlen(filename);
+            char *fullpath = NEditMalloc(pathlen + namelen + 1);
+            memcpy(fullpath, pathname, pathlen);
+            memcpy(fullpath+pathlen, filename, namelen);
+            fullpath[pathlen+namelen] = '\0';
+            IOFilter *filter = GetFilterForPath(fullpath);
+            const char *filter_name = filter ? filter->name : NULL;
+            NEditFree(fullpath);
+            
 	    /* Files are opened in background to improve opening speed
 	       by defering certain time  consuiming task such as syntax
 	       highlighting. At the end of the file-opening loop, the 
@@ -462,7 +475,7 @@ static void processServerCommandString(char *string)
 	       items. The current file may also be raised if there're
 	       macros to execute on. */
 	    window = EditExistingFile(findWindowOnDesktop(tabbed, currentDesktop),
-		    filename, pathname, NULL, NULL, editFlags, geometry, iconicFlag, 
+		    filename, pathname, NULL, filter_name, editFlags, geometry, iconicFlag, 
 		    lmLen == 0 ? NULL : langMode, 
 		    tabbed == -1? GetPrefOpenInTab() : tabbed, True);
 
