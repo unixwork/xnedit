@@ -110,11 +110,12 @@ AR=libtool
 # of X and/or Motif include files if they are not in the compiler's standard
 # search path.
 
+C_OPT_FLAGS?=-O2
 
 ifeq ($(shell [ -d /opt/local/include/X11 ] && echo 1 || echo 0), 1)
-    CFLAGS=-O2 -I/opt/local/include -I/opt/local/include/X11 -I/opt/local/include/freetype2
+    CFLAGS=$(C_OPT_FLAGS) -I/opt/local/include -I/opt/local/include/X11 -I/opt/local/include/freetype2
 else
-    CFLAGS=-O2 -I/usr/x11/include -I/usr/x11/include/freetype2 -I`brew --prefix`/include/
+    CFLAGS=$(C_OPT_FLAGS) -I/usr/x11/include -I/usr/x11/include/freetype2 -I`brew --prefix`/include/
 endif
 
 # Flags for the library (archive) tool.  These are pretty much standard
@@ -134,9 +135,9 @@ BIGGER_STRINGS=
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
 ifeq ($(shell [ -d /opt/local/lib/X11 ] && echo 1 || echo 0), 1)
-    LIBS= -L/opt/local/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
+    LIBS= $(LD_OPT_FLAGS) -L/opt/local/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
 else
-    LIBS= -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
+    LIBS= $(LD_OPT_FLAGS) -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread
 endif
 
 # System independent part

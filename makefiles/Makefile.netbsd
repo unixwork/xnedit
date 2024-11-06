@@ -10,7 +10,10 @@ AR=ar
 # To test if the Motif library exports the runtime version
 # add -DHAVE__XMVERSIONSTRING to CFLAGS
 #
-CFLAGS=-O -I/usr/pkg/include -I/usr/pkg/include/X11 -I/usr/X11R7/include -DUSE_LPR_PRINT_CMD -DUSE_XMIM `pkg-config --cflags xft fontconfig`
-LIBS= -L/usr/X11R7/lib -R/usr/X11R7/lib -liconv -lm -lpthread -lXm -lXt -lSM -lICE -lX11 -lXrender -lXext `pkg-config --libs xft fontconfig`
+
+C_OPT_FLAGS?=-O
+
+CFLAGS=$(C_OPT_FLAGS) -I/usr/pkg/include -I/usr/pkg/include/X11 -I/usr/X11R7/include -DUSE_LPR_PRINT_CMD -DUSE_XMIM `pkg-config --cflags xft fontconfig`
+LIBS= $(LD_OPT_FLAGS) -L/usr/X11R7/lib -R/usr/X11R7/lib -liconv -lm -lpthread -lXm -lXt -lSM -lICE -lX11 -lXrender -lXext `pkg-config --libs xft fontconfig`
 
 include Makefile.common
