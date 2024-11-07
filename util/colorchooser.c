@@ -419,7 +419,7 @@ static void init_pix2(cgData *data, Widget w) {
     Dimension height = w->core.height - 2*IMG2_Y_OFFSET;
     
     if(data->image2) {
-        if(width == data->img2_width == height == data->img2_height) return;
+        if(width == data->img2_width && height == data->img2_height) return;
         XDestroyImage(data->image2);
         data->has_selection = 0;
     }
