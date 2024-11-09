@@ -108,20 +108,14 @@ static void createYesNoDialog(Widget parent);
 static void createErrorDialog(Widget parent);
 static int  doYesNoDialog(const char *msg);
 static void doErrorDialog(const char *errorString, const char *filename);
-static void existOkCB(Widget w, Boolean * client_data,
-	              XmFileSelectionBoxCallbackStruct *call_data);
-static void existCancelCB(Widget w, Boolean * client_data, caddr_t call_data);
 static void errorOKCB(Widget w, caddr_t client_data, caddr_t call_data);
 static void yesNoOKCB(Widget w, caddr_t client_data, caddr_t call_data);
 static void yesNoCancelCB(Widget w, caddr_t client_data, caddr_t call_data);
 
-static int  SelectResult = GFN_CANCEL;  /*  Initialize results as cancel   */
 static Widget YesNoDialog;		/* "Overwrite?" dialog widget	   */
 static int YesNoResult;			/* Result of overwrite dialog	   */
 static Widget ErrorDialog;		/* Dialog widget for error msgs	   */
 static int ErrorDone;			/* Flag to mark dialog completed   */
-static void (*OrigDirSearchProc)();	/* Built in Motif directory search */
-static void (*OrigFileSearchProc)();	/* Built in Motif file search proc */
 
 /*  GetExistingFilename				  	                   */
 /*									   */

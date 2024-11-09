@@ -515,7 +515,6 @@ static void tfDrawCursor(TextFieldWidget tf) {
         int diff = bottom-top;
         int max = (diff/2)+1;
         XPoint *points = calloc(max, sizeof(XPoint));
-        int n = 0;
         int y = top;
         int i;
         for(i=0;i<max && y <= bottom;i++) {
@@ -675,7 +674,6 @@ static Dimension tfCalcHeight(TextFieldWidget tf) {
 }
 
 void textfield_recalc_size(TextFieldWidget w) {
-    NFont *font = w->textfield.font;
     int height = tfCalcHeight(w);
     int width = w->core.width;
     

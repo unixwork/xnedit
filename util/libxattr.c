@@ -78,7 +78,6 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
         return NULL;
     }
     
-    char *begin = buf;
     char *name = NULL;
     for(int i=0;i<length;i++) {
         if(!name && buf[i] == '.') {
@@ -96,8 +95,7 @@ static char ** parse_xattrlist(char *buf, ssize_t length, ssize_t *nelm) {
                 *nelm = -1;
                 return NULL;
             }
-            begin = buf + i + 1;
-            name = 0;
+            name = NULL;
         }
     }
     
