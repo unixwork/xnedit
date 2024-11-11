@@ -8,7 +8,8 @@ License: GPLv2
 Group: Applications/Editors
 BuildRequires: motif-devel
 BuildRequires: pkgconf
-BuildRequires: desktop-file-utils  
+BuildRequires: desktop-file-utils
+Requires: motif
 
 %description
 A fast and classic X11 text editor, based on NEdit, with full unicode support and antialiased text rendering.
