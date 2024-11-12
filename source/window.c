@@ -464,7 +464,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->indentColorDialog = NULL;
     window->font = FontRef(GetPrefFont());
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());
@@ -4222,7 +4221,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     strcpy(window->boldFontName, GetPrefBoldFontName());
     strcpy(window->boldItalicFontName, GetPrefBoldItalicFontName());
     window->colorDialog = NULL;
-    window->indentColorDialog = NULL;
     window->font = FontRef(GetPrefFont());
     window->italicFont = FontRef(GetPrefItalicFont());
     window->boldFont = FontRef(GetPrefBoldFont());

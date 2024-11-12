@@ -342,7 +342,6 @@ typedef struct _WindowInfo {
     Widget	replaceMultiFilePathBtn;
     Widget	fontDialog;		/* NULL, unless font dialog is up */
     void        *colorDialog;		/* NULL, unless color dialog is up, type colorDialog* */
-    void        *indentColorDialog;      /* NULL, unless dialog is up, type indentColorDialog  */
     Widget	readOnlyItem;		/* menu bar settable widgets... */
     Widget	autoSaveItem;
     Widget	saveLastItem;

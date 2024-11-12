@@ -321,14 +321,6 @@ typedef struct {
     int selectedProfile;
 } colorDialog;
 
-/* IndentColor dialog information */
-typedef struct {
-    Widget shell;
-    Widget textarea;
-    Widget msg;
-    WindowInfo *window;
-} indentColorDialog;
-
 /* Repository for simple preferences settings */
 static struct prefData {
     int openInTab;		/* open files in new tabs  */
@@ -1331,7 +1323,6 @@ static void loadColors(colorDialog *cd);
 static void loadColorProfileStyleSettings(colorDialog *cd);
 static void clearRainbowColors(colorDialog *cd);
 static void saveColorProfileSettings(colorDialog *cd);
-static void updateRainbowColors(indentColorDialog *cd);
 
 static int matchLanguageMode(WindowInfo *window);
 static int loadLanguageModesString(char *inString, int fileVer);
@@ -7799,36 +7790,6 @@ void ChooseColors(WindowInfo *window)
         
     /* put up dialog */
     ManageDialogCenteredOnPointer(form);
-}
-
-static void updateRainbowColors(indentColorDialog *cd)
-{
-    char *colors = XmTextGetString(cd->textarea);
-    size_t len = strlen(colors);
-    while(len > 0) {
-        if(colors[len-1] == '\n') {
-            colors[len-1] = 0;
-            len--;
-        } else {
-            break;
-        }
-    }
-    
-    for(int i=0;i<len;i++) {
-        if(colors[i] == '\n') {
-            colors[i] = ';';
-        }
-    }
-    
-    WindowInfo *window;
-    for (window = WindowList; window != NULL; window = window->next)
-    {
-        SetIndentRainbowColors_Deprecated(window, colors);
-    }
-    
-    SetPrefIndentRainbowColors(colors);
-    
-    XtFree(colors);
 }
 
 static void clearRainbowColors(colorDialog *cd)
