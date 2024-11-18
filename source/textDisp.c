@@ -191,11 +191,11 @@ static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color);
 
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
-        Position lineNumLeft, Position lineNumWidth, textBuffer *buffer,
-        NFont *font, NFont *bold, NFont *italic, NFont *boldItalic,
-        ColorProfile *colorProfile, int continuousWrap, int wrapMargin,
-        XmString bgClassString, Pixel calltipFGPixel, Pixel calltipBGPixel,
-        Pixel lineHighlightBGPixel, Boolean indentRainbow,
+        Position lineNumLeft, Position lineNumWidth, Position marginWidth,
+        textBuffer *buffer, NFont *font, NFont *bold, NFont *italic,
+        NFont *boldItalic, ColorProfile *colorProfile, int continuousWrap,
+        int wrapMargin, XmString bgClassString, Pixel calltipFGPixel,
+        Pixel calltipBGPixel, Pixel lineHighlightBGPixel, Boolean indentRainbow,
         Boolean highlightCursorLine, Boolean ansiColors)
 {
     textDisp *textD;
@@ -211,6 +211,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->left = left;
     textD->width = width;
     textD->height = height;
+    textD->marginWidth = marginWidth;
     textD->cursorOn = True;
     /*
     textD->cursor->cursorPos = 0;
@@ -761,7 +762,7 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     
     /* draw the lines of text */
     for (line=firstLine; line<=lastLine; line++)
-    	redisplayLine(textD, line, left, left+width, 0, INT_MAX);
+    	redisplayLine(textD, line, left-textD->marginWidth, left+width, 0, INT_MAX);
     
     /* draw the line numbers if exposed area includes them */
     if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth) {
@@ -2411,7 +2412,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     
     if (leftClip > rightClip) {
         return;
-    } 
+    }
 
     /* Calculate y coordinate of the string to draw */
     fontHeight = textD->ascent + textD->descent;

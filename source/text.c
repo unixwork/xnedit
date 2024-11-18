@@ -947,7 +947,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    new->core.width - marginWidth - textLeft,
 	    new->core.height - new->text.marginHeight * 2,
 	    lineNumCols == 0 ? 0 : marginWidth,
-	    lineNumCols == 0 ? 0 : lineNumCols * charWidth,
+	    lineNumCols == 0 ? 0 : lineNumCols*charWidth, new->text.marginWidth,
 	    buf,new->text.font, new->text.boldFont, new->text.italicFont,
             new->text.boldItalicFont,GetDefaultColorProfile(),
             new->text.continuousWrap, new->text.wrapMargin,
