@@ -4392,6 +4392,11 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	/* If character exceeded wrap margin, find the break point
     	   and wrap there */
     	if (colNum > wrapMargin || width > maxWidth) {
+            if(retWrap) {
+                *retWrap = True;
+                retWrap = NULL;
+            }
+            
     	    foundBreak = False;
             /* TODO: implement unicode word boundary */
     	    for (b=p; b>=lineStart; b--) {
@@ -4411,10 +4416,6 @@ static void wrappedLineCounter(const textDisp* textD, const textBuffer* buf,
     	    	    } else
     	    	    	colNum = BufCountDispChars(buf, b+1, p+1);
     	    	    foundBreak = True;
-                    if(retWrap) {
-                        *retWrap = True;
-                        retWrap = NULL;
-                    }
     	    	    break;
     	    	}
     	    }
