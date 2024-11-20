@@ -137,7 +137,6 @@ typedef struct _TextPart {
     Boolean highlightCursorLine;        /* highlight currently selected line */
     
     Boolean indentRainbow;              /* indent rainbow enabled? */
-    char *indentRainbowColors;          /* rainbow color list */
     
     Boolean ansiColors;
     XftColor *ansiColorList;

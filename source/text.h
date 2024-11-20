@@ -128,8 +128,6 @@
 #define textCBacklightCharTypes "BacklightCharTypes"
 #define textNindentRainbow "indentRainbow"
 #define textCindentRainbow "indentRainbow"
-#define textNindentRainbowColors "indentRainbowColors"
-#define textCindentRainbowColors "indentRainbowColors"
 #define textNhighlightCursorLine "highlightCursorLine"
 #define textChighlightCursorLine "highlightCursorLine"
 #define textNansiColors "ansiColors"

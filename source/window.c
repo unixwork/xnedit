@@ -2975,7 +2975,6 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNbacklightCharTypes, window->backlightCharTypes,
             textNhighlightCursorLine, window->highlightCursorLine,
             textNindentRainbow, window->indentRainbow,
-            textNindentRainbowColors, window->indentRainbowColors,
             textNansiColors, window->ansiColors,
             textNrows, rows, textNcolumns, cols,
             textNlineNumCols, lineNumCols,
@@ -3907,23 +3906,11 @@ void SetHighlightCursorLine(WindowInfo *window, Boolean state)
     }
 }
 
-void SetIndentRainbowColors_Deprecated(WindowInfo *window, const char *colorList)
-{
-    NEditFree(window->indentRainbowColors);
-    window->indentRainbowColors = NEditStrdup(colorList);
-    
-    XtVaSetValues(window->textArea,
-          textNindentRainbowColors, window->indentRainbowColors, NULL);
-    for (int i=0; i<window->nPanes; i++) {
-        XtVaSetValues(window->textPanes[i], textNindentRainbowColors, window->indentRainbowColors, NULL);
-    }
-}
-
 void SetIndentRainbow(WindowInfo *window, Boolean state)
 {
     window->indentRainbow = state;
     
-    XtVaSetValues(window->textArea,
+  XtVaSetValues(window->textArea,
           textNindentRainbow, state, NULL);
     for (int i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i], textNindentRainbow, state, NULL);
@@ -5507,7 +5494,6 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     
     SetHighlightCursorLine(window, orgWin->highlightCursorLine);
     SetIndentRainbow(window, orgWin->indentRainbow);
-    SetIndentRainbowColors_Deprecated(window, orgWin->indentRainbowColors);
     SetAnsiColors(window, orgWin->ansiColors);
     SetBacklightChars(window, orgWin->backlightCharTypes);
     

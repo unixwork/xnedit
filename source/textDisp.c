@@ -4802,13 +4802,6 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow)
     textD->indentRainbow = indentRainbow;
 }
 
-/*
- * Setup indent rainbow colors
- */
-void TextDSetIndentRainbowColors_Deprecated(textDisp *textD, const char *colors)
-{  
-    // TODO: remove
-}
 
 #define ANSI_ESC_MAX_PARAM 16
 #define ANSI_ESC_MAX_PARAM_LEN 4

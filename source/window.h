@@ -108,7 +108,6 @@ void AllWindowsUnbusy(void);
 void SortTabBar(WindowInfo *window);
 void SwitchTabs(Widget from, Widget to);
 void SetHighlightCursorLine(WindowInfo *window, Boolean state);
-void SetIndentRainbowColors_Deprecated(WindowInfo *window, const char *colorList);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetAnsiColors(WindowInfo *window, Boolean state);
 void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList);

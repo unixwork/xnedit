@@ -719,8 +719,6 @@ static XtResource resources[] = {
       XtOffset(TextWidget, text.highlightCursorLine), XmRString, "False"},
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.indentRainbow), XmRString, "False"},
-    {textNindentRainbowColors, textCindentRainbowColors, XmRPointer, sizeof(XmRPointer),
-      XtOffset(TextWidget, text.indentRainbowColors), XmRPointer, NULL},
     {textNbacklightCharTypes,textCBacklightCharTypes,XmRString,sizeof(XmString),
       XtOffset(TextWidget, text.backlightCharTypes), XmRString, NULL},
     {textNrows, textCRows, XmRInt,sizeof(int),
@@ -962,10 +960,6 @@ static void initialize(TextWidget request, TextWidget new)
     delimiters = (char*)NEditMalloc(strlen(new->text.delimiters) + 4);
     sprintf(delimiters, "%s%s", " \t\n", new->text.delimiters);
     new->text.delimiters = delimiters;
-    
-    if(new->text.indentRainbowColors) {
-        new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
-    }
 
     /* Start with the cursor blanked (widgets don't have focus on creation,
        the initial FocusIn event will unblank it and get blinking started) */
@@ -1368,15 +1362,6 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if (new->text.indentRainbow != current->text.indentRainbow)
     {
         TextDSetIndentRainbow(new->text.textD, new->text.indentRainbow);
-        redraw = True;
-    }
-    if (new->text.indentRainbowColors != current->text.indentRainbowColors)
-    {
-        if(current->text.indentRainbowColors) {
-            NEditFree(current->text.indentRainbowColors);
-        }
-        TextDSetIndentRainbowColors_Deprecated(new->text.textD, new->text.indentRainbowColors);
-        new->text.indentRainbowColors = NEditStrdup(new->text.indentRainbowColors);
         redraw = True;
     }
     
