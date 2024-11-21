@@ -2485,9 +2485,6 @@ void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *te
             XmNbackground, textBgPix,
             NULL);
     textD = ((TextWidget)window->textArea)->text.textD;
-    TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
-            &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
-            &cursorFgC, &lineHiBgC );
     /* Update any additional panes */
     for (i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i],
@@ -2495,9 +2492,6 @@ void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *te
                 XmNbackground, textBgPix,
                 NULL);
         textD = ((TextWidget)window->textPanes[i])->text.textD;
-        TextDSetColors_Deprecated( textD, &textFgC, &textBgC, &selectFgC, &selectBgC, 
-                &hiliteFgC, &hiliteBgC, &lineNoFgC, &lineNoBgC,
-                &cursorFgC, &lineHiBgC );
     }
     
     /* Redo any syntax highlighting */

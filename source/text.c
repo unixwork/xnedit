@@ -1371,7 +1371,6 @@ static Boolean setValues(TextWidget current, TextWidget request,
     }
     
     if (new->text.ansiColorList != current->text.ansiColorList) {
-        TextDSetAnsiColorList_Deprecated(new->text.textD, new->text.ansiColorList);
         redraw = True;
     }
 

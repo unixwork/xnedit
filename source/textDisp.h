@@ -245,9 +245,6 @@ void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
-void TextDSetColors_Deprecated(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
-        XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
-        XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP);
 void TextDSetColorProfile(textDisp *textD, ColorProfile *profile);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 void TextDSetBoldFont(textDisp *textD, NFont *boldFont);
@@ -313,7 +310,6 @@ void TextDSetIndentRainbow(textDisp *textD, Boolean indentRainbow);
 void TextDCursorLR(textDisp *textD, int *left, int *right);
 textCursor TextDPos2Cursor(textDisp *textD, int pos);
 void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors);
-void TextDSetAnsiColorList_Deprecated(textDisp *textD, XftColor *colors);
 
 NFont *FontCreate(Display *dp, FcPattern *pattern);
 NFont *FontFromName(Display *dp, const char *name);

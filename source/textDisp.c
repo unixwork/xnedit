@@ -449,45 +449,6 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
 }
 
 
-/* Change the (non syntax-highlit) colors */ 
-void TextDSetColors_Deprecated(textDisp *textD, XftColor *textFgP, XftColor *textBgP,
-        XftColor *selectFgP, XftColor *selectBgP, XftColor *hiliteFgP, XftColor *hiliteBgP, 
-        XftColor *lineNoFgP, XftColor *lineNoBgP, XftColor *cursorFgP, XftColor *lineHiBgP)
-{
-    XGCValues values;
-    Display *d = XtDisplay(textD->w);
-    
-    /* Update the stored pixels */
-/*
-    textD->fgPixel = *textFgP;
-    textD->fgColor = *textFgP;
-    textD->selectFGColor = *selectFgP;
-    textD->highlightFGColor = *hiliteFgP;
-    textD->bgPixel = *textBgP;
-    textD->selectFGPixel = *selectFgP;
-    textD->selectBGPixel = *selectBgP;
-    textD->highlightFGPixel = *hiliteFgP;
-    textD->highlightBGPixel = *hiliteBgP;
-    textD->lineNumFGPixel = *lineNoFgP;
-    textD->lineNumBGPixel = *lineNoBgP;
-    textD->cursorFGPixel = *cursorFgP;
-    textD->lineHighlightBGPixel = *lineHiBgP;
-*/
-
-    releaseGC(textD->w, textD->gc);
-    allocateFixedFontGCs(textD, textBgP->pixel, textFgP->pixel);
-
-    
-    /* Change the cursor GC (the cursor GC is not shared). */
-    values.foreground = cursorFgP->pixel;
-    XChangeGC( d, textD->cursorFGGC, GCForeground, &values );
-    
-    /* Redisplay */
-    TextDRedisplayRect(textD, textD->left, textD->top, textD->width,
-                       textD->height);
-    redrawLineNumbers(textD, textD->top, textD->height, True);
-}
-
 void TextDSetColorProfile(textDisp *textD, ColorProfile *profile)
 {
     XGCValues values;
@@ -1878,11 +1839,6 @@ void TextDSetAnsiColors(textDisp *textD, Boolean ansiColors)
     } else {
         BufDisableAnsiEsc(textD->buffer);
     }
-}
-
-void TextDSetAnsiColorList_Deprecated(textDisp *textD, XftColor *colors)
-{
-    // TODO: remove
 }
 
 /*
