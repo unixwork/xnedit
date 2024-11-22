@@ -51,10 +51,6 @@ void SetAutoIndent(WindowInfo *window, IndentStyle state);
 void SetShowMatching(WindowInfo *window, ShowMatchingStyle state);
 void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
 	const char *boldName, const char *boldItalicName);
-void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *textBg,  
-        const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
-        const char *cursorFg, const char *lineHiBg);
 void SetColorProfile(WindowInfo *window, ColorProfile *profile);
 void LoadColorProfile(Widget w, ColorProfile *profile);
 void EnableWindowResourceDB(const WindowInfo *window);
@@ -110,7 +106,6 @@ void SwitchTabs(Widget from, Widget to);
 void SetHighlightCursorLine(WindowInfo *window, Boolean state);
 void SetIndentRainbow(WindowInfo *window, Boolean state);
 void SetAnsiColors(WindowInfo *window, Boolean state);
-void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList);
 void SetBacklightChars(WindowInfo *window, char *applyBacklightTypes);
 void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state, 
         Boolean notify);

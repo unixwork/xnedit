@@ -888,18 +888,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->lastFocus = text;
 
     /* Set the initial colors from the globals. */
-    SetColors_Deprecated(window,
-              GetPrefColorName(TEXT_FG_COLOR  ),
-              GetPrefColorName(TEXT_BG_COLOR  ),
-              GetPrefColorName(SELECT_FG_COLOR),
-              GetPrefColorName(SELECT_BG_COLOR),
-              GetPrefColorName(HILITE_FG_COLOR),
-              GetPrefColorName(HILITE_BG_COLOR),
-              GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(LINENO_BG_COLOR), 
-              GetPrefColorName(CURSOR_FG_COLOR),
-              GetPrefColorName(CURSOR_LINE_BG_COLOR));
-    SetAnsiColorList_Deprecated(window, GetPrefAnsiColorList());
     SetColorProfile(window, GetDefaultColorProfile());
     
     /* Create the right button popup menu (note: order is important here,
@@ -2439,69 +2427,6 @@ void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
     UpdateMinPaneHeights(window);
 }
 
-void SetColors_Deprecated(WindowInfo *window, const char *textFg, const char *textBg,  
-        const char *selectFg, const char *selectBg, const char *hiliteFg, 
-        const char *hiliteBg, const char *lineNoFg, const char *lineNoBg,
-        const char *cursorFg, const char *lineHiBg)
-{ 
-    int i, dummy;
-    Pixel   textFgPix   = AllocColor( window->textArea, textFg, 
-                    &dummy, &dummy, &dummy),
-            textBgPix   = AllocColor( window->textArea, textBg, 
-                    &dummy, &dummy, &dummy),
-            selectFgPix = AllocColor( window->textArea, selectFg, 
-                    &dummy, &dummy, &dummy),
-            selectBgPix = AllocColor( window->textArea, selectBg, 
-                    &dummy, &dummy, &dummy),
-            hiliteFgPix = AllocColor( window->textArea, hiliteFg, 
-                    &dummy, &dummy, &dummy),
-            hiliteBgPix = AllocColor( window->textArea, hiliteBg, 
-                    &dummy, &dummy, &dummy),
-            lineNoFgPix = AllocColor( window->textArea, lineNoFg, 
-                    &dummy, &dummy, &dummy),
-            lineNoBgPix = AllocColor( window->textArea, lineNoBg, 
-                    &dummy, &dummy, &dummy),
-            cursorFgPix = AllocColor( window->textArea, cursorFg, 
-                    &dummy, &dummy, &dummy),
-            lineHiBgPix = AllocColor( window->textArea, lineHiBg, 
-                    &dummy, &dummy, &dummy);
-    textDisp *textD;
-    
-    XftColor textFgC = PixelToColor(window->textArea, textFgPix);
-    XftColor textBgC = PixelToColor(window->textArea, textBgPix);
-    XftColor selectFgC = PixelToColor(window->textArea, selectFgPix);
-    XftColor selectBgC = PixelToColor(window->textArea, selectBgPix);
-    XftColor hiliteFgC = PixelToColor(window->textArea, hiliteFgPix);
-    XftColor hiliteBgC = PixelToColor(window->textArea, hiliteBgPix);
-    XftColor lineNoFgC = PixelToColor(window->textArea, lineNoFgPix);
-    XftColor lineNoBgC = PixelToColor(window->textArea, lineNoBgPix);
-    XftColor cursorFgC = PixelToColor(window->textArea, cursorFgPix);
-    XftColor lineHiBgC = PixelToColor(window->textArea, lineHiBgPix);
-    
-    
-    /* Update the main pane */
-    XtVaSetValues(window->textArea,
-            XmNforeground, textFgPix,
-            XmNbackground, textBgPix,
-            NULL);
-    textD = ((TextWidget)window->textArea)->text.textD;
-    /* Update any additional panes */
-    for (i=0; i<window->nPanes; i++) {
-        XtVaSetValues(window->textPanes[i],
-                XmNforeground, textFgPix,
-                XmNbackground, textBgPix,
-                NULL);
-        textD = ((TextWidget)window->textPanes[i])->text.textD;
-    }
-    
-    /* Redo any syntax highlighting */
-    if (window->highlightData != NULL)
-        UpdateHighlightStyles(window, True);
-    
-    /* Update FontSel colors */
-    FontSelSetColors(textFgC, textBgPix);
-}
-
 void LoadColorProfile(Widget w, ColorProfile *profile)
 {
     Colormap     cmap;
@@ -3922,25 +3847,6 @@ void SetAnsiColors(WindowInfo *window, Boolean state)
     }
 }
 
-void SetAnsiColorList_Deprecated(WindowInfo *window, const char *colorList)
-{
-    memset(window->ansiColorList, 0, sizeof(window->ansiColorList));
-    
-    char *colors[16];
-    char *str = ParseAnsiColorList(colors, colorList);
-    for(int i=0;i<16;i++) {
-        window->ansiColorList[i] = AllocXftColor(window->textArea, colors[i]);
-    }
-    
-    NEditFree(str);
-    
-    XtVaSetValues(window->textArea,
-          textNansiColorList, window->ansiColorList, NULL);
-    for (int i=0; i<window->nPanes; i++) {
-        XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
-    }
-}
-
 /*
 ** Set the backlight character class string
 */
@@ -4270,24 +4176,15 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->lastFocus = text;
     
     /* Set the initial colors from the globals. */
-    SetColors_Deprecated(window,
-              GetPrefColorName(TEXT_FG_COLOR  ),
-              GetPrefColorName(TEXT_BG_COLOR  ),
-              GetPrefColorName(SELECT_FG_COLOR),
-              GetPrefColorName(SELECT_BG_COLOR),
-              GetPrefColorName(HILITE_FG_COLOR),
-              GetPrefColorName(HILITE_BG_COLOR),
-              GetPrefColorName(LINENO_FG_COLOR),
-              GetPrefColorName(LINENO_BG_COLOR),
-              GetPrefColorName(CURSOR_FG_COLOR),
-              GetPrefColorName(CURSOR_LINE_BG_COLOR));
     SetColorProfile(window, shellWindow->colorProfile);
     // TODO: remove XtVaSetValues here, changing the color profile is enough
+    /*
     XtVaSetValues(window->textArea,
           textNansiColorList, window->ansiColorList, NULL);
     for (int i=0; i<window->nPanes; i++) {
         XtVaSetValues(window->textPanes[i], textNansiColorList, window->ansiColorList, NULL);
     }
+    */
     
     /* Create the right button popup menu (note: order is important here,
        since the translation for popping up this menu was probably already
