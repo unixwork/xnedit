@@ -1,0 +1,14 @@
+Binary files a/.DS_Store and b/.DS_Store differ
+Binary files a/clients/.DS_Store and b/clients/.DS_Store differ
+diff -urN a/clients/mwm/WmError.c b/clients/mwm/WmError.c
+--- a/clients/mwm/WmError.c	2017-08-17 02:38:43
++++ b/clients/mwm/WmError.c	2024-11-24 10:44:11
+@@ -131,7 +131,7 @@
+     XSetIOErrorHandler (WmXIOErrorHandler);
+ 
+     XtSetWarningHandler (WmXtWarningHandler);
+-    XtSetErrorHandler (WmXtErrorHandler);
++    XtSetErrorHandler ((XtErrorHandler _X_NORETURN)WmXtErrorHandler);
+ 
+ } /* END OF FUNCTION WmInitErrorHandler */
+ 

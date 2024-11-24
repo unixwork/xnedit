@@ -32,5 +32,7 @@ util/Makefile.freebsd
 util/Makefile.macosx
 util/Makefile.macos
 util/check_lin_tif
+resources/macos/build
+resources/macos/install
 gmon.out
 .idea
