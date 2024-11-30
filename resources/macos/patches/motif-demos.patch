@@ -1,0 +1,14 @@
+Binary files a/.DS_Store and b/.DS_Store differ
+Binary files a/demos/.DS_Store and b/demos/.DS_Store differ
+Binary files a/demos/unsupported/.DS_Store and b/demos/unsupported/.DS_Store differ
+diff -urN a/demos/unsupported/xmform/xmform.c b/demos/unsupported/xmform/xmform.c
+--- a/demos/unsupported/xmform/xmform.c	2016-03-16 03:10:08
++++ b/demos/unsupported/xmform/xmform.c	2024-11-24 10:45:52
+@@ -54,6 +54,7 @@
+ #include <Xm/Form.h>
+ #include <Xm/PushB.h>
+ #include <Xm/ArrowB.h>
++#include <stdlib.h>
+ 
+ static void FillItPlease();
+ static void NearlyEvenSpread();

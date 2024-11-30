@@ -1,0 +1,14 @@
+Binary files a/.DS_Store and b/.DS_Store differ
+Binary files a/lib/.DS_Store and b/lib/.DS_Store differ
+diff -urN a/lib/Xm/TextF.c b/lib/Xm/TextF.c
+--- a/lib/Xm/TextF.c	2017-08-22 02:27:47
++++ b/lib/Xm/TextF.c	2024-11-24 10:39:57
+@@ -82,7 +82,7 @@
+ #define FIX_1409
+ 
+ #if (defined(__FreeBSD__) && (__FreeBSD__ < 4)) || \
+-    (defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__))
++    (defined(__NetBSD__) || defined(__OpenBSD__))
+ /*
+  * Modification by Integrated Computer Solutions, Inc.  May 2000
+  *
