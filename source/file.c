@@ -2783,7 +2783,12 @@ static int min(int i1, int i2)
     return i1 <= i2 ? i1 : i2;
 }
 
-static char * GetDefaultEncoding(void) {
+static const char * GetDefaultEncoding(void) {
+    const char *fallback = GetPrefFallbackCharset();
+    if(strcmp(fallback, "locale")) {
+        return fallback;
+    }
+    
     char *lc = setlocale (LC_ALL, "");
     char *d = strchr(lc, '.');
     if(d) {

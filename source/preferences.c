@@ -450,6 +450,7 @@ static struct prefData {
     int editorConfig;
     int lockEncodingError;
     char defaultCharset[MAX_ENCODING_LENGTH];
+    char fallbackCharset[MAX_ENCODING_LENGTH];
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1199,6 +1200,9 @@ static PrefDescripRec PrefDescrip[] = {
     {"defaultCharset", "DefaultCharset", PREF_STRING, "locale",
         PrefData.defaultCharset,
         (void *)sizeof(PrefData.defaultCharset), True},
+    {"fallbackCharset", "FallbackCharset", PREF_STRING, "locale",
+        PrefData.fallbackCharset,
+        (void *)sizeof(PrefData.fallbackCharset), True},
     {"iconSize", "IconSize", PREF_ALLOC_STRING,
       "small",
       &PrefData.iconSize, NULL, True} ,
@@ -2425,6 +2429,10 @@ const char* GetPrefDefaultCharset(void)
     }
     
     return PrefData.defaultCharset;
+}
+
+const char* GetPrefFallbackCharset(void) {
+    return PrefData.fallbackCharset;
 }
 
 int GetPrefCloseIconSize(void)

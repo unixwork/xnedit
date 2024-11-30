@@ -239,6 +239,7 @@ Boolean GetFsbShowHidden(void);
 Boolean GetPrefForceOSConversion(void);
 void SetPrefFocusOnRaise(Boolean);
 const char* GetPrefDefaultCharset(void);
+const char* GetPrefFallbackCharset(void);
 
 int GetPrefCloseIconSize(void);
 int GetPrefISrcFindIconSize(void);
