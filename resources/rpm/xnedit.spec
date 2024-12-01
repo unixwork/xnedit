@@ -22,13 +22,13 @@ make linux C_OPT_FLAGS="$RPM_OPT_FLAGS"
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_bindir}
-install -m 0755 source/xnedit %{buildroot}%{_bindir}/xnedit
-install -m 0755 source/xnc %{buildroot}%{_bindir}/xnc
+make install
 
 %files
 %{_bindir}/xnedit
 %{_bindir}/xnc
+%{_datadir}/icons/xnedit.png
+%{_datadir}/applications/xnedit.desktop
 
 %changelog
 * Wed Nov 06 2024 Olaf Wintermann <olaf.wintermann@gmail.com>
