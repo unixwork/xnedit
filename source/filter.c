@@ -684,6 +684,7 @@ typedef struct FilterIOThreadData {
 typedef struct FilterCmdError {
     Widget w;
     int status;
+    int io_errno;
 } FilterCmdError;
 
 static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
@@ -698,10 +699,17 @@ static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
         }
     }
     if(w) {
-        (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
-                "Filter command reported failed exit status: %d\n",
-                "OK",
-                error->status);
+        if(error->io_errno != 0) {
+            (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
+                    "Filter IO Error: %s\n",
+                    "OK",
+                    strerror(error->io_errno));
+        } else {
+            (void)DialogF(DF_WARN, error->w, 1, "Command Failure",
+                    "Filter command reported failed exit status: %d\n",
+                    "OK",
+                    error->status);
+        }
     }
     
     NEditFree(error);
@@ -710,20 +718,38 @@ static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
 static void* file_input_thread(void *data) {
     FilterIOThreadData *stream = data;
     
+    int ioerror = 0;
+    int io_errno = 0;
+    
     char buf[16384];
     size_t r;
     while((r = fread(buf, 1, 16384, stream->file)) > 0) {
-        write(stream->fd_in, buf, r);
+        char *wbuf = buf;
+        while(r > 0) {
+            ssize_t w = write(stream->fd_in, wbuf, r);
+            if(w <= 0) {
+                ioerror = 1;
+                io_errno = errno;
+                break;
+            }
+            r -= w;
+            wbuf += w;
+        }
+        
+        if(ioerror) {
+            break;
+        }
     }
     
     close(stream->fd_in);
     
     int status = -1;
     waitpid(stream->pid, &status, 0);
-    if(status != 0) {
+    if(status != 0 || ioerror) {
         FilterCmdError *error = NEditMalloc(sizeof(FilterCmdError));
         error->w = stream->widget;
         error->status = status;
+        error->io_errno = io_errno;
         XtAppAddTimeOut(
                 stream->appcontext,
                 0,
