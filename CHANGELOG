@@ -1,10 +1,36 @@
 CHANGELOG
 =========
 
-version 1.6.0 (tbd.)
+version 1.6.0 (2024-12-05)
 --------------------------
 
- - removed dependency to libpcre for matching editorconfig patterns
+ - added IO filters
+ - added gzip/bzip2 default options for opening and saving of compressed files
+ - added a filter for monospace fonts to the font selector
+ - added preferences for undo limits
+ - added fallbackCharset preference
+ - improved filedialog error handling
+ - improved fillParagraph to be utf-8 aware
+ - improved clipboard_to_string macro function to support utf-8
+ - improved tolower/toupper macro functions to support utf-8
+ - improved xnedit unicode-capable textfield and enabled it by default
+ - improved text rendering and resizing performance
+ - improved opening of large files
+ - changed max tab size to 256
+ - removed dependency on libpcre for matching editorconfig patterns
+ - fixed encoding when including files
+ - fixed crash in filename_dialog macro function
+ – fixed compatibility with Motif 2.3.8
+ - fixed detached tab window size
+ - fixed font width detection
+ - fixed filedialog not showing the default name when available
+ - fixed some memory leaks and uninitialized memory access
+ - fixed crash on Solaris sparc
+ - fixed build on Solaris/Illumos
+ - fixed integer overflow/possible buffer overflow in measureVisLine
+ - fixed some UI color inconsistencies
+ - fixed some color dialog rendering issues
+ - fixed encoding error dropdown menu not working sometimes
 
 version 1.5.3 (2024-02-12)
 --------------------------

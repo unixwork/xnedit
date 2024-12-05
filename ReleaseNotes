@@ -1,4 +1,4 @@
-          Release Notes for XNEdit Version 1.5.0, Jul 2023
+          Release Notes for XNEdit Version 1.6.0, Dec 2024
 
 
 This file contains last minute notes to users about the release, which are not
@@ -6,6 +6,17 @@ included in the documentation or README files included with the distribution
 kits.  It also contains change information, for users who are interested in
 what bugs have been fixed, and what features have been added in the current
 version.
+
+
+XNEdit 1.6.0 alternative Textfield Widget
+-----------------------------------------
+
+The alternative text field widget, introduced in version 1.2.1, is now enabled
+by default. It can be disabled by adding -DDISABLE_XNE_TEXTFIELD to the CFLAGS.
+
+If the font needs adjustments, it can be changed with this X resource:
+
+*XmTextField.XftFont: Monospace:size=10
 
 
 XNEdit 1.5.0 Experimental Multi-cursor Support
