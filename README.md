@@ -1,5 +1,5 @@
-XNEdit Version 1.5, July 2023
-=============================
+XNEdit Version 1.6, December 2024
+=================================
 
 XNEdit is a multi-purpose text editor for the X Window System, which combines
 a standard, easy to use, graphical user interface with the thorough
