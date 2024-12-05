@@ -28,11 +28,12 @@
 #define NEDIT_TEXTDISP_H_INCLUDED
 
 #include "textBuf.h"
-#include "colorprofile.h"
 
 #include <X11/Intrinsic.h>
 #include <X11/Xlib.h>
 #include <Xm/Xm.h>
+
+#include "colorprofile.h"
 
 #include <X11/Xft/Xft.h>
 
