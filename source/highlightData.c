@@ -926,6 +926,7 @@ static char *DefaultPatternSets[] = {
         ncs new command substitution:\"\\$\\(\":\"\\)\"::Subroutine:new command substitution:\n\
         ncs escapes:\"\\\\[\\\\$`\"\"']\":::Subroutine1:new command substitution:\n\
         ncs single quoted string:\"'\":\"'\"::String1:new command substitution:\n\
+        ncs double quoted string:\"\"\"\":\"\"\"\"::String1:new command substitution:\n\
         ncs variables:\"\\$([-*@#?$!0-9]|[a-zA-Z_][0-9a-zA-Z_]*)\":::Identifier1:new command substitution:\n\
         ncs variables2:\"\\$\\{\":\"}\":\"\\)\":Identifier1:new command substitution:\n\
         assignment:\"[a-zA-Z_][0-9a-zA-Z_]*=\":::Identifier1::\n\
