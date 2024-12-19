@@ -174,6 +174,7 @@ Button1<MotionNotify>:          adjustselection()\n\
 :<Key>KP_2:                     insert()\n\
 :<Key>KP_3:                     insert()\n\
 :<Key>KP_0:                     insert()\n\
+:<Key>KP_Separator:             insert()\n\
 <KeyPress>Return:               PrimitiveParentActivate() action()\n\
 <Key>osfActivate:               PrimitiveParentActivate() action()\n\
 <Key>osfCancel:                 PrimitiveParentCancel()\n\

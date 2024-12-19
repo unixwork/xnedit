@@ -283,6 +283,7 @@ static char defaultTranslations[] =
     ":<Key>KP_2: self_insert()\n"
     ":<Key>KP_3: self_insert()\n"
     ":<Key>KP_0: self_insert()\n"
+    ":<Key>KP_Separator: self_insert()\n"
 
     /* Backspace */
     "Ctrl<KeyPress>osfBackSpace: delete_previous_word()\n"
