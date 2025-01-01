@@ -529,7 +529,7 @@ XmString FSNameCreateLocalized(char *s) {
     return xmstr;
 }
 #else
-#define FSNameCreateLocalized(s) XmStringCreateLocalized
+#define FSNameCreateLocalized(s) XmStringCreateLocalized(s)
 #endif
 
 /* -------------------- path bar -------------------- */
