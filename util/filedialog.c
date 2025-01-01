@@ -52,6 +52,7 @@
 #include "textfield.h"
 #include "ec_glob.h"
 #include "pathutils.h"
+#include "unicode.h"
 
 #include "../source/preferences.h"
 #include "../source/filter.h"
@@ -519,6 +520,17 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     pixmaps_initialized = 1;
 }
 
+/* -------------------- path bar -------------------- */
+#ifdef __APPLE__
+XmString FSNameCreateLocalized(char *s) {
+    char *str = StringNFD2NFC(s);
+    XmString xmstr = XmStringCreateLocalized(str);
+    free(str);
+    return xmstr;
+}
+#else
+#define FSNameCreateLocalized(s) XmStringCreateLocalized
+#endif
 
 /* -------------------- path bar -------------------- */
 
@@ -901,7 +913,7 @@ void PathBarSetPath(PathBar *bar, char *path)
             segStr[i-begin] = '\0';
             begin = i+1;
             
-            str = XmStringCreateLocalized(segStr);
+            str = FSNameCreateLocalized(segStr);
             NEditFree(segStr);
             XtSetArg(args[0], XmNlabelString, str);
             XtSetArg(args[1], XmNfillOnSelect, True);
@@ -1116,7 +1128,7 @@ static void filelistwidget_add(Widget w, int showHidden, char *filter, FileElm *
             }
             e->isHidden = False;
             
-            items[i] = XmStringCreateLocalized(name);
+            items[i] = FSNameCreateLocalized(name);
             i++;
         }
         XmListAddItems(w, items, i, 0);
@@ -1254,7 +1266,7 @@ static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileEl
         e->isHidden = False;
         
         // name
-        XmString str = XmStringCreateLocalized(name);
+        XmString str = FSNameCreateLocalized(name);
         XtVaSetValues(grid,
                 XmNcolumn, 0, 
                 XmNrow, row,
