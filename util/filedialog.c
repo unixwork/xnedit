@@ -947,9 +947,10 @@ void PathBarDestroy(PathBar *pathbar) {
 typedef struct FileElm FileElm;
 struct FileElm {
     char *path;
-    int isDirectory;
     uint64_t size;
     time_t lastModified;
+    Boolean isDirectory;
+    Boolean isHidden;
 };
 
 struct FileDialogData {
@@ -1110,8 +1111,10 @@ static void filelistwidget_add(Widget w, int showHidden, char *filter, FileElm *
             
             char *name = FileName(e->path);
             if((!showHidden && name[0] == '.') || fnmatch(filter, name, 0)) {
+                e->isHidden = True;
                 continue;
             }
+            e->isHidden = False;
             
             items[i] = XmStringCreateLocalized(name);
             i++;
@@ -1245,8 +1248,10 @@ static void filegridwidget_add(Widget grid, int showHidden, char *filter, FileEl
         
         char *name = FileName(e->path);
         if((!showHidden && name[0] == '.') || (!e->isDirectory && fnmatch(filter, name, 0))) {
+            e->isHidden = True;
             continue;
         }
+        e->isHidden = False;
         
         // name
         XmString str = XmStringCreateLocalized(name);
@@ -1600,22 +1605,14 @@ static void filedialog_goup(Widget w, FileDialogData *data, XtPointer d)
     NEditFree(newPath);
 }
 
-char* set_selected_path(FileDialogData *data, XmString item)
-{
-    char *name = NULL;
-    XmStringGetLtoR(item, XmFONTLIST_DEFAULT_TAG, &name);
-    if(!name) {
+char* set_selected_path(FileDialogData *data, const char *path) {
+    if(!path) {
         return NULL;
     }
-    char *path = ConcatPath(data->currentPath, name);
-    XtFree(name);
     
-    if(data->selectedPath) {
-        NEditFree(data->selectedPath);
-    }
-    data->selectedPath = path;
-    
-    return path;
+    NEditFree(data->selectedPath);
+    data->selectedPath = NEditStrdup(path);
+    return data->selectedPath;
 }
 
 void set_path_from_row(FileDialogData *data, int row) {
@@ -1634,12 +1631,27 @@ void set_path_from_row(FileDialogData *data, int row) {
         XNETextSetString(data->name, FileName(path));
         NEditFree(path);
     } else {
-        if(data->selectedPath) {
-            NEditFree(data->selectedPath);
-        }
+        NEditFree(data->selectedPath);
         data->selectedPath = path;
         data->selIsDir = False;
     }
+}
+
+static const char* get_path_from_list(FileElm *ls, int numelm, int index) {
+    if(index >= numelm || index < 0) {
+        return NULL;
+    }
+    int i = 0;
+    for(int e=0;e<numelm;e++) {
+        if(ls[e].isHidden) {
+            continue;
+        }
+        if(i == index) {
+            return ls[e].path;
+        }
+        i++;
+    }
+    return NULL;
 }
 
 void grid_select(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
@@ -1733,7 +1745,8 @@ void grid_header_clicked(Widget w, FileDialogData *data, XmLGridCallbackStruct *
 
 void dirlist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
-    char *path = set_selected_path(data, cb->item);
+    const char *p = get_path_from_list(data->dirs, data->dircount, cb->item_position-1);
+    char *path = set_selected_path(data, p);
     if(path) {
         filedialog_update_dir(data, path);
         PathBarSetPath(data->pathBar, path);
@@ -1743,15 +1756,16 @@ void dirlist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 
 void dirlist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
-    char *path = set_selected_path(data, cb->item);
-    if(path) {
+    const char *p = get_path_from_list(data->dirs, data->dircount, cb->item_position-1);
+    if(set_selected_path(data, p)) {
         data->selIsDir = TRUE;
     }
 }
 
 void filelist_activate(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
 {
-    char *path = set_selected_path(data, cb->item);
+    const char *p = get_path_from_list(data->files, data->filecount, cb->item_position-1);
+    char *path = set_selected_path(data, p);
     if(path) {
         data->selIsDir = False;
         filedialog_ok(w, data, NULL);
@@ -1769,9 +1783,10 @@ void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
         filedialog_check_iofilters(data, path);
         XtFree(path);
     } else {
-        char *path = set_selected_path(data, cb->item);
-        filedialog_check_iofilters(data, path);
+        const char *p = get_path_from_list(data->files, data->filecount, cb->item_position-1);
+        char *path = set_selected_path(data, p);
         if(path) {
+            filedialog_check_iofilters(data, path);
             data->selIsDir = False;
         }
     }
