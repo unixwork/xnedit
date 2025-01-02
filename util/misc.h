@@ -155,7 +155,7 @@ void SetWindowGtkThemeVariant(Display *dp, Window window, int theme);
  */
 XmString FSNameCreateLocalized(char *s);
 #else
-#define FSNameCreateLocalized(s) XmStringCreateLocalized
+#define FSNameCreateLocalized(s) XmStringCreateLocalized(s)
 #endif
 
 #endif /* NEDIT_MISC_H_INCLUDED */
