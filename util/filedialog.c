@@ -52,6 +52,7 @@
 #include "textfield.h"
 #include "ec_glob.h"
 #include "pathutils.h"
+#include "unicode.h"
 
 #include "../source/preferences.h"
 #include "../source/filter.h"
@@ -518,6 +519,17 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     
     pixmaps_initialized = 1;
 }
+
+#ifdef __APPLE__
+static void NameSetString(Widget textfield, const char *str) {
+    char *str_nfc = StringNFD2NFC(str);
+    XNETextSetString(textfield, str_nfc);
+    free(str_nfc);
+}
+#else
+#define NameSetString(textfield, str) XNETextSetString(textfield, str)
+#endif
+
 
 /* -------------------- path bar -------------------- */
 
@@ -1588,7 +1600,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         FileSelect(data, openFile);
         data->status = FILEDIALOG_OK;
         if(data->name) {
-            XNETextSetString(data->name, openFile);
+            NameSetString(data->name, openFile);
             XmProcessTraversal(data->name, XmTRAVERSE_CURRENT);
         } else {
             select_view(data);
@@ -1627,7 +1639,7 @@ void set_path_from_row(FileDialogData *data, int row) {
     filedialog_check_iofilters(data, path);
     
     if(data->type == FILEDIALOG_SAVE) {
-        XNETextSetString(data->name, FileName(path));
+        NameSetString(data->name, FileName(path));
         NEditFree(path);
     } else {
         NEditFree(data->selectedPath);
@@ -1776,7 +1788,7 @@ void filelist_select(Widget w, FileDialogData *data, XmListCallbackStruct *cb)
     if(data->type == FILEDIALOG_SAVE) {
         char *name = NULL;
         XmStringGetLtoR(cb->item, XmFONTLIST_DEFAULT_TAG, &name);
-        XNETextSetString(data->name, name);
+        NameSetString(data->name, name);
         char *path = name ? ConcatPath(data->currentPath, name) : NULL;
         XtFree(name);
         filedialog_check_iofilters(data, path);
