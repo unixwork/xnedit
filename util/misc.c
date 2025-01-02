@@ -33,6 +33,7 @@
 #include "misc.h"
 #include "DialogF.h"
 #include "nedit_malloc.h"
+#include "unicode.h"
 
 #include "xdnd.h"
 
@@ -2572,3 +2573,12 @@ void SetWindowGtkThemeVariant(Display *dp, Window window, int theme)
             4);
     }
 }
+
+#ifdef __APPLE__
+XmString FSNameCreateLocalized(char *s) {
+    char *str = StringNFD2NFC(s);
+    XmString xmstr = XmStringCreateLocalized(str);
+    free(str);
+    return xmstr;
+}
+#endif

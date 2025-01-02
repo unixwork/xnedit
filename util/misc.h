@@ -149,4 +149,13 @@ char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
 void SetWindowGtkThemeVariant(Display *dp, Window window, int theme);
 
+#ifdef __APPLE__
+/*
+ * convert a file name/path to XmString
+ */
+XmString FSNameCreateLocalized(char *s);
+#else
+#define FSNameCreateLocalized(s) XmStringCreateLocalized
+#endif
+
 #endif /* NEDIT_MISC_H_INCLUDED */

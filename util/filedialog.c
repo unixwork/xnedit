@@ -52,7 +52,6 @@
 #include "textfield.h"
 #include "ec_glob.h"
 #include "pathutils.h"
-#include "unicode.h"
 
 #include "../source/preferences.h"
 #include "../source/filter.h"
@@ -519,18 +518,6 @@ static void initPixmaps(Display *dp, Drawable d, Screen *screen, int depth)
     
     pixmaps_initialized = 1;
 }
-
-/* -------------------- path bar -------------------- */
-#ifdef __APPLE__
-XmString FSNameCreateLocalized(char *s) {
-    char *str = StringNFD2NFC(s);
-    XmString xmstr = XmStringCreateLocalized(str);
-    free(str);
-    return xmstr;
-}
-#else
-#define FSNameCreateLocalized(s) XmStringCreateLocalized
-#endif
 
 /* -------------------- path bar -------------------- */
 
