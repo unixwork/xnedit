@@ -1335,7 +1335,11 @@ static char *createExtString(char **extensions, int nExtensions);
 static char **readExtensionList(char **inPtr, int *nExtensions);
 static void updateLanguageModeSubmenu(WindowInfo *window);
 static void setLangModeCB(Widget w, XtPointer clientData, XtPointer callData);
+#ifdef ENABLE_COLORPROFILES
 static void updateColorProfilesMenu(WindowInfo *window);
+#else
+#define updateColorProfilesMenu(w)
+#endif
 static int modeError(languageModeRec *lm, const char *stringStart,
 	const char *stoppedAt, const char *message);
 static void lmDestroyCB(Widget w, XtPointer clientData, XtPointer callData);
@@ -5722,6 +5726,7 @@ static void setColorProfileCB(Widget w, XtPointer clientData, XtPointer callData
     SetDefResDBEnable(True);
 }
 
+#ifdef ENABLE_COLORPROFILES
 static void updateColorProfilesMenu(WindowInfo *window)
 {
     XmString s1;
@@ -5757,7 +5762,7 @@ static void updateColorProfilesMenu(WindowInfo *window)
         XtUnmanageChild(window->colorProfileMenuPane);
     }
 }
-
+#endif
 
 /*
 ** Skip a delimiter and it's surrounding whitespace
