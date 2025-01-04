@@ -329,4 +329,8 @@ void TextDImposeGraphicsExposeTranslation(textDisp *textD, int *xOffset, int *yO
 Boolean TextDPopGraphicExposeQueueEntry(textDisp *textD);
 void TextDTranlateGraphicExposeQueue(textDisp *textD, int xOffset, int yOffset, Boolean appendEntry);
 
+#ifdef EXCLUDE_FONTS
+void FontInitExcludes(const char *list);
+#endif
+
 #endif /* NEDIT_TEXTDISP_H_INCLUDED */

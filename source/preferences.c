@@ -451,6 +451,9 @@ static struct prefData {
     int lockEncodingError;
     char defaultCharset[MAX_ENCODING_LENGTH];
     char fallbackCharset[MAX_ENCODING_LENGTH];
+#ifdef EXCLUDE_FONTS
+    char *fontExcludes;
+#endif
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1212,6 +1215,11 @@ static PrefDescripRec PrefDescrip[] = {
       "gzip;*.gz;.gz;gzip -d;gzip\n"
       "bzip2;*.bz;.bz;bzip2 -d;bzip2",
       &TempStringPrefs.filter, NULL, True} ,
+#ifdef EXCLUDE_FONTS
+    {"excludeFonts", "ExcludeFonts", PREF_ALLOC_STRING,
+      "",
+      &PrefData.fontExcludes, NULL, True} ,
+#endif
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -1446,6 +1454,10 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
        written by an older version of NEdit, update regular expressions in
        highlight patterns to quote braces and use & instead of \0 */
     translatePrefFormats(requiresConversion, fileVer);
+    
+#ifdef EXCLUDE_FONTS
+    FontInitExcludes(PrefData.fontExcludes);
+#endif
 }
 
 /*

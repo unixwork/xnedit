@@ -4905,6 +4905,57 @@ static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color)
 }
 
 /* font list functions */
+
+#ifdef EXCLUDE_FONTS
+static char **font_excludes;
+static size_t num_font_excludes = 0;
+
+void FontInitExcludes(const char *list) {
+    size_t num = 1;
+    size_t len = strlen(list);
+    if(len == 0) {
+        return;
+    }
+    // how many elements in the fonts list
+    for(int i=0;i<len;i++) {
+        if(list[i] == ',') {
+            num++;
+        }
+    }
+    
+    font_excludes = calloc(num, sizeof(char*));
+    num_font_excludes = num;
+    
+    char *str = strdup(list);
+    font_excludes[0] = str;
+    
+    int e = 0;
+    for(int i=0;i<len;i++) {
+        if(list[i] == ',') {
+            str[i] = '\0';
+            font_excludes[++e] = str+i+1;
+        }
+    }
+    
+    // trim font names
+    for(int i=0;i<num_font_excludes;i++) {
+        char *font = font_excludes[i];
+        while(*font > 0 && isspace(*font)) {
+            font++;
+        }
+        size_t font_len = strlen(font);
+        while(font_len > 0 && isspace(font[font_len-1])) {
+            font_len--;
+            font[font_len] = '\0';
+        }
+        font_excludes[i] = font;
+        //printf("Exclude Font: %s\n", font);
+    }
+}
+
+
+#endif
+
 static void getFontMinMax(NFont *font, int *min, int *max) {
     XftFont *xftFont = FontDefault(font);
     int fontMin = xftFont->max_advance_width;
@@ -4999,6 +5050,18 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
         FontAddFail(f, charset);
         return f->fonts->font;
     }
+    
+#ifdef EXCLUDE_FONTS
+    char *name = NULL;
+    FcPatternGetString(match, FC_FULLNAME, 0, (FcChar8**)&name);
+    if(name) {
+        for(int i=0;i<num_font_excludes;i++) {
+            if(!strcmp(name, font_excludes[i])) {
+                return f->fonts->font;
+            }
+        }
+    }
+#endif
     
     XftFont *newFont = XftFontOpenPattern(f->display, match);   
     if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
