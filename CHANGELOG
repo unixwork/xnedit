@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+version 1.6.1 (2025-01-05)
+--------------------------
+
+ - added EXCLUDE_FONTS compile option
+ - improved compatibility with normalized file names on macOS
+ - fixed non-functional numpad separator key
+ - fixed bug in sh syntax highlighting in case command substitution contains
+   double quoted strings
+ - fixed crash in color preferences dialog
+
 version 1.6.0 (2024-12-05)
 --------------------------
 

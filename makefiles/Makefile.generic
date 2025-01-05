@@ -107,6 +107,8 @@ AR=ar
 # DISABLE_XNE_TEXTFIELD   Disable the new XNE textfield in some dialogs
 #                   and use the old Motif textfield.
 #
+# EXCLUDE_FONTS     Enable excludeFonts nedit.rc setting.
+#
 # CDE               Enable drag'n'drop support for CDE. This requires
 #                   additional CDE CFLAGS/LDFLAGS.
 #
