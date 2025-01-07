@@ -43,4 +43,6 @@ void ExchangeSelections(Widget w, Time time);
 void InsertClipboard(Widget w, int isColumnar);
 void TakeMotifDestination(Widget w, Time time);
 
+Atom UTF8StringAtom(Display *display);
+
 #endif /* NEDIT_TEXTSEL_H_INCLUDED */

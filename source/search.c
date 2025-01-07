@@ -42,6 +42,7 @@
 #include "file.h"
 #include "highlight.h"
 #include "selection.h"
+#include "textSel.h"
 #ifdef REPLACE_SCOPE
 #include "textDisp.h"
 #include "textP.h"
@@ -96,9 +97,14 @@ typedef struct _SelectionInfo {
 } SelectionInfo;
 
 typedef struct {
+    char *utf8String;
+    char *string;
+    size_t utf8slen;
+    size_t slen;
     int direction;
     int searchType;
     int searchWrap;
+    int cbCount;
 } SearchSelectedCallData;
 
 /* History mechanism for search and replace strings */
@@ -2848,8 +2854,24 @@ void SearchForSelected(WindowInfo *window, int direction, int searchType,
    callData->direction = direction;
    callData->searchType = searchType;
    callData->searchWrap = searchWrap;
-   XtGetSelectionValue(window->textArea, XA_PRIMARY, XA_STRING,
+   callData->string = NULL;
+   callData->utf8String = NULL;
+   callData->utf8slen = 0;
+   callData->slen = 0;
+   callData->cbCount = 0;
+   
+   Atom targets[2] = {XA_STRING, UTF8StringAtom(XtDisplay(window->textArea))};
+   
+   XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[0],
     	    selectedSearchCB, callData, time);
+   XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[1],
+    	    selectedSearchCB, callData, time);
+}
+
+static void freeSearchSelectedCallData(SearchSelectedCallData *callData) {
+    NEditFree(callData->utf8String);
+    NEditFree(callData->string);
+    NEditFree(callData);
 }
 
 static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
@@ -2857,7 +2879,40 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
 {
     WindowInfo *window = WidgetToWindow(w);
     SearchSelectedCallData *callDataItems = (SearchSelectedCallData *)callData;
+    
     char *value = v;
+    size_t len = *length;
+    
+    // get string or utf8_string value
+    Atom utf8 = UTF8StringAtom(XtDisplay(w));
+    if(value && (*type == XA_STRING || *type == utf8) && *format == 8) {
+        char *string = NEditMalloc(len+1);
+        memcpy(string, value, len);
+        string[len] = '\0';
+        
+        if(*type == XA_STRING) {
+            callDataItems->string = string;
+            callDataItems->slen = len;
+        } else {
+            callDataItems->utf8String = string;
+            callDataItems->utf8slen = len;
+        }
+    }
+    
+    XtFree(v);
+    
+    if(++callDataItems->cbCount < 2) {
+        return;
+    }
+    
+    if(callDataItems->utf8String) {
+        value = callDataItems->utf8String;
+        len = callDataItems->utf8slen;
+    } else {
+        value = callDataItems->string;
+        len = callDataItems->slen;
+    }
+    
     int searchType;
     char searchString[SEARCHMAX+1];
     
@@ -2870,37 +2925,26 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
                     "Selection not appropriate for searching", "OK");
     	else
     	    XBell(TheDisplay, 0);
-        NEditFree(callData);
+        freeSearchSelectedCallData(callData);
 	return;
     }
-    if (*length > SEARCHMAX) {
+    if (len > SEARCHMAX) {
     	if (GetPrefSearchDlogs())
    	    DialogF(DF_WARN, window->shell, 1, "Selection too long",
                     "Selection too long", "OK");
     	else
     	    XBell(TheDisplay, 0);
-	NEditFree(value);
-        NEditFree(callData);
+        freeSearchSelectedCallData(callData);
 	return;
     }
-    if (*length == 0) {
+    if (len == 0) {
     	XBell(TheDisplay, 0);
-	NEditFree(value);
-        NEditFree(callData);
-	return;
-    }
-    /* should be of type text??? */
-    if (*format != 8) {
-    	fprintf(stderr, "XNEdit: can't handle non 8-bit text\n");
-    	XBell(TheDisplay, 0);
-	NEditFree(value);
-        NEditFree(callData);
+        freeSearchSelectedCallData(callData);
 	return;
     }
     /* make the selection the current search string */
-    strncpy(searchString, value, *length);
-    searchString[*length] = '\0';
-    NEditFree(value);
+    strncpy(searchString, value, len);
+    searchString[len] = '\0';
     
     /* Use the passed method for searching, unless it is regex, since this
        kind of search is by definition a literal search */
@@ -2913,7 +2957,7 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
     /* search for it in the window */
     SearchAndSelect(window, callDataItems->direction, searchString,
         searchType, callDataItems->searchWrap);
-    NEditFree(callData);
+    freeSearchSelectedCallData(callData);
 }
 
 /*

@@ -999,3 +999,7 @@ static Atom getAtom(Display *display, int atomNum)
     	atomList[atomNum] = XInternAtom(display, atomNames[atomNum], False);
     return atomList[atomNum];
 }
+
+Atom UTF8StringAtom(Display *display) {
+    getAtom(display, A_UTF8_STRING);
+}
