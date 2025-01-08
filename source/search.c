@@ -94,6 +94,12 @@ typedef struct _SelectionInfo {
     int done;
     WindowInfo* window;
     char* selection;
+    
+    char *utf8String;
+    char *string;
+    size_t utf8slen;
+    size_t slen;
+    int cbCount;
 } SelectionInfo;
 
 typedef struct {
@@ -555,14 +561,18 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
 static void setTextField(WindowInfo *window, Time time, Widget textField)
 {
     XEvent nextEvent;
-    char *primary_selection = 0;
+    char *primary_selection = NULL;
     SelectionInfo *selectionInfo = NEditNew(SelectionInfo);
+    memset(selectionInfo, 0, sizeof(SelectionInfo));
 
     if (GetPrefFindReplaceUsesSelection()) {
         selectionInfo->done = 0;
         selectionInfo->window = window;
         selectionInfo->selection = 0;
-        XtGetSelectionValue(window->textArea, XA_PRIMARY, XA_STRING,
+        Atom targets[2] = {XA_STRING, UTF8StringAtom(XtDisplay(window->textArea))};
+        XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[0],
+                            getSelectionCB, selectionInfo, time);
+        XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[1],
                             getSelectionCB, selectionInfo, time);
         while (selectionInfo->done == 0) {
             XtAppNextEvent(XtWidgetToApplicationContext(window->textArea), &nextEvent);
@@ -570,14 +580,15 @@ static void setTextField(WindowInfo *window, Time time, Widget textField)
         }
         primary_selection = selectionInfo->selection;
     }
-    if (primary_selection == 0) {
-        primary_selection = NEditStrdup("");
+    if (!primary_selection) {
+        primary_selection = "";
     }
 
     /* Update the field */
     XNETextSetString(textField, primary_selection);
 
-    NEditFree(primary_selection);
+    NEditFree(selectionInfo->utf8String);
+    NEditFree(selectionInfo->string);
     NEditFree(selectionInfo);
 }    
 
@@ -585,29 +596,33 @@ static void getSelectionCB(Widget w, XtPointer si, Atom *selection,
         Atom *type, XtPointer v, unsigned long *length, int *format)
 {
     SelectionInfo *selectionInfo = si;
-    char *value = v;
     WindowInfo *window = selectionInfo->window;
-
-    /* return an empty string if we can't get the selection data */
-    if (*type == XT_CONVERT_FAIL || *type != XA_STRING || value == NULL || *length == 0) {
-        NEditFree(value);
-        selectionInfo->selection = 0;
-        selectionInfo->done = 1;
+    
+    char *value = v;
+    size_t len = *length;
+    
+    // get string or utf8_string value
+    Atom utf8 = UTF8StringAtom(XtDisplay(w));
+    if(value && (*type == XA_STRING || *type == utf8) && *format == 8) {
+        char *string = NEditMalloc(len+1);
+        memcpy(string, value, len);
+        string[len] = '\0';
+        
+        if(*type == XA_STRING) {
+            selectionInfo->string = string;
+            selectionInfo->slen = len;
+        } else {
+            selectionInfo->utf8String = string;
+            selectionInfo->utf8slen = len;
+        }
+    }
+    
+    XtFree(value);
+    if(++selectionInfo->cbCount < 2) {
         return;
     }
-    /* return an empty string if the data is not of the correct format. */
-    if (*format != 8) {
-        DialogF(DF_WARN, window->shell, 1, "Invalid Format",
-                "XNEdit can't handle non 8-bit text", "OK");
-        NEditFree(value);
-        selectionInfo->selection = 0;
-        selectionInfo->done = 1;
-        return;
-    }
-    selectionInfo->selection = (char*)NEditMalloc(*length+1);
-    memcpy(selectionInfo->selection, value, *length);
-    selectionInfo->selection[*length] = 0;
-    NEditFree(value);
+    
+    selectionInfo->selection = selectionInfo->utf8String ? selectionInfo->utf8String : selectionInfo->string;
     selectionInfo->done = 1;
 }
 
