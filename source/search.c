@@ -4416,7 +4416,7 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 	tempPtr = filePtr; \
 	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr) { \
 	    tempPtr++; ucPtr++; lcPtr++; \
-	    if (   *ucPtr == 0 /* matched whole string */ \
+	    if (   *ucPtr == 0  && *ucPtr == 0 /* matched whole string */ \
 		&& (cignore_R ||\
 		    isspace((unsigned char)*tempPtr) ||\
 		    strchr(delimiters, *tempPtr) ) \
@@ -4460,8 +4460,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
         strcpy(ucString, searchString);
         strcpy(lcString, searchString);
     } else {
-    	UpCaseString(ucString, searchString);
-    	DownCaseString(lcString, searchString);
+    	UpCaseString(ucString, searchString, False);
+    	DownCaseString(lcString, searchString, False);
     }
 
     if (direction == SEARCH_FORWARD) {
@@ -4513,12 +4513,16 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
 	ucPtr = ucString; \
 	lcPtr = lcString; \
 	tempPtr = filePtr; \
-	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr) { \
+        ucSkipped = 0; \
+	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
+            if(*ucPtr == 0 && ucMatch) ucSkipped++; \
+            ucMatch = *tempPtr == *ucPtr; \
+            lcMatch = *tempPtr == *lcPtr; \
 	    tempPtr++; ucPtr++; lcPtr++; \
-	    if (*ucPtr == 0) { \
+	    if (*ucPtr == 0 && *lcPtr == 0) { \
 		/* matched whole string */ \
 		*startPos = filePtr - string; \
-		*endPos = tempPtr - string; \
+		*endPos = tempPtr - string - ucSkipped; \
 		if (searchExtentBW != NULL) \
 		    *searchExtentBW = *startPos; \
 		if (searchExtentFW != NULL) \
@@ -4530,6 +4534,9 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
 
     register const char *filePtr, *tempPtr, *ucPtr, *lcPtr;
     char lcString[SEARCHMAX], ucString[SEARCHMAX];
+    int ucSkipped = 0;
+    int lcMatch = 0;
+    int ucMatch = 0;
 
     /* SEARCHMAX was fine in the original NEdit, but it should be done away with
        now that searching can be done from macros without limits.  Returning
@@ -4541,8 +4548,8 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
         strcpy(ucString, searchString);
         strcpy(lcString, searchString);
     } else {
-    	UpCaseString(ucString, searchString);
-    	DownCaseString(lcString, searchString);
+    	UpCaseString(ucString, searchString, True);
+    	DownCaseString(lcString, searchString, False);
     }
 
     if (direction == SEARCH_FORWARD) {
@@ -4730,7 +4737,7 @@ void ChangeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_
     memcpy(out, src_buf, clen);
 }
 
-void UpCaseString(char *outString, const char *inString)
+void UpCaseString(char *outString, const char *inString, Boolean addFiller)
 {
     char *outPtr;
     const char *inPtr;
@@ -4741,6 +4748,11 @@ void UpCaseString(char *outString, const char *inString)
         } else {
             int in_len, out_len;
             ChangeCase(inPtr, outPtr, True, &in_len, &out_len);
+            if(addFiller && in_len > out_len) {
+                while(out_len < in_len) {
+                    outPtr[out_len++] = 0;
+                }
+            }
             inPtr += in_len - 1;
             outPtr += out_len - 1;
         }
@@ -4749,7 +4761,7 @@ void UpCaseString(char *outString, const char *inString)
     *outPtr = 0;
 }
 
-void DownCaseString(char *outString, const char *inString)
+void DownCaseString(char *outString, const char *inString, Boolean addFiller)
 {
     char *outPtr;
     const char *inPtr;
@@ -4760,6 +4772,9 @@ void DownCaseString(char *outString, const char *inString)
         } else {
             int in_len, out_len;
             ChangeCase(inPtr, outPtr, False, &in_len, &out_len);
+            while(out_len < in_len) {
+                outPtr[out_len++] = 0;
+            }
             inPtr += in_len - 1;
             outPtr += out_len - 1;
         }

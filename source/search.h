@@ -81,8 +81,8 @@ void WriteSearchHistory(void);
 void ReadSearchHistory(void);
 
 void ChangeCase(const char *in, char *out, int makeUpper, int *in_len, int *out_len);
-void UpCaseString(char *outString, const char *inString);
-void DownCaseString(char *outString, const char *inString);
+void UpCaseString(char *outString, const char *inString, Boolean addFiller);
+void DownCaseString(char *outString, const char *inString, Boolean addFiller);
 
 /*
 ** Schwarzenberg: added SEARCH_LITERAL_WORD .. SEARCH_REGEX_NOCASE 
