@@ -1001,5 +1001,5 @@ static Atom getAtom(Display *display, int atomNum)
 }
 
 Atom UTF8StringAtom(Display *display) {
-    getAtom(display, A_UTF8_STRING);
+    return getAtom(display, A_UTF8_STRING);
 }
