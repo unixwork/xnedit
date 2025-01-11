@@ -107,6 +107,7 @@ static void restoreInsaneVirtualKeyBindings(unsigned char* bindings);
 static void noWarningFilter(String);
 static void showWarningFilter(String);
 static void dndOpenFileCB(Widget w, XtPointer value, XtPointer data);
+static int XErrorFunction(Display *display, XErrorEvent *event);
 
 static XrmDatabase defaultResourceDB;
 
@@ -450,6 +451,8 @@ int main(int argc, char **argv)
             "-g", "-rv", "-reverse", "-bd", "-bordercolor", "-borderwidth",
 	    "-bw", "-title", NULL};
     unsigned char* invalidBindings = NULL;
+    
+    XSetErrorHandler(XErrorFunction);
 
     /* Warn user if this has been compiled wrong. */
     enum MotifStability stability = GetMotifStability();
@@ -1395,6 +1398,17 @@ static void dndOpenFileCB(Widget w, XtPointer value, XtPointer data) {
     }
     
     NEditFree(path);
+}
+
+static int XErrorFunction(Display *display, XErrorEvent *event)
+{
+    char buffer_return[256];
+    buffer_return[0] = '\0';
+    XGetErrorText(display, event->error_code, 
+        buffer_return, sizeof (buffer_return) - 1);
+    buffer_return[255] = '\0';
+    fprintf(stderr, "X Error: %s\n", buffer_return);
+    return 0;
 }
 
 XrmDatabase GetDefaultResourceDB(void)

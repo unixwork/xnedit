@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jan 9, 2025 (Do NOT edit!)
+                 Generated on Jan 11, 2025 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2025 Mark Edel                                            *
@@ -5144,7 +5144,7 @@ static char * htxt_version [] = {
 "Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn, ",
 "Steve LoBasso and Alexander Mai. ",
 "\n\n",
-"Additional NEdit patches by: Fredrik Jönsson, Per Grahn. ",
+"Additional NEdit patches by: Fredrik Jönsson, Per Grahn, Peter Kovář. ",
 "\n\n",
 "XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt, ",
 "Valerio Messina and Jack Zeal. ",
@@ -5863,4 +5863,4 @@ Href H_R [] =
     {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev b9bc5ea 2025-01-08\n";
+static const char * NEditVersion = "XNEdit rev a481169 2025-01-10\n";
