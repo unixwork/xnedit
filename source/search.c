@@ -4499,6 +4499,92 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 }
 
 
+#ifdef USE_STRSTR
+
+static int searchLiteral(const char *string, const char *searchString, int caseSense, 
+	int direction, int wrap, int beginPos, int *startPos, int *endPos,
+	int *searchExtentBW, int *searchExtentFW)
+{
+    if(direction == SEARCH_FORWARD) {
+        const char *beginString = string + beginPos;
+        char *s = caseSense ? strstr(beginString, searchString) : strcasestr(beginString, searchString);
+        if(s) {
+            /* search from beginPos to end of string */
+            *startPos = s - string;
+            *endPos = *startPos + strlen(searchString);
+            if (searchExtentBW != NULL) {
+                *searchExtentBW = *startPos;
+            }
+            if (searchExtentFW != NULL) {
+                *searchExtentFW = *endPos;
+            }
+            return True;
+        } else if(wrap && beginPos > 0) {
+            /* search from start of file to beginPos */
+            s = caseSense ? strstr(string, searchString) : strcasestr(string, searchString);
+            int start = s - string;
+            if(start < beginPos) {
+                *startPos = start;
+                *endPos = *startPos + (int)strlen(searchString);
+                if (searchExtentBW != NULL) {
+                    *searchExtentBW = *startPos;
+                }
+                if (searchExtentFW != NULL) {
+                    *searchExtentFW = *endPos;
+                }
+            }
+        }
+    } else {
+        /* SEARCH_BACKWARD */
+	/* search from beginPos to start of file.  A negative begin pos	*/
+	/* says begin searching from the far end of the file            */
+        int begin = beginPos >= 0 ? beginPos : (int)strlen(string);
+        char *result = NULL;
+        char *s = NULL;
+        const char *str = string;
+        while((s = caseSense ? strstr(str, searchString) : strcasestr(str, searchString)) != NULL) {
+            str = s+1;
+            int pos = s - string;
+            if(pos >= begin) {
+                break;
+            }
+            result = s;
+        }
+        if(result) {
+            *startPos = result - string;
+            *endPos = *startPos + (int)strlen(searchString);
+            if (searchExtentBW != NULL) {
+                *searchExtentBW = *startPos;
+            }
+            if (searchExtentFW != NULL) {
+                *searchExtentFW = *endPos;
+            }
+            return True;
+        } else if(wrap && beginPos > 0) {
+            str = string + beginPos;
+            while((s = caseSense ? strstr(str, searchString) : strcasestr(str, searchString)) != NULL) {
+                str = s+1;
+                result = s;
+            }
+            if(result) {
+                *startPos = result - string;
+                *endPos = *startPos + (int)strlen(searchString);
+                if (searchExtentBW != NULL) {
+                    *searchExtentBW = *startPos;
+                }
+                if (searchExtentFW != NULL) {
+                    *searchExtentFW = *endPos;
+                }
+                return True;
+            }
+        }
+        
+    }
+    return False;
+}
+
+#else
+
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
 	int direction, int wrap, int beginPos, int *startPos, int *endPos,
 	int *searchExtentBW, int *searchExtentFW)
@@ -4585,6 +4671,8 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
 	return FALSE;
     }
 }
+
+#endif
 
 static int searchRegex(const char *string, const char *searchString, int direction,
 	int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
