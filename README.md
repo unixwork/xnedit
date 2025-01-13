@@ -166,10 +166,10 @@ Joy Kyriakopulos, Christopher Conrad, Jim Clark, Arnulfo Zepeda-Navratil,
 Suresh Ravoor, Max Vohlken, Yunliang Yu, Donna Reid, Steve Haehn,
 Steve LoBasso and Alexander Mai.
 
-Additional NEdit patches by: Fredrik Jönsson, Per Grahn.
+Additional NEdit patches by: Fredrik Jönsson, Per Grahn, Peter Kovář.
 
-XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt and
-Valerio Messina.
+XNEdit contributions: Laszlo Ersek, Mike Becker, Peter Mühlenpfordt,
+Valerio Messina and Jack Zeal.
 
 The regular expression matching routines used in NEdit are adapted (with
 permission) from original code written by Henry Spencer at the University of
