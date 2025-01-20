@@ -2,7 +2,7 @@
 *                                                                              *
 * help_data.h --  Nirvana Editor help module data                              *
 *                                                                              *
-                 Generated on Jan 11, 2025 (Do NOT edit!)
+                 Generated on Jan 20, 2025 (Do NOT edit!)
                  Source of content from file help.etx
 *                                                                              *
 * Copyright (c) 1999-2025 Mark Edel                                            *
@@ -140,12 +140,12 @@ static char * htxt_start [] = {
 "\n\n",
 "XNEdit maintains periodic backups of the file you are editing so that you can ",
 "recover the file in the event of a problem such as a system crash, network ",
-"failure, or X server crash.  These files are saved under the name `~filename` ",
-"(on Unix) or `_filename` (on VMS), where filename is the name of the file you ",
-"were editing.  If an XNEdit process is killed, some of these backup files may ",
-"remain in your directory.  (To remove one of these files on Unix, you may ",
-"have to prefix the `~' (tilde) character with a (backslash) to prevent the ",
-"shell from interpreting it as a special character.) ",
+"failure, or X server crash.  These files are saved under the name `~filename`, ",
+"where filename is the name of the file you were editing.  If an XNEdit process ",
+"is killed, some of these backup files may remain in your directory.  (To ",
+"remove one of these files on Unix, you may have to prefix the `~' (tilde) ",
+"character with a (backslash) to prevent the shell from interpreting it as a ",
+"special character.) ",
 "\n\n",
 "\01RShortcuts\01I",
 "\n\n",
@@ -3606,7 +3606,7 @@ static char * htxt_preferences [] = {
 "\n\n",
 "\01A\01BIncremental Backup\01A\n",
 "\01IPeriodically make a backup copy of the file being edited under the name ",
-"`~filename` on Unix or `_filename` on VMS (see \01QCrash Recovery\01I). ",
+"`~filename`. ",
 "\n\n",
 "\01A\01BShow Matching (..)\01A\n",
 "\01IMomentarily highlight matching parenthesis, brackets, and braces, or the ",
@@ -3882,14 +3882,6 @@ static char * htxt_preferences [] = {
 "directory can be given by letting the environment variable NEDIT_HOME ",
 "point to it. ",
 "\n\n",
-"Notice that XNEdit still supports the older names for these files, which are ",
-"`$HOME/.nedit', `$HOME/.neditmacro', and `$HOME/.neditdb', respectively. This ",
-"old naming scheme will be used if XNEdit detects that `$HOME/.nedit' is a ",
-"regular file and NEDIT_HOME isn't set. ",
-"\n\n",
-"(For VMS, the location of these files is '$NEDIT_HOME/' if NEDIT_HOME is set, ",
-"and 'SYS$LOGIN:' otherwise.) ",
-"\n\n",
 "The contents of the preferences file can be moved into another X resource ",
 "file (see \01QX Resources\01I).  One reason for doing so would be to attach server ",
 "specific preferences, such as a default font, to a particular X server. ",
@@ -3964,13 +3956,12 @@ static char * htxt_resources [] = {
 "settable options. ",
 "\n\n",
 "X resources are usually specified in a file called .Xdefaults or .Xresources ",
-"in your home directory (on VMS this is sys$login:decw$xdefaults.dat).  On ",
-"some systems, this file is read and its information attached to the X server ",
-"(your screen) when you start X.  On other systems, the .Xdefaults file is ",
-"read each time you run an X program.  When X resource values are attached to ",
-"the X server, changes to the resource file are not available to application ",
-"programs until you either run the xrdb program with the appropriate file as ",
-"input, or re-start the X server. ",
+"in your home directory. On some systems, this file is read and its information ",
+"attached to the X server (your screen) when you start X.  On other systems, ",
+"the .Xdefaults file is read each time you run an X program.  When X resource ",
+"values are attached to the X server, changes to the resource file are not ",
+"available to application programs until you either run the xrdb program with ",
+"the appropriate file as input, or re-start the X server. ",
 "\n\n",
 "\01RSelected X Resource Names\01I",
 "\n\n",
@@ -5114,13 +5105,12 @@ static char * htxt_recovery [] = {
 "happen while you are editing a file, you can still recover most of your ",
 "work.  XNEdit maintains a backup file which it updates periodically (every 8 ",
 "editing operations or 80 characters typed).  This file has the same name ",
-"as the file that you are editing, but with the character `~' (tilde) on Unix ",
-"or `_' (underscore) on VMS prefixed to the name.  To recover a file after a ",
-"crash, simply rename the file to remove the tilde or underscore character, ",
-"replacing the older version of the file.  (Because several of the Unix shells ",
-"consider the tilde to be a special character, you may have to prefix the ",
-"character with a `\\' (backslash) when you move or delete an XNEdit backup ",
-"file.) ",
+"as the file that you are editing, but with the character `~' prefixed to the ",
+"name.  To recover a file after a crash, simply rename the file to remove the ",
+"tilde or underscore character, replacing the older version of the file. ",
+"(Because several of the Unix shells consider the tilde to be a special ",
+"character, you may have to prefix the character with a `\\' (backslash) when ",
+"you move or delete an XNEdit backup file.) ",
 "\n\n",
 "Example, to recover the file called \"help.c\" on Unix type the command: ",
 "\n\n",
@@ -5661,14 +5651,14 @@ static char * htxt_tabs_dialog [] = {
 "the interpretation of tab characters within a file. ",
 "\n\n",
 "The first field, Tab Spacing, controls how  XNEdit responds to ",
-"tab characters in a file.  On most Unix and VMS systems the ",
+"tab characters in a file.  On most Unix systems the ",
 "conventional interpretation of a tab character is to advance the ",
 "text position to the nearest multiple of eight characters (a tab ",
 "spacing of 8).  However, many programmers of C and other ",
 "structured languages, when given the choice, prefer a tab ",
 "spacing of 3 or 4 characters.  Setting a three or four character ",
 "hardware tab spacing is useful and convenient as long as your ",
-"other software tools support it.  Unfortunately, on Unix and VMS ",
+"other software tools support it.  Unfortunately, on Unix ",
 "systems, system utilities, such as more, and printing software ",
 "can't always properly display files with other than eight ",
 "character tabs. ",
@@ -5860,7 +5850,7 @@ Href H_R [] =
 {
     {&H_R[ 1],    55, HELP_TAGS,          "ctags support"},
     {&H_R[ 2],  5904, HELP_BASICSYNTAX,   "Alternation"},
-    {NULL,     14819, HELP_PREFERENCES,   "Autoload Files"}
+    {NULL,     14768, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev a481169 2025-01-10\n";
+static const char * NEditVersion = "XNEdit rev a099fbd 2025-01-16\n";
