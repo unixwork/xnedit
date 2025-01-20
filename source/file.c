@@ -934,10 +934,22 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
     /* Open the file */
     fp = fopen(path, "rb+");
     if(!fp) {
+        int rw_errno = errno;
         fp = fopen(path, "rb");
         if(fp) {
             /* File is read only */
             content->readonly = 1;
+#ifdef EOPNOTSUPP
+            if(rw_errno == EOPNOTSUPP) {
+                // try again opening the file in write mode
+                // some remote FS don't support read/write mode
+                FILE *test_w = fopen(path, "a");
+                if(test_w) {
+                    content->readonly = 0;
+                    fclose(test_w);
+                }
+            }
+#endif
         } else {
             content->err = errno;
             return 1;
