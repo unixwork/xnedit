@@ -49,7 +49,8 @@ if [ -d "../.git" ]; then
         REV_LONG=`git rev-parse HEAD`
         
         # get revision date
-        REV_DATE=`git show -s --format=%cs $REV_LONG`
+        # REV_DATE=`git show -s --format=%cs $REV_LONG`
+        REV_DATE=`git show -s --date=short --pretty=format:%cd $REV_LONG`
         
         if [ -z "$REV_SHORT" ]; then
             break;
