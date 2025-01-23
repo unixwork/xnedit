@@ -2184,14 +2184,15 @@ void PrintString(const char *string, int length, Widget parent, const char *jobN
 	    1. Create a filename
 	    2. Open the file with the O_CREAT|O_EXCL flags
 	So all an attacker can do is a DoS on the print function. */
-#ifdef __GLIBC__
-    mkstemp(tmpFileName);
+#if defined(__GLIBC__) || _POSIX_VERSION >= 200112L || defined(__sun)
+    fd = mkstemp(tmpFileName);
 #else
     tmpnam(tmpFileName);
+    fd = open(tmpFileName, O_CREAT|O_EXCL|O_WRONLY, S_IRUSR | S_IWUSR);
 #endif
     
     /* open the temporary file */
-    if ((fd = open(tmpFileName, O_CREAT|O_EXCL|O_WRONLY, S_IRUSR | S_IWUSR)) < 0 || (fp = fdopen(fd, "w")) == NULL)
+    if (fd < 0 || (fp = fdopen(fd, "w")) == NULL)
     {
         DialogF(DF_WARN, parent, 1, "Error while Printing",
                 "Unable to write file for printing:\n%s", "OK",

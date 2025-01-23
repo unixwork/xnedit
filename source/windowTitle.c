@@ -477,12 +477,10 @@ char *FormatWindowTitle(const char* filename,
 						!IS_PERM_LOCKED(etDialog.lockReasons));
 	    
         XtSetSensitive(etDialog.oServerNameW, serverNamePresent);
-	
-#ifndef VMS
+
         XtSetSensitive(etDialog.oCcViewTagW,       clearCasePresent);
         XtSetSensitive(etDialog.oServerEqualViewW, clearCasePresent &&
 	                                           serverNamePresent);
-#endif  /* VMS */      
 	
         XtSetSensitive(etDialog.oDirW,    dirNamePresent);
 	
@@ -508,9 +506,6 @@ static void setToggleButtons(void)
     /* Read-only takes precedence on locked */
     XtSetSensitive(etDialog.oFileLockedW, !IS_PERM_LOCKED(etDialog.lockReasons));
 
-#ifdef VMS
-    XmToggleButtonSetState(etDialog.oServerNameW, etDialog.isServer, False);
-#else
     XmToggleButtonSetState(etDialog.oCcViewTagW,
     	    	GetClearCaseViewTag() != NULL, False);
     XmToggleButtonSetState(etDialog.oServerNameW,
@@ -523,7 +518,6 @@ static void setToggleButtons(void)
     } else {
         XmToggleButtonSetState(etDialog.oServerEqualViewW, False, False);
     }
-#endif /* VMS */
 }    
 
 static void formatChangedCB(Widget w, XtPointer clientData, XtPointer callData)
