@@ -3124,7 +3124,7 @@ static void tabsOKCB(Widget w, XtPointer clientData, XtPointer callData)
 	if (stat != TEXT_READ_OK)
 	    return;
 
-        if (emTabDist <= 0 || tabDist >= 1000)
+        if (emTabDist <= 0 || emTabDist >= 1000)
         {
             DialogF(DF_WARN, EmTabText, 1, "Tab Spacing",
                     "Emulated tab spacing out of range", "OK");
