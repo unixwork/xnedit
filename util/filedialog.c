@@ -1912,7 +1912,10 @@ static void adjust_enc_settings(FileDialogData *data) {
             XtVaSetValues(data->xattr, XmNset, 1, NULL);
         }
     } else {
-        XtSetSensitive(data->bom, True);
+        // UTF-16 or UTF-32 without LE/BE setting will always write a BOM
+        // disable data->bom in that case
+        // pos1: UTF-16   pos4: UTF-32
+        XtSetSensitive(data->bom, !(encPos == 1 || encPos == 4));
         if(encPos > 0) {
             /* enable bom for all non-UTF-8 unicode encodings */
             XtVaSetValues(data->bom, XmNset, 1, NULL);
