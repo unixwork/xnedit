@@ -97,6 +97,7 @@ static void TFDelete(TextFieldWidget tf, int from, int to);
 
 static void wordbounds(TextFieldWidget tf, int index, int *out_wleft, int *out_wright);
 
+static Dimension tfCalcWidth(TextFieldWidget tf);
 static Dimension tfCalcHeight(TextFieldWidget tf);
 
 static Atom aTargets;
@@ -120,7 +121,8 @@ static XtResource resources[] = {
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
     {XmNlosingFocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.losingFocusCB), XmRCallback, NULL},
     {XmNactivateCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.activateCB), XmRCallback, NULL},
-    {XmNblinkRate, XmCBlinkRate , XmRInt, sizeof(int), XtOffset(TextFieldWidget, textfield.blinkrate), XmRImmediate, (XtPointer)500}
+    {XmNblinkRate, XmCBlinkRate , XmRInt, sizeof(int), XtOffset(TextFieldWidget, textfield.blinkrate), XmRImmediate, (XtPointer)500},
+    {XmNcolumns, XmCColumns, XmRShort, sizeof(short), XtOffset(TextFieldWidget, textfield.columns), XmRImmediate, (XtPointer) 20}
 };
 
 static XtActionsRec actionslist[] = {
@@ -313,6 +315,7 @@ void textfield_init(Widget request, Widget neww, ArgList args, Cardinal *num_arg
     }
     
     if(tf->textfield.font) {
+        tf->core.width = tfCalcWidth(tf);
         tf->core.height = tfCalcHeight(tf);
     }
 }
@@ -666,6 +669,11 @@ Boolean textfield_set_values(Widget old, Widget request, Widget neww, ArgList ar
 
 Boolean textfield_acceptfocus(Widget widget, Time *time) {
     return 0;
+}
+
+static Dimension tfCalcWidth(TextFieldWidget tf) {
+    NFont *font = tf->textfield.font;
+    return tf->textfield.columns * font->minWidth;
 }
 
 static Dimension tfCalcHeight(TextFieldWidget tf) {

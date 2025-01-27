@@ -92,6 +92,7 @@ typedef struct TextFieldPart {
     int            blinkrate;
     int            cursorOn;
     XtIntervalId   blinkProcId;
+    short          columns;
 } TextFieldPart;
 
 typedef struct TextFieldRec {
