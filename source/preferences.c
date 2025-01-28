@@ -311,6 +311,7 @@ typedef struct {
     Widget styleDefaultW;
     Widget styleLightenW;
     Widget styleCustomW;
+    Widget styleXResLabelW;
     Widget styleXResW;
     //Widget styleWMDefaultW;
     //Widget styleWMLightW;
@@ -7706,7 +7707,7 @@ void ChooseColors(WindowInfo *window)
     XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("X Resource File (absolute path or a path relative to XNEDIT_HOME)");
-    Widget xresLabel = XtVaCreateManagedWidget("stXResLabel",
+    cd->styleXResLabelW = XtVaCreateManagedWidget("stXResLabel",
             xmLabelGadgetClass, tabForm,
             XmNleftAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_WIDGET,
@@ -7722,7 +7723,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, xresLabel,
+            XmNtopWidget, cd->styleXResLabelW,
             XmNleftOffset, 6,
             XmNrightOffset, 6,
             XmNtopOffset, 6,
@@ -7799,7 +7800,8 @@ void ChooseColors(WindowInfo *window)
     
     if(cd->selectedProfile == 0) {
         // disable settings that are not available for the default profile
-        XtSetSensitive(cd->styleXResW, False);
+        XtUnmanageChild(cd->styleXResLabelW);
+        XtUnmanageChild(cd->styleXResW);
         XtSetSensitive(cd->styleDefaultW, False);
         XtSetSensitive(cd->styleLightenW, False);
         XtSetSensitive(cd->styleCustomW, False);
@@ -8029,10 +8031,16 @@ static void loadColorProfileStyleSettings(colorDialog *cd)
     XmTextSetString(cd->styleXResW, sp->resourceFile);
     
     Boolean enableStyleSettings = cd->selectedProfile != 0;
-    XtSetSensitive(cd->styleXResW, enableStyleSettings);
     XtSetSensitive(cd->styleDefaultW, enableStyleSettings);
     XtSetSensitive(cd->styleLightenW, enableStyleSettings);
     XtSetSensitive(cd->styleCustomW, enableStyleSettings);
+    if(enableStyleSettings) {
+        XtManageChild(cd->styleXResLabelW);
+        XtManageChild(cd->styleXResW);
+    } else {
+        XtUnmanageChild(cd->styleXResLabelW);
+        XtUnmanageChild(cd->styleXResW);
+    }
     
     //XtVaSetValues(cd->styleWMDefaultW, XmNset, sp->windowThemeVariant == 0 ? 1 : 0, NULL);
     //XtVaSetValues(cd->styleWMLightW, XmNset, sp->windowThemeVariant == 1 ? 1 : 0, NULL);
