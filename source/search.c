@@ -2685,22 +2685,24 @@ static int getReplaceDlogInfo(WindowInfo *window, int *direction,
 	SEARCH_BACKWARD : SEARCH_FORWARD;
     
     /* Return strings */
-    if (strlen(replaceText) >= SEARCHMAX) {
+    size_t replaceTextLen = strlen(replaceText);
+    if (replaceTextLen >= SEARCHMAX) {
 	DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
                 "Search string too long.", "OK");
 	NEditFree(replaceText);
 	NEditFree(replaceWithText);
 	return FALSE;
     }
-    if (strlen(replaceWithText) >= SEARCHMAX) {
+    size_t replaceWithTextLen = strlen(replaceWithText);
+    if (replaceWithTextLen >= SEARCHMAX) {
 	DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
                 "Replace string too long.", "OK");
 	NEditFree(replaceText);
 	NEditFree(replaceWithText);
 	return FALSE;
     }
-    strcpy(searchString, replaceText);
-    strcpy(replaceString, replaceWithText);
+    memcpy(searchString, replaceText, replaceTextLen+1);
+    memcpy(replaceString, replaceWithText, replaceWithTextLen+1);
     NEditFree(replaceText);
     NEditFree(replaceWithText);
     return TRUE;
@@ -2763,13 +2765,14 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
     }
 
     /* Return the search string */
-    if (strlen(findText) >= SEARCHMAX) {
+    size_t findTextLen = strlen(findText);
+    if (findTextLen >= SEARCHMAX) {
 	DialogF(DF_WARN, XtParent(window->findDlog), 1, "String too long",
                 "Search string too long.", "OK");
 	NEditFree(findText);
 	return FALSE;
     }
-    strcpy(searchString, findText);
+    memcpy(searchString, findText, findTextLen+1);
     NEditFree(findText);
     return TRUE;
 }
@@ -4442,7 +4445,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
        with now that searching can be done from macros without limits. 
        Returning search failure here is cheating users.  This limit is not 
        documented. */
-    if (strlen(searchString) >= SEARCHMAX)
+    size_t searchStringLen = strlen(searchString);
+    if (searchStringLen >= SEARCHMAX)
 	return FALSE;
     
     /* If there is no language mode, we use the default list of delimiters */
@@ -4457,8 +4461,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 	cignore_R=1;
    
     if (caseSense) {
-        strcpy(ucString, searchString);
-        strcpy(lcString, searchString);
+        memcpy(ucString, searchString, searchStringLen+1);
+        memcpy(lcString, searchString, searchStringLen+1);
     } else {
     	UpCaseString(ucString, searchString, False);
     	DownCaseString(lcString, searchString, False);
@@ -4623,16 +4627,17 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
     int ucSkipped = 0;
     int lcMatch = 0;
     int ucMatch = 0;
+    size_t searchLen = strlen(searchString);
 
     /* SEARCHMAX was fine in the original NEdit, but it should be done away with
        now that searching can be done from macros without limits.  Returning
        search failure here is cheating users.  This limit is not documented. */
-    if (strlen(searchString) >= SEARCHMAX)
+    if (searchLen >= SEARCHMAX)
 	return FALSE;
     
     if (caseSense) {
-        strcpy(ucString, searchString);
-        strcpy(lcString, searchString);
+        memcpy(ucString, searchString, searchLen+1);
+        memcpy(lcString, searchString, searchLen+1);
     } else {
     	UpCaseString(ucString, searchString, True);
     	DownCaseString(lcString, searchString, False);
