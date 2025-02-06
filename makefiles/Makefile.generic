@@ -104,6 +104,9 @@ AR=ar
 #                   all other headers in each .c source file.
 #                   Only useful for developers.
 #
+# USE_STRSTR        Enable an alternative case insensitive search
+#                   implementation, that uses libc strcasestr.
+#
 # DISABLE_XNE_TEXTFIELD   Disable the new XNE textfield in some dialogs
 #                   and use the old Motif textfield.
 #
