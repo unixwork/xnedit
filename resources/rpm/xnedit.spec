@@ -1,6 +1,6 @@
 Name: xnedit
 Summary: A Motif based GUI text editor
-Version: 1.6.1
+Version: 1.6.2
 Release: 1%{?dist}
 Source: https://unixwork.de/downloads/files/xnedit/xnedit-%{version}.tar.gz
 URL: https://unixwork.de/xnedit/

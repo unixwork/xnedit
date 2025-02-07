@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+version 1.6.2 (2025-02-07)
+--------------------------
+
+ - added X error handler
+ - changed filedialog to always force BOM setting with UTF16/UTF32
+   when LE/BE is not specified
+ - improved Find Selection when dealing with unicode
+ - fixed non-functional numpad separator key on some systems
+ - fixed Emulate Tab Spacing range check
+
 version 1.6.1 (2025-01-05)
 --------------------------
 
