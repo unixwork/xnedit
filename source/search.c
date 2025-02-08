@@ -4835,8 +4835,10 @@ void UpCaseString(char *outString, const char *inString, Boolean addFiller)
     char *outPtr;
     const char *inPtr;
     
+    int isutf8 = XNEditDefaultCharsetIsUTF8();
+    
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-        if(*inPtr >= 0) {
+        if(*inPtr >= 0 || !isutf8) {
             *outPtr = toupper((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
@@ -4859,8 +4861,10 @@ void DownCaseString(char *outString, const char *inString, Boolean addFiller)
     char *outPtr;
     const char *inPtr;
     
+    int isutf8 = XNEditDefaultCharsetIsUTF8();
+    
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	if(*inPtr >= 0) {
+    	if(*inPtr >= 0 || !isutf8) {
             *outPtr = tolower((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
