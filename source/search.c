@@ -4417,9 +4417,12 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 	ucPtr = ucString; \
 	lcPtr = lcString; \
 	tempPtr = filePtr; \
-	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr) { \
-	    tempPtr++; ucPtr++; lcPtr++; \
-	    if (   *ucPtr == 0  && *ucPtr == 0 /* matched whole string */ \
+	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
+            if(*ucPtr == 0 && ucMatch) ucSkipped++; \
+            ucMatch = *tempPtr == *ucPtr; \
+            lcMatch = *tempPtr == *lcPtr; \
+            tempPtr++; ucPtr++; lcPtr++; \
+	    if (   *ucPtr == 0 && *lcPtr == 0 /* matched whole string */ \
 		&& (cignore_R ||\
 		    isspace((unsigned char)*tempPtr) ||\
 		    strchr(delimiters, *tempPtr) ) \
@@ -4438,6 +4441,9 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 
     register const char *filePtr, *tempPtr, *ucPtr, *lcPtr;
     char lcString[SEARCHMAX], ucString[SEARCHMAX];
+    int ucSkipped = 0;
+    int lcMatch = 0;
+    int ucMatch = 0;
 						
     int cignore_L=0, cignore_R=0;
 		
@@ -4464,8 +4470,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
         memcpy(ucString, searchString, searchStringLen+1);
         memcpy(lcString, searchString, searchStringLen+1);
     } else {
-    	UpCaseString(ucString, searchString, False);
-    	DownCaseString(lcString, searchString, False);
+    	UpCaseString(ucString, searchString, True);
+    	DownCaseString(lcString, searchString, True);
     }
 
     if (direction == SEARCH_FORWARD) {
@@ -4835,10 +4841,8 @@ void UpCaseString(char *outString, const char *inString, Boolean addFiller)
     char *outPtr;
     const char *inPtr;
     
-    int isutf8 = XNEditDefaultCharsetIsUTF8();
-    
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-        if(*inPtr >= 0 || !isutf8) {
+        if(*inPtr >= 0) {
             *outPtr = toupper((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
@@ -4861,10 +4865,8 @@ void DownCaseString(char *outString, const char *inString, Boolean addFiller)
     char *outPtr;
     const char *inPtr;
     
-    int isutf8 = XNEditDefaultCharsetIsUTF8();
-    
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	if(*inPtr >= 0 || !isutf8) {
+    	if(*inPtr >= 0) {
             *outPtr = tolower((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
