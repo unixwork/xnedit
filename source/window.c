@@ -794,17 +794,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             ac);
     XtManageChild(window->encInfoBarList);
     
-    // infobar label
-    window->encInfoBarLabel = XtVaCreateManagedWidget(
-            "ibarlabel",
-            xmLabelWidgetClass,
-            window->encodingInfoBar,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_WIDGET,
-            XmNbottomWidget, window->encInfoBarList,
-            NULL);
-    
     // error dropdown
     ac = 0;
     XtSetArg(al[ac], XmNcolumns, 15); ac++;
@@ -818,8 +807,17 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             al,
             ac);
     // don't manage encInfoErrorList here
-
-
+    
+    // infobar label
+    window->encInfoBarLabel = XtVaCreateManagedWidget(
+            "ibarlabel",
+            xmLabelWidgetClass,
+            window->encodingInfoBar,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, window->encInfoErrorList,
+            NULL);
     XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
                  (XtCallbackProc)jumpToEncErrorCB, mainWin);
     
@@ -856,6 +854,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     XtAddCallback(btnReload, XmNactivateCallback, (XtCallbackProc)reloadCB, 
             mainWin);
     XmStringFree(s1);
+    window->encInfoReloadButton = btnReload;
     
     /* Create the menu bar */
     menuBar = CreateMenuBar(mainWin, window);
@@ -1928,6 +1927,13 @@ void ShowEncodingInfoBar(WindowInfo *window, int state)
     NEditFree(encodings);
     
     // show infobar
+    if(window->encErrorsOnSave) {
+        XtUnmanageChild(window->encInfoReloadButton);
+        XtUnmanageChild(window->encInfoBarList);
+    } else {
+        XtManageChild(window->encInfoReloadButton);
+        XtManageChild(window->encInfoBarList);
+    }
     XtManageChild(window->encodingInfoBar);
     
     showStatsForm(window);
@@ -5989,21 +5995,33 @@ void SetZoom(WindowInfo *window, int step)
  * note: this will not copy the array, so don't free the pointer outside
  *       of the window
  */
-void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors)
+void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors, Boolean onSave)
 {
     window->encErrors = errors;
     window->numEncErrors = numErrors;
+    window->encErrorsOnSave = onSave;
     
     if(numErrors == 0) {
         XtVaSetValues(window->encInfoErrorList, XmNitemCount, 0, XmNitems, NULL, NULL);
         XtUnmanageChild(window->encInfoErrorList);
         return;
     }
-    char buf[256];
+    char buf[32];
     
     XmStringTable strErrors = NEditCalloc(numErrors, sizeof(XmString));
     for(size_t i=0;i<numErrors;i++) {
-        snprintf(buf, 256, "0x%02X", errors[i].c);
+        if(onSave) {
+            int len = 4;
+            for(int n=0;n<4;n++) {
+                if(errors[i].str[n] == '\0') {
+                    len = n;
+                    break;
+                }
+            }
+            snprintf(buf, 32, "%.*s", len, errors[i].str);
+        } else {
+            snprintf(buf, 32, "0x%02X", errors[i].c);
+        }
         strErrors[i] = XmStringCreateSimple(buf);
     }
     
@@ -6058,7 +6076,11 @@ static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct 
     
     EncError e = window->encErrors[cb->item_position];
     // +3 because the unicode replacement char is encoded with 3 bytes in utf8
-    BufSelect(window->buffer, e.pos, e.pos+3);
+    int end_pos = e.pos + 3;
+    if(window->encErrorsOnSave) {
+        end_pos = e.pos + Utf8CharLen(e.str);
+    }
+    BufSelect(window->buffer, e.pos, end_pos);
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, e.pos);
 }

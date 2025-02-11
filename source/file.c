@@ -817,10 +817,10 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         
         show_infobar = TRUE;
         SetEncodingInfoBarLabel(window, msgbuf);
-        SetEncErrors(window, content.enc_errors, content.num_enc_errors);
+        SetEncErrors(window, content.enc_errors, content.num_enc_errors, False);
     } else {
         SetEncodingInfoBarLabel(window, "No conversion errors");
-        SetEncErrors(window, NULL, 0);
+        SetEncErrors(window, NULL, 0, False);
         NEditFree(content.enc_errors);
     }
     
@@ -1744,6 +1744,10 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         }
     }
     
+    EncError *encErrors = NEditCalloc(ENC_ERROR_LIST_LEN, sizeof(EncError));
+    size_t numEncErrors = 0;
+    size_t allocEncErrors = ENC_ERROR_LIST_LEN;
+    
     /* convert text if required and write it to the file */
     int skipped = 0;
     int nonreversible = 0;
@@ -1773,6 +1777,20 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             case EINVAL:
                 /* An invalid multibyte sequence is encountered in the input */
                 skip = Utf8CharLen((const unsigned char*)in);
+                
+                // add unconvertible character to the error list
+                if(numEncErrors >= allocEncErrors) {
+                    allocEncErrors += 16;
+                    encErrors = NEditRealloc(encErrors, allocEncErrors * sizeof(EncError));
+                }
+                memcpy(encErrors[numEncErrors].str, in, skip);
+                if(skip < 4) {
+                    encErrors[numEncErrors].str[skip] = 0;
+                }
+                encErrors[numEncErrors].pos = in - fileString;
+                numEncErrors++;
+                
+                
                 ++skipped;
                 in += skip;
                 if(inleft >= skip) {
@@ -1797,13 +1815,23 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     unsigned int eresp = 0;
+    int show_infobar = FALSE;
     if (skipped > 0 || nonreversible > 0 || unerr > 0) {
-    	eresp = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
+    	/*
+        eresp = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
     			"%d non-reversible characters encountered\n"
     			"%d unknown errors occurred\n"
     			"Save anyway?", "YES", "NO",
                 skipped, nonreversible, unerr);
+        */
+        char msgbuf[256];
+        snprintf(msgbuf, 256, "%d non-convertible characters skipped", skipped);
+        show_infobar = TRUE;
+        SetEncodingInfoBarLabel(window, msgbuf);
+        SetEncErrors(window, encErrors, numEncErrors, True);
+    } else {
+        free(encErrors);
     }
     
     if(ic) {
@@ -1889,6 +1917,11 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         window->fileMissing = TRUE;
         window->device = 0;
         window->inode = 0;
+    }
+    
+    // show infobar, if needed
+    if(show_infobar) {
+        ShowEncodingInfoBar(window, 1);
     }
 
     return TRUE;

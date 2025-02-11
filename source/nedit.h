@@ -262,7 +262,10 @@ typedef struct _UserBGMenuCache {
  */
 typedef struct _EncError {
     size_t pos;
-    int    c;
+    union {
+        int  c;
+        char str[4];
+    };
 } EncError;
 
 
@@ -306,6 +309,7 @@ typedef struct _WindowInfo {
     Widget      encInfoBarLabel;
     Widget      encInfoErrorList;
     Widget      encInfoBarList;
+    Widget      encInfoReloadButton;
     Widget	menuBar;    	    	/* the main menu bar */
     Widget	tabBar;			/* tab bar for tabbed window */
     Widget	tab;			/* tab for this document */
@@ -525,6 +529,7 @@ typedef struct _WindowInfo {
     EncError    *encErrors;
     size_t      numEncErrors;
     size_t      posEncErrors;
+    Boolean     encErrorsOnSave;
        
     XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
     					   of highlighted matching paren.  Non-
