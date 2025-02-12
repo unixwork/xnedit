@@ -268,6 +268,7 @@ static void WindowTakeFocus(Widget shell, WindowInfo *window, XtPointer d);
 
 static void closeInfoBarCB(Widget w, Widget mainWin, void *callData);
 static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct *cb);
+static void encodingSelected(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb);
 static void reloadCB(Widget w, Widget mainWin, void *callData);
 static void windowStructureNotifyEventEH(
         Widget widget,
@@ -793,6 +794,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             al,
             ac);
     XtManageChild(window->encInfoBarList);
+    XtAddCallback(window->encInfoBarList, XmNselectionCallback,
+                 (XtCallbackProc)encodingSelected, window);
     
     // error dropdown
     ac = 0;
@@ -1929,10 +1932,10 @@ void ShowEncodingInfoBar(WindowInfo *window, int state)
     // show infobar
     if(window->encErrorsOnSave) {
         XtUnmanageChild(window->encInfoReloadButton);
-        XtUnmanageChild(window->encInfoBarList);
+        //XtUnmanageChild(window->encInfoBarList);
     } else {
         XtManageChild(window->encInfoReloadButton);
-        XtManageChild(window->encInfoBarList);
+        //XtManageChild(window->encInfoBarList);
     }
     XtManageChild(window->encodingInfoBar);
     
@@ -6083,6 +6086,25 @@ static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct 
     BufSelect(window->buffer, e.pos, end_pos);
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, e.pos);
+}
+
+static void encodingSelected(Widget w, WindowInfo *window, XmComboBoxCallbackStruct *cb) {
+    // encoding dropdown selection is only handled when the encoding bar
+    // was opened by doSave()
+    if(!cb->item_or_text || !window->encErrorsOnSave) {
+        return;
+    }
+    
+    // convert XmString to char*
+    char *encoding = NULL;
+    XmStringGetLtoR(cb->item_or_text, XmFONTLIST_DEFAULT_TAG, &encoding);
+    
+    if(encoding) {
+        size_t enclen = strlen(encoding);
+        memcpy(window->encoding, encoding, enclen+1);
+        
+        XtFree(encoding);
+    }
 }
 
 static void reloadCB(Widget w, Widget mainWin, void *callData)

@@ -1922,6 +1922,8 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     // show infobar, if needed
     if(show_infobar) {
         ShowEncodingInfoBar(window, 1);
+    } else {
+        XtUnmanageChild(window->encodingInfoBar);
     }
 
     return TRUE;
