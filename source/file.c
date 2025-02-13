@@ -899,7 +899,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     
     // show infobar, if needed
     if(show_infobar) {
-        ShowEncodingInfoBar(window, 1);
+        ShowEncodingInfoBar(window, TRUE);
     }
       
     return TRUE;
@@ -1920,11 +1920,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
     
     // show infobar, if needed
-    if(show_infobar) {
-        ShowEncodingInfoBar(window, 1);
-    } else {
-        XtUnmanageChild(window->encodingInfoBar);
-    }
+    ShowEncodingInfoBar(window, show_infobar);
 
     return TRUE;
 }
