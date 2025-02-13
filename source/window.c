@@ -797,6 +797,17 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     XtAddCallback(window->encInfoBarList, XmNselectionCallback,
                  (XtCallbackProc)encodingSelected, window);
     
+    // infobar label
+    window->encInfoBarLabel = XtVaCreateManagedWidget(
+            "ibarlabel",
+            xmLabelWidgetClass,
+            window->encodingInfoBar,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, window->encInfoBarList,
+            NULL);
+    
     // error dropdown
     ac = 0;
     XtSetArg(al[ac], XmNcolumns, 15); ac++;
@@ -810,17 +821,8 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             al,
             ac);
     // don't manage encInfoErrorList here
-    
-    // infobar label
-    window->encInfoBarLabel = XtVaCreateManagedWidget(
-            "ibarlabel",
-            xmLabelWidgetClass,
-            window->encodingInfoBar,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_WIDGET,
-            XmNbottomWidget, window->encInfoErrorList,
-            NULL);
+
+
     XtAddCallback(window->encInfoErrorList, XmNselectionCallback,
                  (XtCallbackProc)jumpToEncErrorCB, mainWin);
     
@@ -6105,6 +6107,8 @@ static void encodingSelected(Widget w, WindowInfo *window, XmComboBoxCallbackStr
         
         XtFree(encoding);
     }
+    
+    SetWindowModified(window, True);
 }
 
 static void reloadCB(Widget w, Widget mainWin, void *callData)
