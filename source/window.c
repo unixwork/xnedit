@@ -5181,7 +5181,14 @@ void RefreshWindowStates(WindowInfo *window)
     if (!IsTopDocument(window))
     	return;
 	
-    if(!window->showInfoBar && XtIsManaged(window->encodingInfoBar)) {
+    if(window->showInfoBar) {
+        SetEncErrors(window, window->encErrors, window->numEncErrors, window->encErrorsOnSave);
+        if(window->encErrorsOnSave) {
+            XtUnmanageChild(window->encInfoReloadButton);
+        } else {
+            XtManageChild(window->encInfoReloadButton);
+        }
+    } else if(XtIsManaged(window->encodingInfoBar)) {
         XtUnmanageChild(window->encodingInfoBar);
         updateStatsFormStatus = 1;
     }
@@ -5212,7 +5219,9 @@ void RefreshWindowStates(WindowInfo *window)
         showStatsForm(window);
     }
     
-    ShowEncodingInfoBar(window, window->showInfoBar);
+    Boolean encInfoBarState = window->showInfoBar;
+    window->showInfoBar = !encInfoBarState;
+    ShowEncodingInfoBar(window, encInfoBarState);
     
     /* signal if macro/shell is running */
     if (window->shellCmdData || window->macroCmdData)
@@ -6002,6 +6011,10 @@ void SetZoom(WindowInfo *window, int step)
  */
 void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors, Boolean onSave)
 {
+    if(window->encErrors != errors) {
+        NEditFree(window->encErrors);
+    }
+    
     window->encErrors = errors;
     window->numEncErrors = numErrors;
     window->encErrorsOnSave = onSave;
