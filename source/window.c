@@ -6042,12 +6042,18 @@ void SetEncErrors(WindowInfo *window, EncError *errors, size_t numErrors, Boolea
         }
         strErrors[i] = XmStringCreateSimple(buf);
     }
-    
+     
     XtVaSetValues(
             window->encInfoErrorList,
             XmNitemCount, numErrors,
             XmNitems, strErrors,
+            XmNselectedPosition, 0,
             NULL);
+    Widget textfield = NULL;
+    XtVaGetValues(window->encInfoErrorList, XmNtextField, &textfield, NULL);
+    if(textfield) {
+        XmTextFieldSetString(textfield, "Errors");
+    }
     
     // cleanup
     for(size_t i=0;i<numErrors;i++) {
