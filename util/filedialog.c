@@ -1846,14 +1846,7 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
             return;
         }
     }
-    
-    if(data->selectedPath) {
-        if(!data->selIsDir) {
-            filedilalog_ok_end(data);
-            return;
-        }
-    }
-    
+     
     if(data->type == FILEDIALOG_SAVE) {
         char *newName = XNETextGetString(data->name);
         if(newName) {
@@ -1863,6 +1856,10 @@ static void filedialog_ok(Widget w, FileDialogData *data, XtPointer d)
                 filedilalog_ok_end(data);
             }
             XtFree(newName);
+        }
+    } else if(data->selectedPath) {
+        if(!data->selIsDir) {
+            filedilalog_ok_end(data);
         }
     }
 }
