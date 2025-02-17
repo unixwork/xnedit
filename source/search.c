@@ -5116,7 +5116,7 @@ void ReadSearchHistory(void)
     } else {
         /* stat() failed, probably for non-exiting history database. */
         if (ENOENT != errno)
-            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+            fprintf(stderr, "XNEdit: Error reading file %s (%s)\n",
                 fullName, strerror(errno));
         return;
     }
@@ -5142,20 +5142,20 @@ void ReadSearchHistory(void)
         }
         if (line[lineLen - 1] != '\n') {
             /* no newline, probably truncated */
-            fprintf(stderr, "NEdit: Line too long in file %s\n", fullName);
+            fprintf(stderr, "XNEdit: Line too long in file %s\n", fullName);
             break;
         }
         line[--lineLen] = '\0';
 
         if (sscanf(line, "%d:%u:%u", &type, &srchLen, &replLen) != 3) {
-            fprintf(stderr, "NEdit: Invalid line in file %s\n", fullName);
+            fprintf(stderr, "XNEdit: Invalid line in file %s\n", fullName);
             break;
         }
 
         SearchTypeHistory[HistStart]=type;
         if (type < 0 || type >= N_SEARCH_TYPES
         || srchLen > SEARCHMAX || replLen > SEARCHMAX) {
-            fprintf(stderr, "NEdit: Invalid values in file %s\n", fullName);
+            fprintf(stderr, "XNEdit: Invalid values in file %s\n", fullName);
             break;
         }
 
@@ -5171,7 +5171,7 @@ void ReadSearchHistory(void)
         SearchHistory[HistStart] = XtMalloc(srchLen+1);
         if (fread(SearchHistory[HistStart], 1, srchLen + 1, fp) != srchLen + 1
         || SearchHistory[HistStart][srchLen] != '\n') {
-            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+            fprintf(stderr, "XNEdit: Error reading file %s (%s)\n",
                 fullName, strerror(errno));
             XtFree(SearchHistory[HistStart]);
             NHist--;
@@ -5183,7 +5183,7 @@ void ReadSearchHistory(void)
         ReplaceHistory[HistStart] = XtMalloc(replLen+1);
         if (fread(ReplaceHistory[HistStart], 1, replLen + 1, fp) != replLen + 1
         || ReplaceHistory[HistStart][replLen] != '\n') {
-            fprintf(stderr, "NEdit: Error reading file %s (%s)\n",
+            fprintf(stderr, "XNEdit: Error reading file %s (%s)\n",
                 fullName, strerror(errno));
             XtFree(SearchHistory[HistStart]);
             XtFree(ReplaceHistory[HistStart]);
