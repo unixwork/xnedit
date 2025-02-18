@@ -1684,7 +1684,10 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             && window->buffer->length != 0
             && GetPrefAppendLF())
     {
+        Boolean filenameSet = window->filenameSet;
+        window->filenameSet = False; /* Temp. prevent check for changes. */
         BufInsert(window->buffer, window->buffer->length, "\n");
+        window->filenameSet = filenameSet;
     }
     
     /* open the file */
