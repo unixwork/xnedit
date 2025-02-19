@@ -28,7 +28,7 @@ src=(
 	"https://www.zlib.net/zlib-1.3.1.tar.gz"
 	"https://ftp-osl.osuosl.org/pub/libpng/src/libpng16/libpng-1.6.34.tar.gz"
 	"https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.gz"
-	"https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.gz"
+	"https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.16.0.tar.xz"
 	"https://www.x.org/releases/individual/lib/libXft-2.3.8.tar.gz"
 	"https://www.x.org/releases/individual/lib/libICE-1.1.2.tar.gz"
 	"https://www.x.org/releases/individual/lib/libSM-1.2.5.tar.gz"
@@ -54,7 +54,8 @@ for url in "${src[@]}"; do
 
     dlfile=$(basename $url)
     dirname=${dlfile%.tar.*}
-    tar xvfz $dlfile
+    # BSD/macOS tar should just work with tar.gz or tar.xz
+    tar xvf $dlfile
 
     echo
     echo "##enter $BUILD_DIR/$dirname"
