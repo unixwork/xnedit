@@ -1738,7 +1738,6 @@ void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb)
     if(list_key_pressed(w, data, &cb->event->xkey)) {
         return;
     }
-    printf("search: %s\n", data->searchBuf);
 
     // if data->showHidden is 0, data->files contains more items than the grid
     // this means SelectedRow might not be the correct index for data->files
