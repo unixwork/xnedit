@@ -53,4 +53,6 @@ Widget CreateFormatButtons(
         Widget *d,
         Widget *m);
 
+void ListFindAndSelect(Widget w, char *searchStr, size_t len);
+
 #endif /* NEDIT_GETFILES_H_INCLUDED */

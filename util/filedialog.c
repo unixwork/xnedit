@@ -964,6 +964,17 @@ struct FileElm {
     Boolean isHidden;
 };
 
+#define SEARCHBUF_SIZE 128
+
+#ifdef DISABLE_FSB_EXTSEARCH
+#define SEARCH_TIMEOUT 0
+#endif
+
+// SEARCH_TIMEOUT: time in ms until the search buffer is reset
+#ifndef SEARCH_TIMEOUT
+#define SEARCH_TIMEOUT 1500
+#endif
+
 struct FileDialogData {
     Widget shell;
     
@@ -995,6 +1006,11 @@ struct FileDialogData {
     Widget iofilter;
     Widget bom;
     Widget xattr;
+    
+    Widget keyEHWidget;
+    Time lastKeyEvent;
+    char searchBuf[SEARCHBUF_SIZE];
+    int searchBufPos;
     
     FileElm *dirs;
     FileElm *files;
@@ -1674,14 +1690,55 @@ void grid_activate(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
     filedialog_ok(w, data, NULL);
 }
  
-void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
+static int list_key_pressed(Widget widget, FileDialogData *data, XKeyEvent *event) {
     char chars[16];
     KeySym keysym;
     int nchars;
     
-    nchars = XLookupString(&cb->event->xkey, chars, 15, &keysym, NULL);
+    nchars = XLookupString(event, chars, 15, &keysym, NULL);
     
-    if(nchars == 0) return;
+    if(nchars == 0) {
+        return 1;
+    }
+    
+    Time t = event->time;
+    Time diffMS = t - data->lastKeyEvent;
+    data->lastKeyEvent = t;
+    if(diffMS > SEARCH_TIMEOUT || (data->keyEHWidget && data->keyEHWidget != widget)) {
+        data->searchBufPos = 0;
+    }
+    data->keyEHWidget = widget;
+    
+    if(keysym == XK_BackSpace || keysym == XK_Delete) {
+        if(data->searchBufPos > 0) {
+            data->searchBufPos--;
+            data->searchBuf[data->searchBufPos] = '\0';
+        }
+    } else if(data->searchBufPos + nchars + 1 < SEARCHBUF_SIZE) {
+        memcpy(data->searchBuf + data->searchBufPos, chars, nchars);
+        data->searchBufPos += nchars;
+        data->searchBuf[data->searchBufPos] = '\0';
+    }
+    
+    return 0;
+}
+
+static void listKeyPressEH(Widget w, XtPointer callData, XEvent *event, Boolean *continueDispatch) {
+    FileDialogData *data = callData;
+    if(list_key_pressed(w, data, &event->xkey)) {
+        return;
+    }
+    
+    ListFindAndSelect(w, data->searchBuf, data->searchBufPos);    
+    
+    *continueDispatch = False;
+}
+
+void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb) {
+    if(list_key_pressed(w, data, &cb->event->xkey)) {
+        return;
+    }
+    printf("search: %s\n", data->searchBuf);
 
     // if data->showHidden is 0, data->files contains more items than the grid
     // this means SelectedRow might not be the correct index for data->files
@@ -1698,8 +1755,8 @@ void grid_key_pressed(Widget w, FileDialogData *data, XmLGridCallbackStruct *cb)
         
         size_t namelen = strlen(name);
         
-        size_t cmplen = namelen < nchars ? namelen : nchars;
-        if(!memcmp(name, chars, cmplen)) {
+        size_t cmplen = namelen < data->searchBufPos ? namelen : data->searchBufPos;
+        if(!memcmp(name, data->searchBuf, cmplen)) {
             if(row <= selectedRow) {
                 if(match == -1) {
                     match = row;
@@ -2686,6 +2743,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             XmNbrowseSelectionCallback,
             (XtCallbackProc)dirlist_select,
             &data);
+    XtAddEventHandler(data.dirlist, KeyPressMask, False, listKeyPressEH, &data);
     
     n = 0;
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_FORM); n++;
@@ -2712,6 +2770,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             XmNbrowseSelectionCallback,
             (XtCallbackProc)filelist_select,
             &data);
+    XtAddEventHandler(data.filelist, KeyPressMask, False, listKeyPressEH, &data);
      
     // Detail FileList
     // the detail view shares widgets with the list view

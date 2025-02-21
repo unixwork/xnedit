@@ -396,3 +396,48 @@ Widget CreateFormatButtons(
     XmStringFree(str);
     return formatBtns;
 }
+
+
+/*
+ * Searches for an item in a list widget, that starts with searchStr
+ * and selects it if was found.
+ */
+void ListFindAndSelect(Widget w, char *searchStr, size_t len)
+{
+    char *itemString;
+    int nItems, i, cmp, selectPos, topPos, nVisible;
+    XmString *items;
+    char name[MAXPATHLEN], path[MAXPATHLEN];
+    
+    /* Get the items (filenames) in the list widget */
+    XtVaGetValues(w, XmNitems, &items, XmNitemCount, &nItems, NULL);
+    
+    /* compare them with the accumulated user keystrokes & decide the
+       appropriate line in the list widget to select */
+    selectPos = 0;
+    for (i=0; i<nItems; i++) {
+        XmStringGetLtoR(items[i], XmSTRING_DEFAULT_CHARSET, &itemString);
+    	cmp = strncmp(itemString, searchStr, len);
+        NEditFree(itemString);
+    	if (cmp == 0) {
+    	    selectPos = i+1;
+    	    break;
+    	} else if (cmp > 0) {
+    	    selectPos = i;
+    	    break;
+    	}
+    }
+
+    /* Make the selection, and make sure it will be visible */
+    XmListSelectPos(w, selectPos, True);
+    if (selectPos == 0) /* XmListSelectPos curiously returns 0 for last item */
+    	selectPos = nItems + 1;
+    XtVaGetValues(w, XmNtopItemPosition, &topPos,
+    	    XmNvisibleItemCount, &nVisible, NULL);
+    if (selectPos < topPos)
+    	XmListSetPos(w, selectPos-2 > 1 ? selectPos-2 : 1);
+    else if (selectPos > topPos+nVisible-1)
+    	XmListSetBottomPos(w, selectPos+2 <= nItems ? selectPos+2 : 0);
+    /* For LessTif 0.89.9. Obsolete now? */
+    XmListSelectPos(w, selectPos, True);
+}
