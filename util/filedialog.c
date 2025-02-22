@@ -1697,7 +1697,7 @@ static int list_key_pressed(Widget widget, FileDialogData *data, XKeyEvent *even
     
     nchars = XLookupString(event, chars, 15, &keysym, NULL);
     
-    if(nchars == 0) {
+    if(nchars == 0 || chars[0] < 0x020) {
         return 1;
     }
     
