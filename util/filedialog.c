@@ -41,6 +41,7 @@
 #include"../Microline/XmL/Grid.h"
 
 #include <X11/Xresource.h>
+#include <X11/keysym.h>
 
 
 /* nedit utils */
