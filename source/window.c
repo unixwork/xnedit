@@ -6094,11 +6094,16 @@ static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct 
         return;
     }
     
-    if(cb->item_position >= window->numEncErrors) {
+    int item_position = cb->item_position;
+    // get XmNselectedPosition, because cb->item_position is buggy when
+    // multiple elements have the same text
+    XtVaGetValues(w, XmNselectedPosition, &item_position, NULL);
+    
+    if(item_position >= window->numEncErrors) {
         return;
     }
     
-    EncError e = window->encErrors[cb->item_position];
+    EncError e = window->encErrors[item_position];
     // +3 because the unicode replacement char is encoded with 3 bytes in utf8
     int end_pos = e.pos + 3;
     if(window->encErrorsOnSave) {
