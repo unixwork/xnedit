@@ -83,6 +83,7 @@ static Pixmap newFolderIcon32;
 static XColor bgColor;
 
 static int LastView = -1; // 0: icon   1: list   2: grid
+static int ShowHidden = -1;
 static char *LastFilter;
 
 #define FSB_ENABLE_DETAIL
@@ -2217,7 +2218,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         LastView = 1;
     }
 #endif
-    Boolean showHiddenValue = GetFsbShowHidden();
+    Boolean showHiddenValue = ShowHidden >= 0 ? ShowHidden : GetFsbShowHidden();
     
     FileDialogData data;
     memset(&data, 0, sizeof(FileDialogData));
@@ -2897,7 +2898,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             LastFilter = NULL;
         }
     }
+    
     LastView = data.selectedview;
+    ShowHidden = data.showHidden;
     
     if(data.selectedPath && !data.selIsDir && data.status == FILEDIALOG_OK) {
         file->path = data.selectedPath;
