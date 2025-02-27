@@ -448,6 +448,7 @@ static struct prefData {
     int windowDarkTheme;
     int fsbView;
     int fsbShowHidden;
+    int fsbFileCmp;
     int editorConfig;
     int lockEncodingError;
     char defaultCharset[MAX_ENCODING_LENGTH];
@@ -1199,6 +1200,8 @@ static PrefDescripRec PrefDescrip[] = {
             &PrefData.fsbView, NULL, True},
     {"fsbShowHidden", "FsbShowHidden", PREF_BOOLEAN, "False",
             &PrefData.fsbShowHidden, NULL, True},
+    {"fsbFileCmp", "FsbFileCmp", PREF_INT, "0",
+            &PrefData.fsbFileCmp, NULL, True},
     {"editorConfig", "EditorConfig", PREF_BOOLEAN, "True",
             &PrefData.editorConfig, NULL, True},
     {"defaultCharset", "DefaultCharset", PREF_STRING, "locale",
@@ -2420,6 +2423,11 @@ Boolean GetWindowDarkTheme(void)
 int GetFsbView(void)
 {
     return PrefData.fsbView;
+}
+
+int GetFsbFileCmp(void)
+{
+    return PrefData.fsbFileCmp;
 }
 
 Boolean GetFsbShowHidden(void)

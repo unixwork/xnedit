@@ -86,6 +86,10 @@ static int LastView = -1; // 0: icon   1: list   2: grid
 static int ShowHidden = -1;
 static char *LastFilter;
 
+typedef int(*FileCmpFunc)(const char *s1, const char *s2);
+
+static FileCmpFunc FileCmp;
+
 #define FSB_ENABLE_DETAIL
 
 const char *newFolder16Data = "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
@@ -1098,7 +1102,7 @@ static int filecmp(const void *f1, const void *f2)
     int ret = 0;
     switch(cmp_field) {
         case 0: {
-            ret = strcmp(FileName(file1->path), FileName(file2->path));
+            ret = FileCmp(FileName(file1->path), FileName(file2->path));
             break;
         }
         case 1: {
@@ -2219,6 +2223,17 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     }
 #endif
     Boolean showHiddenValue = ShowHidden >= 0 ? ShowHidden : GetFsbShowHidden();
+    
+    switch(GetFsbFileCmp()) {
+        default: {
+            FileCmp = (FileCmpFunc)strcmp;
+            break;
+        }
+        case 1: {
+            FileCmp = (FileCmpFunc)strcasecmp;
+            break;
+        }
+    }
     
     FileDialogData data;
     memset(&data, 0, sizeof(FileDialogData));
