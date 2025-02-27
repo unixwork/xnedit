@@ -2889,20 +2889,19 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         XtDispatchEvent(&event);
     }
     
+    // remember filter string
+    LastFilter = XNETextGetString(data.filter);
+    if(LastFilter) {
+        if(strlen(LastFilter) == 0) {
+            XtFree(LastFilter);
+            LastFilter = NULL;
+        }
+    }
     LastView = data.selectedview;
     
     if(data.selectedPath && !data.selIsDir && data.status == FILEDIALOG_OK) {
         file->path = data.selectedPath;
         data.selectedPath = NULL;
-        
-        // remember filter string
-        LastFilter = XNETextGetString(data.filter);
-        if(LastFilter) {
-            if(strlen(LastFilter) == 0) {
-                XtFree(LastFilter);
-                LastFilter = NULL;
-            }
-        }
         
         file->filter = data.selected_filter ? NEditStrdup(data.selected_filter->name) : NULL;
         
