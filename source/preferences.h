@@ -286,4 +286,6 @@ char* ParseAnsiColorList(char **array, const char *str);
 
 void ParseColorProfiles(const char *str);
 
+void MiscSettingsDialog(WindowInfo *window);
+
 #endif /* NEDIT_PREFERENCES_H_INCLUDED */

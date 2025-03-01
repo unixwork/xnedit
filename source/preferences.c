@@ -8463,3 +8463,192 @@ static void parseIconSize(char *iconSize)
     
     free(iconSizeStr);
 }
+
+
+typedef struct {
+    Widget shell;
+    Widget fdDefaultView;
+    Widget fdShowHidden;
+    Widget fdSort;
+} miscDialog;
+
+static miscDialog md;
+
+static void mdDestroyCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    
+}
+
+static void mdCloseCB(Widget w, XtPointer clientData, XtPointer callData)
+{
+    XtDestroyWidget(md.shell);
+    md.shell = NULL;
+}
+
+void MiscSettingsDialog(WindowInfo *window) {
+    if(md.shell) {
+        RaiseDialogWindow(md.shell);
+        return;
+    }
+    
+    int ac = 0;
+    Arg args[20];
+    
+    //XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
+    XtSetArg(args[ac], XmNtitle, "Filters"); ac++;
+    md.shell = CreateWidget(TheAppShell, "misc",
+	    topLevelShellWidgetClass, args, ac);
+    AddSmallIcon(md.shell);
+    Widget form = XtVaCreateManagedWidget("form", xmFormWidgetClass,
+	    md.shell, XmNautoUnmanage, False,
+	    XmNresizePolicy, XmRESIZE_NONE, NULL);
+    
+    
+    XmString s1;
+    
+    Widget okBtn = XtVaCreateManagedWidget("ok",xmPushButtonWidgetClass,form,
+            XmNlabelString, s1=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 4,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 31,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 6,
+            NULL);
+    //XtAddCallback(okBtn, XmNactivateCallback, mdOkCB, NULL);
+    XmStringFree(s1);
+
+    Widget applyBtn = XtVaCreateManagedWidget("apply",xmPushButtonWidgetClass,form,
+            XmNlabelString, s1=XmStringCreateSimple("Apply"),
+            XmNmnemonic, 'A',
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 35,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 64,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 6,
+            NULL);
+    //XtAddCallback(applyBtn, XmNactivateCallback, mdApplyCB, NULL);
+    XmStringFree(s1);
+
+    Widget closeBtn = XtVaCreateManagedWidget("close",
+            xmPushButtonWidgetClass, form,
+            XmNlabelString, s1=XmStringCreateSimple("Close"),
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 68,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 96,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 6,
+            NULL);
+    //XtAddCallback(closeBtn, XmNactivateCallback, mdCloseCB, NULL);
+    XmStringFree(s1);
+    
+    Widget sw = XtVaCreateManagedWidget("sw", xmScrolledWindowWidgetClass, form,
+            XmNwidth, 350,
+            XmNheight, 500,
+            XmNscrollingPolicy, XmAUTOMATIC,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftOffset, 4,
+            XmNrightOffset, 4,
+            XmNtopOffset, 4,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, okBtn,
+            XmNbottomOffset, 6,
+            NULL);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNwidth, 300); ac++;
+    Widget mdform = XmCreateForm(sw, "form", args, ac);
+    XtManageChild(mdform);
+    
+    // filedialog settings
+    s1 = XmStringCreateLocalized("File Dialog");
+    Widget header1 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, mdform,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 8,
+            NULL);
+    XmStringFree(s1);
+    
+    XmString fdViewItems[2];
+    fdViewItems[0] = XmStringCreateLocalized("List");
+    fdViewItems[1] = XmStringCreateLocalized("Detail");
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, fdViewItems); ac++;
+    XtSetArg(args[ac], XmNitemCount, 2); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header1); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.fdDefaultView = XmCreateDropDownList(mdform, "miscDropDown", args, ac);
+    XtManageChild(md.fdDefaultView);
+    XmStringFree(fdViewItems[0]);
+    XmStringFree(fdViewItems[1]);
+    
+    s1 = XmStringCreateLocalized("Default View");
+    Widget fdLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, mdform,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, header1,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.fdDefaultView,
+            NULL);
+    XmStringFree(s1);
+    
+    
+    XmString fdSortItems[2];
+    fdSortItems[0] = XmStringCreateLocalized("strcmp");
+    fdSortItems[1] = XmStringCreateLocalized("strcasecmp");
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, fdSortItems); ac++;
+    XtSetArg(args[ac], XmNitemCount, 2); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.fdDefaultView); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.fdSort = XmCreateDropDownList(mdform, "miscDropDown", args, ac);
+    XtManageChild(md.fdSort);
+    XmStringFree(fdSortItems[0]);
+    XmStringFree(fdSortItems[1]);
+    
+    s1 = XmStringCreateLocalized("File Sorting");
+    Widget fdLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, mdform,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.fdDefaultView,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.fdSort,
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("Show hidden files");
+    md.fdShowHidden = XtVaCreateManagedWidget("muscCheckbox", xmToggleButtonWidgetClass, mdform,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.fdSort,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            NULL);
+    
+    
+    XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
+    AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
+
+    RealizeWithoutForcingPosition(md.shell);
+}
+

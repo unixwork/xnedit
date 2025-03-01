@@ -192,6 +192,7 @@ static void autoScrollDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void editorConfigDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void lockEncodingErrorDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void miscDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void modWarnRealDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void exitWarnDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -1079,6 +1080,8 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     /* Initial Window Size sub menu (simulates radioBehavior) */
     subSubPane = createMenu(subPane, "initialwindowSize",
     	    "Initial Window Size", 'z', NULL, FULL);
+    //createMenuItem(subPane, "miscellaneous", "Miscellaneous...", 'M', miscDefCB, window,
+    //	    FULL);
     /* XtVaSetValues(subSubPane, XmNradioBehavior, True, NULL);  */
     window->size24x80DefItem = btn = createMenuToggle(subSubPane, "24X80",
     	    "24 x 80", '2', size24x80CB, window, False, SHORT);
@@ -2389,6 +2392,13 @@ static void filterDefCB(Widget w, WindowInfo *window, caddr_t callData)
     HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
             ((XmAnyCallbackStruct *)callData)->event);
     FilterSettings(WidgetToWindow(MENU_WIDGET(w)));
+}
+
+static void miscDefCB(Widget w, WindowInfo *window, caddr_t callData)
+{
+    HidePointerOnKeyedEvent(WidgetToWindow(MENU_WIDGET(w))->lastFocus,
+            ((XmAnyCallbackStruct *)callData)->event);
+    MiscSettingsDialog(WidgetToWindow(MENU_WIDGET(w)));
 }
 
 static void modWarnDefCB(Widget w, WindowInfo *window, caddr_t callData)
