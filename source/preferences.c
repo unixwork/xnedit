@@ -56,6 +56,7 @@
 #include "../util/utils.h"
 #include "../util/nedit_malloc.h"
 #include "../util/colorchooser.h"
+#include "../util/filedialog.h"
 
 #include <ctype.h>
 #include <pwd.h>
@@ -8516,9 +8517,19 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     XtVaGetValues(md.fdSort, XmNselectedPosition, &fsbFileCmp, NULL);
     XtVaGetValues(md.fdShowHidden, XmNset, &fsbShowHidden, NULL);
     
+    Boolean resetFsb = False;
+    if(PrefData.fsbView != fsbView+1) {
+        resetFsb = True;
+    } else if(PrefData.fsbShowHidden != fsbShowHidden) {
+        resetFsb = True;
+    }
     SetPrefFsbView(fsbView+1);
     SetPrefFsbFileCmp(fsbFileCmp);
     SetPrefFsbShowHidden(fsbShowHidden);
+    
+    if(resetFsb) {
+        FileDialogResetSettings();
+    }
     
     if(!md.icCustom) {
         int icSize = 0;

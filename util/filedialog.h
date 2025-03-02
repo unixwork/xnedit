@@ -54,6 +54,8 @@ const char ** FileDialogDefaultEncodings(void);
 char* FileDialogGetFilter(void);
 void FileDialogSetFilter(const char *filterStr);
 
+void FileDialogResetSettings(void);
+
 #ifdef __cplusplus
 }
 #endif

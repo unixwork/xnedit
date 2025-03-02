@@ -3014,3 +3014,8 @@ void FileDialogSetFilter(const char *filterStr) {
     NEditFree(LastFilter);
     LastFilter = filterStr ? NEditStrdup(filterStr) : NULL;
 }
+
+void FileDialogResetSettings(void) {
+    LastView = -1;
+    ShowHidden = -1;
+}
