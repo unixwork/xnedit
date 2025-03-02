@@ -2488,6 +2488,13 @@ int GetPrefISrcClearIconSize(void)
     return PrefData.isrcClearIconSize;
 }
 
+void SetPrefIconSize(const char *sizeStr)
+{
+    NEditFree(PrefData.iconSize);
+    PrefData.iconSize = NEditStrdup(sizeStr);
+    PrefsHaveChanged = True;
+}
+
 void SetPrefLockEncodingError(int state)
 {
     setIntPref(&PrefData.lockEncodingError, state);
@@ -8485,6 +8492,8 @@ typedef struct {
     Widget fdDefaultView;
     Widget fdShowHidden;
     Widget fdSort;
+    Widget icSize;
+    int    icCustom;
 } miscDialog;
 
 static miscDialog md;
@@ -8510,6 +8519,18 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     SetPrefFsbView(fsbView+1);
     SetPrefFsbFileCmp(fsbFileCmp);
     SetPrefFsbShowHidden(fsbShowHidden);
+    
+    if(!md.icCustom) {
+        int icSize = 0;
+        XtVaGetValues(md.icSize, XmNselectedPosition, &icSize, NULL);
+        if(icSize == 1) {
+            SetPrefIconSize("medium");
+        } else if(icSize == 2) {
+            SetPrefIconSize("large");
+        } else {
+            SetPrefIconSize("small");
+        }
+    }
 }
 
 static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
@@ -8599,11 +8620,11 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
       
     ac = 0;
-    XtSetArg(args[ac], XmNwidth, 480); ac++;
+    XtSetArg(args[ac], XmNwidth, 470); ac++;
     md.form = XmCreateForm(md.scrolledwindow, "form", args, ac);
     XtManageChild(md.form);
     
-    // filedialog settings
+    // ----------------------- File Dialog Settings -----------------------
     s1 = XmStringCreateLocalized("File Dialog");
     Widget header1 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
@@ -8674,7 +8695,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("Show hidden files");
-    md.fdShowHidden = XtVaCreateManagedWidget("muscCheckbox", xmToggleButtonWidgetClass, md.form,
+    md.fdShowHidden = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
             XmNlabelString, s1,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.fdSort,
@@ -8683,6 +8704,56 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNleftOffset, 8,
             NULL);
     
+    // -----------------------    Icon Settings    -----------------------
+    Widget separator1 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.fdShowHidden,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightOffset, 8,
+            NULL
+            );
+    
+    s1 = XmStringCreateLocalized("Incremental Search Line / Tabbar");
+    Widget header2 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, separator1,
+            XmNtopOffset, 14,
+            NULL);
+    XmStringFree(s1);
+    
+    XmString icSize[3];
+    icSize[0] = XmStringCreateLocalized("Small");
+    icSize[1] = XmStringCreateLocalized("Medium");
+    icSize[2] = XmStringCreateLocalized("Large");
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header2); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icSize = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icSize);
+    
+    s1 = XmStringCreateLocalized("Icon Size");
+    Widget icLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, header2,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icSize,
+            NULL);
+    XmStringFree(s1);
     
     XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
     AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
@@ -8720,9 +8791,21 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(fsbCmp);
     }
     
-    
     XtVaSetValues(md.fdShowHidden, XmNset, PrefData.fsbShowHidden, NULL);
-
+    if(PrefData.closeIconSize == PrefData.isrcClearIconSize && PrefData.isrcClearIconSize == PrefData.isrcFindIconSize) {
+        if(PrefData.closeIconSize >= 0 && PrefData.closeIconSize <= 2) {
+            XmComboBoxSelectItem(md.icSize, icSize[PrefData.closeIconSize]);
+        }
+    } else {
+        // custom size not supported yet
+        XtSetSensitive(md.icSize, False);
+        md.icCustom = True;
+    }
+    
+    XmStringFree(icSize[0]);
+    XmStringFree(icSize[1]);
+    XmStringFree(icSize[2]);
+    
     RealizeWithoutForcingPosition(md.shell);
 }
 

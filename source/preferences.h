@@ -249,6 +249,8 @@ int GetPrefCloseIconSize(void);
 int GetPrefISrcFindIconSize(void);
 int GetPrefISrcClearIconSize(void);
 
+void SetPrefIconSize(const char *sizeStr);
+
 void SetPrefLockEncodingError(int state);
 int GetPrefLockEncodingError(void);
 
