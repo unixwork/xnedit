@@ -89,6 +89,7 @@
 #include <Xm/ScrolledW.h>
 #include <Xm/ArrowB.h>
 #include <Xm/ComboBox.h>
+#include <Xm/DrawingA.h>
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -2420,19 +2421,31 @@ Boolean GetWindowDarkTheme(void)
     return (Boolean)PrefData.windowDarkTheme;
 }
 
-int GetFsbView(void)
+int GetPrefFsbView(void)
 {
     return PrefData.fsbView;
 }
 
-int GetFsbFileCmp(void)
+void SetPrefFsbView(int view) {
+    setIntPref(&PrefData.fsbView, view);
+}
+
+int GetPrefFsbFileCmp(void)
 {
     return PrefData.fsbFileCmp;
 }
 
-Boolean GetFsbShowHidden(void)
+void SetPrefFsbFileCmp(int cmp) {
+    setIntPref(&PrefData.fsbFileCmp, cmp);
+}
+
+Boolean GetPrefFsbShowHidden(void)
 {
     return (Boolean)PrefData.fsbShowHidden;
+}
+
+void SetPrefFsbShowHidden(Boolean v) {
+    setIntPref(&PrefData.fsbShowHidden, v);
 }
 
 int GetPrefOverrideVirtKeyBindings(void)
@@ -8467,6 +8480,8 @@ static void parseIconSize(char *iconSize)
 
 typedef struct {
     Widget shell;
+    Widget scrolledwindow;
+    Widget form;
     Widget fdDefaultView;
     Widget fdShowHidden;
     Widget fdSort;
@@ -8483,6 +8498,23 @@ static void mdCloseCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     XtDestroyWidget(md.shell);
     md.shell = NULL;
+}
+
+static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
+    int fsbView, fsbFileCmp;
+    Boolean fsbShowHidden;
+    XtVaGetValues(md.fdDefaultView, XmNselectedPosition, &fsbView, NULL);
+    XtVaGetValues(md.fdSort, XmNselectedPosition, &fsbFileCmp, NULL);
+    XtVaGetValues(md.fdShowHidden, XmNset, &fsbShowHidden, NULL);
+    
+    SetPrefFsbView(fsbView+1);
+    SetPrefFsbFileCmp(fsbFileCmp);
+    SetPrefFsbShowHidden(fsbShowHidden);
+}
+
+static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
+    mdApplyCB(w, clientData, callData);
+    mdCloseCB(w, clientData, callData);
 }
 
 void MiscSettingsDialog(WindowInfo *window) {
@@ -8516,7 +8548,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    //XtAddCallback(okBtn, XmNactivateCallback, mdOkCB, NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, mdOkCB, NULL);
     XmStringFree(s1);
 
     Widget applyBtn = XtVaCreateManagedWidget("apply",xmPushButtonWidgetClass,form,
@@ -8529,7 +8561,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    //XtAddCallback(applyBtn, XmNactivateCallback, mdApplyCB, NULL);
+    XtAddCallback(applyBtn, XmNactivateCallback, mdApplyCB, NULL);
     XmStringFree(s1);
 
     Widget closeBtn = XtVaCreateManagedWidget("close",
@@ -8542,13 +8574,12 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, 6,
             NULL);
-    //XtAddCallback(closeBtn, XmNactivateCallback, mdCloseCB, NULL);
+    XtAddCallback(closeBtn, XmNactivateCallback, mdCloseCB, NULL);
     XmStringFree(s1);
-    
-    Widget sw = XtVaCreateManagedWidget("sw", xmScrolledWindowWidgetClass, form,
-            XmNwidth, 350,
+     
+    md.scrolledwindow = XtVaCreateManagedWidget("sw", xmScrolledWindowWidgetClass, form,
+            XmNwidth, 500,
             XmNheight, 500,
-            XmNscrollingPolicy, XmAUTOMATIC,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_FORM,
@@ -8558,16 +8589,23 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomAttachment, XmATTACH_WIDGET,
             XmNbottomWidget, okBtn,
             XmNbottomOffset, 6,
+            XmNscrollingPolicy, XmAUTOMATIC,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, closeBtn,
+            XmNbottomOffset, 16,
             NULL);
-    
+      
     ac = 0;
-    XtSetArg(args[ac], XmNwidth, 300); ac++;
-    Widget mdform = XmCreateForm(sw, "form", args, ac);
-    XtManageChild(mdform);
+    XtSetArg(args[ac], XmNwidth, 480); ac++;
+    md.form = XmCreateForm(md.scrolledwindow, "form", args, ac);
+    XtManageChild(md.form);
     
     // filedialog settings
     s1 = XmStringCreateLocalized("File Dialog");
-    Widget header1 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, mdform,
+    Widget header1 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8587,13 +8625,13 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNtopWidget, header1); ac++;
     XtSetArg(args[ac], XmNtopOffset, 8); ac++;
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
-    md.fdDefaultView = XmCreateDropDownList(mdform, "miscDropDown", args, ac);
+    md.fdDefaultView = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
     XtManageChild(md.fdDefaultView);
     XmStringFree(fdViewItems[0]);
     XmStringFree(fdViewItems[1]);
     
     s1 = XmStringCreateLocalized("Default View");
-    Widget fdLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, mdform,
+    Widget fdLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8617,13 +8655,13 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNtopOffset, 8); ac++;
     XtSetArg(args[ac], XmNtopWidget, md.fdDefaultView); ac++;
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
-    md.fdSort = XmCreateDropDownList(mdform, "miscDropDown", args, ac);
+    md.fdSort = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
     XtManageChild(md.fdSort);
     XmStringFree(fdSortItems[0]);
     XmStringFree(fdSortItems[1]);
     
     s1 = XmStringCreateLocalized("File Sorting");
-    Widget fdLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, mdform,
+    Widget fdLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8636,7 +8674,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("Show hidden files");
-    md.fdShowHidden = XtVaCreateManagedWidget("muscCheckbox", xmToggleButtonWidgetClass, mdform,
+    md.fdShowHidden = XtVaCreateManagedWidget("muscCheckbox", xmToggleButtonWidgetClass, md.form,
             XmNlabelString, s1,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.fdSort,
@@ -8648,6 +8686,42 @@ void MiscSettingsDialog(WindowInfo *window) {
     
     XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
     AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
+    
+    // init data
+    XmString fsbView = NULL;
+    switch(PrefData.fsbView) {
+        case 1: {
+            fsbView = XmStringCreateSimple("List");
+            break;
+        }
+        case 2: {
+            fsbView = XmStringCreateSimple("Detail");
+            break;
+        }
+    }
+    if(fsbView) {
+        XmComboBoxSelectItem(md.fdDefaultView, fsbView);
+        XmStringFree(fsbView);
+    }
+    
+    XmString fsbCmp = NULL;
+    switch(PrefData.fsbFileCmp) {
+        case 0: {
+            fsbCmp = XmStringCreateSimple("strcmp");
+            break;
+        }
+        case 1: {
+            fsbCmp = XmStringCreateSimple("strcasecmp");
+            break;
+        }
+    }
+    if(fsbCmp) {
+        XmComboBoxSelectItem(md.fdSort, fsbCmp);
+        XmStringFree(fsbCmp);
+    }
+    
+    
+    XtVaSetValues(md.fdShowHidden, XmNset, PrefData.fsbShowHidden, NULL);
 
     RealizeWithoutForcingPosition(md.shell);
 }

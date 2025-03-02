@@ -2212,7 +2212,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
     int currentEncItem = 0;
     
     if(LastView == -1) {
-        LastView = GetFsbView();
+        LastView = GetPrefFsbView();
         if(LastView < 0 || LastView > 2) {
             LastView = 1;
         }
@@ -2222,9 +2222,9 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         LastView = 1;
     }
 #endif
-    Boolean showHiddenValue = ShowHidden >= 0 ? ShowHidden : GetFsbShowHidden();
+    Boolean showHiddenValue = ShowHidden >= 0 ? ShowHidden : GetPrefFsbShowHidden();
     
-    switch(GetFsbFileCmp()) {
+    switch(GetPrefFsbFileCmp()) {
         default: {
             FileCmp = (FileCmpFunc)strcmp;
             break;
