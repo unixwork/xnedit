@@ -1845,9 +1845,14 @@ int GetPrefISearchLine(void)
     return PrefData.iSearchLine;
 }
 
-int GetZoomStep(void)
+int GetPrefZoomStep(void)
 {
     return PrefData.zoomStep;
+}
+
+void SetPrefZoomStep(int step)
+{
+    setIntPref(&PrefData.zoomStep, step);
 }
 
 void SetPrefSortTabs(int state)
@@ -8495,6 +8500,7 @@ typedef struct {
     Widget fdSort;
     Widget icSize;
     int    icCustom;
+    Widget edZoom;
 } miscDialog;
 
 static miscDialog md;
@@ -8542,6 +8548,18 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
             SetPrefIconSize("small");
         }
     }
+    
+    XmString s1;
+    XtVaGetValues(md.edZoom, XmNselectedItem, &s1, NULL);
+    char *zoomStepStr = NULL;
+    XmStringGetLtoR(s1, XmFONTLIST_DEFAULT_TAG, &zoomStepStr);
+    int zoomStep = atoi(zoomStepStr);
+    if(zoomStep == 0) {
+        zoomStep = 1;
+    }
+    SetPrefZoomStep(zoomStep);
+    XtFree(zoomStepStr);
+    
 }
 
 static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
@@ -8766,8 +8784,62 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
-    AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
+    // -----------------------   Editor Settings   -----------------------
+    Widget separator2 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icSize,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNrightOffset, 8,
+            NULL
+            );
+    
+    s1 = XmStringCreateLocalized("Text Editor");
+    Widget header3 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, separator2,
+            XmNtopOffset, 14,
+            NULL);
+    XmStringFree(s1);
+    
+    XmString edSize[16];
+    for(int i=0;i<16;i++) {
+        char buf[8];
+        snprintf(buf, 8, "%d", i+1);
+        edSize[i] = XmStringCreateLocalized(buf);
+    }
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, edSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 16); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header3); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.edZoom = XmCreateDropDownComboBox(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.edZoom);
+    for(int i=0;i<16;i++) {
+        XmStringFree(edSize[i]);
+    } 
+    
+    s1 = XmStringCreateLocalized("Zoom Step");
+    Widget edLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, header3,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edZoom,
+            NULL);
+    XmStringFree(s1);
+    
     
     // init data
     XmString fsbView = NULL;
@@ -8813,10 +8885,24 @@ void MiscSettingsDialog(WindowInfo *window) {
         md.icCustom = True;
     }
     
+    char buf[16];
+    int zoom = GetPrefZoomStep();
+    snprintf(buf, 16, "%d", zoom);
+    s1 = XmStringCreateSimple(buf);
+    if(zoom >= 16) {
+        XmComboBoxAddItem(md.edZoom, s1, 0, True);
+    }
+    XmComboBoxSelectItem(md.edZoom, s1);
+    XmStringFree(s1);
+    
+    
     XmStringFree(icSize[0]);
     XmStringFree(icSize[1]);
-    XmStringFree(icSize[2]);
+    XmStringFree(icSize[2]);   
     
+    
+    XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
+    AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
     RealizeWithoutForcingPosition(md.shell);
 }
 

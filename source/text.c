@@ -4150,11 +4150,11 @@ static void zoom(Widget w, int step) {
 }
 
 static void zoomInAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
-    zoom(w, GetZoomStep());
+    zoom(w, GetPrefZoomStep());
 }
 
 static void zoomOutAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) {
-    zoom(w, -GetZoomStep());
+    zoom(w, -GetPrefZoomStep());
 }
 
 /*
