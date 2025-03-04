@@ -73,6 +73,9 @@ XmTextPosition XNETextFieldGetLastPosition(Widget widget);
 void XNETextFieldSetInsertionPosition(Widget widget, XmTextPosition i);
 void XNETextFieldSetSelection(Widget w, XmTextPosition first, XmTextPosition last, Time sel_time);
 
+void XNETextFieldSetInt(Widget widget, int value);
+int XNETextFieldGetInt(Widget widget, long int *value);
+
 
 #endif /* XNE_TEXTFIELD_H */
 

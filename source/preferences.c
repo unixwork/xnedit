@@ -57,6 +57,7 @@
 #include "../util/nedit_malloc.h"
 #include "../util/colorchooser.h"
 #include "../util/filedialog.h"
+#include "../util/textfield.h"
 
 #include <ctype.h>
 #include <pwd.h>
@@ -8501,6 +8502,12 @@ typedef struct {
     Widget icSize;
     int    icCustom;
     Widget edZoom;
+    Widget edUndoPurgeLimit;
+    Widget edUndoPurgeTrimTo;
+    Widget edUndoWorryLimit;
+    Widget edUndoWorryTrimTo;
+    Widget edUndoOpLimit;
+    Widget edUndoOpTrimTo;
 } miscDialog;
 
 static miscDialog md;
@@ -8560,6 +8567,31 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     SetPrefZoomStep(zoomStep);
     XtFree(zoomStepStr);
     
+    long undoOpLimit;
+    long undoOpTrimTo;
+    long undoPurgeLimit;
+    long undoPurgeTrimTo;
+    long undoWorryLimit;
+    long undoWorryTrimTo;
+    if(XNETextFieldGetInt(md.edUndoOpLimit, &undoOpLimit)) {
+        SetPrefUndoOpLimit(undoOpLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoOpTrimTo, &undoOpTrimTo)) {
+        SetPrefUndoOpTrimTo(undoOpTrimTo);
+    }
+    if(XNETextFieldGetInt(md.edUndoPurgeLimit, &undoPurgeLimit)) {
+        SetPrefUndoPurgeLimit(undoPurgeLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoPurgeTrimTo, &undoPurgeTrimTo)) {
+        SetPrefUndoPurgeTrimTo(undoPurgeTrimTo);
+    }
+    if(XNETextFieldGetInt(md.edUndoWorryLimit, &undoWorryLimit)) {
+        SetPrefUndoWorryLimit(undoWorryLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoWorryTrimTo, &undoWorryTrimTo)) {
+        SetPrefUndoWorryTrimTo(undoWorryTrimTo);
+    }
+    
 }
 
 static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
@@ -8577,7 +8609,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     Arg args[20];
     
     //XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
-    XtSetArg(args[ac], XmNtitle, "Filters"); ac++;
+    XtSetArg(args[ac], XmNtitle, "Miscellaneous Settings"); ac++;
     md.shell = CreateWidget(TheAppShell, "misc",
 	    topLevelShellWidgetClass, args, ac);
     AddSmallIcon(md.shell);
@@ -8840,6 +8872,132 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
+    md.edUndoOpLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoom,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Op Limit");
+    Widget edLabel2 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoom,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoOpLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoOpTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Op Trim To");
+    Widget edLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoOpTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoPurgeLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpTrimTo,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Purge Limit");
+    Widget edLabel4 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpTrimTo,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoPurgeLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoPurgeTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Purge Trim To");
+    Widget edLabel5 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoPurgeTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoWorryLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeTrimTo,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Worry Limit");
+    Widget edLabel6 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeTrimTo,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoWorryLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoWorryTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoWorryLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Worry Trim To");
+    Widget edLabel7 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoWorryLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoWorryTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
     
     // init data
     XmString fsbView = NULL;
@@ -8898,7 +9056,16 @@ void MiscSettingsDialog(WindowInfo *window) {
     
     XmStringFree(icSize[0]);
     XmStringFree(icSize[1]);
-    XmStringFree(icSize[2]);   
+    XmStringFree(icSize[2]);
+    
+    
+    XNETextFieldSetInt(md.edUndoOpLimit, GetPrefUndoOpLimit());
+    XNETextFieldSetInt(md.edUndoOpTrimTo, GetPrefUndoOpTrimTo());
+    XNETextFieldSetInt(md.edUndoPurgeLimit, GetPrefUndoPurgeLimit());
+    XNETextFieldSetInt(md.edUndoPurgeTrimTo, GetPrefUndoPurgeTrimTo());
+    XNETextFieldSetInt(md.edUndoWorryLimit, GetPrefUndoWorryLimit());
+    XNETextFieldSetInt(md.edUndoWorryTrimTo, GetPrefUndoWorryTrimTo());
+    
     
     
     XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
