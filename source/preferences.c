@@ -8515,6 +8515,7 @@ typedef struct {
     Widget icSize;
     int    icCustom;
     Widget edZoom;
+    Widget edZoomMouseWheel;
     Widget edUndoPurgeLimit;
     Widget edUndoPurgeTrimTo;
     Widget edUndoWorryLimit;
@@ -8579,6 +8580,9 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     }
     SetPrefZoomStep(zoomStep);
     XtFree(zoomStepStr);
+    Boolean edZoomMouseWheel;
+    XtVaGetValues(md.edZoomMouseWheel, XmNset, &edZoomMouseWheel, NULL);
+    SetPrefZoomCtrlMouseWheel(edZoomMouseWheel);
     
     long undoOpLimit;
     long undoOpTrimTo;
@@ -8885,10 +8889,20 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
+    s1 = XmStringCreateLocalized("Enable Zoom with Ctrl+Mousewheel");
+    md.edZoomMouseWheel = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoom,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            NULL);
+    
     md.edUndoOpLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.edZoom,
+            XmNtopWidget, md.edZoomMouseWheel,
             XmNtopOffset, 8,
             NULL);
     
@@ -8898,7 +8912,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.edZoom,
+            XmNtopWidget, md.edZoomMouseWheel,
             XmNtopOffset, 8,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, md.edUndoOpLimit,
@@ -9065,6 +9079,8 @@ void MiscSettingsDialog(WindowInfo *window) {
     }
     XmComboBoxSelectItem(md.edZoom, s1);
     XmStringFree(s1);
+    
+    XtVaSetValues(md.edZoomMouseWheel, XmNset, GetPrefZoomCtrlMouseWheel(), NULL);
     
     
     XmStringFree(icSize[0]);
