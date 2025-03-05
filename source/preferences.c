@@ -413,6 +413,7 @@ static struct prefData {
 				   when it exceeds UNDO_OP_TRIMTO in length */
     
     int zoomStep;
+    int zoomCtrlMouseWheel;     /* change font size with ctrl+mousewheel */
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -1000,6 +1001,8 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
+    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "1",
+    	&PrefData.zoomCtrlMouseWheel, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
     	&PrefData.undoPurgeLimit, NULL, True},
     {"undoPurgeTrimTo", "UndoPurgeTrimTo", PREF_INT, "1",
@@ -1854,6 +1857,16 @@ int GetPrefZoomStep(void)
 void SetPrefZoomStep(int step)
 {
     setIntPref(&PrefData.zoomStep, step);
+}
+
+int GetPrefZoomCtrlMouseWheel(void)
+{
+    return PrefData.zoomCtrlMouseWheel;
+}
+
+void SetPrefZoomCtrlMouseWheel(Boolean s)
+{
+    setIntPref(&PrefData.zoomCtrlMouseWheel, s);
 }
 
 void SetPrefSortTabs(int state)

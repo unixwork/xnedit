@@ -80,6 +80,8 @@ void SetPrefTabBar(int state);
 int GetPrefTabBar(void);
 int GetPrefZoomStep(void);
 void SetPrefZoomStep(int step);
+int GetPrefZoomCtrlMouseWheel(void);
+void SetPrefZoomCtrlMouseWheel(Boolean s);
 void SetPrefSortTabs(int state);
 int GetPrefSortTabs(void);
 void SetPrefTabBarHideOne(int state);

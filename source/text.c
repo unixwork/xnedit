@@ -473,8 +473,8 @@ static char defaultTranslations[] =
     /* Support for mouse wheel in XFree86 */
     "Shift<Btn4Down>,<Btn4Up>: scroll_up(1)\n"
     "Shift<Btn5Down>,<Btn5Up>: scroll_down(1)\n"
-    "Ctrl<Btn4Down>,<Btn4Up>: scroll_up(1, pages)\n"
-    "Ctrl<Btn5Down>,<Btn5Up>: scroll_down(1, pages)\n"
+    "Ctrl<Btn4Down>,<Btn4Up>: scroll_up(1, pages, alt_zoom)\n"
+    "Ctrl<Btn5Down>,<Btn5Up>: scroll_down(1, pages, alt_zoom)\n"
     "<Btn4Down>,<Btn4Up>,<MotionNotify>(1+): extend_adjust()\n"
     "<Btn5Down>,<Btn5Up>,<MotionNotify>(1+): extend_adjust()\n"
     "<Btn4Down>,<Btn4Up>: scroll_up(5)\n"
@@ -3968,10 +3968,15 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
+    
+    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3 && !strcmp(args[2], "alt_zoom")) {
+        zoomInAP(w, event, args, nArgs);
+        return;
+    }
 
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
     	return;
-    if (*nArgs == 2) {
+    if (*nArgs >= 2) {
         /* Allow both 'page' and 'pages' */
         if (strncmp(args[1], "page", 4) == 0) 
             nLines *= textD->nVisibleLines;
@@ -3990,9 +3995,15 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
+    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3 && !strcmp(args[2], "alt_zoom")) {
+        zoomOutAP(w, event, args, nArgs);
+        return;
+    }
+
+    
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
     	return;
-    if (*nArgs == 2) {
+    if (*nArgs >= 2) {
         /* Allow both 'page' and 'pages' */
         if (strncmp(args[1], "page", 4) == 0) 
             nLines *= textD->nVisibleLines;
