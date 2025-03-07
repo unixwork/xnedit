@@ -57,6 +57,7 @@
 #include "../util/nedit_malloc.h"
 #include "../util/colorchooser.h"
 #include "../util/filedialog.h"
+#include "../util/textfield.h"
 
 #include <ctype.h>
 #include <pwd.h>
@@ -412,6 +413,7 @@ static struct prefData {
 				   when it exceeds UNDO_OP_TRIMTO in length */
     
     int zoomStep;
+    int zoomCtrlMouseWheel;     /* change font size with ctrl+mousewheel */
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -999,6 +1001,8 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
+    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "1",
+    	&PrefData.zoomCtrlMouseWheel, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
     	&PrefData.undoPurgeLimit, NULL, True},
     {"undoPurgeTrimTo", "UndoPurgeTrimTo", PREF_INT, "1",
@@ -1853,6 +1857,16 @@ int GetPrefZoomStep(void)
 void SetPrefZoomStep(int step)
 {
     setIntPref(&PrefData.zoomStep, step);
+}
+
+int GetPrefZoomCtrlMouseWheel(void)
+{
+    return PrefData.zoomCtrlMouseWheel;
+}
+
+void SetPrefZoomCtrlMouseWheel(Boolean s)
+{
+    setIntPref(&PrefData.zoomCtrlMouseWheel, s);
 }
 
 void SetPrefSortTabs(int state)
@@ -8499,8 +8513,17 @@ typedef struct {
     Widget fdShowHidden;
     Widget fdSort;
     Widget icSize;
-    int    icCustom;
+    Widget icClose;
+    Widget icFind;
+    Widget icClear;
     Widget edZoom;
+    Widget edZoomMouseWheel;
+    Widget edUndoPurgeLimit;
+    Widget edUndoPurgeTrimTo;
+    Widget edUndoWorryLimit;
+    Widget edUndoWorryTrimTo;
+    Widget edUndoOpLimit;
+    Widget edUndoOpTrimTo;
 } miscDialog;
 
 static miscDialog md;
@@ -8537,9 +8560,10 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         FileDialogResetSettings();
     }
     
-    if(!md.icCustom) {
-        int icSize = 0;
-        XtVaGetValues(md.icSize, XmNselectedPosition, &icSize, NULL);
+    int icSize = 0;
+    XtVaGetValues(md.icSize, XmNselectedPosition, &icSize, NULL);
+    
+    if(icSize < 3) {
         if(icSize == 1) {
             SetPrefIconSize("medium");
         } else if(icSize == 2) {
@@ -8547,6 +8571,15 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         } else {
             SetPrefIconSize("small");
         }
+    } else {
+        int icClose, icFind, icClear;
+        XtVaGetValues(md.icClose, XmNselectedPosition, &icClose, NULL);
+        XtVaGetValues(md.icClear, XmNselectedPosition, &icClear, NULL);
+        XtVaGetValues(md.icFind, XmNselectedPosition, &icFind, NULL);
+        char *sizeStr[] = { "small", "medium", "large" };
+        char iconSizeStr[128];
+        snprintf(iconSizeStr, 128, "close=%s,isrcFind=%s,isrcClear=%s", sizeStr[icClose], sizeStr[icFind], sizeStr[icClear]);
+        SetPrefIconSize(iconSizeStr);
     }
     
     XmString s1;
@@ -8559,12 +8592,57 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     }
     SetPrefZoomStep(zoomStep);
     XtFree(zoomStepStr);
+    Boolean edZoomMouseWheel;
+    XtVaGetValues(md.edZoomMouseWheel, XmNset, &edZoomMouseWheel, NULL);
+    SetPrefZoomCtrlMouseWheel(edZoomMouseWheel);
+    
+    long undoOpLimit;
+    long undoOpTrimTo;
+    long undoPurgeLimit;
+    long undoPurgeTrimTo;
+    long undoWorryLimit;
+    long undoWorryTrimTo;
+    if(XNETextFieldGetInt(md.edUndoOpLimit, &undoOpLimit)) {
+        SetPrefUndoOpLimit(undoOpLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoOpTrimTo, &undoOpTrimTo)) {
+        SetPrefUndoOpTrimTo(undoOpTrimTo);
+    }
+    if(XNETextFieldGetInt(md.edUndoPurgeLimit, &undoPurgeLimit)) {
+        SetPrefUndoPurgeLimit(undoPurgeLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoPurgeTrimTo, &undoPurgeTrimTo)) {
+        SetPrefUndoPurgeTrimTo(undoPurgeTrimTo);
+    }
+    if(XNETextFieldGetInt(md.edUndoWorryLimit, &undoWorryLimit)) {
+        SetPrefUndoWorryLimit(undoWorryLimit);
+    }
+    if(XNETextFieldGetInt(md.edUndoWorryTrimTo, &undoWorryTrimTo)) {
+        SetPrefUndoWorryTrimTo(undoWorryTrimTo);
+    }
     
 }
 
 static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
     mdApplyCB(w, clientData, callData);
     mdCloseCB(w, clientData, callData);
+}
+
+static void mdIconSizeCB(
+        Widget w,
+        XtPointer data,
+        XmComboBoxCallbackStruct *cb)
+{
+    Boolean enable = cb->item_position > 2;
+    XtSetSensitive(md.icClear, enable);
+    XtSetSensitive(md.icClose, enable);
+    XtSetSensitive(md.icFind, enable);
+    
+    if(!enable) {
+        XmComboBoxSelectItem(md.icClear, cb->item_or_text);
+        XmComboBoxSelectItem(md.icClose, cb->item_or_text);
+        XmComboBoxSelectItem(md.icFind, cb->item_or_text);
+    }
 }
 
 void MiscSettingsDialog(WindowInfo *window) {
@@ -8577,7 +8655,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     Arg args[20];
     
     //XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
-    XtSetArg(args[ac], XmNtitle, "Filters"); ac++;
+    XtSetArg(args[ac], XmNtitle, "Miscellaneous Settings"); ac++;
     md.shell = CreateWidget(TheAppShell, "misc",
 	    topLevelShellWidgetClass, args, ac);
     AddSmallIcon(md.shell);
@@ -8756,13 +8834,14 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    XmString icSize[3];
+    XmString icSize[4];
     icSize[0] = XmStringCreateLocalized("Small");
     icSize[1] = XmStringCreateLocalized("Medium");
     icSize[2] = XmStringCreateLocalized("Large");
+    icSize[3] = XmStringCreateLocalized("Individual");
     ac = 0;
     XtSetArg(args[ac], XmNitems, icSize); ac++;
-    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNitemCount, 4); ac++;
     XtSetArg(args[ac], XmNcolumns, 12); ac++;
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
     XtSetArg(args[ac], XmNtopWidget, header2); ac++;
@@ -8770,6 +8849,11 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     md.icSize = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
     XtManageChild(md.icSize);
+    XtAddCallback(
+            md.icSize,
+            XmNselectionCallback,
+            (XtCallbackProc)mdIconSizeCB,
+            NULL);
     
     s1 = XmStringCreateLocalized("Icon Size");
     Widget icLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
@@ -8784,10 +8868,84 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icSize); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icClose = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icClose);
+    
+    s1 = XmStringCreateLocalized("Tab Close Icon Size");
+    Widget icCloseLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icSize,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icClose,
+            NULL);
+    XmStringFree(s1);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icClose); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icFind = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icFind);
+    
+    s1 = XmStringCreateLocalized("Find Icon Size");
+    Widget icFindLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icClose,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icFind,
+            NULL);
+    XmStringFree(s1);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icFind); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icClear = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icClear);
+    
+    s1 = XmStringCreateLocalized("Clear Icon Size");
+    Widget icClearLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icFind,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icClear,
+            NULL);
+    XmStringFree(s1);
+    
+    
+    
     // -----------------------   Editor Settings   -----------------------
     Widget separator2 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.icSize,
+            XmNtopWidget, md.icClear,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8840,6 +8998,142 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
+    s1 = XmStringCreateLocalized("Zoom with Ctrl+Mousewheel");
+    md.edZoomMouseWheel = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoom,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            NULL);
+    
+    md.edUndoOpLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoomMouseWheel,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Op Limit");
+    Widget edLabel2 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edZoomMouseWheel,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoOpLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoOpTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Op Trim To");
+    Widget edLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoOpTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoPurgeLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpTrimTo,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Purge Limit");
+    Widget edLabel4 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoOpTrimTo,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoPurgeLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoPurgeTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Purge Trim To");
+    Widget edLabel5 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoPurgeTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoWorryLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeTrimTo,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Worry Limit");
+    Widget edLabel6 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoPurgeTrimTo,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoWorryLimit,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
+    md.edUndoWorryTrimTo = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
+            XmNrightAttachment, XmATTACH_FORM,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoWorryLimit,
+            XmNtopOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Undo Worry Trim To");
+    Widget edLabel7 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edUndoWorryLimit,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edUndoWorryTrimTo,
+            XmNcolumns, 10,
+            NULL);
+    XmStringFree(s1);
+    
     
     // init data
     XmString fsbView = NULL;
@@ -8878,11 +9172,25 @@ void MiscSettingsDialog(WindowInfo *window) {
     if(PrefData.closeIconSize == PrefData.isrcClearIconSize && PrefData.isrcClearIconSize == PrefData.isrcFindIconSize) {
         if(PrefData.closeIconSize >= 0 && PrefData.closeIconSize <= 2) {
             XmComboBoxSelectItem(md.icSize, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icClear, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icFind, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icClose, icSize[PrefData.closeIconSize]);
+            XtSetSensitive(md.icClear, False);
+            XtSetSensitive(md.icFind, False);
+            XtSetSensitive(md.icClose, False);
         }
     } else {
-        // custom size not supported yet
-        XtSetSensitive(md.icSize, False);
-        md.icCustom = True;
+        XmComboBoxSelectItem(md.icSize, icSize[3]); // individual
+        
+        if(PrefData.closeIconSize >= 0 && PrefData.closeIconSize <= 2) {
+            XmComboBoxSelectItem(md.icClose, icSize[PrefData.closeIconSize]);
+        }
+        if(PrefData.isrcFindIconSize >= 0 && PrefData.isrcFindIconSize <= 2) {
+            XmComboBoxSelectItem(md.icFind, icSize[PrefData.isrcFindIconSize]);
+        }
+        if(PrefData.isrcClearIconSize >= 0 && PrefData.isrcClearIconSize <= 2) {
+            XmComboBoxSelectItem(md.icClear, icSize[PrefData.isrcClearIconSize]);
+        }
     }
     
     char buf[16];
@@ -8895,10 +9203,21 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmComboBoxSelectItem(md.edZoom, s1);
     XmStringFree(s1);
     
+    XtVaSetValues(md.edZoomMouseWheel, XmNset, GetPrefZoomCtrlMouseWheel(), NULL);
+    
     
     XmStringFree(icSize[0]);
     XmStringFree(icSize[1]);
-    XmStringFree(icSize[2]);   
+    XmStringFree(icSize[2]);
+    
+    
+    XNETextFieldSetInt(md.edUndoOpLimit, GetPrefUndoOpLimit());
+    XNETextFieldSetInt(md.edUndoOpTrimTo, GetPrefUndoOpTrimTo());
+    XNETextFieldSetInt(md.edUndoPurgeLimit, GetPrefUndoPurgeLimit());
+    XNETextFieldSetInt(md.edUndoPurgeTrimTo, GetPrefUndoPurgeTrimTo());
+    XNETextFieldSetInt(md.edUndoWorryLimit, GetPrefUndoWorryLimit());
+    XNETextFieldSetInt(md.edUndoWorryTrimTo, GetPrefUndoWorryTrimTo());
+    
     
     
     XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);

@@ -1620,3 +1620,19 @@ void XNETextFieldSetSelection(Widget w, XmTextPosition first, XmTextPosition las
         tfRedrawText(tf);
     }
 }
+
+
+void XNETextFieldSetInt(Widget widget, int value) {
+    char buf[32];
+    snprintf(buf, 32, "%d", value);
+    XNETextSetString(widget, buf);
+}
+
+int XNETextFieldGetInt(Widget widget, long int *value) {
+    char *str = XNETextGetString(widget);
+    char *endptr;
+    long int v = strtol(str, &endptr, 10);
+    *value = v;
+    XtFree(str);
+    return *endptr == 0;
+}

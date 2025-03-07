@@ -863,6 +863,7 @@ void PathBarChangeDir(Widget w, PathBar *bar, XtPointer c)
                 if(bar->updateDir) {
                     bar->updateDir(bar->updateDirData, dir);
                 }
+                XNETextSetString(bar->textfield, dir);
                 NEditFree(dir);
             }
             countSeg++;
