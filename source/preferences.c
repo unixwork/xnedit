@@ -8889,7 +8889,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("Enable Zoom with Ctrl+Mousewheel");
+    s1 = XmStringCreateLocalized("Zoom with Ctrl+Mousewheel");
     md.edZoomMouseWheel = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
             XmNlabelString, s1,
             XmNtopAttachment, XmATTACH_WIDGET,
