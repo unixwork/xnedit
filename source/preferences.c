@@ -8513,7 +8513,9 @@ typedef struct {
     Widget fdShowHidden;
     Widget fdSort;
     Widget icSize;
-    int    icCustom;
+    Widget icClose;
+    Widget icFind;
+    Widget icClear;
     Widget edZoom;
     Widget edZoomMouseWheel;
     Widget edUndoPurgeLimit;
@@ -8558,9 +8560,10 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         FileDialogResetSettings();
     }
     
-    if(!md.icCustom) {
-        int icSize = 0;
-        XtVaGetValues(md.icSize, XmNselectedPosition, &icSize, NULL);
+    int icSize = 0;
+    XtVaGetValues(md.icSize, XmNselectedPosition, &icSize, NULL);
+    
+    if(icSize < 3) {
         if(icSize == 1) {
             SetPrefIconSize("medium");
         } else if(icSize == 2) {
@@ -8568,6 +8571,15 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         } else {
             SetPrefIconSize("small");
         }
+    } else {
+        int icClose, icFind, icClear;
+        XtVaGetValues(md.icClose, XmNselectedPosition, &icClose, NULL);
+        XtVaGetValues(md.icClear, XmNselectedPosition, &icClear, NULL);
+        XtVaGetValues(md.icFind, XmNselectedPosition, &icFind, NULL);
+        char *sizeStr[] = { "small", "medium", "large" };
+        char iconSizeStr[128];
+        snprintf(iconSizeStr, 128, "close=%s,isrcFind=%s,isrcClear=%s", sizeStr[icClose], sizeStr[icFind], sizeStr[icClear]);
+        SetPrefIconSize(iconSizeStr);
     }
     
     XmString s1;
@@ -8614,6 +8626,23 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
 static void mdOkCB(Widget w, XtPointer clientData, XtPointer callData) {
     mdApplyCB(w, clientData, callData);
     mdCloseCB(w, clientData, callData);
+}
+
+static void mdIconSizeCB(
+        Widget w,
+        XtPointer data,
+        XmComboBoxCallbackStruct *cb)
+{
+    Boolean enable = cb->item_position > 2;
+    XtSetSensitive(md.icClear, enable);
+    XtSetSensitive(md.icClose, enable);
+    XtSetSensitive(md.icFind, enable);
+    
+    if(!enable) {
+        XmComboBoxSelectItem(md.icClear, cb->item_or_text);
+        XmComboBoxSelectItem(md.icClose, cb->item_or_text);
+        XmComboBoxSelectItem(md.icFind, cb->item_or_text);
+    }
 }
 
 void MiscSettingsDialog(WindowInfo *window) {
@@ -8805,13 +8834,14 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    XmString icSize[3];
+    XmString icSize[4];
     icSize[0] = XmStringCreateLocalized("Small");
     icSize[1] = XmStringCreateLocalized("Medium");
     icSize[2] = XmStringCreateLocalized("Large");
+    icSize[3] = XmStringCreateLocalized("Individual");
     ac = 0;
     XtSetArg(args[ac], XmNitems, icSize); ac++;
-    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNitemCount, 4); ac++;
     XtSetArg(args[ac], XmNcolumns, 12); ac++;
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
     XtSetArg(args[ac], XmNtopWidget, header2); ac++;
@@ -8819,6 +8849,11 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     md.icSize = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
     XtManageChild(md.icSize);
+    XtAddCallback(
+            md.icSize,
+            XmNselectionCallback,
+            (XtCallbackProc)mdIconSizeCB,
+            NULL);
     
     s1 = XmStringCreateLocalized("Icon Size");
     Widget icLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
@@ -8833,10 +8868,84 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icSize); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icClose = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icClose);
+    
+    s1 = XmStringCreateLocalized("Tab Close Icon Size");
+    Widget icCloseLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icSize,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icClose,
+            NULL);
+    XmStringFree(s1);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icClose); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icFind = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icFind);
+    
+    s1 = XmStringCreateLocalized("Find Icon Size");
+    Widget icFindLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icClose,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icFind,
+            NULL);
+    XmStringFree(s1);
+    
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, icSize); ac++;
+    XtSetArg(args[ac], XmNitemCount, 3); ac++;
+    XtSetArg(args[ac], XmNcolumns, 12); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, md.icFind); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    md.icClear = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.icClear);
+    
+    s1 = XmStringCreateLocalized("Clear Icon Size");
+    Widget icClearLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.icFind,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.icClear,
+            NULL);
+    XmStringFree(s1);
+    
+    
+    
     // -----------------------   Editor Settings   -----------------------
     Widget separator2 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.icSize,
+            XmNtopWidget, md.icClear,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9063,11 +9172,25 @@ void MiscSettingsDialog(WindowInfo *window) {
     if(PrefData.closeIconSize == PrefData.isrcClearIconSize && PrefData.isrcClearIconSize == PrefData.isrcFindIconSize) {
         if(PrefData.closeIconSize >= 0 && PrefData.closeIconSize <= 2) {
             XmComboBoxSelectItem(md.icSize, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icClear, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icFind, icSize[PrefData.closeIconSize]);
+            XmComboBoxSelectItem(md.icClose, icSize[PrefData.closeIconSize]);
+            XtSetSensitive(md.icClear, False);
+            XtSetSensitive(md.icFind, False);
+            XtSetSensitive(md.icClose, False);
         }
     } else {
-        // custom size not supported yet
-        XtSetSensitive(md.icSize, False);
-        md.icCustom = True;
+        XmComboBoxSelectItem(md.icSize, icSize[3]); // individual
+        
+        if(PrefData.closeIconSize >= 0 && PrefData.closeIconSize <= 2) {
+            XmComboBoxSelectItem(md.icClose, icSize[PrefData.closeIconSize]);
+        }
+        if(PrefData.isrcFindIconSize >= 0 && PrefData.isrcFindIconSize <= 2) {
+            XmComboBoxSelectItem(md.icFind, icSize[PrefData.isrcFindIconSize]);
+        }
+        if(PrefData.isrcClearIconSize >= 0 && PrefData.isrcClearIconSize <= 2) {
+            XmComboBoxSelectItem(md.icClear, icSize[PrefData.isrcClearIconSize]);
+        }
     }
     
     char buf[16];
