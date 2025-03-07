@@ -1,5 +1,5 @@
 #!/bin/bash
-# xneditPkg.sh: Copyright 2021-2023 Valerio Messina GNU GPL v2+
+# xneditPkg.sh: Copyright 2021-2025 Valerio Messina GNU GPL v2+
 # xneditPkg.sh is part of XNEdit multi-purpose text editor:
 # https://github.com/unixwork/xnedit a fork of Nedit http://www.nedit.org
 # XNEdit is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@ pkg="/cygdrive/d/ProgramFiles/xnedit"
 pkg="$PROGRAMFILES/xnedit"
 dbg=0 # set to 1 to have debug prints and not stripped files
 
-ver="v0.04.01 2023/09/07"
+ver="v0.04.01 2025/03/07"
 echo "xneditPkg.sh $ver create a Win package for XNEdit"
 # check for external dependancy compliance
 flag=0
@@ -79,17 +79,19 @@ root="/usr" # where to pick dependencies
 pkg=`cygpath -u "$pkg"`
 pkg="$pkg"_$bit"bit"
 pkgWin=`cygpath -w "$pkg"`
-xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | awk '{print $1,$2,$3,$4,$5}' | sed 's/\\\n/ /g' | sed 's/ *$//g' | sed 's/,//g' | sed 's/ /_/g'`
+#xnVer=`grep NEditVersion $bin/help_data.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' | awk '{print $1,$2,$3,$4,$5}' | sed 's/\\\n/ /g' | sed 's/ *$//g' | sed 's/,//g' | sed 's/ /_/g'`
+xnVer=`grep XNEDIT_VERSION $bin/version.h | awk -F'"' '{print $2}' | sed 's/XNEdit //' |                                                                                   sed 's/ /_/g'`
 
 echo "XNEdit script files: $scriptPath"
 echo "XNEdit binaries    : $bin"
+echo "XNEdit version     : $xnVer"
 echo "Dependencies from  : $root"
 echo "Package created in : $pkg"
 echo "Package created in : $pkgWin"
 echo "Debug is (1=active): $dbg"
 read -p "Press Return to start ..."
 echo ""
-echo "Packaging 'XNEdit' v$xnVer for Win$bit ..."
+echo "Packaging 'XNEdit' $xnVer for Win$bit ..."
 cd "$bin"
 
 rm -rf "$pkg" 2> /dev/null # remove prev installation
