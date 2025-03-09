@@ -6107,7 +6107,7 @@ static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct 
     // +3 because the unicode replacement char is encoded with 3 bytes in utf8
     int end_pos = e.pos + 3;
     if(window->encErrorsOnSave) {
-        end_pos = e.pos + Utf8CharLen(e.str);
+        end_pos = e.pos + Utf8CharLen((const unsigned char*)e.str);
     }
     BufSelect(window->buffer, e.pos, end_pos);
     MakeSelectionVisible(window, window->lastFocus);
