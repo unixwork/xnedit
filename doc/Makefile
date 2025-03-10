@@ -43,7 +43,7 @@ instructions:
 	  else \
 	      echo "$(VERSION)" > .version; \
 	  fi
-help: ../source/help_topic.h ../source/help_data.h setext
+help: ../source/help_topic.h ../source/help_data.h ../source/version.h setext
 
 ../source/help_topic.h ../source/help_data.h: .version help.etx setext
 	@ echo "Creating XNEdit help code `cat .version`"
@@ -52,7 +52,9 @@ help: ../source/help_topic.h ../source/help_data.h setext
 	@ mv -f help_data.h ../source
 	@ if [ ! -z "$(VERSION)" ]; then \
 		echo "#define XNEDIT_IS_RELEASE" >> ../source/help_data.h ; \
+		echo "$(VERSION)" > xnedit-release ; \
 	  fi
+	
 
 xnedit.html: .version help.etx setext
 	@ echo "Creating XNEdit HTML documentation..."
