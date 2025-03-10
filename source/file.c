@@ -910,7 +910,7 @@ int GetFileContent(Widget shell, const char *path, const char *encoding, const c
     memset(content, 0, sizeof(FileContent));
     
     off_t fileLen, readLen;
-    char *fileString, *c;
+    char *fileString;
     char buf[IO_BUFSIZE];
     FILE *fp = NULL;
     FileStream *stream = NULL;;

@@ -2451,7 +2451,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     
     Display *display = XtDisplay(w);   
     
-    int i, dummy;
+    int dummy;
         Pixel   textFgPix   = AllocColor( w, profile->textFg, 
                     &dummy, &dummy, &dummy),
             textBgPix   = AllocColor( w, profile->textBg, 
