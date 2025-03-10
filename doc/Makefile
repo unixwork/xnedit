@@ -43,7 +43,7 @@ instructions:
 	  else \
 	      echo "$(VERSION)" > .version; \
 	  fi
-help: ../source/help_topic.h ../source/help_data.h ../source/version.h setext
+help: ../source/help_topic.h ../source/help_data.h setext
 
 ../source/help_topic.h ../source/help_data.h: .version help.etx setext
 	@ echo "Creating XNEdit help code `cat .version`"
