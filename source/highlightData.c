@@ -1450,7 +1450,6 @@ static void convertPatternExpr(char **patternRE, char *patSetName,
 */
 NFont *FontOfNamedStyle(ColorProfile *colorProfile, WindowInfo *window, const char *styleName)
 {   
-    // TODO: this function is just a workaround and not fully converted to Xft
     int styleNo=lookupNamedStyle(window->colorProfile, styleName);
     int fontNum;
     NFont *font;
