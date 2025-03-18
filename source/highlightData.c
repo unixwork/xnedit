@@ -1510,7 +1510,7 @@ char *ColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 char *BgColorOfNamedStyle(ColorProfile *colorProfile, const char *styleName)
 {
     int styleNo=lookupNamedStyle(colorProfile, styleName);
-
+    
     if (styleNo<0)
         return "";
     return colorProfile->styles[styleNo]->bgColor;
