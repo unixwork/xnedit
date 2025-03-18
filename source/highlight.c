@@ -792,7 +792,7 @@ static windowHighlightData *createHighlightData(WindowInfo *window,
       /* p->color = PixelToColor(window->textArea, AllocColor(window->textArea, p->colorName, &r, &g, &b)); */ \
       if (p->bgColorName) { \
         p->bgColor = PixelToColor(window->textArea, AllocColor(window->textArea, p->bgColorName, &r, &g, &b)); \
-        p->bgColor.pixel = AllocColor(window->textArea, p->colorName, &r, &g, &b); \
+        p->bgColor.pixel = AllocColor(window->textArea, p->bgColorName, &r, &g, &b); \
         p->bgColor.color.red = r; \
         p->bgColor.color.green = g; \
         p->bgColor.color.blue = b; \
