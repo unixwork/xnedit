@@ -6497,7 +6497,7 @@ static void updateColors(colorDialog *cd)
     
     colorProfiles = first;
     
-    ColorProfile *removed = clearColorProfileList(colorProfiles);
+    //ColorProfile *removed = clearColorProfileList(colorProfiles);
     
     if(!setProfile) {
         // should not happen but this makes it extra safe
@@ -8759,7 +8759,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(fdViewItems[1]);
     
     s1 = XmStringCreateLocalized("Default View");
-    Widget fdLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8789,7 +8789,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(fdSortItems[1]);
     
     s1 = XmStringCreateLocalized("File Sorting");
-    Widget fdLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8856,7 +8856,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Icon Size");
-    Widget icLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8880,7 +8880,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtManageChild(md.icClose);
     
     s1 = XmStringCreateLocalized("Tab Close Icon Size");
-    Widget icCloseLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8904,7 +8904,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtManageChild(md.icFind);
     
     s1 = XmStringCreateLocalized("Find Icon Size");
-    Widget icFindLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8928,7 +8928,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtManageChild(md.icClear);
     
     s1 = XmStringCreateLocalized("Clear Icon Size");
-    Widget icClearLabel = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -8986,7 +8986,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     } 
     
     s1 = XmStringCreateLocalized("Zoom Step");
-    Widget edLabel1 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9016,7 +9016,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Op Limit");
-    Widget edLabel2 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9037,7 +9037,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Op Trim To");
-    Widget edLabel3 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9058,7 +9058,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Purge Limit");
-    Widget edLabel4 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9079,7 +9079,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Purge Trim To");
-    Widget edLabel5 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9100,7 +9100,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Worry Limit");
-    Widget edLabel6 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9121,7 +9121,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     
     s1 = XmStringCreateLocalized("Undo Worry Trim To");
-    Widget edLabel7 = XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
