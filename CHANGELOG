@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+version 1.6.3 (2025-03-21)
+--------------------------
+
+ - fixed highlight style bg color was used as the foreground color
+ - fixed a false file has been modified message 
+ - fixed broken New File Name textfield after a file override warning
+
 version 1.6.2 (2025-02-07)
 --------------------------
 
