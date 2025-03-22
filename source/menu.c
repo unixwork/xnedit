@@ -239,6 +239,7 @@ static void saveAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void saveAsDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs); 
 static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
+static void saveAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void revertDialogAP(Widget w, XEvent *event, String *args,
 	Cardinal *nArgs);
 static void revertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
@@ -452,6 +453,8 @@ static XtActionsRec Actions[] = {
     {"save_as", saveAsAP},
     {"save-as-dialog", saveAsDialogAP},
     {"save_as_dialog", saveAsDialogAP},
+    {"save-all", saveAllAP},
+    {"save_all", saveAllAP},
     {"revert-to-saved", revertAP},
     {"revert_to_saved", revertAP},
     {"revert_to_saved_dialog", revertDialogAP},
@@ -699,6 +702,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     createMenuItem(menuPane, "save", "Save", 'S', doActionCB, "save", SHORT);
     createMenuItem(menuPane, "saveAs", "Save As...", 'A', doActionCB,
     	    "save_as_dialog", SHORT);
+    createMenuItem(menuPane, "saveAll", "Save All", 'l', doActionCB, "save_all", SHORT);
     createMenuItem(menuPane, "revertToSaved", "Revert to Saved", 'R',
     	    doActionCB, "revert_to_saved_dialog", SHORT);
     createMenuSeparator(menuPane, "sep2", SHORT);
@@ -3074,6 +3078,17 @@ static void saveAsAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     file.encoding = *nArgs > 5 ? args[5] : NULL;
     file.filter = *nArgs > 6 ? args[6] : NULL;
     SaveWindowAs(WidgetToWindow(w), &file);
+}
+
+static void saveAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
+{
+    WindowInfo *window;
+
+    for (window = WindowList; window != NULL; window = window->next) {
+        if (!CheckReadOnly(window)) {
+            SaveWindow(window);
+        }
+    }
 }
 
 static void revertDialogAP(Widget w, XEvent *event, String *args,
