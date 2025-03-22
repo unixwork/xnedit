@@ -287,6 +287,8 @@ static char *fallbackResources[] = {
     "*fileMenu.close.acceleratorText: Ctrl+W",
     "*fileMenu.save.accelerator: Ctrl<Key>s",
     "*fileMenu.save.acceleratorText: Ctrl+S",
+    "*fileMenu.saveAll.accelerator: Shift Ctrl<Key>s",
+    "*fileMenu.saveAll.acceleratorText: Shift+Ctrl+S",
     "*fileMenu.includeFile.accelerator: Alt<Key>i",
     "*fileMenu.includeFile.acceleratorText: Alt+I",
     "*fileMenu.print.accelerator: Ctrl<Key>p",
