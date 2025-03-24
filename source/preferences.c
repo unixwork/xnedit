@@ -822,6 +822,7 @@ static PrefDescripRec PrefDescrip[] = {
         C:Default\n\
         CSS:Default\n\
         Csh:Default\n\
+        Dockerfile:Default\n\
         Fortran:Default\n\
         Java:Default\n\
         JavaScript:Default\n\
@@ -855,6 +856,7 @@ static PrefDescripRec PrefDescrip[] = {
         C:.c .h::::::\".,/\\`'!|@#%^&*()-=+{}[]\"\":;<>?~\":\n\
         CSS:css::Auto:None:::\".,/\\`'!|@#%^&*()=+{}[]\"\":;<>?~\":\n\
         Csh:.csh .cshrc .tcshrc .login .logout:\"^[ \\t]*#[ \\t]*![ \\t]*/bin/t?csh\"::::::\n\
+        Dockerfile::::::::\n\
         Fortran:.f .f77 .for:::::::\n\
         Java:.java:::::::\n\
         JavaScript:.js:::::::\n\

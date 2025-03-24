@@ -354,7 +354,23 @@ static char *DefaultPatternSets[] = {
 	Built In Cmds:\"(^|\\|&|[\\|`;()])[ 	]*(alias|bg|break|breaksw|case|cd|chdir|continue|default|echo|eval|exec|exit|fg|goto|glob|hashstat|history|jobs|kill|limit|login|logout|nohup|notify|nice|onintr|popd|pushd|printenv|read|rehash|repeat|set|setenv|shift|source|suspend|time|umask|unalias|unhash|unlimit|unset|unsetenv|wait)>\":::Keyword::D\n\
 	Tcsh Built In Cmds:\"(^|\\|&|[\\|`;()])[ 	]*(alloc|bindkey|builtins|complete|echotc|filetest|hup|log|sched|settc|setty|stop|telltc|uncomplete|where|which|dirs|ls-F)>\":::Keyword::D\n\
 	Special Chars:\"([-{};.,<>&~=!|^%[\\]\\+\\*\\|()])\":::Keyword::D}",
-    "Fortran:2:0{\n\
+    "Dockerfile:1:0{\n\
+        comment:\"^[ \\t]*#\":\"$\"::Text Comment::\n\
+        single quoted string:\"'\":\"'\"::String::\n\
+        double quoted string:\"\"\"\":\"\"\"\"::String1::\n\
+        keywords:\"(add|ADD|arg|ARG|cmd|CMD|copy|COPY|entrypoint|ENTRYPOINT|env|ENV|expose|EXPOSE|from|FROM|healthcheck|HEALTHCHECK|label|LABEL|maintainer|MAINTAINER|onbuild|ONBUILD|shell|SHELL|stopsignal|STOPSIGNAL|user|USER|volume|VOLUME|workdir|WORKDIR)\":::Header::\n\
+        runcmd:\"^(RUN|run) ([^ \\t]*[ \\t]*)\":\"[^\\\\]$\"::Plain::\n\
+        run:\"\\1\":\" \"::Header:runcmd:C\n\
+        runprog:\"\\2\":\"\"::Subroutine1:runcmd:C\n\
+        run single quoted string:\"'\":\"'\"::String1:runcmd:\n\
+        run double quoted string:\"\"\"\":\"\"\"\"::String1:runcmd:\n\
+        runop:\"(&&|\\|\\||;)[ \\t]*([^ \\t]*[ \\t]*)\":::Plain:runcmd:\n\
+        runop operator:\"\\1\":\"\"::Operator:runop:C\n\
+        runop prog:\"\\2\":\"\"::Subroutine1:runop:C\n\
+        variables:\"\\$([-*@#?$!0-9_]|[a-zA-Z_][0-9a-zA-Z_]*)\":::Identifier::\n\
+        dq variables:\"\\$([-*@#?$!0-9]|[a-zA-Z_][0-9a-zA-Z_]*)\":::Identifier:double quoted string:\n\
+        run dq variables:\"\\$([-*@#?$!0-9]|[a-zA-Z_][0-9a-zA-Z_]*)\":::Identifier:run double quoted string:}",
+"Fortran:2:0{\n\
 	Comment:\"^[Cc*!]\":\"$\"::Comment::\n\
 	Bang Comment:\"!\":\"$\"::Comment::\n\
 	Debug Line:\"^D\":\"$\"::Preprocessor::\n\
