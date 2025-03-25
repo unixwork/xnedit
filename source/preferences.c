@@ -103,7 +103,7 @@
 #define MENU_WIDGET(w) (w)
 #endif
 
-#define PREF_FILE_VERSION "6.2"
+#define PREF_FILE_VERSION "6.3"
 
 /* New styles added in 5.2 for auto-upgrade */
 #define ADD_5_2_STYLES " Pointer:#660000:Bold\nRegex:#009944:Bold\nWarning:brown2:Italic\n"
@@ -1379,6 +1379,7 @@ static int lmDialogEmpty(void);
 static void updatePatternsTo5dot1(void);
 static void updatePatternsTo6dot1(void);
 static void updatePatternsTo6dot2(void);
+static void updatePatternsTo6dot3(void);
 static void migrateColorResources(XrmDatabase prefDB, XrmDatabase appDB);
 static void spliceString(char **intoString, const char *insertString, const char *atExpr);
 static int regexFind(const char *inString, const char *expr);
@@ -1446,6 +1447,9 @@ void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB)
     }
     if (PrefData.prefFileRead && fileVer < 6002) {
         updatePatternsTo6dot2();
+    }
+    if (PrefData.prefFileRead && fileVer < 6003) {
+        updatePatternsTo6dot3();
     }
 
     /* Note that we don't care about unreleased file versions.  Anyone
@@ -6035,6 +6039,23 @@ static void updatePatternsTo6dot2(void) {
     /* Add new styles */
     if (!regexFind(TempStringPrefs.styles, "^[ \t]*Preprocessor2:"))
 	spliceString(&TempStringPrefs.styles, stylePre26dot2, "^[ \t]*Character Const:");
+}
+
+static void updatePatternsTo6dot3(void) {
+    const char *dockerLm6dot3 = "Dockerfile::::::::";
+    const char *dockerHl6dot3 = "Dockerfile:Default";
+    
+    // Add new patterns if there aren't already existing patterns with
+    // the same name.
+    if (!regexFind(TempStringPrefs.language, "^[ \t]*Dockerfile:")) {
+        spliceString(&TempStringPrefs.language, dockerLm6dot3, "^[ \t]*Fortran:");
+    }
+    
+    // Enable default highlighting patterns for these modes, unless already
+    // present
+    if (!regexFind(TempStringPrefs.highlight, "^[ \t]*Dockerfile:")) {
+	spliceString(&TempStringPrefs.highlight, dockerHl6dot3, "^[ \t]*Fortran:");
+    }
 }
 
 /* 
