@@ -359,7 +359,7 @@ static char *DefaultPatternSets[] = {
         single quoted string:\"'\":\"'\"::String::\n\
         double quoted string:\"\"\"\":\"\"\"\"::String1::\n\
         keywords:\"(add|ADD|arg|ARG|cmd|CMD|copy|COPY|entrypoint|ENTRYPOINT|env|ENV|expose|EXPOSE|from|FROM|healthcheck|HEALTHCHECK|label|LABEL|maintainer|MAINTAINER|onbuild|ONBUILD|shell|SHELL|stopsignal|STOPSIGNAL|user|USER|volume|VOLUME|workdir|WORKDIR)\":::Header::\n\
-        runcmd:\"^(RUN|run) ([^ \\t]*[ \\t]*)\":\"[^\\\\]$\"::Plain::\n\
+        runcmd:\"^(RUN|run)[ \t]+([^ \\t]*[ \\t]*)\":\"[^\\\\]$\"::Plain::\n\
         run:\"\\1\":\" \"::Header:runcmd:C\n\
         runprog:\"\\2\":\"\"::Subroutine1:runcmd:C\n\
         run single quoted string:\"'\":\"'\"::String1:runcmd:\n\
