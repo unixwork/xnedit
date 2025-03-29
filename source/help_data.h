@@ -5853,4 +5853,3 @@ Href H_R [] =
     {NULL,     14768, HELP_PREFERENCES,   "Autoload Files"}
 };
 
-static const char * NEditVersion = "XNEdit rev 1ef7ae8 2025-03-22\n";

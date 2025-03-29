@@ -2631,9 +2631,9 @@ sub emit_helpText
     #-----------------------------
     # Emit program version string.
     #-----------------------------
-    $pgmVersion = $variables{ version };
-    $pgmVersion .= '\n' . date() if $pgmVersion !~ /$neditDefaultMarker/ and $pgmVersion !~ /XNEdit rev /;
-    print $stream "\nstatic const char * NEditVersion = \"$pgmVersion\\n\";\n";
+    #$pgmVersion = $variables{ version };
+    #$pgmVersion .= '\n' . date() if $pgmVersion !~ /$neditDefaultMarker/ and $pgmVersion !~ /XNEdit rev /;
+    #print $stream "\nstatic const char * NEditVersion = \"$pgmVersion\\n\";\n";
 }
 
 #-------------------------------------------------------------------------------
