@@ -269,11 +269,7 @@ static const char *getBuildInfo(void)
         bldInfoString = (char*)NEditMalloc(strlen(bldFormat) + strlen(warning) + 1024);
         locale = setlocale(LC_MESSAGES, "");
         
-#if defined(XNEDIT_IS_RELEASE) || !defined(XNEDIT_GIT_REV)
-        const char *xneVersion = NEditVersion;
-#else
-        const char *xneVersion = XNEDIT_VERSION "\n";
-#endif
+        const char *xneVersion = XNEDIT_VERSION "\n";     
         sprintf(bldInfoString, bldFormat,
              xneVersion,
              COMPILE_OS, COMPILE_MACHINE, COMPILE_COMPILER,
