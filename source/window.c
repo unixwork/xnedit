@@ -2452,27 +2452,16 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     Display *display = XtDisplay(w);   
     
     int dummy;
-        Pixel   textFgPix   = AllocColor( w, profile->textFg, 
-                    &dummy, &dummy, &dummy),
-            textBgPix   = AllocColor( w, profile->textBg, 
-                    &dummy, &dummy, &dummy),
-            selectFgPix = AllocColor( w, profile->selectFg, 
-                    &dummy, &dummy, &dummy),
-            selectBgPix = AllocColor( w, profile->selectBg, 
-                    &dummy, &dummy, &dummy),
-            hiliteFgPix = AllocColor( w, profile->hiliteFg, 
-                    &dummy, &dummy, &dummy),
-            hiliteBgPix = AllocColor( w, profile->hiliteBg, 
-                    &dummy, &dummy, &dummy),
-            lineNoFgPix = AllocColor( w, profile->lineNoFg, 
-                    &dummy, &dummy, &dummy),
-            lineNoBgPix = AllocColor( w, profile->lineNoBg, 
-                    &dummy, &dummy, &dummy),
-            cursorFgPix = AllocColor( w, profile->cursorFg, 
-                    &dummy, &dummy, &dummy),
-            lineHiBgPix = AllocColor( w, profile->lineHiBg, 
-                    &dummy, &dummy, &dummy);
-    textDisp *textD;
+    Pixel textFgPix   = AllocColor( w, profile->textFg, &dummy, &dummy, &dummy);
+    Pixel textBgPix   = AllocColor( w, profile->textBg, &dummy, &dummy, &dummy);
+    Pixel selectFgPix = AllocColor( w, profile->selectFg, &dummy, &dummy, &dummy);
+    Pixel selectBgPix = AllocColor( w, profile->selectBg, &dummy, &dummy, &dummy);
+    Pixel hiliteFgPix = AllocColor( w, profile->hiliteFg, &dummy, &dummy, &dummy);
+    Pixel hiliteBgPix = AllocColor( w, profile->hiliteBg, &dummy, &dummy, &dummy);
+    Pixel lineNoFgPix = AllocColor( w, profile->lineNoFg, &dummy, &dummy, &dummy);
+    Pixel lineNoBgPix = AllocColor( w, profile->lineNoBg, &dummy, &dummy, &dummy);
+    Pixel cursorFgPix = AllocColor( w, profile->cursorFg, &dummy, &dummy, &dummy);
+    Pixel lineHiBgPix = AllocColor( w, profile->lineHiBg, &dummy, &dummy, &dummy);
     
     profile->textFgColor = PixelToColor(w, textFgPix);
     profile->textBgColor = PixelToColor(w, textBgPix);
@@ -3594,14 +3583,12 @@ void UpdateWMSizeHints(WindowInfo *window)
     Dimension shellWidth, shellHeight, textHeight, hScrollBarHeight;
     int marginHeight, marginWidth, totalHeight, nCols, nRows;
     NFont *fs;
-    XftFont *font;
     int i, baseWidth, baseHeight, fontHeight, fontWidth;
     Widget hScrollBar;
     textDisp *textD = ((TextWidget)window->textArea)->text.textD;
 
     /* Find the dimensions of a single character of the text font */
     XtVaGetValues(window->textArea, textNXftFont, &fs, NULL);
-    font = FontDefault(fs);
     fontHeight = textD->ascent + textD->descent;
     fontWidth = fs->maxWidth; //font->max_advance_width;
 
@@ -6299,6 +6286,7 @@ static void UpdateWidgetsHierarchy(Widget parent, Widget src, CPDummyWindow *tem
 
 // Destroy the current horizontal and vertical scrollbar
 // and create a new pair of scrollbars for the given textArea
+/*
 static void RecreateTextareaScrollbar(Widget textArea)
 {
     Widget textAreaFrame = XtParent(textArea);
@@ -6350,6 +6338,7 @@ static void RecreateTextareaScrollbar(Widget textArea)
         XtUnmanageChild(newVscrollbar);
     }
 }
+*/
 
 void ReloadWindowResources(WindowInfo *window, Boolean updateMenuBar)
 {

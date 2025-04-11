@@ -596,7 +596,6 @@ static void getSelectionCB(Widget w, XtPointer si, Atom *selection,
         Atom *type, XtPointer v, unsigned long *length, int *format)
 {
     SelectionInfo *selectionInfo = si;
-    WindowInfo *window = selectionInfo->window;
     
     char *value = v;
     size_t len = *length;
