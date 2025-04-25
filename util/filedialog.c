@@ -873,9 +873,7 @@ void PathBarChangeDir(Widget w, PathBar *bar, XtPointer c)
 
 void PathBarSetPath(PathBar *bar, char *path)
 {
-    if(bar->path) {
-        NEditFree(bar->path);
-    }
+    NEditFree(bar->path);
     bar->path = NEditStrdup(path);
     
     for(int i=0;i<bar->numSegments;i++) {
@@ -951,9 +949,7 @@ void PathBarSetPath(PathBar *bar, char *path)
 }
 
 void PathBarDestroy(PathBar *pathbar) {
-    if(pathbar->path) {
-        NEditFree(pathbar->path);
-    }
+    NEditFree(pathbar->path);
     NEditFree(pathbar->pathSegments);
     NEditFree(pathbar);
 }
@@ -1179,9 +1175,7 @@ static void filedialog_update_lists(
     filelistwidget_add(data->dirlist, data->showHidden, "*", dirs, dircount);
     filelistwidget_add(data->filelist, data->showHidden, filterStr, files, filecount);
     
-    if(filter) {
-        XtFree(filter);
-    }
+    XtFree(filter);
 }
 
 /*
@@ -1393,9 +1387,7 @@ static void filedialog_update_grid(
     // update file detail grid
     filegridwidget_add(data->grid, data->showHidden, filterStr, files, filecount, maxnamelen);
     
-    if(filter) {
-        XtFree(filter);
-    }
+    XtFree(filter);
 }
 
 static void cleanupGrid(FileDialogData *data)
@@ -1413,9 +1405,7 @@ static void cleanupGrid(FileDialogData *data)
 static void free_files(FileElm *ls, int count)
 {
     for(int i=0;i<count;i++) {
-        if(ls[i].path) {
-            free(ls[i].path);
-        }
+        free(ls[i].path);
     }
     free(ls);
 }
@@ -1526,9 +1516,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         int r = stat(path, &s);
         if((!r == !S_ISDIR(s.st_mode)) || (r && errno == ENOENT && data->type == FILEDIALOG_SAVE)) {
             // open file
-            if(data->selectedPath) {
-                NEditFree(data->selectedPath);
-            }
+            NEditFree(data->selectedPath);
             data->selectedPath = NEditStrdup(path);
 
             openFile = FileName(path);
@@ -1564,9 +1552,7 @@ static void filedialog_update_dir(FileDialogData *data, char *path)
         /* dir reading complete - set the path textfield */  
         char *oldPath = data->currentPath;
         data->currentPath = NEditStrdup(path);
-        if(oldPath) {
-            NEditFree(oldPath);
-        }
+        NEditFree(oldPath);
         if(openFile) {
             NEditFree(path);
         }
@@ -2988,16 +2974,12 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
         }
     } else {
         data.status = FILEDIALOG_CANCEL;
-        if(data.selectedPath) {
-            NEditFree(data.selectedPath);
-        }
+        NEditFree(data.selectedPath);
     }
    
     filedialog_cleanup_filedata(&data);
     PathBarDestroy(data.pathBar);
-    if(data.currentPath) {
-        NEditFree(data.currentPath);
-    }
+    NEditFree(data.currentPath);
     XtUnmapWidget(dialog);
     XtDestroyWidget(dialog);
     return data.status;

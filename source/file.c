@@ -496,9 +496,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
 	   warning dialog; don't close it twice */
 	safeClose(window);
 	
-        if(ec.charset) {
-            free(ec.charset);
-        }
+        free(ec.charset);
     	return NULL;
     }
     forceShowLineNumbers(window);
@@ -544,9 +542,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
         ApplyEditorConfig(window, ec);
     }
     
-    if(ec.charset) {
-        free(ec.charset);
-    }
+    free(ec.charset);
     
     return window;
 }

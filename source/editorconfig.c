@@ -417,11 +417,7 @@ static int sec_loadvalues(ECSection *sec, EditorConfig *config) {
                 config->end_of_line = EC_CRLF;
             }
         } else if(!strcmp(v->name, "charset")) {
-            if(config->charset) {
-                free(config->charset);
-                config->charset = NULL;
-            }
-            
+            free(config->charset);
             if(!strcmp(v->value, "utf-8-bom")) {
                 config->charset = strdup("utf-8");
                 config->bom = EC_BOM;
@@ -503,12 +499,12 @@ int ECGetConfig(ECFile *ecf, const char *filepath, EditorConfig *config) {
 
 static void destroy_section(ECSection *sec) {
     if(!sec) return;
-    if(sec->name) free(sec->name);
+    free(sec->name);
     
     ECKeyValue *v = sec->values;
     while(v) {
-        if(v->name) free(v->name);
-        if(v->value) free(v->value);
+        free(v->name);
+        free(v->value);
         v = v->next;
     }
 }

@@ -1044,14 +1044,10 @@ static void freePatterns(highlightDataRec *patterns)
     int i;
     
     for (i=0; patterns[i].style!=0; i++) {
-    	if (patterns[i].startRE != NULL)
-    	    free((char *)patterns[i].startRE);
-    	if (patterns[i].endRE != NULL)
-    	    free((char *)patterns[i].endRE);
-    	if (patterns[i].errorRE != NULL)
-    	    free((char *)patterns[i].errorRE);
-    	if (patterns[i].subPatternRE != NULL)
-    	    free((char *)patterns[i].subPatternRE);
+    	free(patterns[i].startRE);
+    	free(patterns[i].endRE);
+    	free(patterns[i].errorRE);
+    	free(patterns[i].subPatternRE);
     }
 
     for (i=0; patterns[i].style!=0; i++) {
