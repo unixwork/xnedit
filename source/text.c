@@ -3971,14 +3971,14 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
-    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3) {
-        if (GetPrefZoomCtrlMouseWheelInvert() ) {
-            if (!strcmp(args[2], "alt_zoom_shifted") ) {
+    if(*nArgs == 3) {
+        if (GetPrefZoomCtrlMouseWheel()) {
+            if (!strcmp(args[2], "alt_zoom")) {
                 zoomInAP(w, event, args, nArgs);
                 return;
             }
         } else {
-            if (!strcmp(args[2], "alt_zoom")) {
+            if (!strcmp(args[2], "alt_zoom_shifted") ) {
                 zoomInAP(w, event, args, nArgs);
                 return;
             }
@@ -4006,14 +4006,14 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
 
-    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3) {
-        if (GetPrefZoomCtrlMouseWheelInvert() ) {
-            if (!strcmp(args[2], "alt_zoom_shifted") ) {
+    if(*nArgs == 3) {
+        if (GetPrefZoomCtrlMouseWheel()) {
+            if (!strcmp(args[2], "alt_zoom")) {
                 zoomOutAP(w, event, args, nArgs);
                 return;
             }
         } else {
-            if (!strcmp(args[2], "alt_zoom")) {
+            if (!strcmp(args[2], "alt_zoom_shifted") ) {
                 zoomOutAP(w, event, args, nArgs);
                 return;
             }
