@@ -413,7 +413,7 @@ static struct prefData {
 				   when it exceeds UNDO_OP_TRIMTO in length */
     
     int zoomStep;
-    int zoomCtrlMouseWheel;     /* change font size with ctrl+mousewheel */
+    int zoomCtrlMouseWheel;     /* 0 = page with ctrl+mousewheel, change font size with shift+ctrl+mousewheel, 1 = actions swapped */
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -1005,7 +1005,7 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
-    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "1",
+    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "0",
     	&PrefData.zoomCtrlMouseWheel, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
     	&PrefData.undoPurgeLimit, NULL, True},
@@ -8542,7 +8542,8 @@ typedef struct {
     Widget icFind;
     Widget icClear;
     Widget edZoom;
-    Widget edZoomMouseWheel;
+    Widget edZoomMouseWheelDefaultBehavior;
+    Widget edZoomMouseWheelInvertedBehavior;
     Widget edUndoPurgeLimit;
     Widget edUndoPurgeTrimTo;
     Widget edUndoWorryLimit;
@@ -8617,10 +8618,16 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     }
     SetPrefZoomStep(zoomStep);
     XtFree(zoomStepStr);
+
     Boolean edZoomMouseWheel;
-    XtVaGetValues(md.edZoomMouseWheel, XmNset, &edZoomMouseWheel, NULL);
+    XtVaGetValues(md.edZoomMouseWheelInvertedBehavior, XmNset, &edZoomMouseWheel, NULL);
     SetPrefZoomCtrlMouseWheel(edZoomMouseWheel);
-    
+    if (edZoomMouseWheel) {
+        RadioButtonChangeState(md.edZoomMouseWheelInvertedBehavior, True, True);
+    } else {
+        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
+    }
+
     long undoOpLimit;
     long undoOpTrimTo;
     long undoPurgeLimit;
@@ -9023,20 +9030,40 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("Zoom with Ctrl+Mousewheel");
-    md.edZoomMouseWheel = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
-            XmNlabelString, s1,
+    Widget pageZoomMouseWheelWrapper;
+    
+    pageZoomMouseWheelWrapper = XtVaCreateManagedWidget("pageZoomMouseWheelWrapper", xmRowColumnWidgetClass,
+            md.form,
+            XmNorientation, XmVERTICAL,
+            XmNpacking, XmPACK_TIGHT,
+            XmNradioBehavior, True,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.edZoom,
             XmNtopOffset, 10,
-            XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNtopWidget, md.edZoom,
+            XmNbottomWidget, md.edUndoOpLimit,
             NULL);
+    
+    md.edZoomMouseWheelDefaultBehavior = XtVaCreateManagedWidget("CtrlPage_ShiftCtrlZoom",
+            xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
+            XmNset, True,
+            XmNmarginHeight, 0,
+            XmNlabelString, s1=XmStringCreateLocalized("Page with Ctrl+Mousewheel\nZoom with Shift+Ctrl+Mousewheel"),
+            NULL);
+    XmStringFree(s1);
+    
+    md.edZoomMouseWheelInvertedBehavior = XtVaCreateManagedWidget("CtrlZoom_ShiftCtrlPage",
+            xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
+            XmNmarginHeight, 5,
+            XmNlabelString, s1=XmStringCreateLocalized("Zoom with Ctrl+Mousewheel\nPage with Shift+Ctrl+Mousewheel"),
+            NULL);
+    XmStringFree(s1);
     
     md.edUndoOpLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.edZoomMouseWheel,
+            XmNtopWidget, pageZoomMouseWheelWrapper,
             XmNtopOffset, 8,
             NULL);
     
@@ -9046,7 +9073,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, md.edZoomMouseWheel,
+            XmNtopWidget, pageZoomMouseWheelWrapper,
             XmNtopOffset, 8,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, md.edUndoOpLimit,
@@ -9228,7 +9255,11 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmComboBoxSelectItem(md.edZoom, s1);
     XmStringFree(s1);
     
-    XtVaSetValues(md.edZoomMouseWheel, XmNset, GetPrefZoomCtrlMouseWheel(), NULL);
+    if (GetPrefZoomCtrlMouseWheel()) {
+        RadioButtonChangeState(md.edZoomMouseWheelInvertedBehavior, True, True);
+    } else {
+        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
+    }
     
     
     XmStringFree(icSize[0]);
