@@ -413,7 +413,7 @@ static struct prefData {
 				   when it exceeds UNDO_OP_TRIMTO in length */
     
     int zoomStep;
-    int zoomCtrlMouseWheel;     /* 1 = change font size with ctrl+mousewheel, page with shift+ctrl+mousewheel, 0 = actions swapped */
+    int zoomCtrlMouseWheel;     /* 0 = page with ctrl+mousewheel, change font size with shift+ctrl+mousewheel, 1 = actions swapped */
     int sortTabs;		/* sort tabs alphabetically */
     int repositionDialogs;	/* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -1005,7 +1005,7 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.iSearchLine, NULL, True},
     {"zoomStep", "ZoomStep", PREF_INT, "1",
     	&PrefData.zoomStep, NULL, True},
-    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "1",
+    {"zoomCtrlMouseWheel", "ZoomCtrlMouseWheel", PREF_INT, "0",
     	&PrefData.zoomCtrlMouseWheel, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
     	&PrefData.undoPurgeLimit, NULL, True},
@@ -9030,9 +9030,9 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    Widget zoomMouseWheelWrapper;
+    Widget pageZoomMouseWheelWrapper;
     
-    zoomMouseWheelWrapper = XtVaCreateManagedWidget("zoomMouseWheelWrapper", xmRowColumnWidgetClass,
+    pageZoomMouseWheelWrapper = XtVaCreateManagedWidget("pageZoomMouseWheelWrapper", xmRowColumnWidgetClass,
             md.form,
             XmNorientation, XmVERTICAL,
             XmNpacking, XmPACK_TIGHT,
@@ -9045,25 +9045,25 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomWidget, md.edUndoOpLimit,
             NULL);
     
-    md.edZoomMouseWheelDefaultBehavior = XtVaCreateManagedWidget("CtrlZoom_ShiftCtrlPage",
-            xmToggleButtonWidgetClass, zoomMouseWheelWrapper,
+    md.edZoomMouseWheelInvertedBehavior = XtVaCreateManagedWidget("CtrlPage_ShiftCtrlZoom",
+            xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
             XmNset, True,
             XmNmarginHeight, 0,
-            XmNlabelString, s1=XmStringCreateLocalized("Zoom with Ctrl+Mousewheel\nPage with Shift+Ctrl+Mousewheel"),
+            XmNlabelString, s1=XmStringCreateLocalized("Page with Ctrl+Mousewheel\nZoom with Shift+Ctrl+Mousewheel"),
             NULL);
     XmStringFree(s1);
     
-    md.edZoomMouseWheelInvertedBehavior = XtVaCreateManagedWidget("CtrlPage_ShiftCtrlZoom",
-            xmToggleButtonWidgetClass, zoomMouseWheelWrapper,
+    md.edZoomMouseWheelDefaultBehavior = XtVaCreateManagedWidget("CtrlZoom_ShiftCtrlPage",
+            xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
             XmNmarginHeight, 5,
-            XmNlabelString, s1=XmStringCreateLocalized("Page with Ctrl+Mousewheel\nZoom with Shift+Ctrl+Mousewheel"),
+            XmNlabelString, s1=XmStringCreateLocalized("Zoom with Ctrl+Mousewheel\nPage with Shift+Ctrl+Mousewheel"),
             NULL);
     XmStringFree(s1);
     
     md.edUndoOpLimit = XtVaCreateManagedWidget("miscTextField", XNEtextfieldWidgetClass, md.form,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, zoomMouseWheelWrapper,
+            XmNtopWidget, pageZoomMouseWheelWrapper,
             XmNtopOffset, 8,
             NULL);
     
@@ -9073,7 +9073,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, zoomMouseWheelWrapper,
+            XmNtopWidget, pageZoomMouseWheelWrapper,
             XmNtopOffset, 8,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, md.edUndoOpLimit,
