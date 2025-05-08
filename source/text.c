@@ -471,14 +471,16 @@ static char defaultTranslations[] =
     "<FocusIn>: focusIn()\n"
     "<FocusOut>: focusOut()\n"
     /* Support for mouse wheel in XFree86 */
-    "Shift<Btn4Down>,<Btn4Up>: scroll_up(1)\n"
-    "Shift<Btn5Down>,<Btn5Up>: scroll_down(1)\n"
-    "Ctrl<Btn4Down>,<Btn4Up>: scroll_up(1, pages, alt_zoom)\n"
-    "Ctrl<Btn5Down>,<Btn5Up>: scroll_down(1, pages, alt_zoom)\n"
-    "<Btn4Down>,<Btn4Up>,<MotionNotify>(1+): extend_adjust()\n"
-    "<Btn5Down>,<Btn5Up>,<MotionNotify>(1+): extend_adjust()\n"
-    "<Btn4Down>,<Btn4Up>: scroll_up(5)\n"
-    "<Btn5Down>,<Btn5Up>: scroll_down(5)\n";
+    "~Ctrl Shift<Btn4Down>,<Btn4Up>: scroll_up(1)\n"
+    "~Ctrl Shift<Btn5Down>,<Btn5Up>: scroll_down(1)\n"
+    "~Shift Ctrl <Btn4Down>,<Btn4Up>: scroll_up(1, pages, alt_zoom)\n"
+    "~Shift Ctrl <Btn5Down>,<Btn5Up>: scroll_down(1, pages, alt_zoom)\n"
+    "Shift Ctrl <Btn4Down>,<Btn4Up>: scroll_up(1, pages, alt_zoom_shifted)\n"
+    "Shift Ctrl <Btn5Down>,<Btn5Up>: scroll_down(1, pages, alt_zoom_shifted)\n"
+    "~Ctrl <Btn4Down>,<Btn4Up>,<MotionNotify>(1+): extend_adjust()\n"
+    "~Ctrl <Btn5Down>,<Btn5Up>,<MotionNotify>(1+): extend_adjust()\n"
+    "~Ctrl <Btn4Down>,<Btn4Up>: scroll_up(5)\n"
+    "~Ctrl <Btn5Down>,<Btn5Up>: scroll_down(5)\n";
      /* some of the translations from the Motif text widget were not picked up:
 	  :<KeyPress>osfSelect: set-anchor()\n\
 	  :<KeyPress>osfActivate: activate()\n\
@@ -3969,9 +3971,18 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
-    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3 && !strcmp(args[2], "alt_zoom")) {
-        zoomInAP(w, event, args, nArgs);
-        return;
+    if(*nArgs == 3) {
+        if (GetPrefZoomCtrlMouseWheel()) {
+            if (!strcmp(args[2], "alt_zoom")) {
+                zoomInAP(w, event, args, nArgs);
+                return;
+            }
+        } else {
+            if (!strcmp(args[2], "alt_zoom_shifted") ) {
+                zoomInAP(w, event, args, nArgs);
+                return;
+            }
+        }
     }
 
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
@@ -3994,12 +4005,20 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
-    
-    if(GetPrefZoomCtrlMouseWheel() && *nArgs == 3 && !strcmp(args[2], "alt_zoom")) {
-        zoomOutAP(w, event, args, nArgs);
-        return;
-    }
 
+    if(*nArgs == 3) {
+        if (GetPrefZoomCtrlMouseWheel()) {
+            if (!strcmp(args[2], "alt_zoom")) {
+                zoomOutAP(w, event, args, nArgs);
+                return;
+            }
+        } else {
+            if (!strcmp(args[2], "alt_zoom_shifted") ) {
+                zoomOutAP(w, event, args, nArgs);
+                return;
+            }
+        }
+    }
     
     if (*nArgs == 0 || sscanf(args[0], "%d", &nLines) != 1)
     	return;
