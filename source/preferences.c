@@ -8620,12 +8620,12 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     XtFree(zoomStepStr);
 
     Boolean edZoomMouseWheel;
-    XtVaGetValues(md.edZoomMouseWheelDefaultBehavior, XmNset, &edZoomMouseWheel, NULL);
+    XtVaGetValues(md.edZoomMouseWheelInvertedBehavior, XmNset, &edZoomMouseWheel, NULL);
     SetPrefZoomCtrlMouseWheel(edZoomMouseWheel);
     if (edZoomMouseWheel) {
-        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
-    } else {
         RadioButtonChangeState(md.edZoomMouseWheelInvertedBehavior, True, True);
+    } else {
+        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
     }
 
     long undoOpLimit;
@@ -9045,7 +9045,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNbottomWidget, md.edUndoOpLimit,
             NULL);
     
-    md.edZoomMouseWheelInvertedBehavior = XtVaCreateManagedWidget("CtrlPage_ShiftCtrlZoom",
+    md.edZoomMouseWheelDefaultBehavior = XtVaCreateManagedWidget("CtrlPage_ShiftCtrlZoom",
             xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
             XmNset, True,
             XmNmarginHeight, 0,
@@ -9053,7 +9053,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    md.edZoomMouseWheelDefaultBehavior = XtVaCreateManagedWidget("CtrlZoom_ShiftCtrlPage",
+    md.edZoomMouseWheelInvertedBehavior = XtVaCreateManagedWidget("CtrlZoom_ShiftCtrlPage",
             xmToggleButtonWidgetClass, pageZoomMouseWheelWrapper,
             XmNmarginHeight, 5,
             XmNlabelString, s1=XmStringCreateLocalized("Zoom with Ctrl+Mousewheel\nPage with Shift+Ctrl+Mousewheel"),
@@ -9256,9 +9256,9 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(s1);
     
     if (GetPrefZoomCtrlMouseWheel()) {
-        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
-    } else {
         RadioButtonChangeState(md.edZoomMouseWheelInvertedBehavior, True, True);
+    } else {
+        RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
     }
     
     
