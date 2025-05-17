@@ -971,7 +971,7 @@ static PrefDescripRec PrefDescrip[] = {
     {"backlightCharTypes", "BacklightCharTypes", PREF_ALLOC_STRING,
       "0-8,10-31,127:red;9:#dedede;32,160-255:#f0f0f0;128-159:orange",
     /*                     gray87                 gray94                 */
-      &PrefData.backlightCharTypes, NULL, False},
+      &PrefData.backlightCharTypes, NULL, True},
     {"saveSearchHistory", "SaveSearchHistory", PREF_BOOLEAN, "False",
       &PrefData.saveSearchHistory, NULL, True},
     {"searchDialogs", "SearchDialogs", PREF_BOOLEAN, "False",
