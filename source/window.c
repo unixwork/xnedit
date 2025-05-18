@@ -746,16 +746,18 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNmarginHeight, 1,        /* == statsLineColNo.marginHeight - 1,
                                       to align with statsLineColNo */
             XmNscrollHorizontal, False,
+            XmNwidth, 10, // initialize width, otherwise the statsLineForm's
+                          // min width will be too big
             XmNeditMode, XmSINGLE_LINE_EDIT,
             XmNeditable, False,
             XmNtraversalOn, False,
             XmNcursorPositionVisible, False,
-            XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET, /*  */
+            XmNtopAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNtopWidget, window->statsLineColNo,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_WIDGET,
             XmNrightWidget, window->statsLineColNo,
-            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET, /*  */
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, window->statsLineColNo,
             XmNrightOffset, 3,
             NULL);
