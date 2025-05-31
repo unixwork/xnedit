@@ -2190,6 +2190,14 @@ static void createFilterWidgets(FileDialogData *data, const char *current_filter
     }
 }
 
+static int file_case_cmp(const char *s1, const char *s2) {
+    int ret = strcasecmp(s1, s2);
+    if(ret != 0) {
+        return ret;
+    }
+    return strcmp(s1, s2);
+}
+
 int FileDialog(Widget parent, char *promptString, FileSelection *file, int type, const char *defaultName)
 {
     Arg args[32];
@@ -2217,7 +2225,7 @@ int FileDialog(Widget parent, char *promptString, FileSelection *file, int type,
             break;
         }
         case 1: {
-            FileCmp = (FileCmpFunc)strcasecmp;
+            FileCmp = (FileCmpFunc)file_case_cmp;
             break;
         }
     }
