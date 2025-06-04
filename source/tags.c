@@ -579,7 +579,7 @@ static int scanCTagsLine(char *line, const char *tagPath, int index)
         posTagREEnd = strrchr(searchString, ';');
         posTagRENull = strchr(searchString, 0); 
         if(!posTagREEnd || (posTagREEnd[1] != '"') || 
-            (posTagRENull[-1] == searchString[0])) {
+            (posTagRENull[strlen(posTagRENull)-1] == searchString[0])) {
             /*  -> original ctags format = exuberant ctags format 1 */
             posTagREEnd = posTagRENull;
         } else {
@@ -747,6 +747,7 @@ static int loadTagsFile(const char *tagsFile, int index, int recLevel)
                 tagFileType=TFT_CTAGS;
         }
         if(tagFileType==TFT_CTAGS) {
+            line[strcspn(line, "\r\n")] = '\0'; // Keep up to first CR/LF
             nTagsAdded += scanCTagsLine(line, tagPath, index);
         } else {
             nTagsAdded += scanETagsLine(line, tagPath, index, file, recLevel);
