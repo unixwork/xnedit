@@ -579,7 +579,7 @@ static int scanCTagsLine(char *line, const char *tagPath, int index)
         posTagREEnd = strrchr(searchString, ';');
         posTagRENull = strchr(searchString, 0); 
         if(!posTagREEnd || (posTagREEnd[1] != '"') || 
-            (posTagRENull[strlen(posTagRENull)-1] == searchString[0])) {
+            (posTagRENull[-1] == searchString[0])) {
             /*  -> original ctags format = exuberant ctags format 1 */
             posTagREEnd = posTagRENull;
         } else {
