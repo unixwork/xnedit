@@ -1505,7 +1505,8 @@ int TextDPosToLineAndCol(textDisp *textD, int pos, int *lineNum, int *column)
 	    return False;
 	*lineNum = textD->absTopLineNum + BufCountLines(buf,
 		textD->firstChar, pos);
-	*column = BufCountDispChars(buf, BufStartOfLine(buf, pos), pos);
+        int startPos = BufStartOfLine(buf, pos);
+	*column = BufCountDispChars(buf, startPos, pos);
 	return True;
     }
 

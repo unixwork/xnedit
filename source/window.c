@@ -3434,7 +3434,6 @@ void UpdateStatsLine(WindowInfo *window)
                     }
                     charCount++;
                 }
-
                 snprintf(slinecol, 42, "S: %ld L: %d  C: %d", charCount, line, colNum);
             } else {
                 snprintf(slinecol, 42, "S: --- L: %d  C: %d", line, colNum);

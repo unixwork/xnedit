@@ -2797,6 +2797,8 @@ static void deletePreviousCharacterAP(Widget w, XEvent *event, String *args,
     checkAutoShowInsertPos(w);
     if(batch) {
         BufEndModifyBatch(textD->buffer);
+    } else {
+        callCursorMovementCBs(w, event); 
     }
 }
 
