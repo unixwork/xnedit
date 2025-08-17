@@ -287,8 +287,10 @@ static int isLocatedOnDesktop(WindowInfo *window, long currentDesktop)
         return True; /* No desktop information available */
     
     windowDesktop = QueryDesktop(TheDisplay, window->shell);
-    /* Sticky windows have desktop 0xFFFFFFFF by convention */
-    if (windowDesktop == currentDesktop || windowDesktop == 0xFFFFFFFFL) 
+    // Sticky windows have desktop 0xFFFFFFFF by convention
+    // In case the window desktop could not be queried (-1), we assume it is on
+    // the current desktop
+    if (windowDesktop == currentDesktop || windowDesktop == -1 || windowDesktop == 0xFFFFFFFFL) 
         return True; /* Desktop matches, or window is sticky */
     
     return False;
