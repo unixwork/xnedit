@@ -115,7 +115,8 @@ WindowInfo *WindowList = NULL;
 Display *TheDisplay = NULL;
 char *ArgV0 = NULL;
 Boolean IsServer = False;
-Boolean BackgroundRun = False;
+static pid_t pid = -1;
+static Boolean BackgroundRun = False;
 Widget TheAppShell;
 
 /* Reasons for choice of default font qualifications:
@@ -439,6 +440,22 @@ char* GetAppName(void)
     return XNEditAppName;
 }
 
+static int retpipe[2];
+void XNEditWindowMapped(void) {
+    if (BackgroundRun) {
+        close(0);
+        close(1);
+        close(2);
+        // Tell the parent process to return
+        int ret = 0;
+        write(retpipe[1], &ret, sizeof(int));
+        close(retpipe[0]);
+        close(retpipe[1]);
+
+        BackgroundRun = False;
+    }
+}
+
 int main(int argc, char **argv)
 {
     int i, lineNum, nRead, fileSpecified = FALSE, editFlags = CREATE;
@@ -488,8 +505,6 @@ int main(int argc, char **argv)
     }
     opts = True;
     
-    int retpipe[2];
-    pid_t pid = -1;
     if(BackgroundRun) {
         if(pipe(retpipe)) {
             perror("pipe");
@@ -843,19 +858,6 @@ int main(int argc, char **argv)
     /* Set up communication port and write ~/.nedit_server_process file */
     if (IsServer)
     	InitServerCommunication();
-    
-    if (BackgroundRun) {
-        if(pid != 0) {
-            /* Tell the parent process to return */
-            close(0);
-            close(1);
-            close(2);
-        }
-        int ret = 0;
-        write(retpipe[1], &ret, sizeof(int));
-        close(retpipe[0]);
-        close(retpipe[1]);
-    }
     
     /* Process events. */
     if (IsServer)

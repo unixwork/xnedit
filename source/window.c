@@ -6181,6 +6181,7 @@ static void windowStructureNotifyEventEH(
     } else if(event->type == MapNotify) {
         updateWindowMapStatus(widget, True);
         InvalidateWindowMenus();
+        XNEditWindowMapped();
     }
 }
 

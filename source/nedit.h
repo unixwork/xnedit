@@ -631,6 +631,8 @@ char* GetAppName(void);
 
 int XNEditDefaultCharsetIsUTF8(void);
 
+void XNEditWindowMapped(void);
+
 XrmDatabase GetDefaultResourceDB(void);
 
 #endif /* NEDIT_NEDIT_H_INCLUDED */
