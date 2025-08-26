@@ -27,7 +27,7 @@ jobs:
       - name: List bin/pkg files
         run: pwd ;
              ls -l ${{ github.workspace }} ;
-             ls -l ${{ github.workspace }}/Release
+             ls -lF ${{ github.workspace }}/source | grep *$
       - name: Get date
         run: |
              export DATE=$(date -I)
