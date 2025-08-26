@@ -23,7 +23,7 @@ jobs:
       - name: Build CI Linux bin
         run: make linux
       - name: Build CI Linux pkg
-        run: resources/AppImage/makeAppDir.sh XNEdit source/xnedit resources/desktop Linux 64
+        run: resources/AppImage/makeAppDir.sh -y XNEdit source/xnedit resources/desktop Linux 64
       - name: List bin/pkg files
         run: pwd ;
              ls -l ${{ github.workspace }} ;
