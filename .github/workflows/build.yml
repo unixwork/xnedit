@@ -1,0 +1,64 @@
+name: GitHub Actions CI Linux build
+run-name: ${{ github.actor }} use GitHub Actions for CI Linux build
+on: [push]
+jobs:
+  GitHub-Actions-CI-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: |
+          echo "Repository: ${{ github.repository }}, branch: ${{ github.ref }}"
+      - run: |
+          echo "Running on: ${{ runner.os }}, triggered by: ${{ github.event_name }}"
+      # - name: Update distro
+      #   run: sudo apt update
+      # - name: Upgrade distro
+      #   run: sudo apt upgrade
+      - name: Install deps
+        run: sudo apt install gcc make pkgconf libmotif-dev ;
+             sudo apt install wget
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Build CI Linux bin
+        run: make linux
+      - name: Build CI Linux pkg
+        run: resources/AppImage/makeAppDir.sh XNEdit source/xnedit resources/desktop Linux 64
+      - name: List bin/pkg files
+        run: pwd ;
+             ls -l ${{ github.workspace }} ;
+             ls -l ${{ github.workspace }}/Release
+      - name: Get date
+        run: |
+             export DATE=$(date -I)
+             echo "DATE: '${DATE}'"
+             echo "DATE=${DATE}" >> $GITHUB_ENV
+      - name: Reset ci-latest tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATE: ${{ env.DATE }}
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "Github CI"
+          git tag -d ci-latest       || true
+          git push origin :ci-latest || true
+          git tag -m ci-latest ci-latest
+          git push --tags
+          echo "DATE: '${DATE}'"
+      - name: Create CI rel
+        id: create_release
+        uses: ncipollo/release-action@v1.18.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          allowUpdates: true
+          draft: false
+          name: CI Build
+          tag: ci-latest
+          prerelease: true
+          replacesArtifacts: true
+          artifacts: "
+            XNEdit*_x86_64.AppImage
+          "
+      - run: |
+          echo "End status: ${{ job.status }}"
