@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with makeAppDir.sh. If not, see <http://www.gnu.org/licenses/>.
 #
-# Syntax: $ makeAppDir.sh XNEdit source/xnedit resources/desktop Linux [32|64]
+# Syntax: $ makeAppDir.sh [-y] XNEdit source/xnedit resources/desktop Linux [32|64]
 #
-ver="2023-08-23"
+ver="2025-08-26"
 echo "makeAppDir.sh v.${ver}: generating the AppDir for a binary"
 flag=0 # check for common external dependancy compliance
 for extCmd in basename chmod cp getconf ls mkdir mv rm uname wget ; do
@@ -31,40 +31,32 @@ if (test "$flag" = 1) then
    echo "ERROR: Install the required packages and retry. Exit"
    exit
 fi
-if (test "" = "$1") then
+if [[ "$1" = "-y" ]]; then
+   batch=1
+   shift
+fi
+if (test "" = "$4") then
    echo "makeAppDir.sh ERROR: need the appName"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
+   echo "Syntax: $ makeAppDir.sh [-y] appName path/binary pathRes Linux|Win [32|64]"
+   echo "          -y for bath execution, no confirmation"
    exit
 fi
 APP=$1 # eg. XNEdit
-if (test "" = "$2") then
-   echo "makeAppDir.sh ERROR: need the binary"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
-   exit
-fi
-if (! test -s "$2") then
-   echo "makeAppDir.sh ERROR: binary not valid/exist"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
-   exit
-fi
 BIN=$2 # eg. source/bin
 NAME=`basename $BIN`
 #echo "BIN:$BIN NAME:$NAME"
-if (test "" = "$3") then
-   echo "makeAppDir.sh ERROR: need the desktop (icon and .desktop) resource path"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
-   exit
-fi
 RES=$3 # eg. resources/desktop
-if (test "" = "$4") then
-   echo "makeAppDir.sh ERROR: need the target platform to create package"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
+PKG=$4
+if (! test -s "$BIN") then
+   echo "makeAppDir.sh ERROR: binary not valid/exist"
+   echo "Syntax: $ makeAppDir.sh [-y] appName path/binary pathRes Linux|Win [32|64]"
+   echo "          -y for bath execution, no confirmation"
    exit
 fi
-PKG=$4
 if (test "$PKG" != "Linux" && test "$PKG" != "Win") then
    echo "makeAppDir.sh ERROR: unsupported target platform $PKG"
-   echo "Syntax: $ makeAppDir.sh appName path/binary pathRes Linux|Win [32|64]"
+   echo "Syntax: $ makeAppDir.sh [-y] appName path/binary pathRes Linux|Win [32|64]"
+   echo "          -y for bath execution, no confirmation"
    exit
 fi
 if (test "" = "$5") then
@@ -76,12 +68,32 @@ CPU=`uname -m`
 if (test "$CPU" = "x86_64" && test "$BIT" = "32") then # built on 64 bit host with 32 bit target
    CPU=i686
 fi
+OS=`uname` # current OS
+if (test "$OS" != "Darwin") then
+   OS=`uname -o`  # Msys or GNU/Linux, illegal on macOS
+fi
 if (test "$PKG" = "Win") then
    EXT=".exe"
 fi
 DIR="AppDir"
+DATE=`date -I`
+
+echo "OS  : $OS"
+echo "CPU : $CPU"
+echo "BIT : $BIT"
+echo "APP : $APP"
+echo "BIN : $BIN"
+echo "NAME: $NAME"
+echo "RES : $RES"
+echo "DIR : $DIR"
+echo "PKG : $PKG"
+echo "DATE: $DATE"
+if (test "$batch" != "1") then
+   read -p "Press RETURN to proceed ..."
+fi
+echo ""
+
 echo "makeAppDir.sh: generating $APP $NAME $PKG $CPU ${BIT}-bit in ${DIR} ..."
-read -p "Press RETURN to proceed ..."
 rm -rf ${DIR}
 mkdir -p ${DIR}/usr/bin
 cp -a CHANGELOG LICENSE README.md ReleaseNotes ${DIR} # text files
@@ -89,46 +101,50 @@ cp -a CHANGELOG LICENSE README.md ReleaseNotes ${DIR} # text files
 #cp -a ${RES}/${NAME}.desktop ${DIR} # freedesktop file
 cp -a ${BIN} ${DIR}/usr/bin # binaries
 cp -a source/xnc${EXT} ${DIR}/usr/bin # binaries
-date=`date -I`
 if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) then # skip on ARM&RISC-V
-   echo "makeAppDir.sh: Generating the AppImage for $BIN ..."
    if (test "$BIT" = "64") then
+      echo "makeAppDir.sh: Generating the AppDir for $BIN ..."
       if (! test -x linuxdeploy-x86_64.AppImage) then
-         wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+         wget -nv "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" 2> wgetLog$DATE.txt
          chmod +x linuxdeploy-x86_64.AppImage
       fi
-      ./linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
+      ./linuxdeploy-x86_64.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$DATE.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      ./linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
+      echo "makeAppDir.sh: Generating the AppImage for $BIN ..."
+      ./linuxdeploy-x86_64.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$DATE.txt
       echo ""
-      mv ${APP}-*x86_64.AppImage ${APP}-${date}-x86_64.AppImage
-      ls -l ${APP}-*-x86_64.AppImage
-      #mv ${APP}-*-x86_64.AppImage ../${APP}-x86_64.AppImage
+      echo "makeAppDir.sh: Generated AppImage:"
+      mv ${APP}-*x86_64.AppImage ${APP}-${DATE}_x86_64.AppImage
+      ls -l ${APP}-*_x86_64.AppImage
+      #mv ${APP}-*_x86_64.AppImage ../${APP}_x86_64.AppImage
       #rm linuxdeploy-x86_64.AppImage
    fi
    if (test "$BIT" = "32") then
+      echo "makeAppDir.sh: Generating the AppDir for $BIN ..."
       if (! test -x linuxdeploy-i386.AppImage) then
-         wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage"
+         wget -nv "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage" 2> wgetLog$DATE.txt
          chmod +x linuxdeploy-i386.AppImage
       fi
-      ./linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$date.txt
+      ./linuxdeploy-i386.AppImage -e ${BIN} --appdir ${DIR} -i ${RES}/${NAME}.png -d ${RES}/${NAME}.desktop > linuxDeployLog$DATE.txt
       cwd=`pwd`
       cd ${DIR}
       rm AppRun
       ln -s usr/bin/xnedit AppRun
       cd "$cwd"
-      ./linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$date.txt
+      echo "makeAppDir.sh: Generating the AppImage for $BIN ..."
+      ./linuxdeploy-i386.AppImage --appdir ${DIR} --output appimage >> linuxDeployLog$DATE.txt
       echo ""
-      mv ${APP}-*i386.AppImage ${APP}-${date}-i386.AppImage
-      ls -l ${APP}-*-i386.AppImage
-      #mv ${APP}-*-i386.AppImage ../${APP}-i386.AppImage
+      mv ${APP}-*i386.AppImage ${APP}-${DATE}_i386.AppImage
+      echo "makeAppDir.sh: Generated AppImage:"
+      ls -l ${APP}-*_i386.AppImage
+      #mv ${APP}-*_i386.AppImage ../${APP}_i386.AppImage
       #rm linuxdeploy-i386.AppImage
    fi
-   #rm linuxDeployLog$date.txt
+   #rm linuxDeployLog$DATE.txt
    echo "Done"
 fi
 #rm -rf ${DIR}
