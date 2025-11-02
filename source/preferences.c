@@ -326,6 +326,10 @@ typedef struct {
     
     Widget profileShell;
     Widget profileList;
+    Widget profileMoveUpBtn;
+    Widget profileMoveDownBtn;
+    Widget profileRenameBtn;
+    Widget profileRemoveBtn;
 } colorDialog;
 
 /* Repository for simple preferences settings */
@@ -7084,6 +7088,40 @@ static Boolean colorDialogCheckProfileNameChars(colorDialog *cd, const char *nam
     return True;
 }
 
+/*
+ * Get the index (cd->colorProfiles) of the selected profile from the
+ * Manage Profiles dialog or -1 if no item is selected
+ */
+static int cdpGetSelectedItem(colorDialog *cd) {
+    int *selected_items;
+    int nselection;
+    if(!XmListGetSelectedPos(cd->profileList, &selected_items, &nselection)) {
+        return -1;
+    }
+    int pos = selected_items[0];
+    XtFree((char*)selected_items);
+    return pos;
+}
+
+
+static void cdpListSelection(Widget w, colorDialog *cd, XtPointer cb)
+{
+    int selected_profile = cdpGetSelectedItem(cd);
+    if(selected_profile < 0) {
+        XtSetSensitive(cd->profileMoveUpBtn, FALSE);
+        XtSetSensitive(cd->profileMoveDownBtn, FALSE);
+        XtSetSensitive(cd->profileRenameBtn, FALSE);
+        XtSetSensitive(cd->profileRemoveBtn, FALSE);
+        return;
+    }
+    
+    XtSetSensitive(cd->profileMoveUpBtn, selected_profile > 1);
+    XtSetSensitive(cd->profileMoveDownBtn, selected_profile+1 < cd->numColorProfiles);
+    
+    XtSetSensitive(cd->profileRenameBtn, TRUE);
+    XtSetSensitive(cd->profileRemoveBtn, TRUE);
+}
+
 static void cdpUpdateList(colorDialog *cd)
 {
     if(!cd->profileList) {
@@ -7101,21 +7139,8 @@ static void cdpUpdateList(colorDialog *cd)
         items[i-1] = MKSTRING(cd->colorProfiles[i].name);
     }
     XmListAddItems(cd->profileList, items, cd->numColorProfiles-1, 0);
-}
-
-/*
- * Get the index (cd->colorProfiles) of the selected profile from the
- * Manage Profiles dialog or -1 if no item is selected
- */
-static int cdpGetSelectedItem(colorDialog *cd) {
-    int *selected_items;
-    int nselection;
-    if(!XmListGetSelectedPos(cd->profileList, &selected_items, &nselection)) {
-        return -1;
-    }
-    int pos = selected_items[0];
-    XtFree((char*)selected_items);
-    return pos;
+    
+    cdpListSelection(cd->profileList, cd, NULL);
 }
 
 static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
@@ -7324,26 +7349,26 @@ static void colorDialogProfileManage(Widget w, colorDialog *cd, XtPointer c)
             XmNbottomOffset, 8,
             NULL);
     
-    Widget moveUpBtn = XtVaCreateManagedWidget("moveup",xmPushButtonWidgetClass,rowCol,
+    cd->profileMoveUpBtn = XtVaCreateManagedWidget("moveup",xmPushButtonWidgetClass,rowCol,
             XmNlabelString, s1=XmStringCreateSimple("Move ^"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             NULL);
-    XtAddCallback(moveUpBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveUp, cd);
-    Widget moveDownBtn = XtVaCreateManagedWidget("movedown",xmPushButtonWidgetClass,rowCol,
+    XtAddCallback(cd->profileMoveUpBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveUp, cd);
+    cd->profileMoveDownBtn = XtVaCreateManagedWidget("movedown",xmPushButtonWidgetClass,rowCol,
             XmNlabelString, s1=XmStringCreateSimple("Move v"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             NULL);
-    XtAddCallback(moveDownBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveDown, cd);
-    Widget renameBtn = XtVaCreateManagedWidget("rename",xmPushButtonWidgetClass,rowCol,
+    XtAddCallback(cd->profileMoveDownBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveDown, cd);
+    cd->profileRenameBtn = XtVaCreateManagedWidget("rename",xmPushButtonWidgetClass,rowCol,
             XmNlabelString, s1=XmStringCreateSimple("Rename"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             NULL);
-    XtAddCallback(renameBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRename, cd);
-    Widget removeBtn = XtVaCreateManagedWidget("remove",xmPushButtonWidgetClass,rowCol,
+    XtAddCallback(cd->profileRenameBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRename, cd);
+    cd->profileRemoveBtn = XtVaCreateManagedWidget("remove",xmPushButtonWidgetClass,rowCol,
             XmNlabelString, s1=XmStringCreateSimple("Remove"),
             XmNmarginWidth, BUTTON_WIDTH_MARGIN,
             NULL);
-    XtAddCallback(removeBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRemove, cd);
+    XtAddCallback(cd->profileRemoveBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRemove, cd);
     
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_FORM); ac++;
     XtSetArg(args[ac], XmNtopOffset, 8); ac++;
@@ -7357,6 +7382,17 @@ static void colorDialogProfileManage(Widget w, colorDialog *cd, XtPointer c)
     XtSetArg(args[ac], XmNrightOffset, 12); ac++;
     cd->profileList = XmCreateScrolledList(form, "list", args, ac);
     XtManageChild(cd->profileList);
+    
+    XtAddCallback(
+                cd->profileList,
+                XmNbrowseSelectionCallback,
+                (XtCallbackProc)cdpListSelection,
+                cd);
+    
+    XtSetSensitive(cd->profileMoveUpBtn, FALSE);
+    XtSetSensitive(cd->profileMoveDownBtn, FALSE);
+    XtSetSensitive(cd->profileRenameBtn, FALSE);
+    XtSetSensitive(cd->profileRemoveBtn, FALSE);
     
     // init profile list
     cdpUpdateList(cd);
