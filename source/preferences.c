@@ -323,6 +323,9 @@ typedef struct {
     ColorProfile *colorProfiles;
     size_t numColorProfiles;
     int selectedProfile;
+    
+    Widget profileShell;
+    Widget profileList;
 } colorDialog;
 
 /* Repository for simple preferences settings */
@@ -1387,14 +1390,14 @@ static void spliceString(char **intoString, const char *insertString, const char
 static int regexFind(const char *inString, const char *expr);
 static int regexReplace(char **inString, const char *expr,
                         const char *replaceWith);
-static int caseFind(const char *inString, const char *expr);
-static int caseReplace(char **inString, const char *expr,
-                       const char *replaceWith, int replaceLen);
+//static int caseFind(const char *inString, const char *expr);
+//static int caseReplace(char **inString, const char *expr,
+//                       const char *replaceWith, int replaceLen);
 static int stringReplace(char **inString, const char *expr, 
                          const char *replaceWith, int searchType,
                          int replaceLen);
-static int replaceMacroIfUnchanged(const char* oldText, const char* newStart, 
-                                    const char* newEnd);
+//static int replaceMacroIfUnchanged(const char* oldText, const char* newStart, 
+//                                    const char* newEnd);
 static const char* getDefaultShell(void);
 static void parseIconSize(char *iconSize);
 
@@ -6208,12 +6211,14 @@ static int regexFind(const char *inString, const char *expr)
 ** Simplified case-sensisitive string search routine which just 
 ** returns true or false depending on whether inString matches expr
 */
+/*
 static int caseFind(const char *inString, const char *expr)
 {
     int beginPos, endPos;
     return SearchString(inString, expr, SEARCH_FORWARD, SEARCH_CASE_SENSE,
             False, 0, &beginPos, &endPos, NULL, NULL, NULL);
 }
+*/
 
 /*
 ** Common implementation for simplified string replacement routines.
@@ -6259,12 +6264,14 @@ static int regexReplace(char **inString, const char *expr,
 ** reallocating inString with NEditMalloc.  If expr is not found, does nothing 
 ** and returns false.
 */
+/*
 static int caseReplace(char **inString, const char *expr, 
                        const char *replaceWith, int replaceLen)
 {
     return stringReplace(inString, expr, replaceWith, SEARCH_CASE_SENSE,
                          replaceLen);
 }
+*/
 
 /*
 ** Looks for a (case-sensitive literal) match of an old macro text in a
@@ -6272,6 +6279,7 @@ static int caseReplace(char **inString, const char *expr,
 ** a substring of the default macros, bounded by a given start and end pattern
 ** (inclusive). Returns the length of the replacement.
 */
+/*
 static int replaceMacroIfUnchanged(const char* oldText, const char* newStart, 
                                    const char* newEnd)
 {
@@ -6288,6 +6296,7 @@ static int replaceMacroIfUnchanged(const char* oldText, const char* newStart,
     }
     return 0;
 }
+*/
 
 #ifdef SGI_CUSTOM
 /*
@@ -6405,6 +6414,7 @@ static void showColorStatus(colorDialog *cd, Widget colorFieldW,
 
 // Remove profiles that are flagged as removed and return a list of all
 // removed color profiles
+/*
 static ColorProfile* clearColorProfileList(ColorProfile *cpList)
 {
     ColorProfile *removed_begin = NULL;
@@ -6432,6 +6442,7 @@ static ColorProfile* clearColorProfileList(ColorProfile *cpList)
     
     return removed_begin;
 }
+*/
 
 /* Update the colors in the window or in the preferences */
 static void updateColors(colorDialog *cd)
@@ -7073,14 +7084,44 @@ static Boolean colorDialogCheckProfileNameChars(colorDialog *cd, const char *nam
     return True;
 }
 
+static void cdpUpdateList(colorDialog *cd)
+{
+    if(!cd->profileList) {
+        return;
+    }
+    
+    XmListDeleteAllItems(cd->profileList);
+    if(cd->numColorProfiles == 0) {
+        return;
+    }
+    
+    XmString *items = calloc(cd->numColorProfiles, sizeof(XmString));
+    // skip first default item
+    for(int i=1;i<cd->numColorProfiles;i++) {
+        items[i-1] = MKSTRING(cd->colorProfiles[i].name);
+    }
+    XmListAddItems(cd->profileList, items, cd->numColorProfiles-1, 0);
+}
+
+/*
+ * Get the index (cd->colorProfiles) of the selected profile from the
+ * Manage Profiles dialog or -1 if no item is selected
+ */
+static int cdpGetSelectedItem(colorDialog *cd) {
+    int *selected_items;
+    int nselection;
+    if(!XmListGetSelectedPos(cd->profileList, &selected_items, &nselection)) {
+        return -1;
+    }
+    int pos = selected_items[0];
+    XtFree((char*)selected_items);
+    return pos;
+}
 
 static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
 {
-    if(cd->selectedProfile == 0) {
-        DialogF(DF_ERR, w, 1, "Error",
-                "The default color profile cannot be renamed.", "OK");
-        return;
-    }
+    int selected_profile = cdpGetSelectedItem(cd);
+    if(selected_profile < 0) return;
     
     char profileName[DF_MAX_PROMPT_LENGTH];
     profileName[0] = 0;
@@ -7108,23 +7149,21 @@ static void colorDialogProfileRename(Widget w, colorDialog *cd, XtPointer c)
         return;
     }
     
-    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    ColorProfile *profile = &cd->colorProfiles[selected_profile];
     
     NEditFree(profile->name);
     profile->name = NEditStrdup(profileName);
     
     colorDialogUpdateProfileList(cd);
+    cdpUpdateList(cd);
 }
 
 static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
 {
-    if(cd->selectedProfile == 0) {
-        DialogF(DF_ERR, w, 1, "Error",
-                "The default color profile cannot be removed.", "OK");
-        return;
-    }
+    int selected_profile = cdpGetSelectedItem(cd);
+    if(selected_profile < 0) return;
     
-    ColorProfile *profile = &cd->colorProfiles[cd->selectedProfile];
+    ColorProfile *profile = &cd->colorProfiles[selected_profile];
     if(profile->orig) {
         profile->orig->removed = True;
     }
@@ -7144,6 +7183,7 @@ static void colorDialogProfileRemove(Widget w, colorDialog *cd, XtPointer c)
     
     colorDialogSelectProfile(cd, cd->selectedProfile);
     colorDialogUpdateProfileList(cd);
+    cdpUpdateList(cd);
 }
 
 static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
@@ -7192,6 +7232,140 @@ static void colorDialogProfileNew(Widget w, colorDialog *cd, XtPointer c)
     saveColorProfileSettings(cd);
     colorDialogSelectProfile(cd, cd->numColorProfiles-1);
     XmStringFree(s);
+    
+    cdpUpdateList(cd);
+}
+
+static void colorDialogProfileMoveUp(Widget w, colorDialog *cd, XtPointer c)
+{
+    int selected_profile = cdpGetSelectedItem(cd);
+    if(selected_profile < 2) return;
+    
+    ColorProfile tmp = cd->colorProfiles[selected_profile-1];
+    cd->colorProfiles[selected_profile-1] = cd->colorProfiles[selected_profile];
+    cd->colorProfiles[selected_profile] = tmp;
+    
+    if(selected_profile == cd->selectedProfile) {
+        cd->selectedProfile--;
+    } else if(selected_profile-1 == cd->selectedProfile) {
+        cd->selectedProfile++;
+    }
+    
+    colorDialogUpdateProfileList(cd);
+    cdpUpdateList(cd);
+    XmListSelectPos(cd->profileList, selected_profile-1, TRUE);
+}
+
+static void colorDialogProfileMoveDown(Widget w, colorDialog *cd, XtPointer c)
+{
+    int selected_profile = cdpGetSelectedItem(cd);
+    if(selected_profile < 1 || selected_profile+1 >= cd->numColorProfiles) return;
+    
+    ColorProfile tmp = cd->colorProfiles[selected_profile+1];
+    cd->colorProfiles[selected_profile+1] = cd->colorProfiles[selected_profile];
+    cd->colorProfiles[selected_profile] = tmp;
+    
+    if(selected_profile == cd->selectedProfile) {
+        cd->selectedProfile++;
+    } else if(selected_profile+1 == cd->selectedProfile) {
+        cd->selectedProfile--;
+    }
+    
+    colorDialogUpdateProfileList(cd);
+    cdpUpdateList(cd);
+    XmListSelectPos(cd->profileList, selected_profile+1, TRUE);
+}
+
+static void cdpCloseCB(Widget w, colorDialog *cd, XtPointer c)
+{
+    XtDestroyWidget(cd->profileShell);
+    cd->profileShell = NULL;
+    cd->profileList = NULL;
+}
+
+static void colorDialogProfileManage(Widget w, colorDialog *cd, XtPointer c)
+{
+    if(cd->profileShell) {
+        RaiseDialogWindow(cd->profileShell);
+        return;
+    }
+    
+    XmString s1;
+    int ac = 0;
+    Arg args[20];
+    //XtSetArg(args[ac], XmNdeleteResponse, XmDO_NOTHING); ac++;
+    XtSetArg(args[ac], XmNtitle, "Color Profiles"); ac++;
+    XtSetArg(args[ac], XmNwidth, 500); ac++;
+    XtSetArg(args[ac], XmNheight, 400); ac++;
+    cd->profileShell = CreateWidget(TheAppShell, "colorprofiles",
+	    topLevelShellWidgetClass, args, ac);
+    AddSmallIcon(cd->profileShell);
+    Widget form = XtVaCreateManagedWidget("profilesForm", xmFormWidgetClass, cd->profileShell, NULL);
+    
+    Widget okBtn = XtVaCreateManagedWidget("ok",xmPushButtonWidgetClass,form,
+            XmNlabelString, s1=XmStringCreateSimple("OK"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, 6,
+            NULL);
+    XtAddCallback(okBtn, XmNactivateCallback, (XtCallbackProc)cdpCloseCB, cd);
+    XmStringFree(s1);
+    
+    Widget rowCol = XtVaCreateManagedWidget("mlRowCol", xmRowColumnWidgetClass, form,
+    	    XmNpacking, XmPACK_COLUMN,
+    	    XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 12,
+    	    XmNtopAttachment, XmATTACH_FORM,
+            XmNtopOffset, 8,
+    	    XmNbottomAttachment, XmATTACH_WIDGET,
+            XmNbottomWidget, okBtn,
+            XmNbottomOffset, 8,
+            NULL);
+    
+    Widget moveUpBtn = XtVaCreateManagedWidget("moveup",xmPushButtonWidgetClass,rowCol,
+            XmNlabelString, s1=XmStringCreateSimple("Move ^"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            NULL);
+    XtAddCallback(moveUpBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveUp, cd);
+    Widget moveDownBtn = XtVaCreateManagedWidget("movedown",xmPushButtonWidgetClass,rowCol,
+            XmNlabelString, s1=XmStringCreateSimple("Move v"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            NULL);
+    XtAddCallback(moveDownBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileMoveDown, cd);
+    Widget renameBtn = XtVaCreateManagedWidget("rename",xmPushButtonWidgetClass,rowCol,
+            XmNlabelString, s1=XmStringCreateSimple("Rename"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            NULL);
+    XtAddCallback(renameBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRename, cd);
+    Widget removeBtn = XtVaCreateManagedWidget("remove",xmPushButtonWidgetClass,rowCol,
+            XmNlabelString, s1=XmStringCreateSimple("Remove"),
+            XmNmarginWidth, BUTTON_WIDTH_MARGIN,
+            NULL);
+    XtAddCallback(removeBtn, XmNactivateCallback, (XtCallbackProc)colorDialogProfileRemove, cd);
+    
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNleftAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNleftWidget, rowCol); ac++;
+    XtSetArg(args[ac], XmNleftOffset, 10); ac++;
+    XtSetArg(args[ac], XmNbottomAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNbottomWidget, okBtn); ac++;
+    XtSetArg(args[ac], XmNbottomOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(args[ac], XmNrightOffset, 12); ac++;
+    cd->profileList = XmCreateScrolledList(form, "list", args, ac);
+    XtManageChild(cd->profileList);
+    
+    // init profile list
+    cdpUpdateList(cd);
+    
+    /* Set initial default button */
+    XtVaSetValues(form, XmNdefaultButton, okBtn, NULL);
+
+    AddMotifCloseCallback(cd->profileShell, (XtCallbackProc)cdpCloseCB, cd);
+    RealizeWithoutForcingPosition(cd->profileShell);
 }
 
 static void colorDialogOpenStylesSettings(Widget w, colorDialog *cd, XtPointer c)
@@ -7326,6 +7500,7 @@ void ChooseColors(WindowInfo *window)
     
     XtAddCallback(cd->profileDropDown, XmNselectionCallback,(XtCallbackProc)colorDialogProfileSelected, cd);
     
+    /*
     s1 = XmStringCreateSimple("Rename");
     Widget colorProfileRename = XtVaCreateManagedWidget("colorProfileRename", xmPushButtonWidgetClass, colorProfileForm,
             XmNtopAttachment, XmATTACH_FORM,
@@ -7354,12 +7529,13 @@ void ChooseColors(WindowInfo *window)
     XmStringFree(s1);
     XtAddCallback(colorProfileRemove, XmNactivateCallback,
                  (XtCallbackProc)colorDialogProfileRemove, cd);
+    */
 
     s1 = XmStringCreateSimple("New");
     Widget colorProfileNew = XtVaCreateManagedWidget("colorProfilNew", xmPushButtonWidgetClass, colorProfileForm,
             XmNtopAttachment, XmATTACH_FORM,
             XmNleftAttachment, XmATTACH_WIDGET,
-            XmNleftWidget, colorProfileRemove,
+            XmNleftWidget, cd->profileDropDown,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, cd->profileDropDown,
             XmNlabelString, s1,
@@ -7368,6 +7544,20 @@ void ChooseColors(WindowInfo *window)
     XmStringFree(s1);
     XtAddCallback(colorProfileNew, XmNactivateCallback,
                  (XtCallbackProc)colorDialogProfileNew, cd);
+    
+    s1 = XmStringCreateSimple("Manage List");
+    Widget colorProfilesManage = XtVaCreateManagedWidget("colorProfilNew", xmPushButtonWidgetClass, colorProfileForm,
+            XmNtopAttachment, XmATTACH_FORM,
+            XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, colorProfileNew,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, cd->profileDropDown,
+            XmNlabelString, s1,
+            XmNhighlightThickness, 2,
+            NULL);
+    XmStringFree(s1);
+    XtAddCallback(colorProfilesManage, XmNactivateCallback,
+                 (XtCallbackProc)colorDialogProfileManage, cd);
     
 #endif
     
