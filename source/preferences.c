@@ -7463,6 +7463,7 @@ void ChooseColors(WindowInfo *window)
     
     /* Create a structure for keeping track of dialog state */
     cd = NEditNew(colorDialog);
+    memset(cd, 0, sizeof(colorDialog));
     window->colorDialog = cd;
     
     /* Create a form widget in a dialog shell */
