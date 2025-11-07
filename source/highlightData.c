@@ -259,7 +259,7 @@ static char *DefaultPatternSets[] = {
 	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
 	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC|STDC_HOSTED|func)__>\":::Preprocessor::\n\
 	numeric constant:\"(?<!\\Y)(?:(?:0b[0-1][0-1']*)|(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
-	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
+	character constant:\"(?:L|u|U|u8)?'\":\"([^\\\\]'|\\\\\\\\')\"::Character Const::D\n\
 	keywords 1 - storage:\"<(?:register|static|extern|thread_local|mutable)>\":::Storage Type::D\n\
 	keywords 2 - declerations:\"<(?:class|typename|template|friend|virtual|inline|explicit|operator|public|private|protected|const|volatile|typedef|struct|union|enum|asm|override|final|decltype|constexpr|constinit|consteval|noexcept|export|import|module|using|namespace|concept|requires)>\":::Keyword::D\n\
 	keywords 3 - types:\"<(?:auto|unsigned|signed|char|double|float|int|long|short|bool|wchar_t|void|nullptr_t|char8_t|char16_t|char32_t)>\":::Storage Type::D\n\
@@ -279,7 +279,7 @@ static char *DefaultPatternSets[] = {
     	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
     	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
 	preprocessor keywords:\"<__(?:LINE|FILE|DATE|TIME|STDC)__|_Pragma>\":::Preprocessor::\n\
-	character constant:\"(?:L|u|U|u8)?'\":\"'\":\"[^\\\\].{10}\":Character Const::D\n\
+	character constant:\"(?:L|u|U|u8)?'\":\"([^\\\\]'|\\\\\\\\')\"::Character Const::D\n\
 	numeric constant:\"(?<!\\Y)(?:(?:0b[0-1][0-1']*)|(?:0(?:x|X)[0-9a-fA-F][0-9a-fA-F']*)|(?:(?:[0-9][0-9']*\\.?[0-9']*)|(?:\\.[0-9']+))(?:(?:e|E)(?:\\+|-)?[0-9']+)?)(?:LL?|ll?|ULL?|ull?|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
     	keywords 1 - storage:\"<(?:extern|auto|register|static|unsigned|signed|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
     	keywords 2 - declerations:\"<(?:const|volatile|typedef|struct|union|enum|inline|restrict)>\":::Keyword::D\n\
@@ -510,7 +510,7 @@ static char *DefaultPatternSets[] = {
 	preprocessor comment:\"/\\*\":\"\\*/\"::Comment:preprocessor line:\n\
     	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
     	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
-	character constant:\"'\":\"'\":\"[^\\\\][^']\":Character Const::\n\
+	character constant:\"'\":\"([^\\\\]'|\\\\\\\\')\"::Character Const::\n\
 	numeric constant:\"(?<!\\Y)((0(x|X)[0-9a-fA-F]*)|(([0-9]+\\.?[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
 	storage keyword:\"<(const|extern|auto|register|static|unsigned|signed|volatile|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
 	keyword:\"<(return|goto|if|else|case|default|switch|break|continue|while|do|for|sizeof)>\":::Keyword::D\n\
@@ -1099,7 +1099,7 @@ static char *DefaultPatternSets[] = {
 	preprocessor comment:\"/\\*\":\"\\*/\"::Comment:preprocessor line:\n\
     	preprocessor string:\"L?\"\"\":\"\"\"\":\"\\n\":Preprocessor1:preprocessor line:\n\
     	prepr string esc chars:\"\\\\(?:.|\\n)\":::String1:preprocessor string:\n\
-	character constant:\"'\":\"'\":\"[^\\\\][^']\":Character Const::\n\
+	character constant:\"'\":\"([^\\\\]'|\\\\\\\\')\"::Character Const::\n\
 	numeric constant:\"(?<!\\Y)((0(x|X)[0-9a-fA-F]*)|(([0-9]+\\.?[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?(?!\\Y)\":::Numeric Const::D\n\
 	storage keyword:\"<(const|extern|auto|register|static|unsigned|signed|volatile|char|double|float|int|long|short|void|typedef|struct|union|enum)>\":::Storage Type::D\n\
 	rule:\"^[ \\t]*[A-Za-z_][A-Za-z0-9_]*[ \\t]*:\":::Preprocessor1::D\n\
