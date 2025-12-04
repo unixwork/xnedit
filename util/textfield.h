@@ -48,6 +48,7 @@
 #include <X11/Intrinsic.h>
 #include <Xm/TextF.h>
 #include "../source/text.h" /* textNXftFont */
+#include "misc.h" /* TextGetStringUtf8 */
 
 extern WidgetClass textfieldWidgetClass;
 
