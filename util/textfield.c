@@ -1495,14 +1495,8 @@ static void tfInsertPrimary(TextFieldWidget tf, XEvent *event) {
     Atom targets[2] = {aUtf8String, XA_STRING};
     Time time = XtLastTimestampProcessed(XtDisplay((Widget)tf));
     
-    void *data[2] = { sel, sel };
-    
-#ifdef __APPLE__
     XtGetSelectionValue((Widget)tf, XA_PRIMARY, targets[0], getPrimary, sel, time);
     XtGetSelectionValue((Widget)tf, XA_PRIMARY, targets[1], getPrimary, sel, time);
-#else
-    XtGetSelectionValues((Widget)tf, XA_PRIMARY, targets, 2, getPrimary, data, time);
-#endif
 }
 
 
