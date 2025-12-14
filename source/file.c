@@ -2864,6 +2864,8 @@ const char * DetectEncoding(const char *buf, size_t len, const char *def) {
                 charLen = 2;
             } else if(c > 192) {
                 charLen = 1;
+            } else if(c > 127) {
+                utf8Err++;
             }
         } else {
             if((c & 192) == 128) {
