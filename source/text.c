@@ -2846,10 +2846,10 @@ static void deleteNextCharacterAP(Widget w, XEvent *event, String *args,
         } else {
             prevPos = textD->cursor->cursorPos;
         }
-        callCursorMovementCBs(w, event);
     }
     
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
     
     if(batch) {
         BufEndModifyBatch(textD->buffer);
@@ -2914,10 +2914,10 @@ static void deletePreviousWordAP(Widget w, XEvent *event, String *args,
             i--;
         }
         
-        callCursorMovementCBs(w, event);
     }
 
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
     if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
@@ -2985,11 +2985,10 @@ static void deleteNextWordAP(Widget w, XEvent *event, String *args,
             mcursorSize--;
             i--;
         }
-    
-        callCursorMovementCBs(w, event);
     }
     
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
     if(batch) {
         BufEndModifyBatch(textD->buffer);
     }
@@ -3096,9 +3095,9 @@ static void forwardCharacterAP(Widget w, XEvent *event, String *args,
     }
     textD->mcursorSize = mcursorSize;
     // better to call this outside of the mcursor loop
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
        
-    checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3137,9 +3136,9 @@ static void backwardCharacterAP(Widget w, XEvent *event, String *args,
         checkMoveSelectionChange(w, event, insertPos, args, nArgs);
     }
     textD->mcursorSize = mcursorSize;
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
     
-    checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3208,9 +3207,9 @@ static void forwardWordAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
 
-    checkAutoShowInsertPos(w);
     
     if(notMoved) {
         ringIfNecessary(silent, w);
@@ -3266,9 +3265,9 @@ static void backwardWordAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
     
-    checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3327,9 +3326,9 @@ static void forwardParagraphAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
     
-    checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3390,9 +3389,9 @@ static void backwardParagraphAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
+    checkAutoShowInsertPos(w);
     callCursorMovementCBs(w, event);
     
-    checkAutoShowInsertPos(w);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3453,9 +3452,9 @@ static void processUpAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     }
     textD->mcursorSize = mcursorSize;
     textD->mcursorSizeReal = textD->mcursorSize;
-    callCursorMovementCBs(w, event);
        
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
     if(notMoved) {
         TextDCheckCursorDuplicates(((TextWidget)w)->text.textD);        
         ringIfNecessary(silent, w);
@@ -3517,9 +3516,8 @@ static void processDownAP(Widget w, XEvent *event, String *args,
         }
     }
     textD->mcursorSize = mcursorSize;
-    callCursorMovementCBs(w, event);
-    
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
     if(notMoved) {
         ringIfNecessary(silent, w);
     }
@@ -3618,9 +3616,8 @@ static void beginningOfLineAP(Widget w, XEvent *event, String *args,
         textD->cursor->cursorPreferredCol = 0;
     }
     textD->mcursorSize = mcursorSize;
-    callCursorMovementCBs(w, event);
-
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
 }
 
 static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
@@ -3646,9 +3643,8 @@ static void endOfLineAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         textD->cursor->cursorPreferredCol = -1;
     }
     textD->mcursorSize = mcursorSize;
-    callCursorMovementCBs(w, event);
-    
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event);
 }
 
 static void beginningOfFileAP(Widget w, XEvent *event, String *args,
@@ -4351,8 +4347,8 @@ static void simpleInsertAtCursor(Widget w, char *chars, XEvent *event,
         }
     }
     
-    callCursorMovementCBs(w, event); 
     checkAutoShowInsertPos(w);
+    callCursorMovementCBs(w, event); 
 }
 
 /*
