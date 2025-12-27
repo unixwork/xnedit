@@ -148,10 +148,11 @@ and from the [web page](https://www.unixwork.de/xnedit/) for XNEdit.
 SUPPORT
 -------
 
-Bug reports and feature requests can be issued at github or sourceforge,
-or contact me via email.
+Bug reports and feature requests can be issued at github, sourcehut,
+sourceforge or contact me via email.
 
- - https://github.com/unixwork/xnedit/issues
+ - https://github.com/unixwork/xnedit/
+ - https://sr.ht/~unixwork/xnedit/
  - https://sourceforge.net/projects/xnedit/
  - Olaf Wintermann <olaf.wintermann@gmail.com>
 
