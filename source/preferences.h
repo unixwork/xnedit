@@ -248,6 +248,11 @@ void SetPrefFocusOnRaise(Boolean);
 const char* GetPrefDefaultCharset(void);
 const char* GetPrefFallbackCharset(void);
 
+int GetPrefRightMargin(void);
+void SetPrefRightMargin(int margin);
+Boolean GetPrefShowRightMargin(void);
+void SetPrefShowRightMargin(Boolean state);
+
 int GetPrefCloseIconSize(void);
 int GetPrefISrcFindIconSize(void);
 int GetPrefISrcClearIconSize(void);

@@ -2883,7 +2883,11 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
         int lineNumCols)
 {
     Widget text, sw, hScrollBar, vScrollBar, frame;
-        
+    
+    // TODO: use window property
+    int rightMargin = GetPrefRightMargin();
+    Boolean showRightMargin = GetPrefShowRightMargin();
+    
     /* Create a text widget inside of a scrolled window widget */
     sw = XtVaCreateManagedWidget("scrolledW", xmScrolledWindowWidgetClass,
             parent, XmNpaneMaximum, SHRT_MAX,
@@ -2919,6 +2923,8 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNoverstrike, window->overstrike,
             textNhidePointer, (Boolean) GetPrefTypingHidesPointer(),
             textNcursorVPadding, GetVerticalAutoScroll(),
+            textNrightMargin, rightMargin,
+            textNshowRightMargin, showRightMargin,
             NULL);
     
     XtVaSetValues(sw, XmNworkWindow, frame, XmNhorizontalScrollBar, 

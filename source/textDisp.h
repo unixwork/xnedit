@@ -185,6 +185,8 @@ struct _textDisp {
     					   primary font + all-highlight fonts */
     int fixedFontWidth;			/* Font width if all current fonts are
     					   fixed and match in width, else -1 */
+    int rightMargin;                    /* right margin column */
+    int rightMarginPos;                 /* right margin in pixels */
     Widget hScrollBar, vScrollBar;
     GC gc;
     GC cursorFGGC;			/* GC for drawing the cursor */
@@ -237,9 +239,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position lineNumLeft, Position lineNumWidth, Position marginWidth,
         textBuffer *buffer, NFont *font, NFont *bold, NFont *italic,
         NFont *boldItalic, ColorProfile *colorProfile, int continuousWrap,
-        int wrapMargin, XmString bgClassString, Pixel calltipFGPixel,
-        Pixel calltipBGPixel, Pixel lineHighlightBGPixel, Boolean indentRainbow,
-        Boolean highlightCursorLine, Boolean ansiColors);
+        int wrapMargin, int rightMargin, XmString bgClassString,
+        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
+        Boolean indentRainbow, Boolean highlightCursorLine, Boolean ansiColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);

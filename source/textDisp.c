@@ -194,9 +194,9 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position lineNumLeft, Position lineNumWidth, Position marginWidth,
         textBuffer *buffer, NFont *font, NFont *bold, NFont *italic,
         NFont *boldItalic, ColorProfile *colorProfile, int continuousWrap,
-        int wrapMargin, XmString bgClassString, Pixel calltipFGPixel,
-        Pixel calltipBGPixel, Pixel lineHighlightBGPixel, Boolean indentRainbow,
-        Boolean highlightCursorLine, Boolean ansiColors)
+        int wrapMargin, int rightMargin, XmString bgClassString,
+        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
+        Boolean indentRainbow, Boolean highlightCursorLine, Boolean ansiColors)
 {
     textDisp *textD;
     XGCValues gcValues;
@@ -280,6 +280,8 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->highlightCursorLine = highlightCursorLine;
     textD->redrawCursorLine = False;
     
+    textD->rightMargin = rightMargin;
+    textD->rightMarginPos = rightMargin > 0 ? left + rightMargin * font->maxWidth : 0;  
     
     // Initialize multi cursor array
     textD->mcursorAlloc = MCURSOR_ALLOC;
@@ -717,7 +719,7 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     firstLine = (top - textD->top - fontHeight + 1) / fontHeight;
     lastLine = (top + height - textD->top) / fontHeight;
     
-    if(textD->d) {
+    if(textD->d && textD->rightMarginPos > 0) {
         XRectangle clipRect;
         clipRect.x = left;
         clipRect.y = top;
@@ -726,13 +728,12 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
         
         // draw right border line
-        int border = textD->left + 80 * textD->font->maxWidth;
-        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, border, top, 1, height);
+        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, textD->rightMarginPos, top, 1, height);
         
         // draw remaining right area using bg2
         /*
-        int bg2width = left + width - border;
-        XftDrawRect(textD->d, &textD->colorProfile->textBgColor2, border + 1, top, bg2width, height);
+        int bg2width = left + width - textD->rightMarginPos;
+        XftDrawRect(textD->d, &textD->colorProfile->textBgColor2, textD->rightMarginPos + 1, top, bg2width, height);
         */
     }
     
@@ -2924,15 +2925,14 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     else {
         XftDrawRect(textD->d, color, x, y, width, height);
     }
-    
-    int border = textD->left + 80 * textD->font->maxWidth;
-    if(border >= x) {
-        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, border, y, 1, height);
+
+    if(textD->rightMarginPos > 0 && textD->rightMarginPos >= x) {
+        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, textD->rightMarginPos, y, 1, height);
         
         // draw remaining right area using bg2
         /*
-        int bg2width = x + width - border;
-        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, border + 1, y, bg2width, height);
+        int bg2width = x + width - textD->rightMarginPos;
+        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, textD->rightMarginPos + 1, y, bg2width, height);
         */
     }
 }

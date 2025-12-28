@@ -759,6 +759,11 @@ static XtResource resources[] = {
       XtOffset(TextWidget, text.vScrollBar), XmRString, ""},
     {textNlineNumCols, textCLineNumCols, XmRInt, sizeof(int),
       XtOffset(TextWidget, text.lineNumCols), XmRString, "0"},
+    {textNrightMargin, textCrightMargin, XmRInt, sizeof(int),
+      XtOffset(TextWidget, text.rightMargin), XmRString, "80"},
+    {textNshowRightMargin, textCshowRightMargin, XmRBoolean,
+      sizeof(Boolean), XtOffset(TextWidget, text.showRightMargin),
+      XmRString, "False"},
     {textNautoShowInsertPos, textCAutoShowInsertPos, XmRBoolean,
       sizeof(Boolean), XtOffset(TextWidget, text.autoShowInsertPos),
       XmRString, "True"},
@@ -942,6 +947,7 @@ static void initialize(TextWidget request, TextWidget new)
     
     /* Create and initialize the text-display part of the widget */
     int fontWidth = new->text.font->minWidth;
+    int rightMargin = new->text.showRightMargin ? new->text.rightMargin : 0;
     textLeft = fontWidth/3 + 1 +
 	    (lineNumCols == 0 ? 0 : marginWidth + charWidth * lineNumCols);
             new->text.textD = TextDCreate((Widget)new, new->text.hScrollBar,
@@ -952,7 +958,7 @@ static void initialize(TextWidget request, TextWidget new)
 	    lineNumCols == 0 ? 0 : lineNumCols*charWidth, new->text.marginWidth,
 	    buf,new->text.font, new->text.boldFont, new->text.italicFont,
             new->text.boldItalicFont,GetDefaultColorProfile(),
-            new->text.continuousWrap, new->text.wrapMargin,
+            new->text.continuousWrap, new->text.wrapMargin, rightMargin,
             new->text.backlightCharTypes, new->text.calltipFGPixel,
             new->text.calltipBGPixel, 0, new->text.indentRainbow,
             new->text.highlightCursorLine, new->text.ansiColors);

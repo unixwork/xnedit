@@ -77,12 +77,14 @@ typedef struct _TextPart {
     Boolean heavyCursor;
     Boolean readOnly;
     Boolean hidePointer;
+    Boolean showRightMargin;
     int rows, columns;
     int marginWidth, marginHeight;
     int cursorBlinkRate;
     int wrapMargin;
     int emulateTabs;
     int lineNumCols;
+    int rightMargin;
     char *delimiters;
     Cardinal cursorVPadding;
     Widget hScrollBar, vScrollBar;

@@ -362,6 +362,8 @@ static struct prefData {
 #endif
     int textRows;		/* initial window height in characters */
     int textCols;		/* initial window width in characters */
+    int rightMargin;            /* draw vertical line after this column */
+    int showRightMargin;        /* enable right margin line */
     int tabDist;		/* number of characters between tab stops */
     int emTabDist;		/* non-zero tab dist. if emulated tabs are on */
     int insertTabs;		/* whether to use tabs for padding */
@@ -1026,6 +1028,10 @@ static PrefDescripRec PrefDescrip[] = {
     	&PrefData.undoOpLimit, NULL, True},
     {"undoOpTrimTo", "UndoOpTrimTo", PREF_INT, "200",
     	&PrefData.undoOpTrimTo, NULL, True},
+    {"rightMargin", "RightMargin", PREF_INT, "80",
+    	&PrefData.rightMargin, NULL, True},
+    {"showRightMargin", "ShowRightMargin", PREF_BOOLEAN, "False",
+    	&PrefData.showRightMargin, NULL, True},
     {"sortTabs", "SortTabs", PREF_BOOLEAN, "False",
     	&PrefData.sortTabs, NULL, True},
     {"tabBar", "TabBar", PREF_BOOLEAN, "True",
@@ -2512,6 +2518,22 @@ const char* GetPrefDefaultCharset(void)
 
 const char* GetPrefFallbackCharset(void) {
     return PrefData.fallbackCharset;
+}
+
+int GetPrefRightMargin(void) {
+    return PrefData.rightMargin;
+}
+
+void SetPrefRightMargin(int margin) {
+    setIntPref(&PrefData.rightMargin, margin);
+}
+
+Boolean GetPrefShowRightMargin(void)  {
+    return (Boolean)PrefData.showRightMargin;
+}
+
+void SetPrefShowRightMargin(Boolean state) {
+    setIntPref(&PrefData.showRightMargin, state);
 }
 
 int GetPrefCloseIconSize(void)
