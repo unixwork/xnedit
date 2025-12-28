@@ -728,7 +728,7 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
         
         // draw right border line
-        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, textD->rightMarginPos, top, 1, height);
+        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, top, 1, height);
         
         // draw remaining right area using bg2
         /*
@@ -2927,7 +2927,7 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     }
 
     if(textD->rightMarginPos > 0 && textD->rightMarginPos >= x) {
-        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, textD->rightMarginPos, y, 1, height);
+        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, y, 1, height);
         
         // draw remaining right area using bg2
         /*

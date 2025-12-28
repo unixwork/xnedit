@@ -2465,7 +2465,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     Pixel lineNoBgPix = AllocColor( w, profile->lineNoBg, &dummy, &dummy, &dummy);
     Pixel cursorFgPix = AllocColor( w, profile->cursorFg, &dummy, &dummy, &dummy);
     Pixel lineHiBgPix = AllocColor( w, profile->lineHiBg, &dummy, &dummy, &dummy);
-    Pixel rborderPix = AllocColor( w, profile->rborder, &dummy, &dummy, &dummy);
+    Pixel rborderPix = AllocColor( w, profile->rightMargin, &dummy, &dummy, &dummy);
     
     profile->textFgColor = PixelToColor(w, textFgPix);
     profile->textBgColor = PixelToColor(w, textBgPix);
@@ -2478,7 +2478,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     profile->lineNoBgColor = PixelToColor(w, lineNoBgPix);
     profile->cursorFgColor = PixelToColor(w, cursorFgPix);
     profile->lineHiBgColor = PixelToColor(w, lineHiBgPix);
-    profile->rborderColor = PixelToColor(w, rborderPix);
+    profile->rightMarginColor = PixelToColor(w, rborderPix);
     
     if(profile->rainbowColorList) {
         ColorList rainbowColors = ParseColorList(profile->rainbowColorList, strlen(profile->rainbowColorList));

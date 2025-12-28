@@ -198,7 +198,7 @@ enum colorTypes {
     CURSOR_FG_COLOR,
     CURSOR_LINE_BG_COLOR,
     TEXT_BG2_COLOR,
-    RBORDER_COLOR,
+    RMARGIN_COLOR,
     NUM_COLORS
 };
 
