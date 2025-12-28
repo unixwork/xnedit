@@ -2456,6 +2456,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     int dummy;
     Pixel textFgPix   = AllocColor( w, profile->textFg, &dummy, &dummy, &dummy);
     Pixel textBgPix   = AllocColor( w, profile->textBg, &dummy, &dummy, &dummy);
+    Pixel textBg2Pix   = AllocColor( w, profile->textBg2, &dummy, &dummy, &dummy);
     Pixel selectFgPix = AllocColor( w, profile->selectFg, &dummy, &dummy, &dummy);
     Pixel selectBgPix = AllocColor( w, profile->selectBg, &dummy, &dummy, &dummy);
     Pixel hiliteFgPix = AllocColor( w, profile->hiliteFg, &dummy, &dummy, &dummy);
@@ -2464,9 +2465,11 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     Pixel lineNoBgPix = AllocColor( w, profile->lineNoBg, &dummy, &dummy, &dummy);
     Pixel cursorFgPix = AllocColor( w, profile->cursorFg, &dummy, &dummy, &dummy);
     Pixel lineHiBgPix = AllocColor( w, profile->lineHiBg, &dummy, &dummy, &dummy);
+    Pixel rborderPix = AllocColor( w, profile->rborder, &dummy, &dummy, &dummy);
     
     profile->textFgColor = PixelToColor(w, textFgPix);
     profile->textBgColor = PixelToColor(w, textBgPix);
+    profile->textBgColor2 = PixelToColor(w, textBg2Pix);
     profile->selectFgColor = PixelToColor(w, selectFgPix);
     profile->selectBgColor = PixelToColor(w, selectBgPix);
     profile->hiliteFgColor = PixelToColor(w, hiliteFgPix);
@@ -2475,6 +2478,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     profile->lineNoBgColor = PixelToColor(w, lineNoBgPix);
     profile->cursorFgColor = PixelToColor(w, cursorFgPix);
     profile->lineHiBgColor = PixelToColor(w, lineHiBgPix);
+    profile->rborderColor = PixelToColor(w, rborderPix);
     
     if(profile->rainbowColorList) {
         ColorList rainbowColors = ParseColorList(profile->rainbowColorList, strlen(profile->rainbowColorList));

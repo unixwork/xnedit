@@ -717,10 +717,29 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     firstLine = (top - textD->top - fontHeight + 1) / fontHeight;
     lastLine = (top + height - textD->top) / fontHeight;
     
+    if(textD->d) {
+        XRectangle clipRect;
+        clipRect.x = left;
+        clipRect.y = top;
+        clipRect.width = width + 9000;
+        clipRect.height = height;
+        XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
+        
+        // draw right border line
+        int border = textD->left + 80 * textD->font->maxWidth;
+        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, border, top, 1, height);
+        
+        // draw remaining right area using bg2
+        /*
+        int bg2width = left + width - border;
+        XftDrawRect(textD->d, &textD->colorProfile->textBgColor2, border + 1, top, bg2width, height);
+        */
+    }
+    
     /* If the graphics contexts are shared using XtAllocateGC, their
        clipping rectangles may have changed since the last use */
     resetClipRectangles(textD);
-    
+      
     /* draw the lines of text */
     for (line=firstLine; line<=lastLine; line++)
     	redisplayLine(textD, line, left-textD->marginWidth, left+width, 0, INT_MAX);
@@ -2904,6 +2923,17 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     }
     else {
         XftDrawRect(textD->d, color, x, y, width, height);
+    }
+    
+    int border = textD->left + 80 * textD->font->maxWidth;
+    if(border >= x) {
+        XftDrawRect(textD->d, &textD->colorProfile->rborderColor, border, y, 1, height);
+        
+        // draw remaining right area using bg2
+        /*
+        int bg2width = x + width - border;
+        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, border + 1, y, bg2width, height);
+        */
     }
 }
 

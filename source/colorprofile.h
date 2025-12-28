@@ -46,6 +46,7 @@ typedef struct _ColorProfile {
 
     char     *textFg;
     char     *textBg;
+    char     *textBg2;
     char     *selectFg;
     char     *selectBg;
     char     *hiliteFg;
@@ -56,6 +57,7 @@ typedef struct _ColorProfile {
     char     *lineHiBg;
     char     *ansiColorList;
     char     *rainbowColorList;
+    char     *rborder;
 
     Boolean  colorsLoaded;
     Boolean  stylesLoaded;
@@ -63,6 +65,7 @@ typedef struct _ColorProfile {
 
     XftColor textFgColor;
     XftColor textBgColor;
+    XftColor textBgColor2;
     XftColor selectFgColor;
     XftColor selectBgColor;
     XftColor hiliteFgColor;
@@ -71,6 +74,7 @@ typedef struct _ColorProfile {
     XftColor lineNoBgColor;
     XftColor cursorFgColor;
     XftColor lineHiBgColor;
+    XftColor rborderColor;
 
     XftColor *ansiColors;
     size_t   numAnsiColors;

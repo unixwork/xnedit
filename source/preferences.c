@@ -1134,6 +1134,12 @@ static PrefDescripRec PrefDescrip[] = {
     {"textBgColor", "TextBgColor", PREF_STRING, NEDIT_DEFAULT_TEXT_BG,
         PrefData.colorNames[TEXT_BG_COLOR],
         (void *)sizeof(PrefData.colorNames[TEXT_BG_COLOR]), True},
+    {"textBg2Color", "TextBg2Color", PREF_STRING, NEDIT_DEFAULT_TEXT_BG2,
+        PrefData.colorNames[TEXT_BG2_COLOR],
+        (void *)sizeof(PrefData.colorNames[TEXT_BG2_COLOR]), True},
+    {"rBorderColor", "RBorderColor", PREF_STRING, NEDIT_DEFAULT_RBORDER,
+        PrefData.colorNames[RBORDER_COLOR],
+        (void *)sizeof(PrefData.colorNames[RBORDER_COLOR]), True},
     {"selectFgColor", "SelectFgColor", PREF_STRING, NEDIT_DEFAULT_SEL_FG,
         PrefData.colorNames[SELECT_FG_COLOR],
         (void *)sizeof(PrefData.colorNames[SELECT_FG_COLOR]), True},
@@ -2591,6 +2597,7 @@ void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
     to->name = NEditStrdup(from->name);
     to->textFg = NEditStrdup(from->textFg);
     to->textBg = NEditStrdup(from->textBg);
+    to->textBg2 = NEditStrdup(from->textBg2);
     to->selectFg = NEditStrdup(from->selectFg);
     to->selectBg = NEditStrdup(from->selectBg);
     to->hiliteFg = NEditStrdup(from->hiliteFg);
@@ -2599,6 +2606,7 @@ void ColorProfileCopySettings(ColorProfile *from, ColorProfile *to)
     to->lineNoBg = NEditStrdup(from->lineNoBg);
     to->cursorFg = NEditStrdup(from->cursorFg);
     to->lineHiBg = NEditStrdup(from->lineHiBg);
+    to->rborder = NEditStrdup(from->rborder);
     to->ansiColorList = NEditStrdup(from->ansiColorList);
     to->rainbowColorList = NEditStrdup(from->rainbowColorList);
     to->resourceFile = from->resourceFile ? NEditStrdup(from->resourceFile) : NULL;
@@ -2639,11 +2647,12 @@ char* WriteColorProfilesString(void)
             int len = snprintf(
                     buf,
                     4096,
-                    "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
+                    "%s:colors:{%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s},"
                     "ansi:{%s},rainbow:{%s},styles:{%d},wm:{%d}%s%s%s%s",
                     profile->name,
                     profile->textFg,
                     profile->textBg,
+                    profile->textBg2,
                     profile->selectFg,
                     profile->selectBg,
                     profile->hiliteFg,
@@ -2652,6 +2661,7 @@ char* WriteColorProfilesString(void)
                     profile->lineNoBg,
                     profile->cursorFg,
                     profile->lineHiBg,
+                    profile->rborder,
                     profile->ansiColorList,
                     profile->rainbowColorList,
                     profile->styleType,
@@ -6475,6 +6485,7 @@ static void updateColors(colorDialog *cd)
         NEditFree(prefProfile->name);
         NEditFree(prefProfile->textFg);
         NEditFree(prefProfile->textBg);
+        NEditFree(prefProfile->textBg2);
         NEditFree(prefProfile->selectFg);
         NEditFree(prefProfile->selectBg);
         NEditFree(prefProfile->hiliteFg);
@@ -6483,6 +6494,7 @@ static void updateColors(colorDialog *cd)
         NEditFree(prefProfile->lineNoBg);
         NEditFree(prefProfile->cursorFg);
         NEditFree(prefProfile->lineHiBg);
+        NEditFree(prefProfile->rborder);
         NEditFree(prefProfile->ansiColorList);
         NEditFree(prefProfile->rainbowColorList);
         NEditFree(prefProfile->resourceFile);
@@ -6490,6 +6502,7 @@ static void updateColors(colorDialog *cd)
         prefProfile->name = NEditStrdup(profile->name);
         prefProfile->textFg = NEditStrdup(profile->textFg);
         prefProfile->textBg = NEditStrdup(profile->textBg);
+        prefProfile->textBg2 = NEditStrdup(profile->textBg2);
         prefProfile->selectFg = NEditStrdup(profile->selectFg);
         prefProfile->selectBg = NEditStrdup(profile->selectBg);
         prefProfile->hiliteFg = NEditStrdup(profile->hiliteFg);
@@ -6498,6 +6511,7 @@ static void updateColors(colorDialog *cd)
         prefProfile->lineNoBg = NEditStrdup(profile->lineNoBg);
         prefProfile->cursorFg = NEditStrdup(profile->cursorFg);
         prefProfile->lineHiBg = NEditStrdup(profile->lineHiBg);
+        prefProfile->rborder = NEditStrdup(profile->rborder);
         prefProfile->ansiColorList = NEditStrdup(profile->ansiColorList);
         prefProfile->rainbowColorList = NEditStrdup(profile->rainbowColorList);
         prefProfile->resourceFile = profile->resourceFile ? NEditStrdup(profile->resourceFile) : NULL;
@@ -6522,6 +6536,7 @@ static void updateColors(colorDialog *cd)
     ColorProfile defaultProfile = cd->colorProfiles[0];
     SetPrefColorName(TEXT_FG_COLOR  , defaultProfile.textFg  );
     SetPrefColorName(TEXT_BG_COLOR  , defaultProfile.textBg  );
+    SetPrefColorName(TEXT_BG2_COLOR , defaultProfile.textBg2 );
     SetPrefColorName(SELECT_FG_COLOR, defaultProfile.selectFg);
     SetPrefColorName(SELECT_BG_COLOR, defaultProfile.selectBg);
     SetPrefColorName(HILITE_FG_COLOR, defaultProfile.hiliteFg);
@@ -6529,6 +6544,7 @@ static void updateColors(colorDialog *cd)
     SetPrefColorName(LINENO_FG_COLOR, defaultProfile.lineNoFg);
     SetPrefColorName(LINENO_BG_COLOR, defaultProfile.lineNoBg);
     SetPrefColorName(CURSOR_FG_COLOR, defaultProfile.cursorFg);
+    SetPrefColorName(RBORDER_COLOR  , defaultProfile.rborder );
     SetPrefColorName(CURSOR_LINE_BG_COLOR, defaultProfile.lineHiBg);
     SetPrefIndentRainbowColors(defaultProfile.rainbowColorList);
     SetPrefAnsiColorList(defaultProfile.ansiColorList); 
@@ -8493,14 +8509,16 @@ static ColorProfile* ParseColorProfile(const char *str, size_t len)
                 ColorList colors = ParseColorList(sectionColors, sectionColorsLen);
                 profile->textFg = NEditStrdup(colors.ncolors >= 1 ? colors.colors[0] : GetPrefColorName(TEXT_FG_COLOR));
                 profile->textBg = NEditStrdup(colors.ncolors >= 2 ? colors.colors[1] : GetPrefColorName(TEXT_BG_COLOR));
-                profile->selectFg = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(SELECT_FG_COLOR));
-                profile->selectBg = NEditStrdup(colors.ncolors >= 4 ? colors.colors[3] : GetPrefColorName(SELECT_BG_COLOR));
-                profile->hiliteFg = NEditStrdup(colors.ncolors >= 5 ? colors.colors[4] : GetPrefColorName(HILITE_FG_COLOR));
-                profile->hiliteBg = NEditStrdup(colors.ncolors >= 6 ? colors.colors[5] : GetPrefColorName(HILITE_BG_COLOR));
-                profile->lineNoFg = NEditStrdup(colors.ncolors >= 7 ? colors.colors[6] : GetPrefColorName(LINENO_FG_COLOR));
-                profile->lineNoBg = NEditStrdup(colors.ncolors >= 8 ? colors.colors[7] : GetPrefColorName(LINENO_BG_COLOR));
-                profile->cursorFg = NEditStrdup(colors.ncolors >= 9 ? colors.colors[8] : GetPrefColorName(CURSOR_FG_COLOR));
-                profile->lineHiBg = NEditStrdup(colors.ncolors >= 10 ? colors.colors[9] : GetPrefColorName(CURSOR_LINE_BG_COLOR));
+                profile->textBg = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(TEXT_BG2_COLOR));
+                profile->selectFg = NEditStrdup(colors.ncolors >= 4 ? colors.colors[3] : GetPrefColorName(SELECT_FG_COLOR));
+                profile->selectBg = NEditStrdup(colors.ncolors >= 5 ? colors.colors[4] : GetPrefColorName(SELECT_BG_COLOR));
+                profile->hiliteFg = NEditStrdup(colors.ncolors >= 6 ? colors.colors[5] : GetPrefColorName(HILITE_FG_COLOR));
+                profile->hiliteBg = NEditStrdup(colors.ncolors >= 7 ? colors.colors[6] : GetPrefColorName(HILITE_BG_COLOR));
+                profile->lineNoFg = NEditStrdup(colors.ncolors >= 8 ? colors.colors[7] : GetPrefColorName(LINENO_FG_COLOR));
+                profile->lineNoBg = NEditStrdup(colors.ncolors >= 9 ? colors.colors[8] : GetPrefColorName(LINENO_BG_COLOR));
+                profile->cursorFg = NEditStrdup(colors.ncolors >= 10 ? colors.colors[9] : GetPrefColorName(CURSOR_FG_COLOR));
+                profile->lineHiBg = NEditStrdup(colors.ncolors >= 11 ? colors.colors[10] : GetPrefColorName(CURSOR_LINE_BG_COLOR));
+                profile->rborder = NEditStrdup(colors.ncolors >= 12 ? colors.colors[11] : GetPrefColorName(RBORDER_COLOR));
                 free(colors.liststr);
                 free(colors.colors);
             } else if(!strncmp(sectionName, "ansi", sectionNameLen)) {
@@ -8619,6 +8637,7 @@ void ParseColorProfiles(const char *str)
     defaultProfile->name = NEditStrdup("default");
     defaultProfile->textFg = NEditStrdup(GetPrefColorName(TEXT_FG_COLOR));
     defaultProfile->textBg = NEditStrdup(GetPrefColorName(TEXT_BG_COLOR));
+    defaultProfile->textBg2 = NEditStrdup(GetPrefColorName(TEXT_BG2_COLOR));
     defaultProfile->selectFg = NEditStrdup(GetPrefColorName(SELECT_FG_COLOR));
     defaultProfile->selectBg = NEditStrdup(GetPrefColorName(SELECT_BG_COLOR));
     defaultProfile->hiliteFg = NEditStrdup(GetPrefColorName(HILITE_FG_COLOR));
@@ -8627,6 +8646,7 @@ void ParseColorProfiles(const char *str)
     defaultProfile->lineNoBg = NEditStrdup(GetPrefColorName(LINENO_BG_COLOR));
     defaultProfile->cursorFg = NEditStrdup(GetPrefColorName(CURSOR_FG_COLOR));
     defaultProfile->lineHiBg = NEditStrdup( GetPrefColorName(CURSOR_LINE_BG_COLOR));
+    defaultProfile->rborder = NEditStrdup( GetPrefColorName(RBORDER_COLOR));
     defaultProfile->rainbowColorList = NEditStrdup(GetPrefIndentRainbowColors());
     defaultProfile->ansiColorList = NEditStrdup(GetPrefAnsiColorList());
     
