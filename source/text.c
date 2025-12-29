@@ -1390,6 +1390,12 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if(new->text.vScrollBar != current->text.vScrollBar) {
         new->text.textD->vScrollBar = new->text.vScrollBar;
     }
+    if(new->text.rightMargin != current->text.rightMargin 
+       || new->text.showRightMargin != current->text.showRightMargin)
+    {
+        TextDSetRightMargin(new->text.textD, new->text.rightMargin);
+        redraw = True;
+    }
     
     return redraw;
 } 

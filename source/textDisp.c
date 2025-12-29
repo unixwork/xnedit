@@ -281,7 +281,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->redrawCursorLine = False;
     
     textD->rightMargin = rightMargin;
-    textD->rightMarginPos = rightMargin > 0 ? left + rightMargin * font->maxWidth : 0;  
+    textD->rightMarginPos = rightMargin > 0 ? left + rightMargin * font->maxWidth : 0;
     
     // Initialize multi cursor array
     textD->mcursorAlloc = MCURSOR_ALLOC;
@@ -471,6 +471,11 @@ void TextDSetColorProfile(textDisp *textD, ColorProfile *profile)
     redrawLineNumbers(textD, textD->top, textD->height, True);
 }
 
+void TextDSetRightMargin(textDisp *textD, int rightMargin) {
+    textD->rightMargin = rightMargin;
+    textD->rightMarginPos = rightMargin > 0 ? textD->left + rightMargin * textD->font->maxWidth : 0;
+}
+
 /*
 ** Change the (non highlight) font
 */
@@ -511,6 +516,10 @@ void TextDSetFont(textDisp *textD, NFont *font)
     if(textD->font != font) {
         FontUnref(textD->font);
         textD->font = FontRef(font);
+    }
+    
+    if(textD->rightMargin > 0) {
+        textD->rightMarginPos = textD->left + textD->rightMargin * font->maxWidth;
     }
     
     if(textD->disableRedisplay) {

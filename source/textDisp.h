@@ -249,6 +249,7 @@ void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
     	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
     	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
 void TextDSetColorProfile(textDisp *textD, ColorProfile *profile);
+void TextDSetRightMargin(textDisp *textD, int rightMargin);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
 void TextDSetBoldFont(textDisp *textD, NFont *boldFont);
 void TextDSetItalicFont(textDisp *textD, NFont *boldFont);
