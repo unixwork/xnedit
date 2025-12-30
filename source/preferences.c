@@ -267,6 +267,10 @@ typedef struct {
     Widget cursorFgErrW;
     Widget cursorLineBgW;
     Widget cursorLineBgErrW;
+    Widget rightMarginFgW;
+    Widget rightMarginFgErrW;
+    Widget rightMarginBgW;
+    Widget rightMarginBgErrW;
     
     // indent rainbow
     Widget scrollW;
@@ -7839,6 +7843,8 @@ void ChooseColors(WindowInfo *window)
             &(cd->lineNoFgW), &(cd->lineNoFgErrW), tmpW, 1, 49, cd );
     tmpW = addColorGroup( tabForm, "lineNoBg", 'N', "Line Numbers Background",
             &(cd->lineNoBgW), &(cd->lineNoBgErrW), tmpW, 1, 49, cd );
+    tmpW = addColorGroup( tabForm, "rightMarginFg", 'R', "Right Margin Line",
+            &(cd->rightMarginFgW), &(cd->rightMarginFgErrW), tmpW, 1, 49, cd );
 
     /* The right column (backgrounds) */
     tmpW = addColorGroup( tabForm, "textBg", 'T', "Text Area Background",
@@ -7851,6 +7857,8 @@ void ChooseColors(WindowInfo *window)
             &(cd->cursorFgW), &(cd->cursorFgErrW), tmpW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "cursorLineBg", 'U', "Cursor Line Background",
             &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, cd );
+    tmpW = addColorGroup( tabForm, "rightMarginBg", 'i', "Right Margin Background",
+            &(cd->rightMarginBgW), &(cd->rightMarginBgW), tmpW, 51, 99, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, tabForm,
@@ -8194,6 +8202,8 @@ static void saveColorProfileSettings(colorDialog *cd)
     profile->lineNoBg = XmTextGetString(cd->lineNoBgW),
     profile->cursorFg = XmTextGetString(cd->cursorFgW),
     profile->lineHiBg = XmTextGetString(cd->cursorLineBgW);
+    profile->rightMargin = XmTextGetString(cd->rightMarginFgW);
+    profile->textBg2 = XmTextGetString(cd->rightMarginBgW);
     
     /*
      * Tab 2: Indent Rainbow Colors
@@ -8357,6 +8367,8 @@ static void loadColors(colorDialog *cd)
     XmTextSetString(cd->lineNoBgW, selectedProfile->lineNoBg);
     XmTextSetString(cd->cursorFgW, selectedProfile->cursorFg);
     XmTextSetString(cd->cursorLineBgW, selectedProfile->lineHiBg);
+    XmTextSetString(cd->rightMarginFgW, selectedProfile->rightMargin);
+    XmTextSetString(cd->rightMarginBgW, selectedProfile->textBg2);
 }
 
 static void loadColorProfileStyleSettings(colorDialog *cd)
