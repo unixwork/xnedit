@@ -65,7 +65,7 @@ typedef struct _ColorProfile {
 
     XftColor textFgColor;
     XftColor textBgColor;
-    XftColor textBgColor2;
+    XftColor textBg2Color;
     XftColor selectFgColor;
     XftColor selectBgColor;
     XftColor hiliteFgColor;

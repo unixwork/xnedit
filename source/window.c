@@ -2469,7 +2469,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
     
     profile->textFgColor = PixelToColor(w, textFgPix);
     profile->textBgColor = PixelToColor(w, textBgPix);
-    profile->textBgColor2 = PixelToColor(w, textBg2Pix);
+    profile->textBg2Color = PixelToColor(w, textBg2Pix);
     profile->selectFgColor = PixelToColor(w, selectFgPix);
     profile->selectBgColor = PixelToColor(w, selectBgPix);
     profile->hiliteFgColor = PixelToColor(w, hiliteFgPix);

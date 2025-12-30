@@ -732,7 +732,7 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
         XRectangle clipRect;
         clipRect.x = left;
         clipRect.y = top;
-        clipRect.width = width + 9000;
+        clipRect.width = width;
         clipRect.height = height;
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
         
@@ -740,10 +740,10 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
         XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, top, 1, height);
         
         // draw remaining right area using bg2
-        /*
+        
         int bg2width = left + width - textD->rightMarginPos;
-        XftDrawRect(textD->d, &textD->colorProfile->textBgColor2, textD->rightMarginPos + 1, top, bg2width, height);
-        */
+        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, textD->rightMarginPos + 1, top, bg2width, height);
+        //*/
     }
     
     /* If the graphics contexts are shared using XtAllocateGC, their
@@ -2935,14 +2935,15 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
         XftDrawRect(textD->d, color, x, y, width, height);
     }
 
-    if(textD->rightMarginPos > 0 && textD->rightMarginPos >= x) {
+    if(textD->rightMarginPos > 0) {
         XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, y, 1, height);
         
         // draw remaining right area using bg2
-        /*
-        int bg2width = x + width - textD->rightMarginPos;
-        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, textD->rightMarginPos + 1, y, bg2width, height);
-        */
+        ///*
+        int startPos = textD->rightMarginPos+1 > x ? textD->rightMarginPos+1 : x;
+        int bg2width = x + width - startPos;
+        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, y, bg2width, height);
+        //*/
     }
 }
 
