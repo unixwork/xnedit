@@ -166,6 +166,8 @@ static void highlightOffDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void backlightCharsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void showRightMarginDefCB(Widget w, WindowInfo *window, caddr_t callData);
+static void rightMarginCB(Widget w, WindowInfo *window, caddr_t callData);
 static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void ansiColorsDefCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fontDefCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -404,6 +406,8 @@ static void setWrapTextAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs);
 static void setWrapMarginAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs);
+static void setShowMarginAP(Widget w, XEvent *event, String *args,
+    Cardinal *nArgs);
 static void setHighlightSyntaxAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs);
 static void setMakeBackupCopyAP(Widget w, XEvent *event, String *args,
@@ -579,6 +583,7 @@ static XtActionsRec Actions[] = {
     {"set_auto_indent", setAutoIndentAP},
     {"set_wrap_text", setWrapTextAP},
     {"set_wrap_margin", setWrapMarginAP},
+    {"set_show_right_margin", setShowMarginAP},
     {"set_highlight_syntax", setHighlightSyntaxAP},
     {"set_make_backup_copy", setMakeBackupCopyAP},
     {"set_incremental_backup", setIncrementalBackupAP},
@@ -989,6 +994,13 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     window->highlightCursorLineDefItem = createMenuToggle(subPane,
           "highlightCursorLine", "Highlight Cursor Line", 'e', highlightCursorLineDefCB,
           window, GetPrefHighlightCursorLine(), FULL);
+#ifdef ENABLE_RIGHT_MARGIN
+    window->showRightMarginDefItem = createMenuToggle(subPane,
+          "showRightMargin", "Show Right Margin", '\0', showRightMarginDefCB,
+          window, GetPrefShowRightMargin(), FULL);
+    createMenuItem(subPane, "rightMargin", "Right Margin...", '\0',
+    	    rightMarginCB, NULL, FULL);
+#endif
     window->indentRainbowDefItem = createMenuToggle(subPane,
           "indentRainbow", "Indent Rainbow", 'R', indentRainbowDefCB,
           window, GetPrefIndentRainbow(), FULL);
@@ -1150,6 +1162,13 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     createMenuSeparator(subPane, "sep1", SHORT);
     createMenuItem(subPane, "wrapMargin", "Wrap Margin...", 'W',
     	    wrapMarginCB, window, SHORT);
+#ifdef ENABLE_RIGHT_MARGIN
+    window->showRightMarginItem = createMenuToggle(menuPane,
+          "showRightMargin", "Show Right Margin", '\0', doActionCB,
+          "set_show_right_margin", GetPrefShowRightMargin(), FULL);
+    createMenuItem(menuPane, "rightMargin", "Right Margin...", '\0',
+    	    rightMarginCB, window, FULL);
+#endif
     createMenuItem(menuPane, "tabs", "Tab Stops...", 'T', tabsCB, window, SHORT);
     createMenuItem(menuPane, "textFont", "Text Fonts...", 'F', fontCB, window,
     	    FULL);
@@ -2132,6 +2151,22 @@ static void highlightCursorLineDefCB(Widget w, WindowInfo *window, caddr_t callD
     	if (IsTopDocument(win))
 	    XmToggleButtonSetState(win->highlightCursorLineDefItem, state, False);
     }
+}
+
+static void showRightMarginDefCB(Widget w, WindowInfo *window, caddr_t callData) {
+    WindowInfo *win;
+    int state = XmToggleButtonGetState(w);
+
+    /* Set the preference and make the other windows' menus agree */
+    SetPrefShowRightMargin(state);
+    for (win=WindowList; win!=NULL; win=win->next) {
+    	if (IsTopDocument(win))
+	    XmToggleButtonSetState(win->showRightMarginDefItem, state, False);
+    }
+}
+
+static void rightMarginCB(Widget w, WindowInfo *window, caddr_t callData) {
+    RightMarginDialog(WidgetToWindow(w)->shell, window);
 }
 
 static void indentRainbowDefCB(Widget w, WindowInfo *window, caddr_t callData)
@@ -4336,6 +4371,19 @@ static void setWrapMarginAP(Widget w, XEvent *event, String *args,
     else {
         fprintf(stderr, "xnedit: set_wrap_margin requires argument\n");
     }
+}
+
+static void setShowMarginAP(Widget w, XEvent *event, String *args,
+    Cardinal *nArgs)
+{
+    WindowInfo *window = WidgetToWindow(w);
+    Boolean newState;
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->showRightMargin, "set_show_right_margin");
+    
+    if (IsTopDocument(window))
+    	XmToggleButtonSetState(window->showRightMarginItem, newState, False);
+    
+    SetShowRightMargin(window, newState);
 }
 
 static void setHighlightSyntaxAP(Widget w, XEvent *event, String *args,

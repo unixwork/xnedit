@@ -178,6 +178,7 @@ char *GetPrefBGMenuBtn(void);
 void RowColumnPrefDialog(Widget parent);
 void TabsPrefDialog(Widget parent, WindowInfo *forWindow);
 void WrapMarginDialog(Widget parent, WindowInfo *forWindow);
+void RightMarginDialog(Widget parent, WindowInfo *forWindow);
 int GetPrefMapDelete(void);
 int GetPrefStdOpenDialog(void);
 char *GetPrefDelimiters(void);

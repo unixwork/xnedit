@@ -343,7 +343,7 @@ static Pixmap closeTabPixmap = 0;
 WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
 {
     Widget winShell, mainWin, menuBar, pane, text, stats, statsAreaForm;
-    Widget closeTabBtn, tabForm, form;
+    Widget closeTabBtn, tabForm;
     WindowInfo *window;
     Pixel bgpix, fgpix;
     Arg al[20];
@@ -438,6 +438,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showISearchLine = GetPrefISearchLine();
     window->showLineNumbers = GetPrefLineNums();
     window->showInfoBar = False;
+    window->showRightMargin = GetPrefShowRightMargin();
     window->highlightSyntax = GetPrefHighlightSyntax();
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
@@ -689,7 +690,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     /* create an unmanaged composite widget to get the folder
        widget to hide the 3D shadow for the manager area.
        Note: this works only on the patched XmLFolder widget */
-    form = XtVaCreateWidget("form",
+    (void)XtVaCreateWidget("form",
         xmFormWidgetClass, window->tabBar,
         XmNheight, 1,
         XmNresizable, False,
@@ -6000,6 +6001,23 @@ void SetZoom(WindowInfo *window, int step)
     NEditFree(italic);
     NEditFree(bold);
     NEditFree(bolditalic);
+}
+
+void SetShowRightMargin(WindowInfo *window, Boolean state)
+{
+    window->showRightMargin = state;
+    
+    XtVaSetValues(
+            window->textArea,
+            textNshowRightMargin, state,
+            NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(
+                window->textPanes[i],
+                window->textArea,
+                textNshowRightMargin, state,
+                NULL);
+    }
 }
 
 /*

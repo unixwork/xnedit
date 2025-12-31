@@ -1393,7 +1393,8 @@ static Boolean setValues(TextWidget current, TextWidget request,
     if(new->text.rightMargin != current->text.rightMargin 
        || new->text.showRightMargin != current->text.showRightMargin)
     {
-        TextDSetRightMargin(new->text.textD, new->text.rightMargin);
+        int rightMargin = new->text.showRightMargin ? new->text.rightMargin : 0;
+        TextDSetRightMargin(new->text.textD, rightMargin);
         redraw = True;
     }
     

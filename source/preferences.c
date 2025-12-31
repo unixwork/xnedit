@@ -3439,6 +3439,10 @@ static void wrapWindowCB(Widget w, XtPointer clientData, XtPointer callData)
     XtSetSensitive(WrapText, !wrapAtWindow);
 }
 
+void RightMarginDialog(Widget parent, WindowInfo *forWindow) {
+    // TODO
+}
+
 /*
 **  Create and show a dialog for selecting the shell
 */

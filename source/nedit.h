@@ -416,11 +416,13 @@ typedef struct _WindowInfo {
     Widget	highlightOffDefItem;
     Widget	highlightDefItem;
     Widget      highlightCursorLineItem;
+    Widget      showRightMarginItem;
     Widget	indentRainbowItem;
     Widget      ansiColorsItem;
     Widget	backlightCharsItem;
     Widget	backlightCharsDefItem;
     Widget      highlightCursorLineDefItem;
+    Widget      showRightMarginDefItem;
     Widget      indentRainbowDefItem;
     Widget      ansiColorsDefItem;
     Widget	searchDlogsDefItem;
@@ -560,6 +562,7 @@ typedef struct _WindowInfo {
     Boolean 	showISearchLine;    	/* is incr. search line to be shown */
     Boolean 	showLineNumbers;    	/* is the line number display shown */
     Boolean     showInfoBar;            /* is the infobar shown */
+    Boolean     showRightMargin;        /* show right margin line */
     Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
     Boolean	backlightChars;		/* is char backlighting turned on? */
     Boolean     highlightCursorLine;    /* is cursor line highlighting on? */
