@@ -578,6 +578,7 @@ typedef struct _WindowInfo {
     					   and shell command executing modes */
     Boolean	ignoreModify;		/* ignore modifications to text area */
     Boolean	windowMenuValid;	/* is window menu up to date? */
+    int         rightMargin;            /* number of columns for right margin */
     int		rHistIndex, fHistIndex;	/* history placeholders for */
     int     	iSearchHistIndex;	/*   find and replace dialogs */
     int     	iSearchStartPos;    	/* start pos. of current incr. search */

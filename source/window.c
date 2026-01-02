@@ -439,6 +439,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->showLineNumbers = GetPrefLineNums();
     window->showInfoBar = False;
     window->showRightMargin = GetPrefShowRightMargin();
+    window->rightMargin = GetPrefRightMargin();
     window->highlightSyntax = GetPrefHighlightSyntax();
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->indentRainbow = GetPrefIndentRainbow();
@@ -4094,6 +4095,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->matchSyntaxBased = GetPrefMatchSyntaxBased();
     window->highlightSyntax = GetPrefHighlightSyntax();
     window->highlightCursorLine = GetPrefHighlightCursorLine();
+    window->showRightMargin = GetPrefShowRightMargin();
+    window->rightMargin = GetPrefRightMargin();
     window->indentRainbow = GetPrefIndentRainbow();
     window->indentRainbowColors = NEditStrdup(GetPrefIndentRainbowColors());
     window->ansiColors = GetPrefAnsiColors();
@@ -6016,6 +6019,22 @@ void SetShowRightMargin(WindowInfo *window, Boolean state)
                 window->textPanes[i],
                 window->textArea,
                 textNshowRightMargin, state,
+                NULL);
+    }
+}
+
+void SetRightMargin(WindowInfo *window, int columns) {
+    window->rightMargin = columns;
+    
+    XtVaSetValues(
+            window->textArea,
+            textNrightMargin, columns,
+            NULL);
+    for (int i=0; i<window->nPanes; i++) {
+        XtVaSetValues(
+                window->textPanes[i],
+                window->textArea,
+                textNrightMargin, columns,
                 NULL);
     }
 }

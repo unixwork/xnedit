@@ -3439,8 +3439,79 @@ static void wrapWindowCB(Widget w, XtPointer clientData, XtPointer callData)
     XtSetSensitive(WrapText, !wrapAtWindow);
 }
 
+typedef struct rightMarginDialog {
+    Widget dialog;
+    Widget text;
+    WindowInfo *window;
+} rightMarginDialog;
+
+static rightMarginDialog rmarginDialog;
+
+static void rightMarginOK(Widget w, XtPointer clientData, XtPointer callData) {
+    char *str = XmTextFieldGetString(rmarginDialog.text);
+    int err = 1;
+    if(str && strlen(str) > 0) {
+        char *end = NULL;
+        int value = (int)strtol(str, &end, 10);
+        if(*end == '\0') {
+            if(value < 0 || value > 32767) {
+                DialogF(DF_WARN, w, 1, "Right Margin",
+                        "Right Margin out of range", "OK");
+                return;
+            }
+            if(rmarginDialog.window) {
+                SetRightMargin(rmarginDialog.window, value);
+            } else {
+                SetPrefRightMargin(value);
+            }
+            err = 0;
+        }
+    }
+    if(err) {
+        DialogF(DF_WARN, w, 1, "Right Margin",
+                "Invalid value", "OK");
+        return;
+    }
+    XtFree(str);
+    
+    
+    XtDestroyWidget(rmarginDialog.dialog);
+}
+
+static void rightMarginCancel(Widget w, XtPointer clientData, XtPointer callData) {
+    XtDestroyWidget(rmarginDialog.dialog);
+}
+
+static void rightMarginHelp(Widget w, XtPointer clientData, XtPointer callData) {
+    
+}
+
 void RightMarginDialog(Widget parent, WindowInfo *forWindow) {
-    // TODO
+    Arg args[16];
+    int n = 0;
+    
+    char buf[16];
+    snprintf(buf, 16, "%d", forWindow ? forWindow->rightMargin : GetPrefRightMargin());
+    
+    XmString s1 = XmStringCreateLocalized("Right Margin (columns)");
+    XmString s2 = XmStringCreateSimple(buf);
+    
+    XtSetArg(args[n], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL); n++;
+    XtSetArg(args[n], XmNautoUnmanage, False); n++;
+    XtSetArg(args[n], XmNselectionLabelString, s1); n++;
+    XtSetArg(args[n], XmNtextString, s2); n++;
+    XtSetArg(args[n], XmNtitle, "Right Margin"); n++;
+    Widget dialog = CreatePromptDialog(parent, "rightMargin", args, n);
+    
+    XtAddCallback(dialog, XmNokCallback, (XtCallbackProc)rightMarginOK, NULL);
+    XtAddCallback(dialog, XmNcancelCallback, (XtCallbackProc)rightMarginCancel,NULL);
+    XtAddCallback(dialog, XmNhelpCallback, (XtCallbackProc)rightMarginHelp,NULL);
+    
+    rmarginDialog.dialog = dialog;
+    rmarginDialog.text = XmSelectionBoxGetChild(dialog, XmDIALOG_TEXT);
+    rmarginDialog.window = forWindow;
+    
+    ManageDialogCenteredOnPointer(dialog);
 }
 
 /*

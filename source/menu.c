@@ -2166,6 +2166,7 @@ static void showRightMarginDefCB(Widget w, WindowInfo *window, caddr_t callData)
 }
 
 static void rightMarginCB(Widget w, WindowInfo *window, caddr_t callData) {
+    window = WidgetToWindow(MENU_WIDGET(w));
     RightMarginDialog(WidgetToWindow(w)->shell, window);
 }
 
