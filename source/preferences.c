@@ -973,8 +973,8 @@ static PrefDescripRec PrefDescrip[] = {
       &PrefData.ansiColors, NULL, True},
 #ifndef DISABLE_COLORPROFILES
     {"colorProfiles", "ColorProfiles", PREF_ALLOC_STRING, 
-            "light:colors:{black;#f5f5f5;black;rgb:cc/cc/cc;white;red;black;#eff0f1;black;rgb:ee/ee/ee},ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},styles:{0},wm:{0},res:{light}\n\
-            dark:colors:{white;#161616;white;rgb:cc/cc/cc;black;red;#a8a8a8;#313131;white;#4f4f4f},ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},rainbow:{#06182a;#02210e;#192709;#2d1505;#210423;#070a2d},styles:{1},wm:{0},res:{dark}",
+            "light:colors:{black;#f5f5f5;#e4e4e4;black;#cccccc;white;red;black;#eff0f1;black;#eeeeee;#b0b0b0},ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},rainbow:{#f0f8ff;#f0fff6;#f8fff0;#fff6f0;#fef0ff;#f0f1ff},styles:{0},wm:{0},res:{light}\n\
+            dark:colors:{white;#161616;#242424;white;#cccccc;black;red;#a8a8a8;#313131;white;#4f4f4f;#6c6c6c},ansi:{#000000;#800000;#008000;#808000;#000080;#800080;#008080;#c0c0c0;#808080;#ff0000;#00ff00;#ffff00;#0000ff;#ff00ff;#00ffff;#ffffff},rainbow:{#06182a;#02210e;#192709;#2d1505;#210423;#070a2d},styles:{1},wm:{0},res:{dark}",
         &TempStringPrefs.colorProfiles, NULL, True},
     {"defaultColorProfile", "DefaultColorProfile", PREF_ALLOC_STRING, "default",
         &PrefData.defaultColorProfile, NULL, True},
@@ -8618,7 +8618,7 @@ static ColorProfile* ParseColorProfile(const char *str, size_t len)
                 ColorList colors = ParseColorList(sectionColors, sectionColorsLen);
                 profile->textFg = NEditStrdup(colors.ncolors >= 1 ? colors.colors[0] : GetPrefColorName(TEXT_FG_COLOR));
                 profile->textBg = NEditStrdup(colors.ncolors >= 2 ? colors.colors[1] : GetPrefColorName(TEXT_BG_COLOR));
-                profile->textBg = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(TEXT_BG2_COLOR));
+                profile->textBg2 = NEditStrdup(colors.ncolors >= 3 ? colors.colors[2] : GetPrefColorName(TEXT_BG2_COLOR));
                 profile->selectFg = NEditStrdup(colors.ncolors >= 4 ? colors.colors[3] : GetPrefColorName(SELECT_FG_COLOR));
                 profile->selectBg = NEditStrdup(colors.ncolors >= 5 ? colors.colors[4] : GetPrefColorName(SELECT_BG_COLOR));
                 profile->hiliteFg = NEditStrdup(colors.ncolors >= 6 ? colors.colors[5] : GetPrefColorName(HILITE_FG_COLOR));

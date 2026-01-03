@@ -44,18 +44,18 @@
 
 /* Some default colors */
 #define NEDIT_DEFAULT_FG        "black"
-#define NEDIT_DEFAULT_TEXT_BG   "rgb:e5/e5/e5"
-#define NEDIT_DEFAULT_TEXT_BG2  "rgb:e4/e4/e4"
-#define NEDIT_DEFAULT_RBORDER   "rgb:b0/b0/b0"
+#define NEDIT_DEFAULT_TEXT_BG   "#e5e5e5"
+#define NEDIT_DEFAULT_TEXT_BG2  "#e4e4e4"
+#define NEDIT_DEFAULT_RBORDER   "#b0b0b0"
 #define NEDIT_DEFAULT_SEL_FG    "black"
-#define NEDIT_DEFAULT_SEL_BG    "rgb:cc/cc/cc"
+#define NEDIT_DEFAULT_SEL_BG    "#cccccc"
 #define NEDIT_DEFAULT_HI_FG     "white" /* These are colors for flashing */
 #define NEDIT_DEFAULT_HI_BG     "red"   /*   matching parens. */
 #define NEDIT_DEFAULT_LINENO_FG "black"
 #define NEDIT_DEFAULT_LINENO_BG "#eff0f1"
 #define NEDIT_DEFAULT_CURSOR_FG "black"
 #define NEDIT_DEFAULT_HELP_FG   "black"
-#define NEDIT_DEFAULT_HELP_BG   "rgb:cc/cc/cc"
+#define NEDIT_DEFAULT_HELP_BG   "#cccccc"
 #define NEDIT_DEFAULT_CURSOR_LINE_BG "rgb:ee/ee/ee"
 
 
