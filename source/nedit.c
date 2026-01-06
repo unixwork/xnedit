@@ -67,6 +67,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <langinfo.h>
 
 #ifndef NO_XMIM
@@ -443,9 +444,21 @@ char* GetAppName(void)
 static int retpipe[2];
 void XNEditWindowMapped(void) {
     if (BackgroundRun) {
-        close(0);
-        close(1);
-        close(2);
+        int dev_null = open("/dev/null", O_WRONLY);
+        int new_stdin[2];
+        if(dev_null >= 0 && pipe(new_stdin) == 0) {
+            close(0);
+            close(1);
+            close(2);
+            
+            dup2(new_stdin[0], STDIN_FILENO);
+            dup2(dev_null, STDOUT_FILENO);
+            dup2(dev_null, STDERR_FILENO);
+            
+            close(new_stdin[1]);
+            close(dev_null);
+        }
+        
         // Tell the parent process to return
         int ret = 0;
         write(retpipe[1], &ret, sizeof(int));

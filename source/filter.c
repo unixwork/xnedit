@@ -717,7 +717,7 @@ static void filter_command_error(XtPointer clientData, XtIntervalId *id) {
 
 static void* file_input_thread(void *data) {
     FilterIOThreadData *stream = data;
-    
+       
     int ioerror = 0;
     int io_errno = 0;
     
@@ -794,7 +794,7 @@ static void* file_output_thread(void *data) {
     return NULL;
 }
 
-static int filestream_create_pipes(FileStream *stream) {
+static int filestream_create_pipes(FileStream *stream) {  
     if(pipe(stream->pin)) {
         return 1;
     }
@@ -814,7 +814,7 @@ static FileStream* filestream_open(Widget w, FILE *f, const char *filter_cmd, in
     stream->hdrbufpos = 0;
     stream->hdrbuflen = 0;
     stream->mode = mode;
-    
+     
     if(filter_cmd) {
         if(filestream_create_pipes(stream)) {
             NEditFree(stream->filter_cmd);
@@ -823,9 +823,9 @@ static FileStream* filestream_open(Widget w, FILE *f, const char *filter_cmd, in
             fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
             return NULL;
         }
-        
+             
         pid_t child = fork();
-        if(child == 0) {
+        if(child == 0) { 
             close(STDIN_FILENO);
             close(STDOUT_FILENO);
 
@@ -833,11 +833,11 @@ static FileStream* filestream_open(Widget w, FILE *f, const char *filter_cmd, in
             // created pipes
             if(dup2(stream->pin[0], STDIN_FILENO) == -1) {
                 perror("dup2");
-                exit(1);
+                _exit(1);
             }
             if(dup2(stream->pout[1], STDOUT_FILENO) == -1) {
                 perror("dup2");
-                exit(1);
+                _exit(1);
             }
 
             close(stream->pin[1]);
@@ -848,7 +848,7 @@ static FileStream* filestream_open(Widget w, FILE *f, const char *filter_cmd, in
 
             // execlp only returns if an error occured
             fprintf(stderr, "Error starting shell: %s\n", GetPrefShell());
-            exit(1);
+            _exit(1);
         } else {
             stream->pid = child;
             
