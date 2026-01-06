@@ -37,6 +37,7 @@
 #include "menu.h"
 #include "preferences.h"
 #include "server.h"
+#include "filter.h"
 #include "../util/DialogF.h"
 #include "../util/fileUtils.h"
 #include "../util/nedit_malloc.h"
@@ -307,9 +308,10 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     if (ParseFilename(nameText, filename, pathname) != 0) {
         XBell(TheDisplay, 0);
 	return;
-    }	
+    }
+    const char *filter_name = GetFilterNameForPath(pathname, filename);
     EditExistingFile(window, filename, 
-            pathname, 0, NULL, False, NULL, GetPrefOpenInTab(), False);
+            pathname, NULL, filter_name, 0, NULL, False, NULL, GetPrefOpenInTab(), False);
 #elif defined(USE_MOTIF_GLOB)
     { char **nameList = NULL;
       int i, nFiles = 0, maxFiles = 30;
@@ -325,8 +327,9 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 	      XBell(TheDisplay, 0);
 	  }
         else {
-    	      EditExistingFile(window, filename, pathname, 0, 
-	              NULL, False, NULL, GetPrefOpenInTab(), False);
+            const char *filter_name = GetFilterNameForPath(pathname, filename);
+            EditExistingFile(window, filename, pathname, NULL, filter_name, 0, 
+                    NULL, False, NULL, GetPrefOpenInTab(), False);
 	  }
       }
       for (i=0; i<nFiles; i++) {
@@ -340,12 +343,14 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 
       glob(nameText, GLOB_NOCHECK, NULL, &globbuf);
       for (i=0; i<(int)globbuf.gl_pathc; i++) {
-	  if (ParseFilename(globbuf.gl_pathv[i], filename, pathname) != 0)
-	      XBell(TheDisplay, 0);
-	  else
-    	      EditExistingFile(GetPrefOpenInTab()? window : NULL, 
-	              filename, pathname, NULL, NULL, 0, NULL, False, NULL, 
-		      GetPrefOpenInTab(), False);
+	  if (ParseFilename(globbuf.gl_pathv[i], filename, pathname) != 0) {
+              XBell(TheDisplay, 0);
+          } else {
+            const char *filter_name = GetFilterNameForPath(pathname, filename);
+            EditExistingFile(GetPrefOpenInTab()? window : NULL, 
+                    filename, pathname, NULL, filter_name, 0, NULL, False, NULL, 
+                    GetPrefOpenInTab(), False);
+          } 
       }
       globfree(&globbuf);
     }

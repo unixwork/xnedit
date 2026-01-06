@@ -670,6 +670,20 @@ IOFilter* GetFilterForPath(const char *path) {
     return filter;
 }
 
+const char* GetFilterNameForPath(const char *path, const char *filename) {
+    /* determine filter */
+    size_t pathlen = strlen(path);
+    size_t namelen = strlen(filename);
+    char *fullpath = NEditMalloc(pathlen + namelen + 1);
+    memcpy(fullpath, path, pathlen);
+    memcpy(fullpath+pathlen, filename, namelen);
+    fullpath[pathlen+namelen] = '\0';
+    IOFilter *filter = GetFilterForPath(fullpath);
+    const char *filter_name = filter ? filter->name : NULL;
+    NEditFree(fullpath);
+    return filter_name;
+}
+
 /* ----------------------------- FileStream -----------------------------*/
 
 typedef struct FilterIOThreadData {

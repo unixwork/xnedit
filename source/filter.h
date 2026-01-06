@@ -64,6 +64,8 @@ IOFilter* GetFilterFromName(const char *name);
 
 IOFilter* GetFilterForPath(const char *path);
 
+const char* GetFilterNameForPath(const char *path, const char *filename);
+
 FileStream* filestream_open_r(Widget w, FILE *f, const char *filter_cmd);
 FileStream* filestream_open_w(Widget w, FILE *f, const char *filter_cmd);
 int filestream_reset(FileStream *stream, int pos);

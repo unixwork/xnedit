@@ -792,15 +792,7 @@ int main(int argc, char **argv)
 		}
 		
                 /* determine filter */
-                size_t pathlen = strlen(pathname);
-                size_t namelen = strlen(filename);
-                char *fullpath = NEditMalloc(pathlen + namelen + 1);
-                memcpy(fullpath, pathname, pathlen);
-                memcpy(fullpath+pathlen, filename, namelen);
-                fullpath[pathlen+namelen] = '\0';
-                IOFilter *filter = GetFilterForPath(fullpath);
-                const char *filter_name = filter ? filter->name : NULL;
-                NEditFree(fullpath);
+                const char *filter_name = GetFilterNameForPath(pathname, filename);
                 
 		/* Files are opened in background to improve opening speed
 		   by defering certain time  consuiming task such as syntax
