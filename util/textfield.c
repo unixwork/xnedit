@@ -115,7 +115,7 @@ static Boolean convertSelection(
 static void loseSelection(Widget w, Atom *type);
 
 static XtResource resources[] = {
-    {XmNtextRenderTable, XmCTextRenderTable, XmRString,sizeof(XmString),XtOffset(TextFieldWidget, textfield.renderTable), XmRString, NULL},
+    {XmNtextRenderTable, XmCTextRenderTable, XmRString,sizeof(char*),XtOffset(TextFieldWidget, textfield.renderTable), XmRString, NULL},
     {textNXftFont, textCXftFont, textTXftFont, sizeof(NFont *), XtOffset(TextFieldWidget, textfield.font), textTXftFont, &defaultFont},
     {XmNvalueChangedCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.valueChangedCB), XmRCallback, NULL},
     {XmNfocusCallback, XmCCallback, XmRCallback, sizeof(XtCallbackList), XtOffset(TextFieldWidget, textfield.focusCB), XmRCallback, NULL},
