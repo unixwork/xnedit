@@ -9352,8 +9352,8 @@ _XmLGridCellDrawValue(XmLGridCell cell,
 			XSetForeground(dpy, ds->gc, ds->background);
 					
 			_XmDrawArrow(dpy, XtWindow(w),
-						 ((XmManagerWidget)g)->manager.bottom_shadow_GC,
 						 ((XmManagerWidget)g)->manager.top_shadow_GC,
+						 ((XmManagerWidget)g)->manager.bottom_shadow_GC,
 						 ds->gc,
 						 cellRect.x + cellRect.width - arrow_size - 2,
 						 cellRect.y + (cellRect.height / 2 - arrow_size / 2),
