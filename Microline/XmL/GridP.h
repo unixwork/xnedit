@@ -442,6 +442,7 @@ typedef struct _XmLGridPart
 	Boolean colSelected;
 	XtPointer colUserData;
         Boolean colResizable;
+        Boolean arrowEtchedIn;
 
     /* xfe additions */
     /* Edit timer is used for inplace editing */

@@ -997,6 +997,13 @@ static XtResource resources[] =
 			XmRImmediate, 
 			(XtPointer) NULL
 		},
+                /* XNE Addition */
+                {
+		XmNarrowEtchedIn, XmCarrowEtchedIn,
+		XmRBoolean, sizeof(Boolean),
+		XtOffset(XmLGridWidget, grid.arrowEtchedIn),
+		XmRImmediate, (XtPointer)FALSE,
+		},
 
 		/* Row Resources */
 		{
@@ -9350,10 +9357,16 @@ _XmLGridCellDrawValue(XmLGridCell cell,
 		if (arrow_size > 0)
 			{
 			XSetForeground(dpy, ds->gc, ds->background);
-					
+			
+                        GC top_shadow_GC = ((XmManagerWidget)g)->manager.top_shadow_GC;
+                        GC bottom_shadow_GC = ((XmManagerWidget)g)->manager.bottom_shadow_GC;
+                        if(g->grid.arrowEtchedIn) {
+                            top_shadow_GC = ((XmManagerWidget)g)->manager.bottom_shadow_GC;
+                            bottom_shadow_GC = ((XmManagerWidget)g)->manager.top_shadow_GC;
+                        }
 			_XmDrawArrow(dpy, XtWindow(w),
-						 ((XmManagerWidget)g)->manager.top_shadow_GC,
-						 ((XmManagerWidget)g)->manager.bottom_shadow_GC,
+						 top_shadow_GC,
+						 bottom_shadow_GC,
 						 ds->gc,
 						 cellRect.x + cellRect.width - arrow_size - 2,
 						 cellRect.y + (cellRect.height / 2 - arrow_size / 2),

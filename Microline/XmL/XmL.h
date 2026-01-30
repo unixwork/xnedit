@@ -294,7 +294,11 @@ typedef struct
 
 #define XmNenterGridCallback "enterGridCallback"
 #define XmNleaveGridCallback "leaveGridCallback"
-
+        
+/* XNE Additions */
+#define XmNarrowEtchedIn "arrowEtchedIn"
+#define XmCarrowEtchedIn "arrowEtchedIn"
+        
 /* Grid Row/Column/Cell resources */
 
 #ifndef XmNrow
