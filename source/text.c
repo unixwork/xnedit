@@ -724,7 +724,7 @@ static XtResource resources[] = {
     {textNindentRainbow, textCindentRainbow, XmRBoolean, sizeof(Boolean),
       XtOffset(TextWidget, text.indentRainbow), XmRString, "False"},
     {textNbacklightCharTypes,textCBacklightCharTypes,XmRString,sizeof(XmString),
-      XtOffset(TextWidget, text.backlightCharTypes), XmRString, NULL},
+      XtOffset(TextWidget, text.backlightCharTypes), XmRXmString, NULL},
     {textNrows, textCRows, XmRInt,sizeof(int),
       XtOffset(TextWidget, text.rows), XmRString, "24"},
     {textNcolumns, textCColumns, XmRInt, sizeof(int),

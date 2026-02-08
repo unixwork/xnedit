@@ -5706,7 +5706,7 @@ void MoveDocumentDialog(WindowInfo *window)
     /* get the list of available shell windows, not counting
        the document to be moved */    
     nWindows = NWindows();
-    list = (XmStringTable) NEditMalloc(nWindows * sizeof(XmString *));
+    list = (XmStringTable) NEditMalloc(nWindows * sizeof(XmString));
     shellWinList = (WindowInfo **) NEditMalloc(nWindows * sizeof(WindowInfo *));
 
     for (win=WindowList; win; win=win->next) {

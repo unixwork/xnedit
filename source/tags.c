@@ -1493,7 +1493,7 @@ static Widget createSelectMenu(Widget parent, char *label, int nArgs,
     int ac;
     Arg csdargs[20];
     
-    list = (XmStringTable) NEditMalloc(nArgs * sizeof(XmString *));
+    list = (XmStringTable) NEditMalloc(nArgs * sizeof(XmString));
     for (i=0; i<nArgs; i++)
         list[i] = XmStringCreateSimple(args[i]);
     sprintf(tmpStr,"Select File With TAG: %s",tagName);
