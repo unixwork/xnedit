@@ -259,6 +259,8 @@ int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);
 void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
 	int height);
+void TextDRedisplayEdges(textDisp *textD, int width, int height,
+                         int marginWidth, int marginHeight);
 void TextDSetScroll(textDisp *textD, int topLineNum, int horizOffset);
 void TextDGetScroll(textDisp *textD, int *topLineNum, int *horizOffset);
 void TextDInsert(textDisp *textD, char *text);

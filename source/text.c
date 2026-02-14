@@ -1148,10 +1148,7 @@ static void resize(TextWidget w)
     /* if the window became shorter or narrower, there may be text left
        in the bottom or right margin area, which must be cleaned up */
     if (XtIsRealized((Widget)w)) {
-	XClearArea(XtDisplay(w), XtWindow(w), 0, height-marginHeight,
-    		width, marginHeight, False);
-	XClearArea(XtDisplay(w), XtWindow(w),width-marginWidth,
-		0, marginWidth, height, False);
+        TextDRedisplayEdges(w->text.textD, width, height, marginWidth, marginHeight);
     }
 }
 

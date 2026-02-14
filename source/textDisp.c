@@ -760,6 +760,35 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     }
 }
 
+void TextDRedisplayEdges(textDisp *textD, int width, int height,
+                         int marginWidth, int marginHeight)
+{
+    Display *dp = XtDisplay(textD->w);
+    Window w = XtWindow(textD->w);
+
+    XClearArea(dp, w, 0, height-marginHeight, width, marginHeight, False);
+    XClearArea(dp, w,width-marginWidth, 0, marginWidth, height, False);
+    
+    if(textD->rightMargin == 0) {
+        return;
+    }
+    
+    XRectangle rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.width = width;
+    rect.height = height;
+    XftDrawSetClipRectangles(textD->d, 0, 0, &rect, 1);
+    
+    // right margin line
+    XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, height-marginHeight, 1, marginHeight);
+    // right margin background bottom
+    int startPos = textD->rightMarginPos+1;
+    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, height-marginHeight, width-startPos, marginHeight);
+    // right margin background right
+    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, width-marginWidth, 0, marginWidth, height);
+}
+
 /*
 ** Refresh all of the text between buffer positions "start" and "end"
 ** not including the character at the position "end".
