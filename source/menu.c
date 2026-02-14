@@ -994,7 +994,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     window->highlightCursorLineDefItem = createMenuToggle(subPane,
           "highlightCursorLine", "Highlight Cursor Line", 'e', highlightCursorLineDefCB,
           window, GetPrefHighlightCursorLine(), FULL);
-#ifdef ENABLE_RIGHT_MARGIN
+#ifndef DISABLE_RIGHT_MARGIN
     window->showRightMarginDefItem = createMenuToggle(subPane,
           "showRightMargin", "Show Right Margin", '\0', showRightMarginDefCB,
           window, GetPrefShowRightMargin(), FULL);
@@ -1162,7 +1162,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     createMenuSeparator(subPane, "sep1", SHORT);
     createMenuItem(subPane, "wrapMargin", "Wrap Margin...", 'W',
     	    wrapMarginCB, window, SHORT);
-#ifdef ENABLE_RIGHT_MARGIN
+#ifndef DISABLE_RIGHT_MARGIN
     window->showRightMarginItem = createMenuToggle(menuPane,
           "showRightMargin", "Show Right Margin", '\0', doActionCB,
           "set_show_right_margin", GetPrefShowRightMargin(), FULL);
