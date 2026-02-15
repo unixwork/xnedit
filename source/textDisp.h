@@ -141,7 +141,8 @@ struct _textDisp {
     					   where to move the cursor, to reduce
     					   the number of redraw calls */
     int cursorStyle;			/* One of enum cursorStyles above */
-    Position marginWidth;                    /* textWidget marginWidth */
+    Position marginWidth;               /* textWidget marginWidth */
+    Position marginHeight;              /* textWidget marginHeight */
     //int cursorPreferredCol;		/* Column for vert. cursor movement */
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
@@ -237,11 +238,12 @@ struct _textDisp {
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, Position marginWidth,
-        textBuffer *buffer, NFont *font, NFont *bold, NFont *italic,
-        NFont *boldItalic, ColorProfile *colorProfile, int continuousWrap,
-        int wrapMargin, int rightMargin, XmString bgClassString,
-        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, Boolean highlightCursorLine, Boolean ansiColors);
+        Position marginHeight, textBuffer *buffer, NFont *font, NFont *bold,
+        NFont *italic, NFont *boldItalic, ColorProfile *colorProfile,
+        int continuousWrap, int wrapMargin, int rightMargin,
+        XmString bgClassString, Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Pixel lineHighlightBGPixel, Boolean indentRainbow,
+        Boolean highlightCursorLine, Boolean ansiColors);
 void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);

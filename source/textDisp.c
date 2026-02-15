@@ -192,11 +192,12 @@ static void ansiBgToColorIndex(textDisp *textD, short bg, XftColor *color);
 textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         Position left, Position top, Position width, Position height,
         Position lineNumLeft, Position lineNumWidth, Position marginWidth,
-        textBuffer *buffer, NFont *font, NFont *bold, NFont *italic,
-        NFont *boldItalic, ColorProfile *colorProfile, int continuousWrap,
-        int wrapMargin, int rightMargin, XmString bgClassString,
-        Pixel calltipFGPixel, Pixel calltipBGPixel, Pixel lineHighlightBGPixel,
-        Boolean indentRainbow, Boolean highlightCursorLine, Boolean ansiColors)
+        Position marginHeight, textBuffer *buffer, NFont *font, NFont *bold,
+        NFont *italic, NFont *boldItalic, ColorProfile *colorProfile,
+        int continuousWrap, int wrapMargin, int rightMargin,
+        XmString bgClassString, Pixel calltipFGPixel, Pixel calltipBGPixel,
+        Pixel lineHighlightBGPixel, Boolean indentRainbow,
+        Boolean highlightCursorLine, Boolean ansiColors)
 {
     textDisp *textD;
     XGCValues gcValues;
@@ -212,6 +213,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->width = width;
     textD->height = height;
     textD->marginWidth = marginWidth;
+    textD->marginHeight = marginHeight;
     textD->cursorOn = True;
     /*
     textD->cursor->cursorPos = 0;
@@ -469,6 +471,10 @@ void TextDSetColorProfile(textDisp *textD, ColorProfile *profile)
     TextDRedisplayRect(textD, textD->left, textD->top, textD->width,
                        textD->height);
     redrawLineNumbers(textD, textD->top, textD->height, True);
+    
+    Position width = textD->w->core.width;
+    Position height = textD->w->core.height;
+    TextDRedisplayEdges(textD, width, height, textD->marginWidth, textD->marginHeight);
 }
 
 void TextDSetRightMargin(textDisp *textD, int rightMargin) {
@@ -765,6 +771,10 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
 {
     Display *dp = XtDisplay(textD->w);
     Window w = XtWindow(textD->w);
+    
+    if(w == 0 || !textD->d) {
+        return;
+    }
 
     XClearArea(dp, w, 0, height-marginHeight, width, marginHeight, False);
     XClearArea(dp, w,width-marginWidth, 0, marginWidth, height, False);
@@ -781,12 +791,14 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     XftDrawSetClipRectangles(textD->d, 0, 0, &rect, 1);
     
     // right margin line
-    XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, height-marginHeight, 1, marginHeight);
+    XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, 0, 1, height);
     // right margin background bottom
     int startPos = textD->rightMarginPos+1;
     XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, height-marginHeight, width-startPos, marginHeight);
+    // right margin background top
+    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, 0, width, marginHeight);
     // right margin background right
-    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, width-marginWidth, 0, marginWidth, height);
+    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, width-marginWidth-1, 0, marginWidth+1, height);
 }
 
 /*
