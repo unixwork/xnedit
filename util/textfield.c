@@ -811,6 +811,7 @@ static void adjustselectionAP(Widget w, XEvent *event, String *args, Cardinal *n
 static void insertText(TextFieldWidget tf, char *chars, int nchars, XEvent *event) {
     if(nchars == 0) return;
     
+    size_t len = strlen(chars);
     if(tf->textfield.hasSelection) {
         int selStart, selEnd;
         tfSelectionIndex(tf, &selStart, &selEnd);
@@ -1383,7 +1384,7 @@ static int tfXToPos(TextFieldWidget tf, int x) {
 static void TFInsert(TextFieldWidget tf, const char *chars, size_t nchars) {
     // realloc buffer if needed
     if(tf->textfield.length + nchars >= tf->textfield.alloc) {
-        tf->textfield.alloc += TF_BUF_BLOCK;
+        tf->textfield.alloc += nchars > TF_BUF_BLOCK ? nchars : TF_BUF_BLOCK;
         tf->textfield.buffer = XtRealloc(tf->textfield.buffer, tf->textfield.alloc);
     }
     
