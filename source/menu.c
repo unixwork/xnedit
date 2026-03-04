@@ -964,13 +964,13 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     	    "Default Replace Scope", 'R', NULL, FULL);
     XtVaSetValues(subSubSubPane, XmNradioBehavior, True, NULL); 
     window->replScopeWinDefItem = createMenuToggle(subSubSubPane, "window",
-    	    "In Window", 'W', replaceScopeWindowCB, window,
+    	    "In Window", 'W', (menuCallbackProc)replaceScopeWindowCB, window,
     	    GetPrefReplaceDefScope() == REPL_DEF_SCOPE_WINDOW, FULL);
     window->replScopeSelDefItem = createMenuToggle(subSubSubPane, "selection",
-    	    "In Selection", 'S', replaceScopeSelectionCB, window,
+    	    "In Selection", 'S', (menuCallbackProc)replaceScopeSelectionCB, window,
     	    GetPrefReplaceDefScope() == REPL_DEF_SCOPE_SELECTION, FULL);
     window->replScopeSmartDefItem = createMenuToggle(subSubSubPane, "window",
-    	    "Smart", 'm', replaceScopeSmartCB, window,
+    	    "Smart", 'm', (menuCallbackProc)replaceScopeSmartCB, window,
     	    GetPrefReplaceDefScope() == REPL_DEF_SCOPE_SMART, FULL);
 #endif
 
