@@ -1967,6 +1967,10 @@ void SetParseColorError(int value)
     printParseColorError = value;
 }
 
+// Same as AllocXftColor2, but it does not allocate the pixel value.
+// This would be faster, but on some platforms the pixel value is required,
+// therefore this function is not used for now
+/*
 XftColor ParseXftColor(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName)
 {
     XftColor xftColor;
@@ -1984,6 +1988,7 @@ XftColor ParseXftColor(Display *display, Colormap colormap, Pixel foreground, in
     
     return xftColor;
 }
+*/
 
 /*
 ** Allocate a read-only (shareable) colormap cell for a named color, from the
@@ -1991,26 +1996,14 @@ XftColor ParseXftColor(Display *display, Colormap colormap, Pixel foreground, in
 ** the colormap is full and there's no suitable substitute, print an error on
 ** stderr, and return the widget's foreground color as a backup.
 */
-Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b)
+Pixel AllocColor2(Display *display, Colormap cMap, Pixel foreground, int depth, const char *colorName, int *r, int *g, int *b)
 {
     XColor       colorDef;
-    XColor      *allColorDefs;
-    Display     *display = XtDisplay(w);
-    Colormap     cMap;
-    Pixel        foreground, bestPixel;
+    XColor       *allColorDefs;
+    Pixel        bestPixel;
     double       small = 1.0e9;
-    int          depth;
     unsigned int ncolors;
     unsigned long i, best = 0;    /* pixel value */
-    
-    /* Get the correct colormap for compatability with the "best" visual
-       feature in 5.2.  Default visual of screen is no good here. */
-
-    XtVaGetValues(w,
-                  XtNcolormap,   &cMap,
-                  XtNdepth,      &depth,
-                  XtNforeground, &foreground,
-                  NULL);
 
     bestPixel = foreground; /* Our last fallback */
 
@@ -2098,11 +2091,41 @@ Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b)
     return bestPixel;
 }
 
+Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b) {
+    Display      *display = XtDisplay(w);
+    Colormap     cMap;
+    Pixel        foreground;
+    int          depth;
+    
+    XtVaGetValues(w,
+                  XtNcolormap,   &cMap,
+                  XtNdepth,      &depth,
+                  XtNforeground, &foreground,
+                  NULL);
+    
+    return AllocColor2(display, cMap, foreground, depth, colorName, r, g, b);
+}
+
 XftColor AllocXftColor(Widget w, const char *colorName)
 {
+    Display      *display = XtDisplay(w);
+    Colormap     cMap;
+    Pixel        foreground;
+    int          depth;
+    
+    XtVaGetValues(w,
+                  XtNcolormap,   &cMap,
+                  XtNdepth,      &depth,
+                  XtNforeground, &foreground,
+                  NULL);
+    
+    return AllocXftColor2(display, cMap, foreground, depth, colorName);
+}
+
+XftColor AllocXftColor2(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName) {
     int r, g, b;
     XftColor c;
-    c.pixel = AllocColor(w, colorName, &r, &g, &b);
+    c.pixel = AllocColor2(display, colormap, foreground, depth, colorName, &r, &g, &b);
     c.color.red = r;
     c.color.green = g;
     c.color.blue = b;

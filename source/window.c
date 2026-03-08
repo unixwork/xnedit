@@ -2486,7 +2486,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
         ColorList rainbowColors = ParseColorList(profile->rainbowColorList, strlen(profile->rainbowColorList));
         profile->rainbowColors = NEditCalloc(rainbowColors.ncolors, sizeof(XftColor));
         for(int i=0;i<rainbowColors.ncolors;i++) {
-            profile->rainbowColors[i] = ParseXftColor(display, cmap, foreground, depth, rainbowColors.colors[i]);
+            profile->rainbowColors[i] = AllocXftColor2(display, cmap, foreground, depth, rainbowColors.colors[i]);
         }
         profile->numRainbowColors = rainbowColors.ncolors;
         free(rainbowColors.colors);
@@ -2497,7 +2497,7 @@ void LoadColorProfile(Widget w, ColorProfile *profile)
         ColorList ansiColors = ParseColorList(profile->ansiColorList, strlen(profile->ansiColorList));
         profile->ansiColors = NEditCalloc(ansiColors.ncolors, sizeof(XftColor));
         for(int i=0;i<ansiColors.ncolors;i++) {
-            profile->ansiColors[i] = ParseXftColor(display, cmap, foreground, depth, ansiColors.colors[i]);
+            profile->ansiColors[i] = AllocXftColor2(display, cmap, foreground, depth, ansiColors.colors[i]);
         }
         profile->numAnsiColors = ansiColors.ncolors;
         free(ansiColors.colors);
