@@ -5113,6 +5113,13 @@ NFont *FontFromName(Display *dp, const char *name)
     return font;
 }
 
+
+/*  
+    *** BUGFIX ***
+    XftFontOpenPattern() takes ownership of the pattern whenever it returns non-zero. It can only be released when the function returns NULL.
+    https://github.com/drvptr
+    2026 Petr Derbyshev <drvpotr@gmail.com>
+*/
 XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
 {
     /* charset for char c */
@@ -5121,61 +5128,65 @@ XftFont *FontListAddFontForChar(NFont *f, FcChar32 c)
     value.type = FcTypeCharSet;
     value.u.c = charset;
     FcCharSetAddChar(charset, c);
-    if(!FcCharSetHasChar(charset, c)) {
+    if (!FcCharSetHasChar(charset, c)) {
         FcCharSetDestroy(charset);
         return f->fonts->font;
     }
-    
-    /* font lookup based on the NFont pattern */ 
+
     FcPattern *pattern = FcPatternDuplicate(f->pattern);
     FcPatternAdd(pattern, FC_CHARSET, value, 0);
     FcResult result;
-    FcPattern *match = XftFontMatch (
+    FcPattern *match = XftFontMatch(
             f->display, DefaultScreen(f->display), pattern, &result);
-    if(!match) {
+    if (!match) {
         FcPatternDestroy(pattern);
         FontAddFail(f, charset);
         return f->fonts->font;
     }
-    
+
 #ifdef EXCLUDE_FONTS
     char *name = NULL;
     FcPatternGetString(match, FC_FULLNAME, 0, (FcChar8**)&name);
-    if(name) {
-        for(int i=0;i<num_font_excludes;i++) {
-            if(!strcmp(name, font_excludes[i])) {
+    if (name) {
+        for (int i = 0; i < num_font_excludes; i++) {
+            if (!strcmp(name, font_excludes[i])) {
+                FcPatternDestroy(match);      /* bugfix: leak */
+                FcPatternDestroy(pattern);    /* bugfix: leak */
+                FontAddFail(f, charset);      /* bugfix: repeat search every time */
                 return f->fonts->font;
             }
         }
     }
 #endif
-    
-    XftFont *newFont = XftFontOpenPattern(f->display, match);   
-    if(!newFont || !FcCharSetHasChar(newFont->charset, c)) {
-        FcPatternDestroy(pattern);
+
+    XftFont *newFont = XftFontOpenPattern(f->display, match);
+    if (!newFont) {
+        /* BUGFIX: Xft did NOT take ownership of the match - we're destroying it ourselves. */
         FcPatternDestroy(match);
-        if(newFont) {
-            XftFontClose(f->display, newFont);
-        }
+        FcPatternDestroy(pattern);
         FontAddFail(f, charset);
         return f->fonts->font;
     }
-    
+    if (!FcCharSetHasChar(newFont->charset, c)) {
+        /* BUGFIX:  match already belongs to Xft (saved in newFont or destroyed
+	    inside XftFontOpenInfo). Do NOT touch it here. */
+        XftFontClose(f->display, newFont);
+        FcPatternDestroy(pattern);
+        FontAddFail(f, charset);
+        return f->fonts->font;
+    }
+
+    FcPatternDestroy(pattern);   /* bugfix: leak */
     FcCharSetDestroy(charset);
-    
+
     NFontList *newElm = NEditMalloc(sizeof(NFontList));
     newElm->font = newFont;
     newElm->next = NULL;
-    
-    NFontList *elm = f->fonts;
-    NFontList *last = NULL;
-    while(elm) {
-        last = elm;
-        elm = elm->next;
-    }
+
+    NFontList *elm = f->fonts, *last = NULL;
+    while (elm) { last = elm; elm = elm->next; }
     last->next = newElm;
-    
-    
+
     return newFont;
 }
 
