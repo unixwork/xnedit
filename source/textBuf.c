@@ -1476,11 +1476,11 @@ int BufExpandCharacter(const char *cp, int clen, int indent, char *outStr,
         
         int ulen = 1;
         unsigned char u0 = ((const unsigned char*)cp)[0];
-        if(u0 > 240) {
+        if(u0 >= 0xF0) { 
             ulen = 4;
-        } else if(u0 > 224) {
+        } else if(u0 >= 0xE0) {
             ulen = 3;
-        } else {
+        } else if(u0 >= 0xC0) {
             ulen = 2;
         }
         ulen = ulen > clen ? 1 : ulen;
@@ -3312,7 +3312,7 @@ int Utf8CharLen(const unsigned char *u)
         ulen = 4;
     } else if(u0 >= 224) {
         ulen = 3;
-    } else if(u0 > 192) {
+    } else if(u0 >= 192) {
         ulen = 2;
     }
     return ulen;
