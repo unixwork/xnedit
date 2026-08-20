@@ -2951,10 +2951,12 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
     {
-        /* draw underline */
-    	//XDrawLine(XtDisplay(textD->w), XtWindow(textD->w), gc, x,
-    	//    	y + textD->ascent, toX - 1, y + textD->ascent);
-        XftDrawRect(textD->d, fground, x, y + textD->ascent, toX - 1, 1);
+        // draw underline
+        // we cannot trust the toX arg, therefore we need to get the real
+        // width of the string
+        XGlyphInfo extents;
+        XftTextExtents32(XtDisplay(textD->w), font, string, nChars, &extents);
+        XftDrawRect(textD->d, fground, x, y + textD->ascent, extents.xOff - 1, 1);
     }
 }
 
