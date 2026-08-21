@@ -134,7 +134,7 @@ BIGGER_STRINGS=
 # libraries which are required by the X and Motif libraries.  These vary from
 # system to system, and it helps to have a working Motif program (or at least
 # an X program) as an example.
-ifeq ($(shell [ -d /opt/local/lib/X11 ] && echo 1 || echo 0), 1)
+ifeq ($(shell [ -d /opt/local/include/X11 ] && echo 1 || echo 0), 1)
     LIBS= $(LD_OPT_FLAGS) -L/opt/local/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread -framework CoreFoundation
 else
     LIBS= $(LD_OPT_FLAGS) -L`brew --prefix`/lib -lXm -lXmu -lXft -lfontconfig -lXt -lX11 -lm -lXrender -ljpeg -lpng -liconv -lpthread -framework CoreFoundation
