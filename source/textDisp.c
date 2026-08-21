@@ -2956,7 +2956,7 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         // width of the string
         XGlyphInfo extents;
         XftTextExtents32(XtDisplay(textD->w), font, string, nChars, &extents);
-        XftDrawRect(textD->d, fground, x, y + textD->ascent, extents.xOff - 1, 1);
+        XftDrawRect(textD->d, fground, x, y + textD->ascent, extents.xOff, 1);
     }
 }
 
