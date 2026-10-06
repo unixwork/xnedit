@@ -2985,7 +2985,13 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
         ///*
         int startPos = textD->rightMarginPos+1 > x ? textD->rightMarginPos+1 : x;
         int bg2width = x + width - startPos;
-        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, y, bg2width, height);
+        // If nothing needs to be cleared in the right margin area then bg2Width 
+        // will be negative (or zero); as XftDrawRect takes an unsigned int for 
+        // its width parameter we shouldn't call the function in that case (as 
+        // the value will be interpreted as a large positive value).
+        if ( bg2width > 0 ) {
+            XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, y, bg2width, height);
+        }
         //*/
     }
 }
