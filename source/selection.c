@@ -283,10 +283,11 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     	snprintf(nameText, MAXPATHLEN-1, "%s%s", includeDir, includeName);
     
     /* strip whitespace from name */
-    for (inPtr=nameText, outPtr=nameText; *inPtr!='\0'; inPtr++)
-    	if (*inPtr != ' ' && *inPtr != '\t' && *inPtr != '\n')
-    	    *outPtr++ = *inPtr;
-    *outPtr = '\0';
+    /* is there a reason for this?? */
+    //for (inPtr=nameText, outPtr=nameText; *inPtr!='\0'; inPtr++)
+    //	if (*inPtr != ' ' && *inPtr != '\t' && *inPtr != '\n')
+    //	    *outPtr++ = *inPtr;
+    //*outPtr = '\0';
 
     /* Process ~ characters in name */
     ExpandTilde(nameText);
