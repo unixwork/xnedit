@@ -1112,6 +1112,20 @@ static char *DefaultPatternSets[] = {
 };
 
 
+// Different functions handle populating the highlighting styles list when it
+// is initially loaded and when the list is changed by the user.  We can thus 
+// need to compute the MENU_COLS value in a single place outside the function
+// (or else the maths could get out of sync in the two places).
+//
+// See source/preferences.c : CreateLanguageModeMenu(...) for where the 
+// language menu is populated/updated.
+// 
+// The value of 25 for the maximum size of a column «feels right» to me in 
+// the context of the highlighting styles list (it is arbitrary though).
+int highlightPopupColumns(int numberOfStyles) {
+    return ( (int)( numberOfStyles / 25 ) ) + 1;
+}
+
 void SetColorProfileName(const char *profileName)
 {
     NEditFree(currentColorProfileName);
@@ -1602,8 +1616,18 @@ static Widget createHighlightStylesMenu(Widget parent)
     Widget menu;
     int i;
     XmString s1;
-
-    menu = CreatePulldownMenu(parent, "highlightStyles", NULL, 0);
+    
+    int n;
+    Arg args[20];
+    
+    n = 0;
+    XtSetArg(args[n], XmNpacking, XmPACK_COLUMN); n++;
+    XtSetArg(args[n], XmNorientation, XmVERTICAL); n++;
+    int MENU_COLS = highlightPopupColumns(NHighlightStyles);
+    XtSetArg(args[n], XmNnumColumns, MENU_COLS); n++;
+    XtSetArg(args[n], XmNresizeWidth, True); n++;
+    XtSetArg(args[n], XmNresizeHeight, True); n++;
+    menu = CreatePulldownMenu(parent, "highlightStyles", args, n);
     for (i=0; i<NHighlightStyles; i++) {
         XtVaCreateManagedWidget("highlightStyles", xmPushButtonWidgetClass,menu,
     	      XmNlabelString, s1=XmStringCreateSimple(HighlightStyles[i]->name),
@@ -2699,8 +2723,7 @@ void EditHighlightPatterns(WindowInfo *window)
             XmNrightPosition, 99,
             NULL);
  
-    HighlightDialog.lmPulldown = CreateLanguageModeMenu(lmForm, langModeCB,
-    	    NULL);
+    HighlightDialog.lmPulldown = CreateLanguageModeMenu(lmForm, langModeCB, NULL);
     n = 0;
     XtSetArg(args[n], XmNspacing, 0); n++;
     XtSetArg(args[n], XmNmarginWidth, 0); n++;
@@ -3146,6 +3169,12 @@ void EditHighlightPatterns(WindowInfo *window)
     XtSetArg(args[n], XmNrightAttachment, XmATTACH_WIDGET); n++;
     XtSetArg(args[n], XmNrightWidget, styleBtn); n++;
     XtSetArg(args[n], XmNsubMenuId, HighlightDialog.stylePulldown); n++;
+    XtSetArg(args[n], XmNpacking, XmPACK_COLUMN); n++;
+    XtSetArg(args[n], XmNorientation, XmVERTICAL); n++;
+    int MENU_COLS = highlightPopupColumns(NHighlightStyles);
+    XtSetArg(args[n], XmNnumColumns, MENU_COLS); n++;
+    XtSetArg(args[n], XmNresizeWidth, True); n++;
+    XtSetArg(args[n], XmNresizeHeight, True); n++;
     HighlightDialog.styleOptMenu = XmCreateOptionMenu(patternsForm,
     		"styleOptMenu", args, n);
     XtManageChild(HighlightDialog.styleOptMenu);
@@ -3211,8 +3240,16 @@ static void updateHighlightStyleMenu(void)
     oldMenu = HighlightDialog.stylePulldown;
     HighlightDialog.stylePulldown = createHighlightStylesMenu(
     	    XtParent(XtParent(oldMenu)));
+    int MENU_COLS = highlightPopupColumns(NHighlightStyles);
     XtVaSetValues(XmOptionButtonGadget(HighlightDialog.styleOptMenu),
-    	    XmNsubMenuId, HighlightDialog.stylePulldown, NULL);
+            XmNsubMenuId, HighlightDialog.stylePulldown,
+            XmNpacking, XmPACK_COLUMN,
+            XmNorientation, XmVERTICAL, 
+            XmNnumColumns, MENU_COLS, 
+            XmNresizeWidth, True, 
+            XmNresizeHeight, True, 
+            NULL
+            );
     patIndex = ManagedListSelectedIndex(HighlightDialog.managedListW);
     if (patIndex == -1)
     	setStyleMenu("Plain");
@@ -3232,12 +3269,12 @@ void UpdateLanguageModeMenu(void)
 
     if (HighlightDialog.shell == NULL)
     	return;
-
+    
     oldMenu = HighlightDialog.lmPulldown;
     HighlightDialog.lmPulldown = CreateLanguageModeMenu(
     	    XtParent(XtParent(oldMenu)), langModeCB, NULL);
     XtVaSetValues(XmOptionButtonGadget(HighlightDialog.lmOptMenu),
-    	    XmNsubMenuId, HighlightDialog.lmPulldown, NULL);
+            XmNsubMenuId, HighlightDialog.lmPulldown, NULL);
     SetLangModeMenu(HighlightDialog.lmOptMenu, HighlightDialog.langModeName);
 
     XtDestroyWidget(oldMenu);
