@@ -5732,19 +5732,19 @@ Widget CreateLanguageModeMenu(Widget parent, XtCallbackProc cbProc, void *cbArg)
     Arg args[20];
     // This function is called both when language modes are initially loaded 
     // and when the list is changed by the user.  We can thus compute the 
-    // MENU_COLS value inside the function.
+    // menuCols value inside the function.
     // 
     // See source/highlightData.c : highlightPopupColumns(...), /passim/ 
     // for where the highlighting style menu is populated/updated.
     // 
     // The value of 15 for the maximum size of a column «feels right» to me 
     // in the context of the languages list (it is arbitrary though).
-    int MENU_COLS = ( (int)( NLanguageModes / 15 ) ) + 1;
+    int menuCols = ( (int)( NLanguageModes / 15 ) ) + 1;
     
     n = 0;
     XtSetArg(args[n], XmNpacking, XmPACK_COLUMN); n++;
     XtSetArg(args[n], XmNorientation, XmVERTICAL); n++;
-    XtSetArg(args[n], XmNnumColumns, MENU_COLS); n++;
+    XtSetArg(args[n], XmNnumColumns, menuCols); n++;
     XtSetArg(args[n], XmNresizeWidth, True); n++;
     XtSetArg(args[n], XmNresizeHeight, True); n++;
     

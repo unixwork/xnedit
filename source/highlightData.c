@@ -1623,8 +1623,8 @@ static Widget createHighlightStylesMenu(Widget parent)
     n = 0;
     XtSetArg(args[n], XmNpacking, XmPACK_COLUMN); n++;
     XtSetArg(args[n], XmNorientation, XmVERTICAL); n++;
-    int MENU_COLS = highlightPopupColumns(NHighlightStyles);
-    XtSetArg(args[n], XmNnumColumns, MENU_COLS); n++;
+    int menuCols = highlightPopupColumns(NHighlightStyles);
+    XtSetArg(args[n], XmNnumColumns, menuCols); n++;
     XtSetArg(args[n], XmNresizeWidth, True); n++;
     XtSetArg(args[n], XmNresizeHeight, True); n++;
     menu = CreatePulldownMenu(parent, "highlightStyles", args, n);
@@ -3240,12 +3240,12 @@ static void updateHighlightStyleMenu(void)
     oldMenu = HighlightDialog.stylePulldown;
     HighlightDialog.stylePulldown = createHighlightStylesMenu(
     	    XtParent(XtParent(oldMenu)));
-    int MENU_COLS = highlightPopupColumns(NHighlightStyles);
+    int menuCols = highlightPopupColumns(NHighlightStyles);
     XtVaSetValues(XmOptionButtonGadget(HighlightDialog.styleOptMenu),
             XmNsubMenuId, HighlightDialog.stylePulldown,
             XmNpacking, XmPACK_COLUMN,
             XmNorientation, XmVERTICAL, 
-            XmNnumColumns, MENU_COLS, 
+            XmNnumColumns, menuCols, 
             XmNresizeWidth, True, 
             XmNresizeHeight, True, 
             NULL
