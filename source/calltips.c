@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
+*                                                                              *
 * calltips.c -- Calltip UI functions  (calltip *file* functions are in tags.c) *
-*									       *
-* Copyright (C) 2002 Nathaniel Gray					       *
-*									       *
+*                                                                              *
+* Copyright (C) 2002 Nathaniel Gray                                            *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* April, 1997								       *
-*									       *
-* Written by Mark Edel  						       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* April, 1997                                                                  *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -159,7 +159,7 @@ void TextDRedrawCalltip(textDisp *textD, int calltipID) {
 
         /* make sure tip doesn't run off right or left side of screen */
         if (abs_x + tipWidth >= screenAttr.width - CALLTIP_EDGE_GUARD)
-    	    abs_x = screenAttr.width - tipWidth - CALLTIP_EDGE_GUARD;
+            abs_x = screenAttr.width - tipWidth - CALLTIP_EDGE_GUARD;
         if (abs_x < CALLTIP_EDGE_GUARD)
             abs_x = CALLTIP_EDGE_GUARD;
 
@@ -168,7 +168,7 @@ void TextDRedrawCalltip(textDisp *textD, int calltipID) {
                 offscreenV(&screenAttr, abs_y, tipHeight)) {
             /* Maybe flipping from below to above (or vice-versa) will help */
             if (!offscreenV(&screenAttr, abs_y + flip_delta, tipHeight))
-    	        abs_y += flip_delta;
+                abs_y += flip_delta;
             /* Make sure the tip doesn't end up *totally* offscreen */
             else if (abs_y + tipHeight < 0)
                 abs_y = CALLTIP_EDGE_GUARD;

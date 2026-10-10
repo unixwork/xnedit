@@ -533,8 +533,8 @@ static void updateMenuItems(void)
     if (TagsFileList) tagStat=TRUE;
     
     for (w=WindowList; w!=NULL; w=w->next) {
-    	if (!IsTopDocument(w))
-	    continue;
+        if (!IsTopDocument(w))
+        continue;
         XtSetSensitive(w->showTipItem, tipStat || tagStat);
         XtSetSensitive(w->unloadTipsMenuItem, tipStat);
         XtSetSensitive(w->findDefItem, tagStat);
@@ -1083,7 +1083,7 @@ static int fakeRegExSearch(WindowInfo *window, char *in_buffer,
     *outPtr=0; /* Terminate searchSubs */
     
     found = SearchString(fileString, searchSubs, dir, SEARCH_REGEX, 
-      	    False, searchStartPos, startPos, endPos, NULL, NULL, NULL);
+              False, searchStartPos, startPos, endPos, NULL, NULL, NULL);
     
     if(!found && !ctagsMode) {
         /* position of the target definition could have been drifted before

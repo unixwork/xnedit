@@ -30,14 +30,14 @@
 #include "nedit.h"
 #include "../util/rbTree.h"
 
-#define STACK_SIZE 1024		/* Maximum stack size */
-#define MAX_SYM_LEN 100 	/* Max. symbol name length */
-#define MACRO_EVENT_MARKER 2 	/* Special value for the send_event field of
-    	    	    	    	   events passed to action routines.  Tells
-    	    	    	    	   them that they were called from a macro */
+#define STACK_SIZE 1024          /* Maximum stack size */
+#define MAX_SYM_LEN 100          /* Max. symbol name length */
+#define MACRO_EVENT_MARKER 2     /* Special value for the send_event field of
+                                    events passed to action routines.  Tells
+                                    them that they were called from a macro */
 
 enum symTypes {CONST_SYM, GLOBAL_SYM, LOCAL_SYM, ARG_SYM, PROC_VALUE_SYM,
-    	C_FUNCTION_SYM, MACRO_FUNCTION_SYM, ACTION_ROUTINE_SYM};
+        C_FUNCTION_SYM, MACRO_FUNCTION_SYM, ACTION_ROUTINE_SYM};
 #define N_OPS 43
 enum operations {OP_RETURN_NO_VAL, OP_RETURN, OP_PUSH_SYM, OP_DUP, OP_ADD,
     OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_NEGATE, OP_INCR, OP_DECR, OP_GT, OP_LT,
@@ -153,7 +153,7 @@ void FillLoopAddrs(Inst *breakAddr, Inst *continueAddr);
 
 /* Routines for executing programs */
 int ExecuteMacro(WindowInfo *window, Program *prog, int nArgs, DataValue *args,
-    	DataValue *result, RestartData **continuation, char **msg);
+        DataValue *result, RestartData **continuation, char **msg);
 int ContinueMacro(RestartData *continuation, DataValue *result, char **msg);
 void RunMacroAsSubrCall(Program *prog);
 void PreemptMacro(void);

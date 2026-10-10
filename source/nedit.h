@@ -61,24 +61,24 @@
 
 /* Tuning parameters */
 #define SEARCHMAX 5119          /* Maximum length of search/replace strings */
-#define MAX_SEARCH_HISTORY 100	/* Maximum length of search string history */
-#define MAX_PANES 6		/* Max # of ADDITIONAL text editing panes
-				   that can be added to a window */
+#define MAX_SEARCH_HISTORY 100  /* Maximum length of search string history */
+#define MAX_PANES 6             /* Max # of ADDITIONAL text editing panes
+                                   that can be added to a window */
 
-#define AUTOSAVE_CHAR_LIMIT 30	/* number of characters user can type before
-				   NEdit generates a new backup file */
-#define AUTOSAVE_OP_LIMIT 8	/* number of distinct editing operations user
-				   can do before NEdit gens. new backup file */
-#define MAX_FONT_LEN 100	/* maximum length for a font name */
-#define MAX_COLOR_LEN 30	/* maximum length for a color name */
-#define MAX_MARKS 36	    	/* max. # of bookmarks (one per letter & #) */
-#define MIN_LINE_NUM_COLS 4 	/* Min. # of columns in line number display */
+#define AUTOSAVE_CHAR_LIMIT 30    /* number of characters user can type before
+                   NEdit generates a new backup file */
+#define AUTOSAVE_OP_LIMIT 8    /* number of distinct editing operations user
+                   can do before NEdit gens. new backup file */
+#define MAX_FONT_LEN 100    /* maximum length for a font name */
+#define MAX_COLOR_LEN 30    /* maximum length for a color name */
+#define MAX_MARKS 36            /* max. # of bookmarks (one per letter & #) */
+#define MIN_LINE_NUM_COLS 4     /* Min. # of columns in line number display */
 #define APP_NAME GetAppName()   /* application name for loading resources */
-#define APP_CLASS "XNEdit"	/* application class for loading resources */
+#define APP_CLASS "XNEdit"    /* application class for loading resources */
 
 #ifdef SGI_CUSTOM
 #define MAX_SHORTENED_ITEMS 100   /* max. number of items excluded in short- */
-#endif	    	    	    	  /*     menus mode */
+#endif                              /*     menus mode */
 
 typedef enum {NO_AUTO_INDENT, AUTO_INDENT, SMART_INDENT} IndentStyle;
 typedef enum {NO_WRAP, NEWLINE_WRAP, CONTINUOUS_WRAP} WrapStyle;
@@ -90,21 +90,21 @@ enum virtKeyOverride { VIRT_KEY_OVERRIDE_NEVER, VIRT_KEY_OVERRIDE_AUTO,
     in preferences.c  */
 enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRUNCSUBST_IGNORE};
 
-#define NO_FLASH_STRING		"off"
-#define FLASH_DELIMIT_STRING	"delimiter"
-#define FLASH_RANGE_STRING	"range"
+#define NO_FLASH_STRING        "off"
+#define FLASH_DELIMIT_STRING    "delimiter"
+#define FLASH_RANGE_STRING    "range"
 
 #define CHARSET (XmStringCharSet)XmSTRING_DEFAULT_CHARSET
 
 #define MKSTRING(string) \
-	XmStringCreateLtoR(string, XmSTRING_DEFAULT_CHARSET)
-	
+    XmStringCreateLtoR(string, XmSTRING_DEFAULT_CHARSET)
+    
 #define SET_ONE_RSRC(widget, name, newValue) \
 { \
     static Arg args[1] = {{name, (XtArgVal)0}}; \
     args[0].value = (XtArgVal)newValue; \
     XtSetValues(widget, args, 1); \
-}	
+}    
 
 #define GET_ONE_RSRC(widget, name, valueAddr) \
 { \
@@ -159,23 +159,23 @@ enum truncSubstitution {TRUNCSUBST_SILENT, TRUNCSUBST_FAIL, TRUNCSUBST_WARN, TRU
 
 /* Record on undo list */
 typedef struct _UndoInfo {
-    struct _UndoInfo *next;		/* pointer to the next undo record */
-    int		type;
-    int		startPos;
-    int		endPos;
-    int 	oldLen;
-    char	*oldText;
+    struct _UndoInfo *next;        /* pointer to the next undo record */
+    int        type;
+    int        startPos;
+    int        endPos;
+    int     oldLen;
+    char    *oldText;
     short       numOp;                  /* Number of undo records
                                            for this operation.
                                            */
-    char	inUndo;			/* flag to indicate undo command on
-    					   this record in progress.  Redirects
-    					   SaveUndoInfo to save the next mod-
-    					   ifications on the redo list instead
-    					   of the undo list. */
-    char	restoresToSaved;	/* flag to indicate undoing this
-    	    	    	    	    	   operation will restore file to
-    	    	    	    	    	   last saved (unmodified) state */
+    char    inUndo;            /* flag to indicate undo command on
+                           this record in progress.  Redirects
+                           SaveUndoInfo to save the next mod-
+                           ifications on the redo list instead
+                           of the undo list. */
+    char    restoresToSaved;    /* flag to indicate undoing this
+                                           operation will restore file to
+                                           last saved (unmodified) state */
 } UndoInfo;
 
 /* Element in bookmark table */
@@ -293,233 +293,233 @@ typedef struct _EncError {
 */
 typedef struct _WindowInfo {
     struct _WindowInfo *next;
-    Widget	shell;			/* application shell of window */
-    Widget	mainWin;		/* main window of shell */
-    Widget	splitPane;		/* paned win. for splitting text area */
-    Widget	textArea;		/* the first text editing area widget */
-    Widget	textPanes[MAX_PANES];	/* additional ones created on demand */
-    Widget	lastFocus;		/* the last pane to have kbd. focus */
-    Widget	statsLine;		/* file stats information display */
+    Widget    shell;            /* application shell of window */
+    Widget    mainWin;        /* main window of shell */
+    Widget    splitPane;        /* paned win. for splitting text area */
+    Widget    textArea;        /* the first text editing area widget */
+    Widget    textPanes[MAX_PANES];    /* additional ones created on demand */
+    Widget    lastFocus;        /* the last pane to have kbd. focus */
+    Widget    statsLine;        /* file stats information display */
     Widget      statsLineForm;
     Widget      statsLineColNo;         /* Line/Column information display */
-    Widget  	iSearchForm;	    	/* incremental search line widgets */
-    Widget  	iSearchFindButton;
-    Widget  	iSearchText;
-    Widget  	iSearchClearButton;
-    Widget  	iSearchRegexToggle;
-    Widget  	iSearchCaseToggle;
-    Widget  	iSearchRevToggle;
+    Widget      iSearchForm;            /* incremental search line widgets */
+    Widget      iSearchFindButton;
+    Widget      iSearchText;
+    Widget      iSearchClearButton;
+    Widget      iSearchRegexToggle;
+    Widget      iSearchCaseToggle;
+    Widget      iSearchRevToggle;
     Widget      encodingInfoBar;
     Widget      encInfoBarLabel;
     Widget      encInfoErrorList;
     Widget      encInfoBarList;
     Widget      encInfoReloadButton;
-    Widget	menuBar;    	    	/* the main menu bar */
-    Widget	tabBar;			/* tab bar for tabbed window */
-    Widget	tab;			/* tab for this document */
-    Widget	replaceDlog;		/* replace dialog */
-    Widget	replaceText;		/* replace dialog settable widgets... */
-    Widget	replaceWithText;
-    Widget    	replaceCaseToggle;
-    Widget	replaceWordToggle;    
-    Widget	replaceRegexToggle;    
-    Widget	replaceRevToggle;
-    Widget	replaceKeepBtn;
-    Widget	replaceBtns;
-    Widget	replaceBtn;
-    Widget	replaceAllBtn;
+    Widget    menuBar;                /* the main menu bar */
+    Widget    tabBar;            /* tab bar for tabbed window */
+    Widget    tab;            /* tab for this document */
+    Widget    replaceDlog;        /* replace dialog */
+    Widget    replaceText;        /* replace dialog settable widgets... */
+    Widget    replaceWithText;
+    Widget        replaceCaseToggle;
+    Widget    replaceWordToggle;    
+    Widget    replaceRegexToggle;    
+    Widget    replaceRevToggle;
+    Widget    replaceKeepBtn;
+    Widget    replaceBtns;
+    Widget    replaceBtn;
+    Widget    replaceAllBtn;
 #ifndef REPLACE_SCOPE
     Widget      replaceInWinBtn;
-    Widget	replaceInSelBtn;
+    Widget    replaceInSelBtn;
 #endif
-    Widget	replaceSearchTypeBox;
-    Widget	replaceFindBtn;
-    Widget	replaceAndFindBtn;
-    Widget	findDlog;		/* find dialog */
-    Widget	findText;		/* find dialog settable widgets... */
+    Widget    replaceSearchTypeBox;
+    Widget    replaceFindBtn;
+    Widget    replaceAndFindBtn;
+    Widget    findDlog;        /* find dialog */
+    Widget    findText;        /* find dialog settable widgets... */
     Widget      findCaseToggle;
     Widget      findWordToggle;    
     Widget      findRegexToggle;    
-    Widget	findRevToggle;
-    Widget	findKeepBtn;
-    Widget	findBtns;
-    Widget	findBtn;
-    Widget	findSearchTypeBox;
-    Widget	replaceMultiFileDlog;	/* Replace in multiple files */
-    Widget	replaceMultiFileList;
-    Widget	replaceMultiFilePathBtn;
-    Widget	fontDialog;		/* NULL, unless font dialog is up */
-    void        *colorDialog;		/* NULL, unless color dialog is up, type colorDialog* */
-    Widget	readOnlyItem;		/* menu bar settable widgets... */
-    Widget	autoSaveItem;
-    Widget	saveLastItem;
+    Widget    findRevToggle;
+    Widget    findKeepBtn;
+    Widget    findBtns;
+    Widget    findBtn;
+    Widget    findSearchTypeBox;
+    Widget    replaceMultiFileDlog;    /* Replace in multiple files */
+    Widget    replaceMultiFileList;
+    Widget    replaceMultiFilePathBtn;
+    Widget    fontDialog;        /* NULL, unless font dialog is up */
+    void        *colorDialog;        /* NULL, unless color dialog is up, type colorDialog* */
+    Widget    readOnlyItem;        /* menu bar settable widgets... */
+    Widget    autoSaveItem;
+    Widget    saveLastItem;
     Widget      openSelItem;
     Widget      newOppositeItem;
-    Widget	closeItem;
-    Widget	printSelItem;
-    Widget	undoItem;
-    Widget	redoItem;
-    Widget	cutItem;
-    Widget	delItem;
-    Widget	copyItem;
-    Widget	lowerItem;
-    Widget	upperItem;
+    Widget    closeItem;
+    Widget    printSelItem;
+    Widget    undoItem;
+    Widget    redoItem;
+    Widget    cutItem;
+    Widget    delItem;
+    Widget    copyItem;
+    Widget    lowerItem;
+    Widget    upperItem;
     Widget      findSelItem;
     Widget      findAgainItem;
-    Widget	replaceFindAgainItem;
-    Widget 	replaceAgainItem;
+    Widget    replaceFindAgainItem;
+    Widget     replaceAgainItem;
     Widget      gotoSelItem;
     Widget      colorProfileMenuPane;
-    Widget	langModeCascade;
-    Widget	findDefItem;
-    Widget	showTipItem;
-    Widget	autoIndentOffItem;
-    Widget	autoIndentItem;
-    Widget	smartIndentItem;
-    Widget  	noWrapItem;
-    Widget  	newlineWrapItem;
-    Widget  	continuousWrapItem;
-    Widget	statsLineItem;
-    Widget	iSearchLineItem;
-    Widget	lineNumsItem;
-    Widget	showMatchingOffItem;
-    Widget	showMatchingDelimitItem;
-    Widget	showMatchingRangeItem;
-    Widget	matchSyntaxBasedItem;
-    Widget	overtypeModeItem;
+    Widget    langModeCascade;
+    Widget    findDefItem;
+    Widget    showTipItem;
+    Widget    autoIndentOffItem;
+    Widget    autoIndentItem;
+    Widget    smartIndentItem;
+    Widget      noWrapItem;
+    Widget      newlineWrapItem;
+    Widget      continuousWrapItem;
+    Widget    statsLineItem;
+    Widget    iSearchLineItem;
+    Widget    lineNumsItem;
+    Widget    showMatchingOffItem;
+    Widget    showMatchingDelimitItem;
+    Widget    showMatchingRangeItem;
+    Widget    matchSyntaxBasedItem;
+    Widget    overtypeModeItem;
     Widget      resetZoomItem;
-    Widget	highlightItem;
-    Widget	windowMenuPane;
-    Widget	shellMenuPane;
-    Widget	macroMenuPane;
-    Widget  	bgMenuPane;
-    Widget  	tabMenuPane;
-    Widget  	prevOpenMenuPane;
-    Widget  	prevOpenMenuItem;
-    Widget  	unloadTagsMenuPane;
-    Widget  	unloadTagsMenuItem;
-    Widget  	unloadTipsMenuPane;
-    Widget  	unloadTipsMenuItem;
-    Widget	filterItem;
-    Widget	autoIndentOffDefItem;
-    Widget	autoIndentDefItem;
-    Widget	smartIndentDefItem;
-    Widget	autoSaveDefItem;
-    Widget	saveLastDefItem;
-    Widget	noWrapDefItem;
-    Widget	newlineWrapDefItem;
-    Widget	contWrapDefItem;
-    Widget	showMatchingOffDefItem;
-    Widget	showMatchingDelimitDefItem;
-    Widget	showMatchingRangeDefItem;
-    Widget	matchSyntaxBasedDefItem;
-    Widget	highlightOffDefItem;
-    Widget	highlightDefItem;
+    Widget    highlightItem;
+    Widget    windowMenuPane;
+    Widget    shellMenuPane;
+    Widget    macroMenuPane;
+    Widget      bgMenuPane;
+    Widget      tabMenuPane;
+    Widget      prevOpenMenuPane;
+    Widget      prevOpenMenuItem;
+    Widget      unloadTagsMenuPane;
+    Widget      unloadTagsMenuItem;
+    Widget      unloadTipsMenuPane;
+    Widget      unloadTipsMenuItem;
+    Widget    filterItem;
+    Widget    autoIndentOffDefItem;
+    Widget    autoIndentDefItem;
+    Widget    smartIndentDefItem;
+    Widget    autoSaveDefItem;
+    Widget    saveLastDefItem;
+    Widget    noWrapDefItem;
+    Widget    newlineWrapDefItem;
+    Widget    contWrapDefItem;
+    Widget    showMatchingOffDefItem;
+    Widget    showMatchingDelimitDefItem;
+    Widget    showMatchingRangeDefItem;
+    Widget    matchSyntaxBasedDefItem;
+    Widget    highlightOffDefItem;
+    Widget    highlightDefItem;
     Widget      highlightCursorLineItem;
     Widget      showRightMarginItem;
-    Widget	indentRainbowItem;
+    Widget    indentRainbowItem;
     Widget      ansiColorsItem;
-    Widget	backlightCharsItem;
-    Widget	backlightCharsDefItem;
+    Widget    backlightCharsItem;
+    Widget    backlightCharsDefItem;
     Widget      highlightCursorLineDefItem;
     Widget      showRightMarginDefItem;
     Widget      indentRainbowDefItem;
     Widget      ansiColorsDefItem;
-    Widget	searchDlogsDefItem;
+    Widget    searchDlogsDefItem;
     Widget      beepOnSearchWrapDefItem;
-    Widget	keepSearchDlogsDefItem;
+    Widget    keepSearchDlogsDefItem;
     Widget      saveSearchHistoryDefItem;
-    Widget	searchWrapsDefItem;
+    Widget    searchWrapsDefItem;
     Widget      appendLFItem;
-    Widget	sortOpenPrevDefItem;
-    Widget	allTagsDefItem;
-    Widget	smartTagsDefItem;
-    Widget	reposDlogsDefItem;
+    Widget    sortOpenPrevDefItem;
+    Widget    allTagsDefItem;
+    Widget    smartTagsDefItem;
+    Widget    reposDlogsDefItem;
     Widget      autoScrollDefItem;
     Widget      editorConfigDefItem;
     Widget      lockEncodingErrorDefItem;
-    Widget	openInTabDefItem;
-    Widget	tabBarDefItem;
-    Widget	tabBarHideDefItem;
-    Widget	toolTipsDefItem;
-    Widget	tabNavigateDefItem;
+    Widget    openInTabDefItem;
+    Widget    tabBarDefItem;
+    Widget    tabBarHideDefItem;
+    Widget    toolTipsDefItem;
+    Widget    tabNavigateDefItem;
     Widget      tabSortDefItem;
-    Widget	statsLineDefItem;
-    Widget	iSearchLineDefItem;
-    Widget	lineNumsDefItem;
-    Widget	pathInWindowsMenuDefItem;
-    Widget  	modWarnDefItem;
-    Widget  	modWarnRealDefItem;
-    Widget  	exitWarnDefItem;
-    Widget	searchLiteralDefItem;
-    Widget	searchCaseSenseDefItem;
-    Widget	searchLiteralWordDefItem;
-    Widget	searchCaseSenseWordDefItem;
-    Widget	searchRegexNoCaseDefItem;
-    Widget	searchRegexDefItem;
+    Widget    statsLineDefItem;
+    Widget    iSearchLineDefItem;
+    Widget    lineNumsDefItem;
+    Widget    pathInWindowsMenuDefItem;
+    Widget      modWarnDefItem;
+    Widget      modWarnRealDefItem;
+    Widget      exitWarnDefItem;
+    Widget    searchLiteralDefItem;
+    Widget    searchCaseSenseDefItem;
+    Widget    searchLiteralWordDefItem;
+    Widget    searchCaseSenseWordDefItem;
+    Widget    searchRegexNoCaseDefItem;
+    Widget    searchRegexDefItem;
 #ifdef REPLACE_SCOPE
-    Widget	replScopeWinDefItem;
-    Widget	replScopeSelDefItem;
-    Widget	replScopeSmartDefItem;
+    Widget    replScopeWinDefItem;
+    Widget    replScopeSelDefItem;
+    Widget    replScopeSmartDefItem;
 #endif
-    Widget	size24x80DefItem;
-    Widget	size40x80DefItem;
-    Widget	size60x80DefItem;
-    Widget	size80x80DefItem;
-    Widget	sizeCustomDefItem;
-    Widget	cancelShellItem;
-    Widget	learnItem;
-    Widget	finishLearnItem;
-    Widget	cancelMacroItem;
-    Widget	replayItem;
-    Widget	repeatItem;
-    Widget	splitPaneItem;
-    Widget	closePaneItem;
-    Widget	detachDocumentItem;
-    Widget	moveDocumentItem;
-    Widget	contextMoveDocumentItem;
-    Widget	contextDetachDocumentItem;
-    Widget  	bgMenuUndoItem;
-    Widget  	bgMenuRedoItem;
+    Widget    size24x80DefItem;
+    Widget    size40x80DefItem;
+    Widget    size60x80DefItem;
+    Widget    size80x80DefItem;
+    Widget    sizeCustomDefItem;
+    Widget    cancelShellItem;
+    Widget    learnItem;
+    Widget    finishLearnItem;
+    Widget    cancelMacroItem;
+    Widget    replayItem;
+    Widget    repeatItem;
+    Widget    splitPaneItem;
+    Widget    closePaneItem;
+    Widget    detachDocumentItem;
+    Widget    moveDocumentItem;
+    Widget    contextMoveDocumentItem;
+    Widget    contextDetachDocumentItem;
+    Widget      bgMenuUndoItem;
+    Widget      bgMenuRedoItem;
 #ifdef SGI_CUSTOM
-    Widget	shortMenusDefItem;
-    Widget	toggleShortItems[MAX_SHORTENED_ITEMS]; /* Menu items to be
-    	    	    	    	    	   managed and unmanaged to toggle
-    	    	    	    	    	   short menus on and off */
-    int     	nToggleShortItems;
+    Widget    shortMenusDefItem;
+    Widget    toggleShortItems[MAX_SHORTENED_ITEMS]; /* Menu items to be
+                                           managed and unmanaged to toggle
+                                           short menus on and off */
+    int         nToggleShortItems;
 #endif
-    char	filename[MAXPATHLEN];	/* name component of file being edited*/
-    char	path[MAXPATHLEN];	/* path component of file being edited*/
+    char    filename[MAXPATHLEN];    /* name component of file being edited*/
+    char    path[MAXPATHLEN];    /* path component of file being edited*/
     char        encoding[MAX_ENCODING_LENGTH];
     char        *filter;                /* io filter name */
     Boolean     bom;                    /* content starts with BOM */
-    unsigned	fileMode;		/* permissions of file being edited */
-    uid_t	fileUid; 		/* last recorded user id of the file */
-    gid_t	fileGid;		/* last recorded group id of the file */
-    int     	fileFormat; 	    	/* whether to save the file straight
-    	    	    	    	    	   (Unix format), or convert it to
-					   MS DOS style with \r\n line breaks */
-    time_t    	lastModTime; 	    	/* time of last modification to file */
+    unsigned    fileMode;        /* permissions of file being edited */
+    uid_t    fileUid;         /* last recorded user id of the file */
+    gid_t    fileGid;        /* last recorded group id of the file */
+    int         fileFormat;             /* whether to save the file straight
+                                           (Unix format), or convert it to
+                       MS DOS style with \r\n line breaks */
+    time_t        lastModTime;             /* time of last modification to file */
     dev_t       device;                 /*  device where the file resides */
     ino_t       inode;                  /*  file's inode  */
-    UndoInfo	*undo;			/* info for undoing last operation */
-    UndoInfo	*redo;			/* info for redoing last undone op */
+    UndoInfo    *undo;            /* info for undoing last operation */
+    UndoInfo    *redo;            /* info for redoing last undone op */
     UndoInfo    *undo_batch_begin;      /* last undo item at batch-begin */
     int         undo_batch_count;       /* undo items per batch */
     int         undo_op_batch_size;     /* batch size of undo operation */
-    textBuffer	*buffer;		/* holds the text being edited */
-    int		nPanes;			/* number of additional text editing
-    					   areas, created by splitWindow */
-    int		autoSaveCharCount;	/* count of single characters typed
-    					   since last backup file generated */
-    int		autoSaveOpCount;	/* count of editing operations "" */
-    int		undoOpCount;		/* count of stored undo operations */
-    int		undoMemUsed;		/* amount of memory (in bytes)
-    					   dedicated to the undo list */
-    char	fontName[MAX_FONT_LEN];	/* names of the text fonts in use */
-    char	italicFontName[MAX_FONT_LEN];
-    char	boldFontName[MAX_FONT_LEN];
-    char	boldItalicFontName[MAX_FONT_LEN];
+    textBuffer    *buffer;        /* holds the text being edited */
+    int        nPanes;            /* number of additional text editing
+                           areas, created by splitWindow */
+    int        autoSaveCharCount;    /* count of single characters typed
+                           since last backup file generated */
+    int        autoSaveOpCount;    /* count of editing operations "" */
+    int        undoOpCount;        /* count of stored undo operations */
+    int        undoMemUsed;        /* amount of memory (in bytes)
+                           dedicated to the undo list */
+    char    fontName[MAX_FONT_LEN];    /* names of the text fonts in use */
+    char    italicFontName[MAX_FONT_LEN];
+    char    boldFontName[MAX_FONT_LEN];
+    char    boldItalicFontName[MAX_FONT_LEN];
     
     int         zoom;
     
@@ -537,87 +537,87 @@ typedef struct _WindowInfo {
     size_t      posEncErrors;
     Boolean     encErrorsOnSave;
        
-    XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
-    					   of highlighted matching paren.  Non-
-    					   zero val. means highlight is drawn */
-    int		flashPos;		/* position saved for erasing matching
-    					   paren highlight (if one is drawn) */
-    int 	wasSelected;		/* last selection state (for dim/undim
-    					   of selection related menu items */
-    Boolean	filenameSet;		/* is the window still "Untitled"? */ 
-    Boolean	fileChanged;		/* has window been modified? */
+    XtIntervalId flashTimeoutID;    /* timer procedure id for getting rid
+                           of highlighted matching paren.  Non-
+                           zero val. means highlight is drawn */
+    int        flashPos;        /* position saved for erasing matching
+                           paren highlight (if one is drawn) */
+    int     wasSelected;        /* last selection state (for dim/undim
+                           of selection related menu items */
+    Boolean    filenameSet;        /* is the window still "Untitled"? */ 
+    Boolean    fileChanged;        /* has window been modified? */
     Boolean     fileMissing;            /* is the window's file gone? */
     int         lockReasons;            /* all ways a file can be locked */
-    Boolean	autoSave;		/* is autosave turned on? */
-    Boolean	saveOldVersion;		/* keep old version in filename.bck */
-    IndentStyle	indentStyle;		/* whether/how to auto indent */
-    WrapStyle	wrapMode;		/* line wrap style: NO_WRAP,
-    	    	    	    	    	   NEWLINE_WRAP or CONTINUOUS_WRAP */
-    Boolean	overstrike;		/* is overstrike mode turned on ? */
+    Boolean    autoSave;        /* is autosave turned on? */
+    Boolean    saveOldVersion;        /* keep old version in filename.bck */
+    IndentStyle    indentStyle;        /* whether/how to auto indent */
+    WrapStyle    wrapMode;        /* line wrap style: NO_WRAP,
+                                           NEWLINE_WRAP or CONTINUOUS_WRAP */
+    Boolean    overstrike;        /* is overstrike mode turned on ? */
     ShowMatchingStyle showMatchingStyle;/* How to show matching parens:
-					   NO_FLASH, FLASH_DELIMIT, or
-					   FLASH_RANGE */
-    char	matchSyntaxBased;	/* Use syntax info to show matching */
-    Boolean	showStats;		/* is stats line supposed to be shown */
-    Boolean 	showISearchLine;    	/* is incr. search line to be shown */
-    Boolean 	showLineNumbers;    	/* is the line number display shown */
+                       NO_FLASH, FLASH_DELIMIT, or
+                       FLASH_RANGE */
+    char    matchSyntaxBased;    /* Use syntax info to show matching */
+    Boolean    showStats;        /* is stats line supposed to be shown */
+    Boolean     showISearchLine;        /* is incr. search line to be shown */
+    Boolean     showLineNumbers;        /* is the line number display shown */
     Boolean     showInfoBar;            /* is the infobar shown */
     Boolean     showRightMargin;        /* show right margin line */
-    Boolean	highlightSyntax;	/* is syntax highlighting turned on? */
-    Boolean	backlightChars;		/* is char backlighting turned on? */
+    Boolean    highlightSyntax;    /* is syntax highlighting turned on? */
+    Boolean    backlightChars;        /* is char backlighting turned on? */
     Boolean     highlightCursorLine;    /* is cursor line highlighting on? */
-    char	*backlightCharTypes;	/* what backlighting to use */
+    char    *backlightCharTypes;    /* what backlighting to use */
     Boolean     indentRainbow;          /* is indentation highlight turned onß*/
     char        *indentRainbowColors;   /* indent rainbow color lists */
     Boolean     ansiColors;             /* is ansi coloring enabled? */
     XftColor    ansiColorList[16];      /* 16 ANSI Colors */
     
-    Boolean	modeMessageDisplayed;	/* special stats line banner for learn
-    					   and shell command executing modes */
-    char	*modeMessage;		/* stats line banner content for learn
-    					   and shell command executing modes */
-    Boolean	ignoreModify;		/* ignore modifications to text area */
-    Boolean	windowMenuValid;	/* is window menu up to date? */
+    Boolean    modeMessageDisplayed;    /* special stats line banner for learn
+                           and shell command executing modes */
+    char    *modeMessage;        /* stats line banner content for learn
+                           and shell command executing modes */
+    Boolean    ignoreModify;        /* ignore modifications to text area */
+    Boolean    windowMenuValid;    /* is window menu up to date? */
     int         rightMargin;            /* number of columns for right margin */
-    int		rHistIndex, fHistIndex;	/* history placeholders for */
-    int     	iSearchHistIndex;	/*   find and replace dialogs */
-    int     	iSearchStartPos;    	/* start pos. of current incr. search */
-    int       	iSearchLastBeginPos;    /* beg. pos. last match of current i.s.*/
-    int     	nMarks;     	    	/* number of active bookmarks */
-    XtIntervalId markTimeoutID;	    	/* backup timer for mark event handler*/
-    Bookmark	markTable[MAX_MARKS];	/* marked locations in window */
-    void    	*highlightData; 	/* info for syntax highlighting */
-    void    	*shellCmdData;  	/* when a shell command is executing,
-    	    	    	    	    	   info. about it, otherwise, NULL */
-    void    	*macroCmdData;  	/* same for macro commands */
+    int        rHistIndex, fHistIndex;    /* history placeholders for */
+    int         iSearchHistIndex;    /*   find and replace dialogs */
+    int         iSearchStartPos;        /* start pos. of current incr. search */
+    int           iSearchLastBeginPos;    /* beg. pos. last match of current i.s.*/
+    int         nMarks;                 /* number of active bookmarks */
+    XtIntervalId markTimeoutID;            /* backup timer for mark event handler*/
+    Bookmark    markTable[MAX_MARKS];    /* marked locations in window */
+    void        *highlightData;     /* info for syntax highlighting */
+    void        *shellCmdData;      /* when a shell command is executing,
+                                           info. about it, otherwise, NULL */
+    void        *macroCmdData;      /* same for macro commands */
     Boolean     macroBlocking;          /* blocking macro command running */
-    void    	*smartIndentData;   	/* compiled macros for smart indent */
-    Atom	fileClosedAtom;         /* Atom used to tell nc that the file is closed */
-    int    	languageMode;	    	/* identifies language mode currently
-    	    	    	    	    	   selected in the window */
-    Boolean	multiFileReplSelected;	/* selected during last multi-window 
-					   replacement operation (history) */
-    struct _WindowInfo**		/* temporary list of writable windows */
-		writableWindows;	/* used during multi-file replacements */
-    int		nWritableWindows;	/* number of elements in the list */
-    Bool 	multiFileBusy;		/* suppresses multiple beeps/dialogs
-					   during multi-file replacements */
-    Bool 	replaceFailed;		/* flags replacements failures during
-					   multi-file replacements */
-    Bool	replaceLastRegexCase;   /* last state of the case sense button
+    void        *smartIndentData;       /* compiled macros for smart indent */
+    Atom    fileClosedAtom;         /* Atom used to tell nc that the file is closed */
+    int        languageMode;            /* identifies language mode currently
+                                           selected in the window */
+    Boolean    multiFileReplSelected;    /* selected during last multi-window 
+                       replacement operation (history) */
+    struct _WindowInfo**        /* temporary list of writable windows */
+        writableWindows;    /* used during multi-file replacements */
+    int        nWritableWindows;    /* number of elements in the list */
+    Bool     multiFileBusy;        /* suppresses multiple beeps/dialogs
+                       during multi-file replacements */
+    Bool     replaceFailed;        /* flags replacements failures during
+                       multi-file replacements */
+    Bool    replaceLastRegexCase;   /* last state of the case sense button
                                            in regex mode for replace dialog */
-    Bool	replaceLastLiteralCase; /* idem, for literal mode */
-    Bool	iSearchLastRegexCase;   /* idem, for regex mode in 
+    Bool    replaceLastLiteralCase; /* idem, for literal mode */
+    Bool    iSearchLastRegexCase;   /* idem, for regex mode in 
                                            incremental search bar */
-    Bool	iSearchLastLiteralCase; /* idem, for literal mode */
-    Bool	findLastRegexCase; 	/* idem, for regex mode in find dialog */
-    Bool	findLastLiteralCase;    /* idem, for literal mode */
+    Bool    iSearchLastLiteralCase; /* idem, for literal mode */
+    Bool    findLastRegexCase;     /* idem, for regex mode in find dialog */
+    Bool    findLastLiteralCase;    /* idem, for literal mode */
     
 #ifdef REPLACE_SCOPE
-    int		replaceScope;		/* Current scope for replace dialog */
-    Widget	replaceScopeWinToggle;	/* Scope for replace = window */
-    Widget	replaceScopeSelToggle;	/* Scope for replace = selection */
-    Widget	replaceScopeMultiToggle;/* Scope for replace = multiple files */
+    int        replaceScope;        /* Current scope for replace dialog */
+    Widget    replaceScopeWinToggle;    /* Scope for replace = window */
+    Widget    replaceScopeSelToggle;    /* Scope for replace = selection */
+    Widget    replaceScopeMultiToggle;/* Scope for replace = multiple files */
 #endif
     UserMenuCache   *userMenuCache;     /* cache user menus: */
     UserBGMenuCache  userBGMenuCache;   /* shell & macro menu are shared over all

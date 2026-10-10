@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* interpret.c -- Nirvana Editor macro interpreter			       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* interpret.c -- Nirvana Editor macro interpreter                              *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* April, 1997								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* April, 1997                                                                  *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -60,20 +60,20 @@
 #include "../debug.h"
 #endif
 
-#define PROGRAM_SIZE  4096	/* Maximum program size */
-#define MAX_ERR_MSG_LEN 256	/* Max. length for error messages */
-#define LOOP_STACK_SIZE 200	/* (Approx.) Number of break/continue stmts
-    	    	    	    	   allowed per program */
-#define INSTRUCTION_LIMIT 100 	/* Number of instructions the interpreter is
-    	    	    	    	   allowed to execute before preempting and
-    	    	    	    	   returning to allow other things to run */
+#define PROGRAM_SIZE  4096        /* Maximum program size */
+#define MAX_ERR_MSG_LEN 256       /* Max. length for error messages */
+#define LOOP_STACK_SIZE 200       /* (Approx.) Number of break/continue stmts
+                                     allowed per program */
+#define INSTRUCTION_LIMIT 100     /* Number of instructions the interpreter is
+                                     allowed to execute before preempting and
+                                     returning to allow other things to run */
 
 /* Temporary markers placed in a branch address location to designate
    which loop address (break or continue) the location needs */
 #define NEEDS_BREAK 1
 #define NEEDS_CONTINUE 2
 
-#define N_ARGS_ARG_SYM -1   	/* special arg number meaning $n_args value */
+#define N_ARGS_ARG_SYM -1       /* special arg number meaning $n_args value */
 
 enum opStatusCodes {STAT_OK=2, STAT_DONE, STAT_ERROR, STAT_PREEMPT};
 
@@ -164,7 +164,7 @@ static Symbol *GlobalSymList = NULL;
 static char *AllocatedStrings = NULL;
 
 typedef struct SparseArrayEntryWrapperTag {
-    SparseArrayEntry 	data; /* LEAVE this as top entry */
+    SparseArrayEntry     data; /* LEAVE this as top entry */
     int inUse;              /* we use pointers to the data to refer to the entire struct */
     struct SparseArrayEntryWrapperTag *next;
 } SparseArrayEntryWrapper;
@@ -178,25 +178,25 @@ static const char *StackUnderflowMsg = "macro stack underflow";
 static const char *StringToNumberMsg = "string could not be converted to number";
 
 /* Temporary global data for use while accumulating programs */
-static Symbol *LocalSymList = NULL;	 /* symbols local to the program */
-static Inst Prog[PROGRAM_SIZE]; 	 /* the program */
-static Inst *ProgP;			 /* next free spot for code gen. */
+static Symbol *LocalSymList = NULL;      /* symbols local to the program */
+static Inst Prog[PROGRAM_SIZE];          /* the program */
+static Inst *ProgP;                      /* next free spot for code gen. */
 static Inst *LoopStack[LOOP_STACK_SIZE]; /* addresses of break, cont stmts */
 static Inst **LoopStackPtr = LoopStack;  /*  to fill at the end of a loop */
 
 /* Global data for the interpreter */
-static DataValue *TheStack;	    /* the stack */
-static DataValue *StackP;	    /* next free spot on stack */
-static DataValue *FrameP;   	    /* frame pointer (start of local variables
-    	    	    	    	       for the current subroutine invocation) */
-static Inst *PC;		    /* program counter during execution */
-static char *ErrMsg;		    /* global for returning error messages
-    	    	    	    	       from executing functions */
+static DataValue *TheStack;         /* the stack */
+static DataValue *StackP;           /* next free spot on stack */
+static DataValue *FrameP;           /* frame pointer (start of local variables
+                                       for the current subroutine invocation) */
+static Inst *PC;                    /* program counter during execution */
+static char *ErrMsg;                /* global for returning error messages
+                                       from executing functions */
 static WindowInfo
-	*InitiatingWindow = NULL;   /* window from which macro was run */
-static WindowInfo *FocusWindow;	    /* window on which macro commands operate */
-static int PreemptRequest;  	    /* passes preemption requests from called
-    	    	    	    	       routines back up to the interpreter */
+    *InitiatingWindow = NULL;       /* window from which macro was run */
+static WindowInfo *FocusWindow;     /* window on which macro commands operate */
+static int PreemptRequest;          /* passes preemption requests from called
+                                       routines back up to the interpreter */
 
 /* Array for mapping operations to functions for performing the operations
    Must correspond to the enum called "operations" in interpret.h */
@@ -239,20 +239,20 @@ void InitMacroGlobals(void)
     /* Add action routines from NEdit menus and text widget */
     actions = GetMenuActions(&nActions);
     for (i=0; i<nActions; i++) {
-    	dv.val.xtproc = actions[i].proc;
-    	InstallSymbol(actions[i].string, ACTION_ROUTINE_SYM, dv);
+        dv.val.xtproc = actions[i].proc;
+        InstallSymbol(actions[i].string, ACTION_ROUTINE_SYM, dv);
     }
     actions = TextGetActions(&nActions);
     for (i=0; i<nActions; i++) {
-    	dv.val.xtproc = actions[i].proc;
-    	InstallSymbol(actions[i].string, ACTION_ROUTINE_SYM, dv);
+        dv.val.xtproc = actions[i].proc;
+        InstallSymbol(actions[i].string, ACTION_ROUTINE_SYM, dv);
     }
     
     /* Add subroutine argument symbols ($1, $2, ..., $9) */
     for (i=0; i<9; i++) {
-	argName[1] = '1' + i;
-	dv.val.n = i;
-	InstallSymbol(argName, ARG_SYM, dv);
+    argName[1] = '1' + i;
+    dv.val.n = i;
+    InstallSymbol(argName, ARG_SYM, dv);
     }
     
     /* Add special symbol $n_args */
@@ -300,7 +300,7 @@ Program *FinishCreatingProgram(void)
     /* Local variables' values are stored on the stack.  Here we assign
        frame pointer offsets to them. */
     for (s = newProg->localSymList; s != NULL; s = s->next)
-	s->value.val.n = fpOffset++;
+    s->value.val.n = fpOffset++;
     
     DISASM(newProg->code, ProgP - Prog);
     
@@ -320,8 +320,8 @@ void FreeProgram(Program *prog)
 int AddOp(int op, char **msg)
 {
     if (ProgP >= &Prog[PROGRAM_SIZE]) {
-	*msg = "macro too large";
-	return 0;
+    *msg = "macro too large";
+    return 0;
     }
     ProgP->func = OpFns[op];
     ProgP++;
@@ -334,8 +334,8 @@ int AddOp(int op, char **msg)
 int AddSym(Symbol *sym, char **msg)
 {
     if (ProgP >= &Prog[PROGRAM_SIZE]) {
-	*msg = "macro too large";
-	return 0;
+    *msg = "macro too large";
+    return 0;
     }
     ProgP->sym = sym;
     ProgP++;
@@ -348,8 +348,8 @@ int AddSym(Symbol *sym, char **msg)
 int AddImmediate(int value, char **msg)
 {
     if (ProgP >= &Prog[PROGRAM_SIZE]) {
-	*msg = "macro too large";
-	return 0;
+    *msg = "macro too large";
+    return 0;
     }
     ProgP->value = value;
     ProgP++;
@@ -362,8 +362,8 @@ int AddImmediate(int value, char **msg)
 int AddBranchOffset(Inst *to, char **msg)
 {
     if (ProgP >= &Prog[PROGRAM_SIZE]) {
-	*msg = "macro too large";
-	return 0;
+    *msg = "macro too large";
+    return 0;
     }
     /* Should be ptrdiff_t for branch offsets */
     ProgP->value = to - ProgP;
@@ -431,8 +431,8 @@ int AddContinueAddr(Inst *addr)
 static void addLoopAddr(Inst *addr)
 {
     if (LoopStackPtr > &LoopStack[LOOP_STACK_SIZE-1]) {
-    	fprintf(stderr, "NEdit: loop stack overflow in macro parser");
-    	return;
+        fprintf(stderr, "NEdit: loop stack overflow in macro parser");
+        return;
     }
     *LoopStackPtr++ = addr;
 }
@@ -440,19 +440,19 @@ static void addLoopAddr(Inst *addr)
 void FillLoopAddrs(Inst *breakAddr, Inst *continueAddr)
 {
     while (True) {
-    	LoopStackPtr--;
-    	if (LoopStackPtr < LoopStack) {
-    	    fprintf(stderr, "NEdit: internal error (lsu) in macro parser\n");
-    	    return;
-    	}
-    	if (*LoopStackPtr == NULL)
-    	    break;
-    	if ((*LoopStackPtr)->value == NEEDS_BREAK)
+        LoopStackPtr--;
+        if (LoopStackPtr < LoopStack) {
+            fprintf(stderr, "NEdit: internal error (lsu) in macro parser\n");
+            return;
+        }
+        if (*LoopStackPtr == NULL)
+            break;
+        if ((*LoopStackPtr)->value == NEEDS_BREAK)
             (*LoopStackPtr)->value = breakAddr - *LoopStackPtr;
-    	else if ((*LoopStackPtr)->value == NEEDS_CONTINUE)
+        else if ((*LoopStackPtr)->value == NEEDS_CONTINUE)
             (*LoopStackPtr)->value = continueAddr - *LoopStackPtr;
-    	else
-    	    fprintf(stderr, "NEdit: internal error (uat) in macro parser\n");
+        else
+            fprintf(stderr, "NEdit: internal error (uat) in macro parser\n");
     }
 }
 
@@ -464,7 +464,7 @@ void FillLoopAddrs(Inst *breakAddr, Inst *continueAddr)
 ** macro exceeded its alotted time-slice and scheduled...
 */
 int ExecuteMacro(WindowInfo *window, Program *prog, int nArgs, DataValue *args,
-    	DataValue *result, RestartData **continuation, char **msg)
+        DataValue *result, RestartData **continuation, char **msg)
 {
     RestartData *context;
     static DataValue noValue = {NO_TAG, {0}};
@@ -484,7 +484,7 @@ int ExecuteMacro(WindowInfo *window, Program *prog, int nArgs, DataValue *args,
 
     /* Push arguments and call information onto the stack */
     for (i=0; i<nArgs; i++)
-    	*(context->stackP++) = args[i];
+        *(context->stackP++) = args[i];
 
     context->stackP->val.subr = NULL; /* return PC */
     context->stackP->tag = NO_TAG;
@@ -502,8 +502,8 @@ int ExecuteMacro(WindowInfo *window, Program *prog, int nArgs, DataValue *args,
     
     /* Initialize and make room on the stack for local variables */
     for (s = prog->localSymList; s != NULL; s = s->next) {
-    	FP_GET_SYM_VAL(context->frameP, s) = noValue;
-    	context->stackP++;
+        FP_GET_SYM_VAL(context->frameP, s) = noValue;
+        context->stackP++;
     }
     
     /* Begin execution, return on error or preemption */
@@ -532,40 +532,40 @@ int ContinueMacro(RestartData *continuation, DataValue *result, char **msg)
     restoreContext(continuation);
     ErrMsg = NULL;
     for (;;) {
-    	
-    	/* Execute an instruction */
-    	inst = PC++;
-	status = (inst->func)();
-    	
-    	/* If error return was not STAT_OK, return to caller */
-    	if (status != STAT_OK) {
-    	    if (status == STAT_PREEMPT) {
-    		saveContext(continuation);
-    		restoreContext(&oldContext);
-    		return MACRO_PREEMPT;
-    	    } else if (status == STAT_ERROR) {
-		*msg = ErrMsg;
-		FreeRestartData(continuation);
-		restoreContext(&oldContext);
-		return MACRO_ERROR;
-	    } else if (status == STAT_DONE) {
-		*msg = "";
-		*result = *--StackP;
-		FreeRestartData(continuation);
-		restoreContext(&oldContext);
-		return MACRO_DONE;
-	    }
-    	}
-	
-	/* Count instructions executed.  If the instruction limit is hit,
-	   preempt, store re-start information in continuation and give
-	   X, other macros, and other shell scripts a chance to execute */
-    	instCount++;
-	if (instCount >= INSTRUCTION_LIMIT) {
-    	    saveContext(continuation);
-    	    restoreContext(&oldContext);
-    	    return MACRO_TIME_LIMIT;
-	}
+        
+        /* Execute an instruction */
+        inst = PC++;
+    status = (inst->func)();
+        
+        /* If error return was not STAT_OK, return to caller */
+        if (status != STAT_OK) {
+            if (status == STAT_PREEMPT) {
+            saveContext(continuation);
+            restoreContext(&oldContext);
+            return MACRO_PREEMPT;
+            } else if (status == STAT_ERROR) {
+        *msg = ErrMsg;
+        FreeRestartData(continuation);
+        restoreContext(&oldContext);
+        return MACRO_ERROR;
+        } else if (status == STAT_DONE) {
+        *msg = "";
+        *result = *--StackP;
+        FreeRestartData(continuation);
+        restoreContext(&oldContext);
+        return MACRO_DONE;
+        }
+        }
+    
+    /* Count instructions executed.  If the instruction limit is hit,
+       preempt, store re-start information in continuation and give
+       X, other macros, and other shell scripts a chance to execute */
+        instCount++;
+    if (instCount >= INSTRUCTION_LIMIT) {
+            saveContext(continuation);
+            restoreContext(&oldContext);
+            return MACRO_TIME_LIMIT;
+    }
     }
 }
 
@@ -600,8 +600,8 @@ void RunMacroAsSubrCall(Program *prog)
     FrameP = StackP;
     PC = prog->code;
     for (s = prog->localSymList; s != NULL; s = s->next) {
-	FP_GET_SYM_VAL(FrameP, s) = noValue;
-	StackP++;
+    FP_GET_SYM_VAL(FrameP, s) = noValue;
+    StackP++;
     }
 }
 
@@ -629,7 +629,7 @@ void PreemptMacro(void)
 void ModifyReturnedValue(RestartData *context, DataValue dv)
 {
     if ((context->pc-1)->func == fetchRetVal)
-	*(context->stackP-1) = dv;
+    *(context->stackP-1) = dv;
 }
 
 /*
@@ -723,11 +723,11 @@ Symbol *LookupSymbol(const char *name)
     Symbol *s;
 
     for (s = LocalSymList; s != NULL; s = s->next)
-	if (strcmp(s->name, name) == 0)
-	    return s;
+    if (strcmp(s->name, name) == 0)
+        return s;
     for (s = GlobalSymList; s != NULL; s = s->next)
-	if (strcmp(s->name, name) == 0)
-	    return s;
+    if (strcmp(s->name, name) == 0)
+        return s;
     return NULL;
 }
 
@@ -743,11 +743,11 @@ Symbol *InstallSymbol(const char *name, enum symTypes type, DataValue value)
     s->type = type;
     s->value = value;
     if (type == LOCAL_SYM) {
-    	s->next = LocalSymList;
-    	LocalSymList = s;
+        s->next = LocalSymList;
+        LocalSymList = s;
     } else {
-    	s->next = GlobalSymList;
-    	GlobalSymList = s;
+        s->next = GlobalSymList;
+        GlobalSymList = s;
     }
     return s;
 }
@@ -767,18 +767,18 @@ Symbol *PromoteToGlobal(Symbol *sym)
     Symbol *s;
 
     if (sym->type != LOCAL_SYM)
-	return sym;
+    return sym;
 
     /* Remove sym from the local symbol list */
     if (sym == LocalSymList)
-	LocalSymList = sym->next;
+    LocalSymList = sym->next;
     else {
-	for (s = LocalSymList; s != NULL; s = s->next) {
-	    if (s->next == sym) {
-		s->next = sym->next;
-		break;
-	    }
-	}
+    for (s = LocalSymList; s != NULL; s = s->next) {
+        if (s->next == sym) {
+        s->next = sym->next;
+        break;
+        }
+    }
     }
     
     /* There are two scenarios which could make this check succeed:
@@ -978,7 +978,7 @@ void GarbageCollectStrings(void)
 
     /* mark all strings as unreferenced */
     for (p = AllocatedStrings; p != NULL; p = *((char **)p)) {
-    	*(p + sizeof(char *)) = 0;
+        *(p + sizeof(char *)) = 0;
     }
     
     for (thisAP = AllocatedSparseArrayEntries;
@@ -989,10 +989,10 @@ void GarbageCollectStrings(void)
     /* Sweep the global symbol list, marking which strings are still
        referenced */
     for (s = GlobalSymList; s != NULL; s = s->next) {
-    	if (s->value.tag == STRING_TAG) {
+        if (s->value.tag == STRING_TAG) {
             /* test first because it may be read-only static string */
             if (!(*(s->value.val.str.rep - 1))) {
-    	        *(s->value.val.str.rep - 1) = 1;
+                *(s->value.val.str.rep - 1) = 1;
             }
         }
         else if (s->value.tag == ARRAY_TAG) {
@@ -1004,18 +1004,18 @@ void GarbageCollectStrings(void)
     next = AllocatedStrings;
     AllocatedStrings = NULL;
     while (next != NULL) {
-    	p = next;
-    	next = *((char **)p);
-    	if (*(p + sizeof(char *)) != 0) {
-    	    *((char **)p) = AllocatedStrings;
-    	    AllocatedStrings = p;
-    	}
+        p = next;
+        next = *((char **)p);
+        if (*(p + sizeof(char *)) != 0) {
+            *((char **)p) = AllocatedStrings;
+            AllocatedStrings = p;
+        }
         else {
 #ifdef TRACK_GARBAGE_LEAKS
             --numAllocatedStrings;
 #endif
-    	    NEditFree(p);
-    	}
+            NEditFree(p);
+        }
     }
     
     nextAP = AllocatedSparseArrayEntries;
@@ -1068,21 +1068,21 @@ static void freeSymbolTable(Symbol *symTab)
     Symbol *s;
     
     while(symTab != NULL) {
-    	s = symTab;
-    	free(s->name);
-    	symTab = s->next;
-    	NEditFree(s);
+        s = symTab;
+        free(s->name);
+        symTab = s->next;
+        NEditFree(s);
     }    
 }
 
 #define POP(dataVal) \
     if (StackP == TheStack) \
-	return execError(StackUnderflowMsg, ""); \
+    return execError(StackUnderflowMsg, ""); \
     dataVal = *--StackP;
    
 #define PUSH(dataVal) \
     if (StackP >= &TheStack[STACK_SIZE]) \
-    	return execError(StackOverflowMsg, ""); \
+        return execError(StackOverflowMsg, ""); \
     *StackP++ = dataVal;
 
 #define PEEK(dataVal, peekIndex) \
@@ -1090,11 +1090,11 @@ static void freeSymbolTable(Symbol *symTab)
 
 #define POP_INT(number) \
     if (StackP == TheStack) \
-	return execError(StackUnderflowMsg, ""); \
+    return execError(StackUnderflowMsg, ""); \
     --StackP; \
     if (StackP->tag == STRING_TAG) { \
-    	if (!StringToNum(StackP->val.str.rep, &number)) \
-    	    return execError(StringToNumberMsg, ""); \
+        if (!StringToNum(StackP->val.str.rep, &number)) \
+            return execError(StringToNumberMsg, ""); \
     } else if (StackP->tag == INT_TAG) \
         number = StackP->val.n; \
     else \
@@ -1102,11 +1102,11 @@ static void freeSymbolTable(Symbol *symTab)
 
 #define POP_STRING(string) \
     if (StackP == TheStack) \
-	return execError(StackUnderflowMsg, ""); \
+    return execError(StackUnderflowMsg, ""); \
     --StackP; \
     if (StackP->tag == INT_TAG) { \
-    	string = AllocString(TYPE_INT_STR_SIZE(int)); \
-    	sprintf(string, "%d", StackP->val.n); \
+        string = AllocString(TYPE_INT_STR_SIZE(int)); \
+        sprintf(string, "%d", StackP->val.n); \
     } else if (StackP->tag == STRING_TAG) \
         string = StackP->val.str.rep; \
     else \
@@ -1127,7 +1127,7 @@ static void freeSymbolTable(Symbol *symTab)
 #define PEEK_INT(number, peekIndex) \
     if ((StackP - peekIndex - 1)->tag == STRING_TAG) { \
         if (!StringToNum((StackP - peekIndex - 1)->val.str.rep, &number)) { \
-    	    return execError(StringToNumberMsg, ""); \
+            return execError(StringToNumberMsg, ""); \
         } \
     } else if ((StackP - peekIndex - 1)->tag == INT_TAG) { \
         number = (StackP - peekIndex - 1)->val.n; \
@@ -1138,14 +1138,14 @@ static void freeSymbolTable(Symbol *symTab)
 
 #define PUSH_INT(number) \
     if (StackP >= &TheStack[STACK_SIZE]) \
-    	return execError(StackOverflowMsg, ""); \
+        return execError(StackOverflowMsg, ""); \
     StackP->tag = INT_TAG; \
     StackP->val.n = number; \
     StackP++;
     
 #define PUSH_STRING(string, length) \
     if (StackP >= &TheStack[STACK_SIZE]) \
-    	return execError(StackOverflowMsg, ""); \
+        return execError(StackOverflowMsg, ""); \
     StackP->tag = STRING_TAG; \
     StackP->val.str.rep = string; \
     StackP->val.str.len = length; \
@@ -1192,28 +1192,28 @@ static int pushSymVal(void)
     } else if (s->type == GLOBAL_SYM || s->type == CONST_SYM) {
         symVal = s->value;
     } else if (s->type == ARG_SYM) {
-    	nArgs = FP_GET_ARG_COUNT(FrameP);
-    	argNum = s->value.val.n;
-    	if (argNum >= nArgs) {
-    	    return execError("referenced undefined argument: %s",  s->name);
+        nArgs = FP_GET_ARG_COUNT(FrameP);
+        argNum = s->value.val.n;
+        if (argNum >= nArgs) {
+            return execError("referenced undefined argument: %s",  s->name);
         }
-    	if (argNum == N_ARGS_ARG_SYM) {
+        if (argNum == N_ARGS_ARG_SYM) {
             symVal.tag = INT_TAG;
             symVal.val.n = nArgs;
-    	}
+        }
         else {
             symVal = FP_GET_ARG_N(FrameP, argNum);
         }
     } else if (s->type == PROC_VALUE_SYM) {
-	char *errMsg;
-	if (!(s->value.val.subr)(FocusWindow, NULL, 0,
-	    	&symVal, &errMsg)) {
-	    return execError(errMsg, s->name);
+    char *errMsg;
+    if (!(s->value.val.subr)(FocusWindow, NULL, 0,
+            &symVal, &errMsg)) {
+        return execError(errMsg, s->name);
         }
     } else
-    	return execError("reading non-variable: %s", s->name);
+        return execError("reading non-variable: %s", s->name);
     if (symVal.tag == NO_TAG) {
-    	return execError("variable not set: %s", s->name);
+        return execError("variable not set: %s", s->name);
     }
 
     PUSH(symVal)
@@ -1234,7 +1234,7 @@ static int pushArgVal(void)
     if (argNum >= nArgs || argNum < 0) {
         char argStr[TYPE_INT_STR_SIZE(argNum)];
         sprintf(argStr, "%d", argNum + 1);
-    	return execError("referenced undefined argument: $args[%s]", argStr);
+        return execError("referenced undefined argument: $args[%s]", argStr);
     }
     PUSH(FP_GET_ARG_N(FrameP, argNum));
     return STAT_OK;
@@ -1301,13 +1301,13 @@ static int pushArraySymVal(void)
     PC++;
     
     if (sym->type == LOCAL_SYM) {
-    	dataPtr = &FP_GET_SYM_VAL(FrameP, sym);
+        dataPtr = &FP_GET_SYM_VAL(FrameP, sym);
     }
     else if (sym->type == GLOBAL_SYM) {
-    	dataPtr = &sym->value;
+        dataPtr = &sym->value;
     }
     else {
-    	return execError("assigning to non-lvalue array or non-array: %s", sym->name);
+        return execError("assigning to non-lvalue array or non-array: %s", sym->name);
     }
 
     if (initEmpty && dataPtr->tag == NO_TAG) {
@@ -1554,7 +1554,7 @@ static int divide(void)
     POP_INT(n2)
     POP_INT(n1)
     if (n2 == 0) {
-	return execError("division by zero", "");
+    return execError("division by zero", "");
     }
     PUSH_INT(n1 / n2)
     return STAT_OK;
@@ -1570,7 +1570,7 @@ static int modulo(void)
     POP_INT(n2)
     POP_INT(n1)
     if (n2 == 0) {
-	return execError("modulo by zero", "");
+    return execError("modulo by zero", "");
     }
     PUSH_INT(n1 % n2)
     return STAT_OK;
@@ -1917,24 +1917,24 @@ static int callSubroutine(void)
     ** If the subroutine is built-in, call the built-in routine
     */
     if (sym->type == C_FUNCTION_SYM) {
-    	DataValue result;
+        DataValue result;
 
         /* "pop" stack back to the first argument in the call stack */
-    	StackP -= nArgs;
+        StackP -= nArgs;
 
-    	/* Call the function and check for preemption */
-    	PreemptRequest = False;
-	if (!sym->value.val.subr(FocusWindow, StackP,
-	    	nArgs, &result, &errMsg))
-	    return execError(errMsg, sym->name);
-    	if (PC->func == fetchRetVal) {
-    	    if (result.tag == NO_TAG) {
-    	    	return execError("%s does not return a value", sym->name);
+        /* Call the function and check for preemption */
+        PreemptRequest = False;
+    if (!sym->value.val.subr(FocusWindow, StackP,
+            nArgs, &result, &errMsg))
+        return execError(errMsg, sym->name);
+        if (PC->func == fetchRetVal) {
+            if (result.tag == NO_TAG) {
+                return execError("%s does not return a value", sym->name);
             }
-    	    PUSH(result);
-	    PC++;
-    	}
-    	return PreemptRequest ? STAT_PREEMPT : STAT_OK;
+            PUSH(result);
+        PC++;
+        }
+        return PreemptRequest ? STAT_PREEMPT : STAT_OK;
     }
     
     /*
@@ -1945,28 +1945,28 @@ static int callSubroutine(void)
     ** values which are already there.
     */
     if (sym->type == MACRO_FUNCTION_SYM) {
-    	StackP->tag = NO_TAG; /* return PC */
-    	StackP->val.inst = PC;
-    	StackP++;
+        StackP->tag = NO_TAG; /* return PC */
+        StackP->val.inst = PC;
+        StackP++;
         
-    	StackP->tag = NO_TAG; /* old FrameP */
-    	StackP->val.dataval = FrameP;
-    	StackP++;
+        StackP->tag = NO_TAG; /* old FrameP */
+        StackP->val.dataval = FrameP;
+        StackP++;
         
-    	StackP->tag = NO_TAG; /* nArgs */
-    	StackP->val.n = nArgs;
-    	StackP++;
+        StackP->tag = NO_TAG; /* nArgs */
+        StackP->val.n = nArgs;
+        StackP++;
         
         *(StackP++) = noValue; /* cached arg array */
         
-    	FrameP = StackP;
-    	prog = sym->value.val.prog;
-    	PC = prog->code;
-	for (s = prog->localSymList; s != NULL; s = s->next) {
-	    FP_GET_SYM_VAL(FrameP, s) = noValue;
-	    StackP++;
-	}
-   	return STAT_OK;
+        FrameP = StackP;
+        prog = sym->value.val.prog;
+        PC = prog->code;
+    for (s = prog->localSymList; s != NULL; s = s->next) {
+        FP_GET_SYM_VAL(FrameP, s) = noValue;
+        StackP++;
+    }
+       return STAT_OK;
     }
     
     /*
@@ -1974,42 +1974,42 @@ static int callSubroutine(void)
     */
     if (sym->type == ACTION_ROUTINE_SYM) {
         String *argList;
-    	Cardinal numArgs = nArgs;
-    	XKeyEvent key_event;
-	Display *disp;
-	Window win;
+        Cardinal numArgs = nArgs;
+        XKeyEvent key_event;
+    Display *disp;
+    Window win;
     
-	/* Create a fake event with a timestamp suitable for actions which need
-	   timestamps, a marker to indicate that the call was from a macro
-	   (to stop shell commands from putting up their own separate banner) */
+    /* Create a fake event with a timestamp suitable for actions which need
+       timestamps, a marker to indicate that the call was from a macro
+       (to stop shell commands from putting up their own separate banner) */
         disp=XtDisplay(InitiatingWindow->shell);
-	win=XtWindow(InitiatingWindow->shell);
+    win=XtWindow(InitiatingWindow->shell);
 
-	key_event.type = KeyPress;
-	key_event.send_event = MACRO_EVENT_MARKER;
-	key_event.time=XtLastTimestampProcessed(XtDisplay(InitiatingWindow->shell));
-	
-	/* The following entries are just filled in to avoid problems
-	   in strange cases, like calling "self_insert()" directly from the
-	   macro menu. In fact the display was sufficient to cure this crash. */
+    key_event.type = KeyPress;
+    key_event.send_event = MACRO_EVENT_MARKER;
+    key_event.time=XtLastTimestampProcessed(XtDisplay(InitiatingWindow->shell));
+    
+    /* The following entries are just filled in to avoid problems
+       in strange cases, like calling "self_insert()" directly from the
+       macro menu. In fact the display was sufficient to cure this crash. */
         key_event.display=disp;
         key_event.window=key_event.root=key_event.subwindow=win;
     
         argList = (String *)NEditCalloc(nArgs, sizeof(*argList));
-	/* pop arguments off the stack and put them in the argument list */
-	for (i=nArgs-1; i>=0; i--) {
-    	    POP_STRING(argList[i])
-	}
+    /* pop arguments off the stack and put them in the argument list */
+    for (i=nArgs-1; i>=0; i--) {
+            POP_STRING(argList[i])
+    }
 
-    	/* Call the action routine and check for preemption */
-    	PreemptRequest = False;
-    	sym->value.val.xtproc(FocusWindow->lastFocus,
-    	    	(XEvent *)&key_event, argList, &numArgs);
+        /* Call the action routine and check for preemption */
+        PreemptRequest = False;
+        sym->value.val.xtproc(FocusWindow->lastFocus,
+                (XEvent *)&key_event, argList, &numArgs);
         NEditFree(argList);
-    	if (PC->func == fetchRetVal) {
-    	    return execError("%s does not return a value", sym->name);
+        if (PC->func == fetchRetVal) {
+            return execError("%s does not return a value", sym->name);
         }
-    	return PreemptRequest ? STAT_PREEMPT : STAT_OK;
+        return PreemptRequest ? STAT_PREEMPT : STAT_OK;
     }
 
     /* Calling a non subroutine symbol */
@@ -2055,7 +2055,7 @@ static int returnValOrNone(int valOnStack)
 
     /* return value is on the stack */
     if (valOnStack) {
-    	POP(retVal);
+        POP(retVal);
     }
     
     /* get stored return information */
@@ -2071,20 +2071,20 @@ static int returnValOrNone(int valOnStack)
     
     /* push returned value, if requsted */
     if (PC == NULL) {
-	if (valOnStack) {
-    	    PUSH(retVal);
-	} else {
-	    PUSH(noValue);
-	}
+    if (valOnStack) {
+            PUSH(retVal);
+    } else {
+        PUSH(noValue);
+    }
     } else if (PC->func == fetchRetVal) {
-	if (valOnStack) {
-    	    PUSH(retVal);
-	    PC++;
-	} else {
-	    return execError(
-	    	"using return value of %s which does not return a value",
-	    	((PC-2)->sym->name));
-	}
+    if (valOnStack) {
+            PUSH(retVal);
+        PC++;
+    } else {
+        return execError(
+            "using return value of %s which does not return a value",
+            ((PC-2)->sym->name));
+    }
     }
     
     /* NULL return PC indicates end of program */
@@ -2127,7 +2127,7 @@ static int branchTrue(void)
     PC++;
     
     if (value)
-    	PC = addr;
+        PC = addr;
     return STAT_OK;
 }
 static int branchFalse(void)
@@ -2143,7 +2143,7 @@ static int branchFalse(void)
     PC++;
     
     if (!value)
-    	PC = addr;
+        PC = addr;
     return STAT_OK;
 }
 
@@ -2315,7 +2315,7 @@ static void arrayDisposeNode(rbTreeNode *src)
 
 SparseArrayEntry *ArrayNew(void)
 {
-	return((SparseArrayEntry *)rbTreeNew(arrayEmptyAllocator));
+    return((SparseArrayEntry *)rbTreeNew(arrayEmptyAllocator));
 }
 
 /*
@@ -2815,9 +2815,9 @@ static int deleteArrayElement(void)
 static int errCheck(const char *s)
 {
     if (errno == EDOM)
-	return execError("%s argument out of domain", s);
+    return execError("%s argument out of domain", s);
     else if (errno == ERANGE)
-	return execError("%s result out of range", s);
+    return execError("%s result out of range", s);
     else
         return STAT_OK;
 }
@@ -2859,7 +2859,7 @@ int StringToNum(const char *string, int *number)
     if (number) {
         if (sscanf(string, "%d", number) != 1) {
             /* This case is here to support old behavior */
-    	    *number = 0;
+            *number = 0;
         }
     }
     return True;

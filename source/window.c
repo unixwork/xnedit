@@ -211,7 +211,7 @@ extern void _XmDismissTearOff(Widget, XtPointer, XtPointer);
 
 static void hideTooltip(Widget tab);
 static Pixmap createBitmapWithDepth(Widget w, char *data, unsigned int width,
-	unsigned int height);
+    unsigned int height);
 static void createSearchForm(WindowInfo *window);
 static WindowInfo *getNextTabWindow(WindowInfo *window, int direction,
         int crossWin, int wrap);
@@ -256,8 +256,8 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin);
 static UndoInfo *cloneUndoItems(UndoInfo *orgList);
 static Widget containingPane(Widget w);
 
-static WindowInfo *inFocusDocument = NULL;  	/* where we are now */
-static WindowInfo *lastFocusDocument = NULL;	    	/* where we came from */
+static WindowInfo *inFocusDocument = NULL;      /* where we are now */
+static WindowInfo *lastFocusDocument = NULL;    /* where we came from */
 static int DoneWithMoveDocumentDialog;
 static int updateLineNumDisp(WindowInfo* window);
 static int updateGutterWidth(WindowInfo* window);
@@ -283,7 +283,7 @@ static Atom wm_take_focus;
 static int take_focus_atom_is_init = 0;
 
 static Bool CopyDBEntry(
-    XrmDatabase	*db,
+    XrmDatabase *db,
     XrmBindingList bindings,
     XrmQuarkList quarks,
     XrmRepresentation *type,
@@ -608,7 +608,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        to 0 seems to avoid avoid the crash. */
        
     window->iSearchForm = XtVaCreateWidget("iSearchForm", 
-       	    xmFormWidgetClass, statsAreaForm,
+               xmFormWidgetClass, statsAreaForm,
         XmNshadowThickness, 0,
         XmNleftAttachment, XmATTACH_FORM,
         XmNleftOffset, STAT_SHADOW_THICKNESS,
@@ -665,7 +665,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
             XmNtraversalOn, False,
             XmNrightAttachment, XmATTACH_FORM,
             XmNrightOffset, 3,
-            XmNbottomAttachment, XmATTACH_FORM,	    
+            XmNbottomAttachment, XmATTACH_FORM,        
             XmNbottomOffset, 3,
             NULL);
     XtAddCallback(closeTabBtn, XmNactivateCallback, (XtCallbackProc)closeTabCB, 
@@ -1212,18 +1212,18 @@ static Widget addTab(Widget folder, const char *string)
     
     s1 = XmStringCreateSimple((char *)string);
     tab = XtVaCreateManagedWidget("tab",
-	    xrwsBubbleButtonWidgetClass, folder,
-	    /* XmNmarginWidth, <default@nedit.c>, */
-	    /* XmNmarginHeight, <default@nedit.c>, */
-  	    /* XmNalignment, <default@nedit.c>, */
-  	    XmNlabelString, s1,
-  	    XltNbubbleString, s1,
-	    XltNshowBubble, GetPrefToolTips(),
-	    XltNautoParkBubble, True,
-	    XltNslidingBubble, False,
-	    /* XltNdelay, 800,*/
-	    /* XltNbubbleDuration, 8000,*/
-	    NULL);
+        xrwsBubbleButtonWidgetClass, folder,
+        /* XmNmarginWidth, <default@nedit.c>, */
+        /* XmNmarginHeight, <default@nedit.c>, */
+          /* XmNalignment, <default@nedit.c>, */
+          XmNlabelString, s1,
+          XltNbubbleString, s1,
+        XltNshowBubble, GetPrefToolTips(),
+        XltNautoParkBubble, True,
+        XltNslidingBubble, False,
+        /* XltNdelay, 800,*/
+        /* XltNbubbleDuration, 8000,*/
+        NULL);
     XmStringFree(s1);
 
     /* there's things to do as user click on the tab */
@@ -1234,15 +1234,15 @@ static Widget addTab(Widget folder, const char *string)
        we try to use the 'standard' color */
     tooltipLabel = XtNameToWidget(tab, "*BubbleLabel");
     XtVaSetValues(tooltipLabel,
-    	    XmNbackground, AllocateColor(tab, GetPrefTooltipBgColor()),
-    	    XmNforeground, AllocateColor(tab, NEDIT_DEFAULT_FG),
-    	    NULL);
+            XmNbackground, AllocateColor(tab, GetPrefTooltipBgColor()),
+            XmNforeground, AllocateColor(tab, NEDIT_DEFAULT_FG),
+            NULL);
 
     /* put borders around tooltip. BubbleButton use 
        transientShellWidgetClass as tooltip shell, which
        came without borders */
     XtVaSetValues(XtParent(tooltipLabel), XmNborderWidth, 1, NULL);
-	
+    
 #ifdef LESSTIF_VERSION
     /* If we don't do this, no popup when right-click on tabs */
     AddTabContextMenuAction(tab);
@@ -1250,7 +1250,7 @@ static Widget addTab(Widget folder, const char *string)
 
     return tab;
 }
-	    
+        
 /*
 ** Comparison function for sorting windows by title.
 ** Windows are sorted by alphabetically by filename and then 
@@ -1264,7 +1264,7 @@ static int compareWindowNames(const void *windowA, const void *windowB)
 
     rc = strcmp(a->filename, b->filename);
     if (rc != 0)
-	 return rc;
+     return rc;
     rc = strcmp(a->path, b->path);
     return rc;
 }
@@ -1280,8 +1280,8 @@ void SortTabBar(WindowInfo *window)
     int i, j, nDoc, tabCount;
 
     if (!GetPrefSortTabs())
-    	return;
-	
+        return;
+    
     /* need more than one tab to sort */
     nDoc = NDocuments(window);
     if (nDoc < 2)
@@ -1290,8 +1290,8 @@ void SortTabBar(WindowInfo *window)
     /* first sort the documents */
     windows = (WindowInfo **)NEditMalloc(sizeof(WindowInfo *) * nDoc);
     for (w=WindowList, i=0; w!=NULL; w=w->next) {
-    	if (window->shell == w->shell)
-    	    windows[i++] = w;
+        if (window->shell == w->shell)
+            windows[i++] = w;
     }
     qsort(windows, nDoc, sizeof(WindowInfo *), compareWindowNames);
 
@@ -1364,8 +1364,8 @@ WindowInfo *TabToWindow(Widget tab)
 {
     WindowInfo *win;
     for (win=WindowList; win; win=win->next) {
-    	if (win->tab == tab)
-	    return win;
+        if (win->tab == tab)
+        return win;
     }
 
     return NULL;
@@ -1446,7 +1446,7 @@ void CloseWindow(WindowInfo *window)
                                                    line from long file names */
         UpdateStatsLine(window);
         DetermineLanguageMode(window, True);
-	RefreshTabState(window);
+    RefreshTabState(window);
         updateLineNumDisp(window);
         return;
     }
@@ -1492,28 +1492,28 @@ void CloseWindow(WindowInfo *window)
 
     /* refresh tab bar after closing a document */
     if (nextBuf) {
-	ShowWindowTabBar(nextBuf);
+    ShowWindowTabBar(nextBuf);
         updateLineNumDisp(nextBuf);
     } else if (topBuf) {
-	ShowWindowTabBar(topBuf);
+    ShowWindowTabBar(topBuf);
         updateLineNumDisp(topBuf);
     }
     
     /* dim/undim Detach_Tab menu items */
     win = nextBuf? nextBuf : topBuf;
     if (win) {
-	state = NDocuments(win) > 1;
-    	XtSetSensitive(win->detachDocumentItem, state);
-    	XtSetSensitive(win->contextDetachDocumentItem, state);
+    state = NDocuments(win) > 1;
+        XtSetSensitive(win->detachDocumentItem, state);
+        XtSetSensitive(win->contextDetachDocumentItem, state);
     }
 
     /* dim/undim Attach_Tab menu items */
     state = NDocuments(WindowList) < NWindows();
     for(win=WindowList; win; win=win->next) {
-    	if (IsTopDocument(win)) {    
-    	    XtSetSensitive(win->moveDocumentItem, state);
-    	    XtSetSensitive(win->contextMoveDocumentItem, state);
-	}
+        if (IsTopDocument(win)) {    
+            XtSetSensitive(win->moveDocumentItem, state);
+            XtSetSensitive(win->contextMoveDocumentItem, state);
+    }
     }
 
     /* free background menu cache for document */
@@ -1527,11 +1527,11 @@ void CloseWindow(WindowInfo *window)
         /* free user menu cache for window */
         FreeUserMenuCache(window->userMenuCache);
 
-	/* remove and deallocate all of the widgets associated with window */
-    	NEditFree(window->backlightCharTypes); /* we made a copy earlier on */
+    /* remove and deallocate all of the widgets associated with window */
+        NEditFree(window->backlightCharTypes); /* we made a copy earlier on */
         NEditFree(window->indentRainbowColors);
-	CloseAllPopupsFor(window->shell);
-    	XtDestroyWidget(window->shell);
+    CloseAllPopupsFor(window->shell);
+        XtDestroyWidget(window->shell);
     }
     
     /* unref window fonts */
@@ -1556,23 +1556,23 @@ void CloseWindow(WindowInfo *window)
 int GetShowTabBar(WindowInfo *window)
 {
     if (!GetPrefTabBar())
-     	return False;
+         return False;
     else if (NDocuments(window) == 1)
-    	return !GetPrefTabBarHideOne();
+        return !GetPrefTabBarHideOne();
     else
-    	return True;
+        return True;
 }
 
 void ShowWindowTabBar(WindowInfo *window)
 {
     if (GetPrefTabBar()) {
-	if (GetPrefTabBarHideOne())
-	    ShowTabBar(window, NDocuments(window)>1);
-	else 
-	    ShowTabBar(window, True);
+    if (GetPrefTabBarHideOne())
+        ShowTabBar(window, NDocuments(window)>1);
+    else 
+        ShowTabBar(window, True);
     }
     else
-	ShowTabBar(window, False);
+    ShowTabBar(window, False);
 }
 
 /*
@@ -1654,7 +1654,7 @@ void SplitPane(WindowInfo *window)
     
     TextSetBuffer(text, window->buffer);
     if (window->highlightData != NULL)
-    	AttachHighlightToWidget(text, window);
+        AttachHighlightToWidget(text, window);
     if (window->backlightChars)
     {
         XtVaSetValues(text, textNbacklightCharTypes,
@@ -1692,7 +1692,7 @@ void SplitPane(WindowInfo *window)
 
     /* Re-manage panedWindow to recalculate pane heights & reset selection */
     if (IsTopDocument(window))
-    	XtManageChild(window->splitPane);
+        XtManageChild(window->splitPane);
     
     /* Reset all of the heights, scroll positions, etc. */
     for (i=0; i<=window->nPanes; i++) {
@@ -1797,7 +1797,7 @@ void ClosePane(WindowInfo *window)
     }
 
     if (IsTopDocument(window))
-    	XtManageChild(window->splitPane);
+        XtManageChild(window->splitPane);
     
     /* Reset all of the scroll positions, insert positions, etc. */
     for (i=0; i<=window->nPanes; i++) {
@@ -1839,10 +1839,10 @@ void ShowLineNumbers(WindowInfo *window, int state)
     } else {
         XtVaGetValues(window->shell, XmNwidth, &windowWidth, NULL);
         XtVaGetValues(window->textArea,
-	        textNmarginWidth, &marginWidth, NULL);
+            textNmarginWidth, &marginWidth, NULL);
         XtVaSetValues(window->shell, XmNwidth,
                 windowWidth - textD->left + marginWidth, NULL);
-	
+    
         for (i=0; i<=window->nPanes; i++) {
             text = i==0 ? window->textArea : window->textPanes[i-1];
             XtVaSetValues(text, textNlineNumCols, 0, NULL);
@@ -1852,10 +1852,10 @@ void ShowLineNumbers(WindowInfo *window, int state)
     /* line numbers panel is shell-level, hence other
        tabbed documents in the window should synch */
     for (win=WindowList; win; win=win->next) {
-    	if (win->shell != window->shell || win == window)
-	    continue;
-	    
-    	win->showLineNumbers = state;
+        if (win->shell != window->shell || win == window)
+        continue;
+        
+        win->showLineNumbers = state;
 
         for (i=0; i<=win->nPanes; i++) {
             text = i==0 ? win->textArea : win->textPanes[i-1];
@@ -2026,9 +2026,9 @@ void ShowStatsLine(WindowInfo *window, int state)
     /* i-search line is shell-level, hence other tabbed
        documents in the window should synch */
     for (win=WindowList; win; win=win->next) {
-    	if (win->shell != window->shell || win == window)
-	    continue;
-	win->showStats = state;
+        if (win->shell != window->shell || win == window)
+        continue;
+    win->showStats = state;
     }
 }
 
@@ -2056,11 +2056,11 @@ static void showStats(WindowInfo *window, int state)
 static void showTabBar(WindowInfo *window, int state)
 {
     if (state) {
-	XtManageChild(XtParent(window->tabBar));
-	showStatsForm(window);
+    XtManageChild(XtParent(window->tabBar));
+    showStatsForm(window);
     } else {
-	XtUnmanageChild(XtParent(window->tabBar));
-	showStatsForm(window);
+    XtUnmanageChild(XtParent(window->tabBar));
+    showStatsForm(window);
     }
 }
 
@@ -2089,9 +2089,9 @@ void ShowISearchLine(WindowInfo *window, int state)
     /* i-search line is shell-level, hence other tabbed
        documents in the window should synch */
     for (win=WindowList; win; win=win->next) {
-    	if (win->shell != window->shell || win == window)
-	    continue;
-	win->showISearchLine = state;
+        if (win->shell != window->shell || win == window)
+        continue;
+    win->showISearchLine = state;
     }
 }
 
@@ -2114,11 +2114,11 @@ void TempShowISearch(WindowInfo *window, int state)
 static void showISearch(WindowInfo *window, int state)
 {
     if (state) {
-	XtManageChild(window->iSearchForm);
-	showStatsForm(window);
+    XtManageChild(window->iSearchForm);
+    showStatsForm(window);
     } else {
-	XtUnmanageChild(window->iSearchForm);
-	showStatsForm(window);
+    XtUnmanageChild(window->iSearchForm);
+    showStatsForm(window);
     }
       
     /* Tell WM that the non-expandable part of the window has changed size */
@@ -2178,14 +2178,14 @@ void SetModeMessage(WindowInfo *window, const char *message)
     window->modeMessage = NEditStrdup(message);
 
     if (!IsTopDocument(window))
-    	return;
-	
+        return;
+    
     XmTextSetString(window->statsLine, (char*)message);
     /*
      * Don't invoke the stats line again, if stats line is already displayed.
      */
     if (!window->showStats)
-	showStats(window, True);
+    showStats(window, True);
 }
 
 /*
@@ -2195,14 +2195,14 @@ void SetModeMessage(WindowInfo *window, const char *message)
 void ClearModeMessage(WindowInfo *window)
 {
     if (!window->modeMessageDisplayed)
-    	return;
+        return;
 
     window->modeMessageDisplayed = False;
     NEditFree(window->modeMessage);
     window->modeMessage = NULL;
     
     if (!IsTopDocument(window))
-    	return;
+        return;
 
     /*
      * Remove the stats line only if indicated by it's window state.
@@ -2243,10 +2243,10 @@ void SetAutoIndent(WindowInfo *window, IndentStyle state)
         XtVaSetValues(window->textPanes[i], textNautoIndent, autoIndent,
                 textNsmartIndent, smartIndent, NULL);
     if (IsTopDocument(window)) {
-	XmToggleButtonSetState(window->smartIndentItem, smartIndent, False);
-	XmToggleButtonSetState(window->autoIndentItem, autoIndent, False);
-	XmToggleButtonSetState(window->autoIndentOffItem,
-	        state == NO_AUTO_INDENT, False);
+    XmToggleButtonSetState(window->smartIndentItem, smartIndent, False);
+    XmToggleButtonSetState(window->autoIndentItem, autoIndent, False);
+    XmToggleButtonSetState(window->autoIndentOffItem,
+            state == NO_AUTO_INDENT, False);
     }
 }
 
@@ -2258,11 +2258,11 @@ void SetShowMatching(WindowInfo *window, ShowMatchingStyle state)
 {
     window->showMatchingStyle = state;
     if (IsTopDocument(window)) {
-	XmToggleButtonSetState(window->showMatchingOffItem, 
+    XmToggleButtonSetState(window->showMatchingOffItem, 
             state == NO_FLASH, False);
-	XmToggleButtonSetState(window->showMatchingDelimitItem, 
+    XmToggleButtonSetState(window->showMatchingDelimitItem, 
             state == FLASH_DELIMIT, False);
-	XmToggleButtonSetState(window->showMatchingRangeItem, 
+    XmToggleButtonSetState(window->showMatchingRangeItem, 
             state == FLASH_RANGE, False);
     }
 }
@@ -2586,9 +2586,9 @@ void SetAutoWrap(WindowInfo *window, WrapStyle state)
     window->wrapMode = state;
     
     if (IsTopDocument(window)) {
-	XmToggleButtonSetState(window->newlineWrapItem, autoWrap, False);
-	XmToggleButtonSetState(window->continuousWrapItem, contWrap, False);
-	XmToggleButtonSetState(window->noWrapItem, state == NO_WRAP, False);
+    XmToggleButtonSetState(window->newlineWrapItem, autoWrap, False);
+    XmToggleButtonSetState(window->continuousWrapItem, contWrap, False);
+    XmToggleButtonSetState(window->noWrapItem, state == NO_WRAP, False);
     }
 }
 
@@ -2620,30 +2620,30 @@ WindowInfo *WidgetToWindow(Widget w)
     Widget parent;
     
     while (True) {
-    	/* return window pointer of document */
-    	if (XtClass(w) == xmPanedWindowWidgetClass)
-	    break;
-	    
-	if (XtClass(w) == topLevelShellWidgetClass) {
-    	    WidgetList items;
+        /* return window pointer of document */
+        if (XtClass(w) == xmPanedWindowWidgetClass)
+        break;
+        
+    if (XtClass(w) == topLevelShellWidgetClass) {
+            WidgetList items;
 
-	    /* there should be only 1 child for the shell -
-	       the main window widget */
-    	    XtVaGetValues(w, XmNchildren, &items, NULL);
-	    w = items[0];
-	    break;
-	}
-	
-    	parent = XtParent(w);
-    	if (parent == NULL)
-    	    return NULL;
-	
-	/* make sure it is not a dialog shell */
-    	if (XtClass(parent) == topLevelShellWidgetClass &&
-	    	XmIsMainWindow(w))
-    	    break;
+        /* there should be only 1 child for the shell -
+           the main window widget */
+            XtVaGetValues(w, XmNchildren, &items, NULL);
+        w = items[0];
+        break;
+    }
+    
+        parent = XtParent(w);
+        if (parent == NULL)
+            return NULL;
+    
+    /* make sure it is not a dialog shell */
+        if (XtClass(parent) == topLevelShellWidgetClass &&
+            XmIsMainWindow(w))
+            break;
 
-    	w = parent;
+        w = parent;
     }
     
     XtVaGetValues(w, XmNuserData, &window, NULL);
@@ -2658,14 +2658,14 @@ WindowInfo *WidgetToWindow(Widget w)
 void SetWindowModified(WindowInfo *window, int modified)
 {
     if (window->fileChanged == FALSE && modified == TRUE) {
-    	SetSensitive(window, window->closeItem, TRUE);
-    	window->fileChanged = TRUE;
-    	UpdateWindowTitle(window);
-	RefreshTabState(window);
+        SetSensitive(window, window->closeItem, TRUE);
+        window->fileChanged = TRUE;
+        UpdateWindowTitle(window);
+    RefreshTabState(window);
     } else if (window->fileChanged == TRUE && modified == FALSE) {
-    	window->fileChanged = FALSE;
-    	UpdateWindowTitle(window);
-	RefreshTabState(window);
+        window->fileChanged = FALSE;
+        UpdateWindowTitle(window);
+    RefreshTabState(window);
     }
 }
 
@@ -2700,7 +2700,7 @@ void UpdateWindowTitle(const WindowInfo *window)
     char *iconTitle, *title;
     
     if (!IsTopDocument(window))
-    	return;
+        return;
 
     title = FormatWindowTitle(window->filename,
                                     window->path,
@@ -2750,7 +2750,7 @@ void UpdateWindowReadOnly(WindowInfo *window)
     int i, state;
     
     if (!IsTopDocument(window))
-    	return;
+        return;
 
     state = IS_ANY_LOCKED(window->lockReasons);
     XtVaSetValues(window->textArea, textNreadOnly, state, NULL);
@@ -3005,14 +3005,14 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
     /* Check and dim/undim selection related menu items */
     if ((window->wasSelected && !selected) ||
         (!window->wasSelected && selected)) {
-    	window->wasSelected = selected;
-	
-	/* do not refresh shell-level items (window, menu-bar etc)
-	   when motifying non-top document */
+        window->wasSelected = selected;
+    
+    /* do not refresh shell-level items (window, menu-bar etc)
+       when motifying non-top document */
         if (IsTopDocument(window)) {
-    	    XtSetSensitive(window->printSelItem, selected);
-    	    XtSetSensitive(window->cutItem, selected);
-    	    XtSetSensitive(window->copyItem, selected);
+            XtSetSensitive(window->printSelItem, selected);
+            XtSetSensitive(window->cutItem, selected);
+            XtSetSensitive(window->copyItem, selected);
             XtSetSensitive(window->delItem, selected);
             /* Note we don't change the selection for items like
                "Open Selected" and "Find Selected".  That's because
@@ -3024,9 +3024,9 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
             DimSelectionDepUserMenuItems(window, selected);
             if (window->replaceDlog != NULL && XtIsManaged(window->replaceDlog))
             {
-        	UpdateReplaceActionButtons(window);
+            UpdateReplaceActionButtons(window);
             }
-	}
+    }
     }
 
     /* When the program needs to make a change to a text area without without
@@ -3167,17 +3167,17 @@ static void saveYourselfCB(Widget w, Widget appShell, XtPointer callData)
 
     /* editor windows are popup-shell children of top-level appShell */
     XtVaGetValues(appShell, XmNchildren, &children, 
-    	    XmNnumChildren, &nItems, NULL);
+            XmNnumChildren, &nItems, NULL);
 
     for (n=nItems-1; n>=0; n--) {
-    	WidgetList tabs;
-	int tabCount;
-	
-	if (strcmp(XtName(children[n]), "textShell") ||
-	  ((topWin = WidgetToWindow(children[n])) == NULL))
-	    continue;   /* skip non-editor windows */ 
+        WidgetList tabs;
+    int tabCount;
+    
+    if (strcmp(XtName(children[n]), "textShell") ||
+      ((topWin = WidgetToWindow(children[n])) == NULL))
+        continue;   /* skip non-editor windows */ 
 
-	/* create a group for each window */
+    /* create a group for each window */
         getGeometryString(topWin, geometry);
         argv[argc++] = NEditStrdup("-group");
         argv[argc++] = NEditStrdup("-geometry");
@@ -3188,21 +3188,21 @@ static void saveYourselfCB(Widget w, Widget appShell, XtPointer callData)
         } else if (wasIconic) {
             argv[argc++] = NEditStrdup("-noiconic");
             wasIconic = False;
-	}
-	
-	/* add filename of each tab in window... */
-    	XtVaGetValues(topWin->tabBar, XmNtabWidgetList, &tabs,
-            	XmNtabCount, &tabCount, NULL);
+    }
+    
+    /* add filename of each tab in window... */
+        XtVaGetValues(topWin->tabBar, XmNtabWidgetList, &tabs,
+                XmNtabCount, &tabCount, NULL);
 
-    	for (i=0; i< tabCount; i++) {
-	    win = TabToWindow(tabs[i]);
+        for (i=0; i< tabCount; i++) {
+        win = TabToWindow(tabs[i]);
             if (win->filenameSet) {
-		/* add filename */
-        	argv[argc] = (char*)NEditMalloc(strlen(win->path) +
-                	strlen(win->filename) + 1);
-        	sprintf(argv[argc++], "%s%s", win->path, win->filename);
+        /* add filename */
+            argv[argc] = (char*)NEditMalloc(strlen(win->path) +
+                    strlen(win->filename) + 1);
+            sprintf(argv[argc++], "%s%s", win->path, win->filename);
             }
-	}
+    }
     }
 
     NEditFree(revWindowList);
@@ -3392,12 +3392,12 @@ static int updateLineNumDisp(WindowInfo* window)
 void UpdateStatsLine(WindowInfo *window)
 {
     int line, pos, colNum;
-	int byteLength;
-	long charCount = 0;
-	long offset = 0;
-	unsigned char current;
+    int byteLength;
+    long charCount = 0;
+    long offset = 0;
+    unsigned char current;
 
-	char * selection;
+    char * selection;
     char *string, *format, slinecol[42];
     Widget statW = window->statsLine;
     XmString xmslinecol;
@@ -3524,8 +3524,8 @@ void AllWindowsBusy(const char *message)
 
     if (!currentlyBusy)
     {
-	busyStartTime = getRelTimeInTenthsOfSeconds();
-	modeMessageSet = False;
+    busyStartTime = getRelTimeInTenthsOfSeconds();
+    modeMessageSet = False;
         
         for (w=WindowList; w!=NULL; w=w->next)
         {
@@ -3540,12 +3540,12 @@ void AllWindowsBusy(const char *message)
             BeginWait(w->shell);
         }
     } else if (!modeMessageSet && message && 
-		getRelTimeInTenthsOfSeconds() - busyStartTime > 10) {
-	/* Show the mode message when we've been busy for more than a second */ 
-	for (w=WindowList; w!=NULL; w=w->next) {
-	    SetModeMessage(w, message);
-	}
-	modeMessageSet = True;
+        getRelTimeInTenthsOfSeconds() - busyStartTime > 10) {
+    /* Show the mode message when we've been busy for more than a second */ 
+    for (w=WindowList; w!=NULL; w=w->next) {
+        SetModeMessage(w, message);
+    }
+    modeMessageSet = True;
     }
     BusyWait(WindowList->shell);
             
@@ -3729,14 +3729,14 @@ void AddSmallIcon(Widget shell)
 ** & 0.93.94 tested).  LessTif v2.x showed no such problem. 
 */
 static Pixmap createBitmapWithDepth(Widget w, char *data, unsigned int width,
-	unsigned int height)
+    unsigned int height)
 {
     Pixmap pixmap;
     Pixel fg, bg;
     int depth;
 
     XtVaGetValues (w, XmNforeground, &fg, XmNbackground, &bg,
-	    XmNdepth, &depth, NULL);
+        XmNdepth, &depth, NULL);
     pixmap = XCreatePixmapFromBitmapData(XtDisplay(w),
             RootWindowOfScreen(XtScreen(w)), (char *)data,
             width, height, fg, bg, depth);
@@ -3912,71 +3912,71 @@ static Widget manageToolBars(Widget toolBarsForm)
     int n, nItems=0;
 
     XtVaGetValues(toolBarsForm, XmNchildren, &children, 
-    	    XmNnumChildren, &nItems, NULL);
+            XmNnumChildren, &nItems, NULL);
 
     for (n=0; n<nItems; n++) {
-    	Widget tbar = children[n];
-	
-    	if (XtIsManaged(tbar)) {	    
-	    if (topWidget) {
-		XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_WIDGET,
-			XmNtopWidget, topWidget,
-		    	XmNbottomAttachment, XmATTACH_NONE,
-	    	    	XmNleftOffset, STAT_SHADOW_THICKNESS,
-	    	    	XmNrightOffset, STAT_SHADOW_THICKNESS,			
-			NULL);
-	    }
-	    else {
-	    	/* the very first toolbar on top */
-	    	XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_FORM,
-		    	XmNbottomAttachment, XmATTACH_NONE,
-	    	    	XmNleftOffset, STAT_SHADOW_THICKNESS,
-	    	    	XmNtopOffset, STAT_SHADOW_THICKNESS,			
-	    	    	XmNrightOffset, STAT_SHADOW_THICKNESS,			
-			NULL);
-	    }
+        Widget tbar = children[n];
+    
+        if (XtIsManaged(tbar)) {        
+        if (topWidget) {
+        XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, topWidget,
+                XmNbottomAttachment, XmATTACH_NONE,
+                    XmNleftOffset, STAT_SHADOW_THICKNESS,
+                    XmNrightOffset, STAT_SHADOW_THICKNESS,            
+            NULL);
+        }
+        else {
+            /* the very first toolbar on top */
+            XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_FORM,
+                XmNbottomAttachment, XmATTACH_NONE,
+                    XmNleftOffset, STAT_SHADOW_THICKNESS,
+                    XmNtopOffset, STAT_SHADOW_THICKNESS,            
+                    XmNrightOffset, STAT_SHADOW_THICKNESS,            
+            NULL);
+        }
 
-	    topWidget = tbar;	    
+        topWidget = tbar;        
 
-	    /* if the next widget is a separator, turn it on */
-	    if (n+1<nItems && !strcmp(XtName(children[n+1]), "TOOLBAR_SEP")) {
-    	    	XtManageChild(children[n+1]);
-	    }	    
-	}
-	else {
-	    /* Remove top attachment to widget to avoid circular dependency.
-	       Attach bottom to form so that when the widget is redisplayed
-	       later, it will trigger the parent form to resize properly as
-	       if the widget is being inserted */
-	    XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_NONE,
-		    XmNbottomAttachment, XmATTACH_FORM, NULL);
-	    
-	    /* if the next widget is a separator, turn it off */
-	    if (n+1<nItems && !strcmp(XtName(children[n+1]), "TOOLBAR_SEP")) {
-    	    	XtUnmanageChild(children[n+1]);
-	    }
-	}
+        /* if the next widget is a separator, turn it on */
+        if (n+1<nItems && !strcmp(XtName(children[n+1]), "TOOLBAR_SEP")) {
+                XtManageChild(children[n+1]);
+        }        
+    }
+    else {
+        /* Remove top attachment to widget to avoid circular dependency.
+           Attach bottom to form so that when the widget is redisplayed
+           later, it will trigger the parent form to resize properly as
+           if the widget is being inserted */
+        XtVaSetValues(tbar, XmNtopAttachment, XmATTACH_NONE,
+            XmNbottomAttachment, XmATTACH_FORM, NULL);
+        
+        /* if the next widget is a separator, turn it off */
+        if (n+1<nItems && !strcmp(XtName(children[n+1]), "TOOLBAR_SEP")) {
+                XtUnmanageChild(children[n+1]);
+        }
+    }
     }
     
     if (topWidget) {
-    	if (strcmp(XtName(topWidget), "TOOLBAR_SEP")) {
-	    XtVaSetValues(topWidget, 
-		    XmNbottomAttachment, XmATTACH_FORM,
-		    XmNbottomOffset, STAT_SHADOW_THICKNESS,
-		    NULL);
-	}
-	else {
-	    /* is a separator */
-	    Widget wgt;
-	    XtVaGetValues(topWidget, XmNtopWidget, &wgt, NULL);
-	    
-	    /* don't need sep below bottom-most toolbar */
-	    XtUnmanageChild(topWidget);
-	    XtVaSetValues(wgt, 
-		    XmNbottomAttachment, XmATTACH_FORM,
-		    XmNbottomOffset, STAT_SHADOW_THICKNESS,
-		    NULL);
-	}
+        if (strcmp(XtName(topWidget), "TOOLBAR_SEP")) {
+        XtVaSetValues(topWidget, 
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, STAT_SHADOW_THICKNESS,
+            NULL);
+    }
+    else {
+        /* is a separator */
+        Widget wgt;
+        XtVaGetValues(topWidget, XmNtopWidget, &wgt, NULL);
+        
+        /* don't need sep below bottom-most toolbar */
+        XtUnmanageChild(topWidget);
+        XtVaSetValues(wgt, 
+            XmNbottomAttachment, XmATTACH_FORM,
+            XmNbottomOffset, STAT_SHADOW_THICKNESS,
+            NULL);
+    }
     }
     
     return topWidget;
@@ -3999,7 +3999,7 @@ static void getTextPaneDimension(WindowInfo *window, int *nRows, int *nCols)
     /* we have to work out the height, as the text area may have been split */
     XtVaGetValues(window->textArea, textNhScrollBar, &hScrollBar,
             textNmarginHeight, &marginHeight, textNmarginWidth, &marginWidth,
-	    NULL);
+        NULL);
     XtVaGetValues(hScrollBar, XmNheight, &hScrollBarHeight, NULL);
     XtVaGetValues(window->splitPane, XmNheight, &paneHeight, NULL);
     totalHeight = paneHeight - 2*marginHeight -hScrollBarHeight;
@@ -4161,11 +4161,11 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
        manage it hidden, then unmanage it and reset XmNworkWindow, 
        then let RaiseDocument() show it later. */
     pane = XtVaCreateWidget("pane",
-    	    xmPanedWindowWidgetClass, window->mainWin,
-    	    XmNmarginWidth, 0, XmNmarginHeight, 0, XmNseparatorOn, False,
-    	    XmNspacing, 3, XmNsashIndent, -2,
-	    XmNmappedWhenManaged, False,
-	    NULL);
+            xmPanedWindowWidgetClass, window->mainWin,
+            XmNmarginWidth, 0, XmNmarginHeight, 0, XmNseparatorOn, False,
+            XmNspacing, 3, XmNsashIndent, -2,
+        XmNmappedWhenManaged, False,
+        NULL);
     XtVaSetValues(window->mainWin, XmNworkWindow, pane, NULL);
     XtManageChild(pane);
     window->splitPane = pane;
@@ -4182,8 +4182,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     /* Create the first, and most permanent text area (other panes may
        be added & removed, but this one will never be removed */
     text = createTextArea(pane, window, nRows, nCols,
-    	    GetPrefEmTabDist(PLAIN_LANGUAGE_MODE), GetPrefDelimiters(),
-	    GetPrefWrapMargin(), window->showLineNumbers?MIN_LINE_NUM_COLS:0);
+            GetPrefEmTabDist(PLAIN_LANGUAGE_MODE), GetPrefDelimiters(),
+        GetPrefWrapMargin(), window->showLineNumbers?MIN_LINE_NUM_COLS:0);
     XtManageChild(text);
     window->textArea = text;
     window->lastFocus = text;
@@ -4245,8 +4245,8 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
        the subsequently added documents. Here we try to do the latter 
        for all new documents created. */
     if (XtIsManaged(XtParent(window->statsLineForm))) {
-    	XtUnmanageChild(XtParent(window->statsLineForm));
-    	XtManageChild(XtParent(window->statsLineForm));    
+        XtUnmanageChild(XtParent(window->statsLineForm));
+        XtManageChild(XtParent(window->statsLineForm));    
     }
 #endif /* LESSTIF_VERSION */
 
@@ -4280,50 +4280,50 @@ static WindowInfo *getNextTabWindow(WindowInfo *window, int direction,
     int nBuf = crossWin? NWindows() : NDocuments(window);
 
     if (nBuf <= 1)
-    	return NULL;
+        return NULL;
 
     /* get the list of tabs */
     tabs = (WidgetList)NEditMalloc(sizeof(Widget) * nBuf);
     tabTotalCount = 0;
     if (crossWin) {
-	int n, nItems;
-	WidgetList children;
+    int n, nItems;
+    WidgetList children;
 
-	XtVaGetValues(TheAppShell, XmNchildren, &children, 
-    		XmNnumChildren, &nItems, NULL);
-	
-	/* get list of tabs in all windows */
-    	for (n=0; n<nItems; n++) {
-	    if (strcmp(XtName(children[n]), "textShell") ||
-	      ((win = WidgetToWindow(children[n])) == NULL))
-	    	continue;   /* skip non-text-editor windows */ 
-	    
-    	    XtVaGetValues(win->tabBar, XmNtabWidgetList, &tabList,
-            	    XmNtabCount, &tabCount, NULL);
-	    
-    	    for (i=0; i< tabCount; i++) {
-	    	tabs[tabTotalCount++] = tabList[i];
-	    }
-	}
+    XtVaGetValues(TheAppShell, XmNchildren, &children, 
+            XmNnumChildren, &nItems, NULL);
+    
+    /* get list of tabs in all windows */
+        for (n=0; n<nItems; n++) {
+        if (strcmp(XtName(children[n]), "textShell") ||
+          ((win = WidgetToWindow(children[n])) == NULL))
+            continue;   /* skip non-text-editor windows */ 
+        
+            XtVaGetValues(win->tabBar, XmNtabWidgetList, &tabList,
+                    XmNtabCount, &tabCount, NULL);
+        
+            for (i=0; i< tabCount; i++) {
+            tabs[tabTotalCount++] = tabList[i];
+        }
+    }
     }
     else {
-	/* get list of tabs in this window */
-    	XtVaGetValues(window->tabBar, XmNtabWidgetList, &tabList,
-            	XmNtabCount, &tabCount, NULL);
+    /* get list of tabs in this window */
+        XtVaGetValues(window->tabBar, XmNtabWidgetList, &tabList,
+                XmNtabCount, &tabCount, NULL);
 
-    	for (i=0; i< tabCount; i++) {
-	    if (TabToWindow(tabList[i]))    /* make sure tab is valid */
-	    	tabs[tabTotalCount++] = tabList[i];
-	}
+        for (i=0; i< tabCount; i++) {
+        if (TabToWindow(tabList[i]))    /* make sure tab is valid */
+            tabs[tabTotalCount++] = tabList[i];
+    }
     }
     
     /* find the position of the tab in the tablist */
     tabPos = 0;
     for (n=0; n<tabTotalCount; n++) {
-    	if (tabs[n] == window->tab) {
-	    tabPos = n;
-	    break;
-	}
+        if (tabs[n] == window->tab) {
+        tabPos = n;
+        break;
+    }
     }
     
     /* calculate index position of next tab */
@@ -4335,7 +4335,7 @@ static WindowInfo *getNextTabWindow(WindowInfo *window, int direction,
             nextPos = nBuf - 2; 
     } else if (nextPos < 0) {
         if (wrap)
-    	    nextPos = nBuf - 1;
+            nextPos = nBuf - 1;
         else
             nextPos = 1;
     }
@@ -4360,8 +4360,8 @@ static int getTabPosition(Widget tab)
             XmNtabCount, &tabCount, NULL);
 
     for (i=0; i< tabCount; i++) {
-    	if (tab == tabList[i])
-	    return i;
+        if (tab == tabList[i])
+        return i;
     }
     
     return -1; /* something is wrong! */
@@ -4403,9 +4403,9 @@ void RefreshTabState(WindowInfo *win)
     tipString=XmStringCreateSimple(labelString);
     
     XtVaSetValues(win->tab,
-	    XltNbubbleString, tipString,
-	    XmNlabelString, s1,
-	    NULL);
+        XltNbubbleString, tipString,
+        XmNlabelString, s1,
+        NULL);
     XmStringFree(s1);
     XmStringFree(tipString);
 }
@@ -4703,12 +4703,12 @@ int CloseAllDocumentInWindow(WindowInfo *window)
     WindowInfo *win;
     
     if (NUnsavedDocuments(window) == 1) {
-    	/* only one document in the window */
-    	return CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
+        /* only one document in the window */
+        return CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
     }
     else {
-	Widget winShell = window->shell;
-	WindowInfo *topDocument;
+    Widget winShell = window->shell;
+    WindowInfo *topDocument;
         
 #ifndef OLD_CLOSE_FILE_DIALOG
         // open dialog for selecting files, that should be saved
@@ -4716,43 +4716,43 @@ int CloseAllDocumentInWindow(WindowInfo *window)
             return False;
         } 
 #else
-    	/* close all _modified_ documents belong to this window */
-	for (win = WindowList; win; ) {
-    	    if (win->shell == winShell && win->fileChanged) {
-	    	WindowInfo *next = win->next;
-    	    	if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
-		    return False;
-		win = next;
-	    }
-	    else
-	    	win = win->next;
-	}
+        /* close all _modified_ documents belong to this window */
+    for (win = WindowList; win; ) {
+            if (win->shell == winShell && win->fileChanged) {
+            WindowInfo *next = win->next;
+                if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
+            return False;
+        win = next;
+        }
+        else
+            win = win->next;
+    }
 #endif        
         
-    	/* see there's still documents left in the window */
-	for (win = WindowList; win; win=win->next)
-	    if (win->shell == winShell)
-	    	break;
-	
-	if (win) {
-	    topDocument = GetTopDocument(winShell);
+        /* see there's still documents left in the window */
+    for (win = WindowList; win; win=win->next)
+        if (win->shell == winShell)
+            break;
+    
+    if (win) {
+        topDocument = GetTopDocument(winShell);
 
-    	    /* close all non-top documents belong to this window */
-	    for (win = WindowList; win; ) {
-    		if (win->shell == winShell && win != topDocument) {
-	    	    WindowInfo *next = win->next;
-    	    	    if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
-			return False;
-		    win = next;
-		}
-		else
-	    	    win = win->next;
-	    }
+            /* close all non-top documents belong to this window */
+        for (win = WindowList; win; ) {
+            if (win->shell == winShell && win != topDocument) {
+                WindowInfo *next = win->next;
+                    if (!CloseFileAndWindow(win, PROMPT_SBC_DIALOG_RESPONSE))
+            return False;
+            win = next;
+        }
+        else
+                win = win->next;
+        }
 
-	    /* close the last document and its window */
-    	    if (!CloseFileAndWindow(topDocument, PROMPT_SBC_DIALOG_RESPONSE))
-		return False;
-	}
+        /* close the last document and its window */
+            if (!CloseFileAndWindow(topDocument, PROMPT_SBC_DIALOG_RESPONSE))
+        return False;
+    }
     }
     
     return True;
@@ -4763,23 +4763,23 @@ static void CloseDocumentWindow(Widget w, WindowInfo *window, XtPointer callData
     int nDocuments = NDocuments(window);
     
     if (nDocuments == NWindows()) {
-    	/* this is only window, then exit */
-	XtCallActionProc(WindowList->lastFocus, "exit",
-    		((XmAnyCallbackStruct *)callData)->event, NULL, 0);
+        /* this is only window, then exit */
+    XtCallActionProc(WindowList->lastFocus, "exit",
+            ((XmAnyCallbackStruct *)callData)->event, NULL, 0);
     }
     else {
         if (nDocuments == 1) {
-	    CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
-	}
-    	else {
+        CloseFileAndWindow(window, PROMPT_SBC_DIALOG_RESPONSE);
+    }
+        else {
             int resp = 1;
             if (GetPrefWarnExit())
                 resp = DialogF(DF_QUES, window->shell, 2, "Close Window",
-	    	    "Close ALL documents in this window?", "Close", "Cancel");
+                "Close ALL documents in this window?", "Close", "Cancel");
 
             if (resp == 1)
-    		CloseAllDocumentInWindow(window);
-	}
+            CloseAllDocumentInWindow(window);
+    }
     }
 }
 
@@ -4792,8 +4792,8 @@ void RefreshMenuToggleStates(WindowInfo *window)
     WindowInfo *win;
     
     if (!IsTopDocument(window))
-	return;
-	
+    return;
+    
     /* File menu */
     XtSetSensitive(window->printSelItem, window->wasSelected);
 
@@ -4837,8 +4837,8 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XtSetSensitive(window->contextDetachDocumentItem, NDocuments(window)>1);
 
     for (win=WindowList; win; win=win->next)
-    	if (win->shell != window->shell)  
-	    break;
+        if (win->shell != window->shell)  
+        break;
     XtSetSensitive(window->moveDocumentItem, win != NULL);
 }
 
@@ -4865,8 +4865,8 @@ WindowInfo *MarkLastDocument(WindowInfo *window)
     WindowInfo *prev = lastFocusDocument;
     
     if (window)
-    	lastFocusDocument = window;
-	
+        lastFocusDocument = window;
+    
     return prev;
 }
 
@@ -4878,7 +4878,7 @@ WindowInfo *MarkActiveDocument(WindowInfo *window)
     WindowInfo *prev = inFocusDocument;
 
     if (window)
-    	inFocusDocument = window;
+        inFocusDocument = window;
 
     return prev;
 }
@@ -4891,16 +4891,16 @@ void NextDocument(WindowInfo *window)
     WindowInfo *win;
     
     if (WindowList->next == NULL)
-    	return;
+        return;
 
     win = getNextTabWindow(window, 1, GetPrefGlobalTabNavigate(), 1);
     if (win == NULL)
-    	return;
-	
+        return;
+    
     if (window->shell == win->shell)
-	RaiseDocument(win);
+    RaiseDocument(win);
     else
-    	RaiseFocusDocumentWindow(win, True);
+        RaiseFocusDocumentWindow(win, True);
 }
 
 /*
@@ -4911,16 +4911,16 @@ void PreviousDocument(WindowInfo *window)
     WindowInfo *win;
     
     if (WindowList->next == NULL)
-    	return;
+        return;
 
     win = getNextTabWindow(window, -1, GetPrefGlobalTabNavigate(), 1);
     if (win == NULL)
-    	return;
-	
+        return;
+    
     if (window->shell == win->shell)
-	RaiseDocument(win);
+    RaiseDocument(win);
     else
-    	RaiseFocusDocumentWindow(win, True);
+        RaiseFocusDocumentWindow(win, True);
 }
 
 /*
@@ -4931,17 +4931,17 @@ void LastDocument(WindowInfo *window)
     WindowInfo *win;
     
     for(win = WindowList; win; win=win->next)
-    	if (lastFocusDocument == win)
-	    break;
+        if (lastFocusDocument == win)
+        break;
     
     if (!win)
-    	return;
+        return;
 
     if (window->shell == win->shell)
-	RaiseDocument(win);
+    RaiseDocument(win);
     else
-    	RaiseFocusDocumentWindow(win, True);
-	
+        RaiseFocusDocumentWindow(win, True);
+    
 }
 
 /*
@@ -4952,8 +4952,8 @@ int IsValidWindow(WindowInfo *window)
     WindowInfo *win;
     
     for(win = WindowList; win; win=win->next)
-    	if (window == win)
-	    return True;
+        if (window == win)
+        return True;
     
     
     return False;
@@ -4965,8 +4965,8 @@ int IsValidWindow(WindowInfo *window)
 void RaiseDocumentWindow(WindowInfo *window)
 {
     if (!window)
-    	return;
-	
+        return;
+    
     RaiseDocument(window);
     RaiseShellWindow(window->shell, GetPrefFocusOnRaise());
 }
@@ -4977,8 +4977,8 @@ void RaiseDocumentWindow(WindowInfo *window)
 void RaiseFocusDocumentWindow(WindowInfo *window, Boolean focus)
 {
     if (!window)
-    	return;
-	
+        return;
+    
     RaiseDocument(window);
     RaiseShellWindow(window->shell, focus);
 }
@@ -4997,15 +4997,15 @@ static void redisplayTearOffs(Widget menuPane)
     XtVaGetValues(menuPane, XmNchildren, &itemList, 
             XmNnumChildren, &nItems, NULL);
     for (n=0; n<(int)nItems; n++) {
-    	if (XtClass(itemList[n]) == xmCascadeButtonWidgetClass) {
-	    XtVaGetValues(itemList[n], XmNsubMenuId, &subMenuID, NULL);
-	    redisplayTearOffs(subMenuID);
-	}
+        if (XtClass(itemList[n]) == xmCascadeButtonWidgetClass) {
+        XtVaGetValues(itemList[n], XmNsubMenuId, &subMenuID, NULL);
+        redisplayTearOffs(subMenuID);
+    }
     }
 
     /* redisplay tearoff for this menu */
     if (!XmIsMenuShell(XtParent(menuPane)))
-    	ShowHiddenTearOff(menuPane);    
+        ShowHiddenTearOff(menuPane);    
 }
 
 /*
@@ -5023,15 +5023,15 @@ static void hideTearOffs(Widget menuPane)
     XtVaGetValues(menuPane, XmNchildren, &itemList, 
             XmNnumChildren, &nItems, NULL);
     for (n=0; n<(int)nItems; n++) {
-    	if (XtClass(itemList[n]) == xmCascadeButtonWidgetClass) {
-	    XtVaGetValues(itemList[n], XmNsubMenuId, &subMenuID, NULL);
-	    hideTearOffs(subMenuID);
-	}
+        if (XtClass(itemList[n]) == xmCascadeButtonWidgetClass) {
+        XtVaGetValues(itemList[n], XmNsubMenuId, &subMenuID, NULL);
+        hideTearOffs(subMenuID);
+    }
     }
 
     /* hide tearoff for this menu */
     if (!XmIsMenuShell(XtParent(menuPane)))
-    	XtUnmapWidget(XtParent(menuPane));    
+        XtUnmapWidget(XtParent(menuPane));    
 }
 
 /*
@@ -5043,18 +5043,18 @@ static void hideTearOffs(Widget menuPane)
 void RaiseDocument(WindowInfo *window)
 {
     WindowInfo *win, *lastwin;        
-	
+    
     if (!window || !WindowList)
-    	return;
+        return;
 
     lastwin = MarkActiveDocument(window);
     if (lastwin != window && IsValidWindow(lastwin))
-    	MarkLastDocument(lastwin);
+        MarkLastDocument(lastwin);
 
     /* document already on top? */
     XtVaGetValues(window->mainWin, XmNuserData, &win, NULL);
     if (win == window)
-    	return;
+        return;
 
     /* set the document as top document */
     XtVaSetValues(window->mainWin, XmNuserData, window, NULL);
@@ -5067,10 +5067,10 @@ void RaiseDocument(WindowInfo *window)
     /* Turn on syntax highlight that might have been deferred.
        NB: this must be done after setting the document as
            XmNworkWindow and managed, else the parent shell 
-	   window may shrink on some window-managers such as 
-	   metacity, due to changes made in UpdateWMSizeHints().*/
+       window may shrink on some window-managers such as 
+       metacity, due to changes made in UpdateWMSizeHints().*/
     if (window->highlightSyntax && window->highlightData==NULL)
-    	StartHighlighting(window, False);
+        StartHighlighting(window, False);
 
     /* put away the bg menu tearoffs of last active document */
     hideTearOffs(win->bgMenuPane);
@@ -5080,7 +5080,7 @@ void RaiseDocument(WindowInfo *window)
     
     /* set tab as active */
     XmLFolderSetActiveTab(window->tabBar,
-    	    getTabPosition(window->tab), False);
+            getTabPosition(window->tab), False);
 
     /* set keyboard focus. Must be done before unmanaging previous
        top document, else lastFocus will be reset to textArea */
@@ -5152,8 +5152,8 @@ int NDocuments(WindowInfo *window)
     int nDocument = 0;
     
     for (win = WindowList; win; win = win->next) {
-    	if (win->shell == window->shell)
-	    nDocument++;
+        if (win->shell == window->shell)
+        nDocument++;
     }
     
     return nDocument;
@@ -5166,8 +5166,8 @@ int NUnsavedDocuments(WindowInfo *window)
     int nDocument = 0;
     
     for (win = WindowList; win; win = win->next) {
-    	if(win->shell == winShell && win->fileChanged)
-	    nDocument++;
+        if(win->shell == winShell && win->fileChanged)
+        nDocument++;
     }
     
     return nDocument;
@@ -5181,8 +5181,8 @@ void RefreshWindowStates(WindowInfo *window)
     int updateStatsFormStatus = 0;
     
     if (!IsTopDocument(window))
-    	return;
-	
+        return;
+    
     if(window->showInfoBar) {
         SetEncErrors(window, window->encErrors, window->numEncErrors, window->encErrorsOnSave);
         if(window->encErrorsOnSave) {
@@ -5196,9 +5196,9 @@ void RefreshWindowStates(WindowInfo *window)
     }
     
     if (window->modeMessageDisplayed) {
-    	XmTextSetString(window->statsLine, window->modeMessage);
+        XmTextSetString(window->statsLine, window->modeMessage);
     } else {
-    	UpdateStatsLine(window);
+        UpdateStatsLine(window);
     }
     
     UpdateWindowReadOnly(window);
@@ -5206,17 +5206,17 @@ void RefreshWindowStates(WindowInfo *window)
 
     /* show/hide statsline as needed */
     if (window->modeMessageDisplayed && !XtIsManaged(window->statsLineForm)) {
-    	/* turn on statline to display mode message */
-    	showStats(window, True);
+        /* turn on statline to display mode message */
+        showStats(window, True);
     }
     else if (window->showStats && !XtIsManaged(window->statsLineForm)) {
-    	/* turn on statsline since it is enabled */
-    	showStats(window, True);
+        /* turn on statsline since it is enabled */
+        showStats(window, True);
     }
     else if (!window->showStats && !window->modeMessageDisplayed &&
              XtIsManaged(window->statsLineForm)) {
-    	/* turn off statsline since there's nothing to show */
-    	showStats(window, False);
+        /* turn off statsline since there's nothing to show */
+        showStats(window, False);
     } else if(updateStatsFormStatus) {
         showStatsForm(window);
     }
@@ -5227,14 +5227,14 @@ void RefreshWindowStates(WindowInfo *window)
     
     /* signal if macro/shell is running */
     if (window->shellCmdData || window->macroCmdData)
-    	BeginWait(window->shell);
+        BeginWait(window->shell);
     else
-    	EndWait(window->shell);
+        EndWait(window->shell);
 
     /* we need to force the statsline to reveal itself */
     if (XtIsManaged(window->statsLineForm)) {
-	XmTextSetCursorPosition(window->statsLine, 0);     /* start of line */
-	XmTextSetCursorPosition(window->statsLine, 9000);  /* end of line */
+    XmTextSetCursorPosition(window->statsLine, 0);     /* start of line */
+    XmTextSetCursorPosition(window->statsLine, 9000);  /* end of line */
     }
     
     XmUpdateDisplay(window->statsLine);    
@@ -5256,60 +5256,60 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
     
     /* transfer the primary selection */
     memcpy(&sel, &orgWin->buffer->primary, sizeof(selection));
-	    
+        
     if (sel.selected) {
-    	if (sel.rectangular)
-    	    BufRectSelect(window->buffer, sel.start, sel.end,
-		    sel.rectStart, sel.rectEnd);
-    	else
-    	    BufSelect(window->buffer, sel.start, sel.end);
+        if (sel.rectangular)
+            BufRectSelect(window->buffer, sel.start, sel.end,
+            sel.rectStart, sel.rectEnd);
+        else
+            BufSelect(window->buffer, sel.start, sel.end);
     } else
-    	BufUnselect(window->buffer);
+        BufUnselect(window->buffer);
 
     /* Record the current heights, scroll positions, and insert positions
        of the existing panes, keyboard focus */
     focusPane = 0;
     for (i=0; i<=orgWin->nPanes; i++) {
-    	text = i==0 ? orgWin->textArea : orgWin->textPanes[i-1];
-    	insertPositions[i] = TextGetCursorPos(text);
-    	XtVaGetValues(containingPane(text), XmNheight, &paneHeights[i], NULL);
-    	totalHeight += paneHeights[i];
-    	TextGetScroll(text, &topLines[i], &horizOffsets[i]);
-    	if (text == orgWin->lastFocus)
-    	    focusPane = i;
+        text = i==0 ? orgWin->textArea : orgWin->textPanes[i-1];
+        insertPositions[i] = TextGetCursorPos(text);
+        XtVaGetValues(containingPane(text), XmNheight, &paneHeights[i], NULL);
+        totalHeight += paneHeights[i];
+        TextGetScroll(text, &topLines[i], &horizOffsets[i]);
+        if (text == orgWin->lastFocus)
+            focusPane = i;
     }
     
     window->nPanes = orgWin->nPanes;
     
     /* Copy some parameters */
     XtVaGetValues(orgWin->textArea, textNemulateTabs, &emTabDist,
-    	    textNwordDelimiters, &delimiters, textNwrapMargin, &wrapMargin,
+            textNwordDelimiters, &delimiters, textNwrapMargin, &wrapMargin,
             NULL);
     lineNumCols = orgWin->showLineNumbers ? MIN_LINE_NUM_COLS : 0;
     XtVaSetValues(window->textArea, textNemulateTabs, emTabDist,
-    	    textNwordDelimiters, delimiters, textNwrapMargin, wrapMargin,
-	    textNlineNumCols, lineNumCols, NULL);
+            textNwordDelimiters, delimiters, textNwrapMargin, wrapMargin,
+        textNlineNumCols, lineNumCols, NULL);
     
     
     /* clone split panes, if any */
     textD = ((TextWidget)window->textArea)->text.textD;
     if (window->nPanes) {
-	/* Unmanage & remanage the panedWindow so it recalculates pane 
+    /* Unmanage & remanage the panedWindow so it recalculates pane 
            heights */
-    	XtUnmanageChild(window->splitPane);
+        XtUnmanageChild(window->splitPane);
 
-	/* Create a text widget to add to the pane and set its buffer and
-	   highlight data to be the same as the other panes in the orgWin */
+    /* Create a text widget to add to the pane and set its buffer and
+       highlight data to be the same as the other panes in the orgWin */
 
-	for(i=0; i<orgWin->nPanes; i++) {
-	    text = createTextArea(window->splitPane, window, 1, 1, emTabDist,
-    		    delimiters, wrapMargin, lineNumCols);
-	    TextSetBuffer(text, window->buffer);
+    for(i=0; i<orgWin->nPanes; i++) {
+        text = createTextArea(window->splitPane, window, 1, 1, emTabDist,
+                delimiters, wrapMargin, lineNumCols);
+        TextSetBuffer(text, window->buffer);
 
-	    if (window->highlightData != NULL)
-    		AttachHighlightToWidget(text, window);
-	    XtManageChild(text);
-	    window->textPanes[i] = text;
+        if (window->highlightData != NULL)
+            AttachHighlightToWidget(text, window);
+        XtManageChild(text);
+        window->textPanes[i] = text;
 
             /* Fix up the colors */
             newTextD = ((TextWidget)text)->text.textD;
@@ -5317,49 +5317,49 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
                     XmNbackground, textD->colorProfile->textBgColor.pixel, 
                     textNansiColorList, window->ansiColorList, NULL);
             TextDSetColorProfile(newTextD, textD->colorProfile);
-	}
+    }
         
-	/* Set the minimum pane height in the new pane */
-	UpdateMinPaneHeights(window);
+    /* Set the minimum pane height in the new pane */
+    UpdateMinPaneHeights(window);
 
-	for (i=0; i<=window->nPanes; i++) {
-    	    text = i==0 ? window->textArea : window->textPanes[i-1];
-    	    setPaneDesiredHeight(containingPane(text), paneHeights[i]);
-	}
+    for (i=0; i<=window->nPanes; i++) {
+            text = i==0 ? window->textArea : window->textPanes[i-1];
+            setPaneDesiredHeight(containingPane(text), paneHeights[i]);
+    }
 
-	/* Re-manage panedWindow to recalculate pane heights & reset selection */
-    	XtManageChild(window->splitPane);
+    /* Re-manage panedWindow to recalculate pane heights & reset selection */
+        XtManageChild(window->splitPane);
     }
 
     /* Reset all of the heights, scroll positions, etc. */
     for (i=0; i<=window->nPanes; i++) {
-    	textDisp *paneTextD;
-	
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-	TextSetCursorPos(text, insertPositions[i]);
-	TextSetScroll(text, topLines[i], horizOffsets[i]);
+        textDisp *paneTextD;
+    
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+    TextSetCursorPos(text, insertPositions[i]);
+    TextSetScroll(text, topLines[i], horizOffsets[i]);
 
-	/* dim the cursor */
-    	paneTextD = ((TextWidget)text)->text.textD;
-	TextDSetCursorStyle(paneTextD, DIM_CURSOR);
-	TextDUnblankCursor(paneTextD);
+    /* dim the cursor */
+        paneTextD = ((TextWidget)text)->text.textD;
+    TextDSetCursorStyle(paneTextD, DIM_CURSOR);
+    TextDUnblankCursor(paneTextD);
     }
         
     /* set the focus pane */
     for (i=0; i<=window->nPanes; i++) {
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-	if(i == focusPane) {
-	    window->lastFocus = text;
-    	    XmProcessTraversal(text, XmTRAVERSE_CURRENT);
-	    break;
-	}
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+    if(i == focusPane) {
+        window->lastFocus = text;
+            XmProcessTraversal(text, XmTRAVERSE_CURRENT);
+        break;
+    }
     }
     
     /* Update the window manager size hints after the sizes of the panes have
        been set (the widget heights are not yet readable here, but they will
        be by the time the event loop gets around to running this timer proc) */
     XtAppAddTimeOut(XtWidgetToApplicationContext(window->shell), 0,
-    	    wmSizeUpdateProc, window);
+            wmSizeUpdateProc, window);
 }
 
 /*
@@ -5418,13 +5418,13 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
        if syntax highlighting is on.
     */
     window->buffer->rangesetTable =
-	    RangesetTableClone(orgWin->buffer->rangesetTable, window->buffer);
+        RangesetTableClone(orgWin->buffer->rangesetTable, window->buffer);
 
     /* Syntax highlighting */    
     window->languageMode = orgWin->languageMode;
     window->highlightSyntax = orgWin->highlightSyntax;
     if (window->highlightSyntax)
-    	StartHighlighting(window, False);
+        StartHighlighting(window, False);
 
     /* copy states of original document */
     window->filenameSet = orgWin->filenameSet;
@@ -5508,21 +5508,21 @@ static UndoInfo *cloneUndoItems(UndoInfo *orgList)
     UndoInfo *head = NULL, *undo, *clone, *last = NULL;
 
     for (undo = orgList; undo; undo = undo->next) {
-	clone = (UndoInfo *)NEditMalloc(sizeof(UndoInfo));
-	memcpy(clone, undo, sizeof(UndoInfo));
+    clone = (UndoInfo *)NEditMalloc(sizeof(UndoInfo));
+    memcpy(clone, undo, sizeof(UndoInfo));
 
-	if (undo->oldText) {
-	    clone->oldText = (char*)NEditMalloc(strlen(undo->oldText)+1);
-	    strcpy(clone->oldText, undo->oldText);
-	}
-	clone->next = NULL;
+    if (undo->oldText) {
+        clone->oldText = (char*)NEditMalloc(strlen(undo->oldText)+1);
+        strcpy(clone->oldText, undo->oldText);
+    }
+    clone->next = NULL;
 
-	if (last)
-	    last->next = clone;
-	else
-	    head = clone;
+    if (last)
+        last->next = clone;
+    else
+        head = clone;
 
-	last = clone;
+    last = clone;
     }
 
     return head;
@@ -5570,13 +5570,13 @@ WindowInfo *DetachDocument(WindowInfo *window)
     WindowInfo *win = NULL, *cloneWin;
     
     if (NDocuments(window) < 2)
-    	return NULL;
+        return NULL;
 
     /* raise another document in the same shell window if the window
        being detached is the top document */
     if (IsTopDocument(window)) {
-    	win = getNextTabWindow(window, 1, 0, 0);
-    	RaiseDocument(win);
+        win = getNextTabWindow(window, 1, 0, 0);
+        RaiseDocument(win);
     }
     
     //WinGeometry geometry = WindowGetGeometry(window);
@@ -5641,13 +5641,13 @@ WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window)
 
     /* prepare to move document */
     if (NDocuments(window) < 2) {
-    	/* hide the window to make it look like we are moving */
-    	XtUnmapWidget(window->shell);
+        /* hide the window to make it look like we are moving */
+        XtUnmapWidget(window->shell);
     }
     else if (IsTopDocument(window)) {
-    	/* raise another document to replace the document being moved */
-    	win = getNextTabWindow(window, 1, 0, 0);
-    	RaiseDocument(win);
+        /* raise another document to replace the document being moved */
+        win = getNextTabWindow(window, 1, 0, 0);
+        RaiseDocument(win);
     }
     
     /* relocate the document to target window */
@@ -5671,7 +5671,7 @@ WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window)
     
     /* some menu states might have changed when deleting document */
     if (win)
-    	RefreshWindowStates(win);
+        RefreshWindowStates(win);
     
     /* this should keep the new document window fresh */
     RaiseDocumentWindow(cloneWin);
@@ -5682,7 +5682,7 @@ WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window)
 }
 
 static void moveDocumentCB(Widget dialog, WindowInfo *window,
-	XtPointer call_data)
+    XtPointer call_data)
 {
     XmSelectionBoxCallbackStruct *cbs = (XmSelectionBoxCallbackStruct *) call_data;
     DoneWithMoveDocumentDialog = cbs->reason;
@@ -5710,15 +5710,15 @@ void MoveDocumentDialog(WindowInfo *window)
     shellWinList = (WindowInfo **) NEditMalloc(nWindows * sizeof(WindowInfo *));
 
     for (win=WindowList; win; win=win->next) {
-	if (!IsTopDocument(win) || win->shell == window->shell)
-	    continue;
-	
-	snprintf(tmpStr, sizeof(tmpStr), "%s%s",
-		win->filenameSet? win->path : "", win->filename);
+    if (!IsTopDocument(win) || win->shell == window->shell)
+        continue;
+    
+    snprintf(tmpStr, sizeof(tmpStr), "%s%s",
+        win->filenameSet? win->path : "", win->filename);
 
-	list[nList] = XmStringCreateSimple(tmpStr);
-	shellWinList[nList] = win;
-	nList++;
+    list[nList] = XmStringCreateSimple(tmpStr);
+    shellWinList[nList] = win;
+    nList++;
     }
 
     /* stop here if there's no other window to move to */
@@ -5754,20 +5754,20 @@ void MoveDocumentDialog(WindowInfo *window)
 
     /* free the window list */
     for (i=0; i<nList; i++)
-	XmStringFree(list[i]);
+    XmStringFree(list[i]);
     NEditFree(list);    
 
     /* create the option box for moving all documents */    
     s1 = MKSTRING("Move all documents in this window");
     moveAllOption =  XtVaCreateWidget("moveAll", 
-    	    xmToggleButtonWidgetClass, dialog,
-	    XmNlabelString, s1,
-	    XmNalignment, XmALIGNMENT_BEGINNING,
-	    NULL);
+            xmToggleButtonWidgetClass, dialog,
+        XmNlabelString, s1,
+        XmNalignment, XmALIGNMENT_BEGINNING,
+        NULL);
     XmStringFree(s1);
     
     if (NDocuments(window) >1)
-	XtManageChild(moveAllOption);
+    XtManageChild(moveAllOption);
 
     /* disable option if only one document in the window */
     XtUnmanageChild(XmSelectionBoxGetChild(dialog, XmDIALOG_APPLY_BUTTON));
@@ -5793,29 +5793,29 @@ void MoveDocumentDialog(WindowInfo *window)
     
     /* now move document(s) */
     if (DoneWithMoveDocumentDialog == XmCR_OK) {
-    	/* move top document */
-	if (XmToggleButtonGetState(moveAllOption)) {
-    	    /* move all documents */
-	    for (win = WindowList; win; ) {		
-    		if (win != window && win->shell == window->shell) {
-	    	    WindowInfo *next = win->next;
-    	    	    MoveDocument(targetWin, win);
-		    win = next;
-		}
-		else
-	    	    win = win->next;
-	    }
+        /* move top document */
+    if (XmToggleButtonGetState(moveAllOption)) {
+            /* move all documents */
+        for (win = WindowList; win; ) {        
+            if (win != window && win->shell == window->shell) {
+                WindowInfo *next = win->next;
+                    MoveDocument(targetWin, win);
+            win = next;
+        }
+        else
+                win = win->next;
+        }
 
-	    /* invoking document is the last to move */
-    	    MoveDocument(targetWin, window);
-	}
-	else {
-    	    MoveDocument(targetWin, window);
-	}
+        /* invoking document is the last to move */
+            MoveDocument(targetWin, window);
+    }
+    else {
+            MoveDocument(targetWin, window);
+    }
     }
 
     NEditFree(shellWinList);    
-    XtDestroyWidget(dialog);	
+    XtDestroyWidget(dialog);    
 }
 
 static void hideTooltip(Widget tab)
@@ -5823,7 +5823,7 @@ static void hideTooltip(Widget tab)
     Widget tooltip = XtNameToWidget(tab, "*BubbleShell");
     
     if (tooltip)
-    	XtPopdown(tooltip);
+        XtPopdown(tooltip);
 }
 
 static void closeTabProc(XtPointer clientData, XtIntervalId *id)
@@ -5854,7 +5854,7 @@ static void closeTabCB(Widget w, Widget mainWin, caddr_t callData)
        managed to workaround the bug by delaying the action of closing
        the tab. For now. */
     XtAppAddTimeOut(XtWidgetToApplicationContext(w), 0,
-    	    closeTabProc, GetTopDocument(mainWin));
+            closeTabProc, GetTopDocument(mainWin));
 }
 
 /*
@@ -5894,7 +5894,7 @@ void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state,
         Boolean notify)
 {
     if (IsTopDocument(window)) {
-    	XmToggleButtonSetState(w, state, notify);
+        XmToggleButtonSetState(w, state, notify);
     }
 }
 
@@ -5904,7 +5904,7 @@ void SetToggleButtonState(WindowInfo *window, Widget w, Boolean state,
 void SetSensitive(WindowInfo *window, Widget w, Boolean sensitive)
 {
     if (IsTopDocument(window)) {
-    	XtSetSensitive(w, sensitive);
+        XtSetSensitive(w, sensitive);
     }
 }
 
@@ -5918,26 +5918,26 @@ void CleanUpTabBarExposeQueue(WindowInfo *window)
     int count;
     
     if (window == NULL)
-    	return;
+        return;
     
     /* remove redundant expose events on tab bar */
     count=0;
     while (XCheckTypedWindowEvent(TheDisplay, XtWindow(window->tabBar), 
-	   Expose, &event))
-	count++;
+       Expose, &event))
+    count++;
 
     /* now we can update tabbar */
     if (count) {
-	ev.type = Expose;
-	ev.display = TheDisplay;
-	ev.window = XtWindow(window->tabBar);
-	ev.x = 0;
-	ev.y = 0;
-	ev.width = XtWidth(window->tabBar);
-	ev.height = XtHeight(window->tabBar);
-	ev.count = 0;
-	XSendEvent(TheDisplay, XtWindow(window->tabBar), False,
-		ExposureMask, (XEvent *)&ev);
+    ev.type = Expose;
+    ev.display = TheDisplay;
+    ev.window = XtWindow(window->tabBar);
+    ev.x = 0;
+    ev.y = 0;
+    ev.width = XtWidth(window->tabBar);
+    ev.height = XtHeight(window->tabBar);
+    ev.count = 0;
+    XSendEvent(TheDisplay, XtWindow(window->tabBar), False,
+        ExposureMask, (XEvent *)&ev);
     }
 }    
 
@@ -6209,7 +6209,7 @@ static void reloadCB(Widget w, Widget mainWin, void *callData)
 
 static void updateWindowMapStatus(Widget widget, Boolean status) {
     for (WindowInfo *w=WindowList; w!=NULL; w=w->next) {
-    	if(w->shell == widget) {
+        if(w->shell == widget) {
             w->mapped = status;
         }
     }

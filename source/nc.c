@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* nc.c -- Nirvana Editor client program for nedit server processes	       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* nc.c -- Nirvana Editor client program for nedit server processes             *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* November, 1995							       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* November, 1995                                                               *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -160,10 +160,10 @@ static FileListHead fileListHead;
 
 static void setPropertyValue(Atom atom) {
     XChangeProperty(TheDisplay,
-	            RootWindow(TheDisplay, DefaultScreen(TheDisplay)),
-	            atom, XA_STRING,
-	            8, PropModeReplace,
-	            (unsigned char *)"True", 4);
+                RootWindow(TheDisplay, DefaultScreen(TheDisplay)),
+                atom, XA_STRING,
+                8, PropModeReplace,
+                (unsigned char *)"True", 4);
 }
 
 /* Add another entry to the file entry list, if it doesn't exist yet. */
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     /* Read the preferences command line into a database (note that we
        don't support the .nc file anymore) */
     prefDB = CreatePreferencesDatabase(NULL, APP_CLASS, 
-	    OpTable, XtNumber(OpTable), (unsigned *)&argc, argv);
+        OpTable, XtNumber(OpTable), (unsigned *)&argc, argv);
     
     /* Process the command line before calling XtOpenDisplay, because the
        latter consumes certain command line arguments that we still need
@@ -241,23 +241,23 @@ int main(int argc, char **argv)
         
     /* Open the display and find the root window */
     TheDisplay = XtOpenDisplay (context, NULL, APP_NAME, APP_CLASS, NULL,
-    	    0, &argc, argv);
+            0, &argc, argv);
     if (!TheDisplay) {
-	XtWarning ("xnc: Can't open display\n");
-	exit(EXIT_FAILURE);
+    XtWarning ("xnc: Can't open display\n");
+    exit(EXIT_FAILURE);
     }
     rootWindow = RootWindow(TheDisplay, DefaultScreen(TheDisplay));
     
     /* Read the application resources into the Preferences data structure */
     RestorePreferences(prefDB, XtDatabase(TheDisplay), APP_NAME,
-    	    APP_CLASS, PrefDescrip, XtNumber(PrefDescrip));
+            APP_CLASS, PrefDescrip, XtNumber(PrefDescrip));
     
     /* Make sure that the time out unit is at least 1 second and not too
        large either (overflow!). */
     if (Preferences.timeOut < 1) {
-	Preferences.timeOut = 1;
+    Preferences.timeOut = 1;
     } else if (Preferences.timeOut > 1000) {
-	Preferences.timeOut = 1000;
+    Preferences.timeOut = 1000;
     }
     
     /* For Clearcase users who have not set a server name, use the clearcase
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
         
     /* Monitor the properties on the root window */
     XSelectInput(TheDisplay, rootWindow, PropertyChangeMask);
-	
+    
     /* Create the server property atoms on the current DISPLAY. */
     CreateServerPropertyAtoms(Preferences.serverName,
                               &serverExistsAtom,
@@ -314,8 +314,8 @@ static void timeOutProc(Boolean *timeOutReturn, XtIntervalId *id)
    */
     Window rootWindow = RootWindow(TheDisplay, DefaultScreen(TheDisplay));
     if (currentWaitForAtom != noAtom) {
-	XChangeProperty(TheDisplay, rootWindow, currentWaitForAtom, XA_STRING, 
-	    8, PropModeReplace, (unsigned char *)"", strlen(""));
+    XChangeProperty(TheDisplay, rootWindow, currentWaitForAtom, XA_STRING, 
+        8, PropModeReplace, (unsigned char *)"", strlen(""));
     }
 
     /* Flag that the timeout has occurred. */
@@ -337,8 +337,8 @@ static Boolean findExistingServer(XtAppContext context,
     /* See if there might be a server (not a guaranty), by translating the
        root window property XNEDIT_SERVER_EXISTS_<user>_<host> */
     if (XGetWindowProperty(TheDisplay, rootWindow, serverExistsAtom, 0,
-    	    INT_MAX, False, XA_STRING, &dummyAtom, &getFmt, &nItems,
-    	    &dummyULong, &propValue) != Success || nItems == 0) {
+            INT_MAX, False, XA_STRING, &dummyAtom, &getFmt, &nItems,
+            &dummyULong, &propValue) != Success || nItems == 0) {
         serverExists = False;
     } else {
         Boolean timeOut = False;
@@ -475,17 +475,17 @@ static int startServer(const char *message, const char *commandLineArgs)
     
     /* prompt user whether to start server */
     if (!Preferences.autoStart) {
-	printf("%s", message);
-	do {
-    	    c = getc(stdin);
-	} while (c == ' ' || c == '\t');
-	if (c != 'Y' && c != 'y' && c != '\n')
-    	    return (-2);
+    printf("%s", message);
+    do {
+            c = getc(stdin);
+    } while (c == ' ' || c == '\t');
+    if (c != 'Y' && c != 'y' && c != '\n')
+            return (-2);
     }
     
     /* start the server */
     commandLine = XtMalloc(strlen(Preferences.serverCmd) +
-    	    strlen(commandLineArgs) + 3);
+            strlen(commandLineArgs) + 3);
     sprintf(commandLine, "%s %s", Preferences.serverCmd, commandLineArgs);
 
     sysrc=system(commandLine);
@@ -509,7 +509,7 @@ static CommandLine processCommandLine(int argc, char** argv)
     int length = 0;
    
     for (i=1; i<argc; i++) {
-    	length += 1 + strlen(argv[i])*4 + 2;
+        length += 1 + strlen(argv[i])*4 + 2;
     }
     commandLine.shell = XtMalloc(length+1 + 9 + MAXPATHLEN);
     *commandLine.shell = '\0';
@@ -518,7 +518,7 @@ static CommandLine processCommandLine(int argc, char** argv)
     parseCommandLine(argc, argv, &commandLine);
     if (commandLine.serverRequest == NULL) {
         fprintf(stderr, "xnc: Invalid commandline argument\n");
-	exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
     }
 
     return(commandLine);
@@ -543,7 +543,7 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
        maximum length is calculated by assuming every argument is a file,
        and a complete record of maximum length is created for it */
     for (i=1; i<argc; i++) {
-    	length += MAX_RECORD_HEADER_LENGTH + strlen(argv[i]) + MAXPATHLEN;
+        length += MAX_RECORD_HEADER_LENGTH + strlen(argv[i]) + MAXPATHLEN;
     }
     /* In case of no arguments, must still allocate space for one record header */
     if (length < MAX_RECORD_HEADER_LENGTH)
@@ -556,126 +556,126 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
     outPtr = commandString;
     for (i=1; i<argc; i++) {
         if (opts && !strcmp(argv[i], "--")) { 
-    	    opts = False; /* treat all remaining arguments as filenames */
-	    continue;
-	} else if (opts && !strcmp(argv[i], "-do")) {
-    	    nextArg(argc, argv, &i);
-    	    toDoCommand = argv[i];
-    	} else if (opts && !strcmp(argv[i], "-lm")) {
-	    copyCommandLineArg(commandLine, argv[i]);
-    	    nextArg(argc, argv, &i);
-    	    langMode = argv[i];
-	    copyCommandLineArg(commandLine, argv[i]);
-    	} else if (opts && (!strcmp(argv[i], "-g")  || 
-	                    !strcmp(argv[i], "-geometry"))) {
-	    copyCommandLineArg(commandLine, argv[i]);
-    	    nextArg(argc, argv, &i);
-    	    geometry = argv[i];
-	    copyCommandLineArg(commandLine, argv[i]);
-    	} else if (opts && !strcmp(argv[i], "-read")) {
-    	    read = 1;
-    	} else if (opts && !strcmp(argv[i], "-create")) {
-    	    create = 1;
-    	} else if (opts && !strcmp(argv[i], "-tabbed")) {
-    	    tabbed = 1;
-    	    group = 0;	/* override -group option */
-    	} else if (opts && !strcmp(argv[i], "-untabbed")) {
-    	    tabbed = 0;
-    	    group = 0;  /* override -group option */
-    	} else if (opts && !strcmp(argv[i], "-group")) {
-    	    group = 2; /* 2: start new group, 1: in group */
-    	} else if (opts && (!strcmp(argv[i], "-iconic") || 
-	                    !strcmp(argv[i], "-icon"))) {
-    	    iconic = 1;
-	    copyCommandLineArg(commandLine, argv[i]);
-    	} else if (opts && !strcmp(argv[i], "-line")) {
-    	    nextArg(argc, argv, &i);
-	    nRead = sscanf(argv[i], "%d", &lineArg);
-	    if (nRead != 1)
-    		fprintf(stderr, "xnc: argument to line should be a number\n");
-    	    else
-    	    	lineNum = lineArg;
-    	} else if (opts && (*argv[i] == '+')) {
-    	    nRead = sscanf((argv[i]+1), "%d", &lineArg);
-	    if (nRead != 1)
-    		fprintf(stderr, "xnc: argument to + should be a number\n");
-    	    else
-    	    	lineNum = lineArg;
-    	} else if (opts && (!strcmp(argv[i], "-ask") || !strcmp(argv[i], "-noask"))) {
-    	    ; /* Ignore resource-based arguments which are processed later */
-    	} else if (opts && (!strcmp(argv[i], "-svrname") || 
-		            !strcmp(argv[i], "-svrcmd"))) {
-    	    nextArg(argc, argv, &i); /* Ignore rsrc args with data */
-    	} else if (opts && (!strcmp(argv[i], "-xrm") ||
-	                    !strcmp(argv[i], "-display"))) {
-	    copyCommandLineArg(commandLine, argv[i]);
-    	    nextArg(argc, argv, &i); /* Ignore rsrc args with data */
-	    copyCommandLineArg(commandLine, argv[i]);
-    	} else if (opts && (!strcmp(argv[i], "-version") || !strcmp(argv[i], "-V"))) {
-    	    printNcVersion();
-	    exit(EXIT_SUCCESS);
-	} else if (opts && (!strcmp(argv[i], "-h") ||
-			    !strcmp(argv[i], "-help"))) {
-	    fprintf(stderr, "%s", cmdLineHelp);
-	    exit(EXIT_SUCCESS);
-    	} else if (opts && (*argv[i] == '-')) {
-    	    fprintf(stderr, "xnc: Unrecognized option %s\n%s", argv[i],
-    	    	    cmdLineHelp);
-    	    exit(EXIT_FAILURE);
-    	} else {
-    	    if (ParseFilename(argv[i], name, path) != 0) {
-	       /* An Error, most likely too long paths/strings given */
-	       commandLine->serverRequest = NULL;
-	       return;
-	    }
-    	    strcat(path, name);
-	    
-	    /* determine if file is to be openned in new tab, by
-	       factoring the options -group, -tabbed & -untabbed */
-    	    if (group == 2) {
-	        isTabbed = 0;  /* start a new window for new group */
-		group = 1;     /* next file will be within group */
-	    } 
-	    else if (group == 1) {
-	    	isTabbed = 1;  /* new tab for file in group */
-	    }
-	    else {
-	    	isTabbed = tabbed; /* not in group */
-	    }
-	    
-    	    /* SunOS 4 acc or acc and/or its runtime library has a bug
-    	       such that %n fails (segv) if it follows a string in a
-    	       printf or sprintf.  The silly code below avoids this.
+            opts = False; /* treat all remaining arguments as filenames */
+        continue;
+    } else if (opts && !strcmp(argv[i], "-do")) {
+            nextArg(argc, argv, &i);
+            toDoCommand = argv[i];
+        } else if (opts && !strcmp(argv[i], "-lm")) {
+        copyCommandLineArg(commandLine, argv[i]);
+            nextArg(argc, argv, &i);
+            langMode = argv[i];
+        copyCommandLineArg(commandLine, argv[i]);
+        } else if (opts && (!strcmp(argv[i], "-g")  || 
+                        !strcmp(argv[i], "-geometry"))) {
+        copyCommandLineArg(commandLine, argv[i]);
+            nextArg(argc, argv, &i);
+            geometry = argv[i];
+        copyCommandLineArg(commandLine, argv[i]);
+        } else if (opts && !strcmp(argv[i], "-read")) {
+            read = 1;
+        } else if (opts && !strcmp(argv[i], "-create")) {
+            create = 1;
+        } else if (opts && !strcmp(argv[i], "-tabbed")) {
+            tabbed = 1;
+            group = 0;    /* override -group option */
+        } else if (opts && !strcmp(argv[i], "-untabbed")) {
+            tabbed = 0;
+            group = 0;  /* override -group option */
+        } else if (opts && !strcmp(argv[i], "-group")) {
+            group = 2; /* 2: start new group, 1: in group */
+        } else if (opts && (!strcmp(argv[i], "-iconic") || 
+                        !strcmp(argv[i], "-icon"))) {
+            iconic = 1;
+        copyCommandLineArg(commandLine, argv[i]);
+        } else if (opts && !strcmp(argv[i], "-line")) {
+            nextArg(argc, argv, &i);
+        nRead = sscanf(argv[i], "%d", &lineArg);
+        if (nRead != 1)
+            fprintf(stderr, "xnc: argument to line should be a number\n");
+            else
+                lineNum = lineArg;
+        } else if (opts && (*argv[i] == '+')) {
+            nRead = sscanf((argv[i]+1), "%d", &lineArg);
+        if (nRead != 1)
+            fprintf(stderr, "xnc: argument to + should be a number\n");
+            else
+                lineNum = lineArg;
+        } else if (opts && (!strcmp(argv[i], "-ask") || !strcmp(argv[i], "-noask"))) {
+            ; /* Ignore resource-based arguments which are processed later */
+        } else if (opts && (!strcmp(argv[i], "-svrname") || 
+                    !strcmp(argv[i], "-svrcmd"))) {
+            nextArg(argc, argv, &i); /* Ignore rsrc args with data */
+        } else if (opts && (!strcmp(argv[i], "-xrm") ||
+                        !strcmp(argv[i], "-display"))) {
+        copyCommandLineArg(commandLine, argv[i]);
+            nextArg(argc, argv, &i); /* Ignore rsrc args with data */
+        copyCommandLineArg(commandLine, argv[i]);
+        } else if (opts && (!strcmp(argv[i], "-version") || !strcmp(argv[i], "-V"))) {
+            printNcVersion();
+        exit(EXIT_SUCCESS);
+    } else if (opts && (!strcmp(argv[i], "-h") ||
+                !strcmp(argv[i], "-help"))) {
+        fprintf(stderr, "%s", cmdLineHelp);
+        exit(EXIT_SUCCESS);
+        } else if (opts && (*argv[i] == '-')) {
+            fprintf(stderr, "xnc: Unrecognized option %s\n%s", argv[i],
+                    cmdLineHelp);
+            exit(EXIT_FAILURE);
+        } else {
+            if (ParseFilename(argv[i], name, path) != 0) {
+           /* An Error, most likely too long paths/strings given */
+           commandLine->serverRequest = NULL;
+           return;
+        }
+            strcat(path, name);
+        
+        /* determine if file is to be openned in new tab, by
+           factoring the options -group, -tabbed & -untabbed */
+            if (group == 2) {
+            isTabbed = 0;  /* start a new window for new group */
+        group = 1;     /* next file will be within group */
+        } 
+        else if (group == 1) {
+            isTabbed = 1;  /* new tab for file in group */
+        }
+        else {
+            isTabbed = tabbed; /* not in group */
+        }
+        
+            /* SunOS 4 acc or acc and/or its runtime library has a bug
+               such that %n fails (segv) if it follows a string in a
+               printf or sprintf.  The silly code below avoids this.
                
                The "long" cast on strlen() is necessary because size_t
                is 64 bit on Alphas, and 32-bit on most others.  There is
                no printf format specifier for "size_t", thanx, ANSI. */
-    	    sprintf(outPtr, "%d %d %d %d %d %ld %ld %ld %ld\n%n", lineNum,
-		    read, create, iconic, isTabbed, (long) strlen(path), 
-		    (long) strlen(toDoCommand), (long) strlen(langMode),
-		    (long) strlen(geometry), &charsWritten);
-    	    outPtr += charsWritten;
-    	    strcpy(outPtr, path);
-    	    outPtr += strlen(path);
-    	    *outPtr++ = '\n';
-    	    strcpy(outPtr, toDoCommand);
-    	    outPtr += strlen(toDoCommand);
-    	    *outPtr++ = '\n';
-    	    strcpy(outPtr, langMode);
-    	    outPtr += strlen(langMode);
-    	    *outPtr++ = '\n';
-    	    strcpy(outPtr, geometry);
-    	    outPtr += strlen(geometry);
-    	    *outPtr++ = '\n';
+            sprintf(outPtr, "%d %d %d %d %d %ld %ld %ld %ld\n%n", lineNum,
+            read, create, iconic, isTabbed, (long) strlen(path), 
+            (long) strlen(toDoCommand), (long) strlen(langMode),
+            (long) strlen(geometry), &charsWritten);
+            outPtr += charsWritten;
+            strcpy(outPtr, path);
+            outPtr += strlen(path);
+            *outPtr++ = '\n';
+            strcpy(outPtr, toDoCommand);
+            outPtr += strlen(toDoCommand);
+            *outPtr++ = '\n';
+            strcpy(outPtr, langMode);
+            outPtr += strlen(langMode);
+            *outPtr++ = '\n';
+            strcpy(outPtr, geometry);
+            outPtr += strlen(geometry);
+            *outPtr++ = '\n';
 
             /* Create the file open atoms for the paths supplied */
             addToFileList(path);
-	    fileCount++;
+        fileCount++;
 
             /* These switches only affect the next filename argument, not all */
             toDoCommand = "";
             lineNum = 0;
-    	}
+        }
     }
     
     /* If there's an un-written -do command, or we are to open a new window,
@@ -684,19 +684,19 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
      * iconic state (and optional language mode and geometry).
      */
     if (toDoCommand[0] != '\0' || fileCount == 0) {
-	sprintf(outPtr, "0 0 0 %d %d 0 %ld %ld %ld\n\n%n", iconic, tabbed,
-		(long) strlen(toDoCommand),
-		(long) strlen(langMode), (long) strlen(geometry), &charsWritten);
-	outPtr += charsWritten;
-	strcpy(outPtr, toDoCommand);
-	outPtr += strlen(toDoCommand);
-	*outPtr++ = '\n';
-	strcpy(outPtr, langMode);
-	outPtr += strlen(langMode);
-	*outPtr++ = '\n';
-	strcpy(outPtr, geometry);
-	outPtr += strlen(geometry);
-	*outPtr++ = '\n';
+    sprintf(outPtr, "0 0 0 %d %d 0 %ld %ld %ld\n\n%n", iconic, tabbed,
+        (long) strlen(toDoCommand),
+        (long) strlen(langMode), (long) strlen(geometry), &charsWritten);
+    outPtr += charsWritten;
+    strcpy(outPtr, toDoCommand);
+    outPtr += strlen(toDoCommand);
+    *outPtr++ = '\n';
+    strcpy(outPtr, langMode);
+    outPtr += strlen(langMode);
+    *outPtr++ = '\n';
+    strcpy(outPtr, geometry);
+    outPtr += strlen(geometry);
+    *outPtr++ = '\n';
     }
     
     *outPtr = '\0';
@@ -715,8 +715,8 @@ static void waitUntilRequestProcessed(XtAppContext context,
     /* Set the NEDIT_SERVER_REQUEST_<user>_<host> property on the root
        window to activate the server */
     XChangeProperty(TheDisplay, rootWindow, serverRequestAtom, XA_STRING, 8,
-    	    PropModeReplace, (unsigned char *)commandString,
-    	    strlen(commandString));
+            PropModeReplace, (unsigned char *)commandString,
+            strlen(commandString));
     
     /* Set up a timeout proc in case the server is dead.  The standard
        selection timeout is probably a good guess at how long to wait
@@ -821,9 +821,9 @@ static void waitUntilFilesOpenedOrClosed(XtAppContext context,
 static void nextArg(int argc, char **argv, int *argIndex)
 {
     if (*argIndex + 1 >= argc) {
-    	fprintf(stderr, "xnc: %s requires an argument\n%s",
-	        argv[*argIndex], cmdLineHelp);
-    	exit(EXIT_FAILURE);
+        fprintf(stderr, "xnc: %s requires an argument\n%s",
+            argv[*argIndex], cmdLineHelp);
+        exit(EXIT_FAILURE);
     }
     (*argIndex)++;
 }
@@ -840,14 +840,14 @@ static void copyCommandLineArg(CommandLine *commandLine, const char *arg)
     char *outPtr = commandLine->shell + strlen(commandLine->shell);
     *outPtr++ = '\'';
     for (c=arg; *c!='\0'; c++) {
-	if (*c == '\'') {
-	    *outPtr++ = '\'';
-	    *outPtr++ = '\\';
-	}
-	*outPtr++ = *c;
-	if (*c == '\'') {
-	    *outPtr++ = '\'';
-	}
+    if (*c == '\'') {
+        *outPtr++ = '\'';
+        *outPtr++ = '\\';
+    }
+    *outPtr++ = *c;
+    if (*c == '\'') {
+        *outPtr++ = '\'';
+    }
     }
     *outPtr++ = '\'';
     *outPtr++ = ' ';
