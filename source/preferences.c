@@ -8030,12 +8030,13 @@ void ChooseColors(WindowInfo *window)
             XmNrightAttachment, XmATTACH_POSITION,
             XmNrightPosition, 99,
             XmNalignment, XmALIGNMENT_CENTER,
-            XmNlabelString, s1 = XmStringCreateLtoR(
+            XmNlabelString, s1 = XmStringCreateLocalized(
                 "NOTE: Foreground colors only apply when syntax highlighting "
-                "is DISABLED.\n", XmFONTLIST_DEFAULT_TAG),
+                "is DISABLED.\n"),
             NULL);
+    XmStringFree(s1);
     
-   tmpW = XtVaCreateManagedWidget("separator", 
+    tmpW = XtVaCreateManagedWidget("separator", 
             xmSeparatorWidgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, tmpW,
@@ -8053,8 +8054,9 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
             XmNleftOffset, 8,
             NULL);
+    XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("Suppress for selected text:\n");
+    s1 = XmStringCreateLocalized("Suppress for selected text:");
     tmpW = XtVaCreateManagedWidget("suppresInSelectionLbl",
             xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
@@ -8064,6 +8066,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftOffset, 8,
             XmNlabelString, s1, 
             NULL);
+    XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("Highlight syntax");
     cd->suppressStyleInSelectionW = 
@@ -8077,6 +8080,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
             XmNleftOffset, 24,
             NULL);
+    XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("Indent rainbow");
     cd->suppressRainbowInSelectionW = 
@@ -8089,6 +8093,7 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
             XmNleftOffset, 24,
             NULL);
+    XmStringFree(s1);
     
     s1 = XmStringCreateLocalized("Backlighting");
     cd->suppressBacklightingInSelectionW = 
@@ -8101,7 +8106,6 @@ void ChooseColors(WindowInfo *window)
             XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
             XmNleftOffset, 24,
             NULL);
-    
     XmStringFree(s1);
     
     Dimension h = 60;
