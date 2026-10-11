@@ -291,6 +291,15 @@ int GetPrefUndoOpLimit(void);
 void SetPrefUndoOpTrimTo(int limit);
 int GetPrefUndoOpTrimTo(void);
 
+void SetPrefSuppressStyleInSelection(Boolean v);
+Boolean GetPrefSuppressStyleInSelection(void);
+void SetPrefSuppressRainbowInSelection(Boolean v);
+Boolean GetPrefSuppressRainbowInSelection(void);
+void SetPrefSuppressBacklightingInSelection(Boolean v);
+Boolean GetPrefSuppressBacklightingInSelection(void);
+void SetPrefShowNontextSelection(Boolean v);
+Boolean GetPrefShowNontextSelection(void);
+
 char* ChangeFontSize(const char *name, int newsize);
 
 ColorList ParseColorList(const char *str, size_t len);

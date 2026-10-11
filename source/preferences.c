@@ -271,6 +271,10 @@ typedef struct {
     Widget rightMarginFgErrW;
     Widget rightMarginBgW;
     Widget rightMarginBgErrW;
+    Widget suppressStyleInSelectionW;
+    Widget suppressRainbowInSelectionW;
+    Widget suppressBacklightingInSelectionW;
+    Widget showNontextSelectionW;
     
     // indent rainbow
     Widget scrollW;
@@ -473,6 +477,10 @@ static struct prefData {
 #ifdef EXCLUDE_FONTS
     char *fontExcludes;
 #endif
+    int suppressStyleInSelection;
+    int suppressRainbowInSelection;
+    int suppressBacklightingInSelection;
+    int showNontextSelection;
 } PrefData;
 
 /* Temporary storage for preferences strings which are discarded after being
@@ -1257,6 +1265,14 @@ static PrefDescripRec PrefDescrip[] = {
       "",
       &PrefData.fontExcludes, NULL, True} ,
 #endif
+    {"suppressStyleInSelection", "SuppressStyleInSelection", PREF_BOOLEAN, "False",
+            &PrefData.suppressStyleInSelection, NULL, True},
+    {"suppressRainbowInSelection", "SuppressRainbowInSelection", PREF_BOOLEAN, "True",
+            &PrefData.suppressRainbowInSelection, NULL, True},
+    {"suppressBacklightingInSelection", "SuppressBacklightingInSelection", PREF_BOOLEAN, "True",
+            &PrefData.suppressBacklightingInSelection, NULL, True},
+    {"showNontextSelection", "ShowNontextSelection", PREF_BOOLEAN, "True",
+            &PrefData.showNontextSelection, NULL, True},
 };
 
 static XrmOptionDescRec OpTable[] = {
@@ -2777,6 +2793,42 @@ void SetPrefUndoOpTrimTo(int limit)
 int GetPrefUndoOpTrimTo(void)
 {
     return PrefData.undoOpTrimTo;
+}
+
+Boolean GetPrefSuppressStyleInSelection(void)
+{
+    return (Boolean)PrefData.suppressStyleInSelection;
+}
+
+void SetPrefSuppressStyleInSelection(Boolean v) {
+    setIntPref(&PrefData.suppressStyleInSelection, v);
+}
+
+Boolean GetPrefSuppressRainbowInSelection(void)
+{
+    return (Boolean)PrefData.suppressRainbowInSelection;
+}
+
+void SetPrefSuppressRainbowInSelection(Boolean v) {
+    setIntPref(&PrefData.suppressRainbowInSelection, v);
+}
+
+Boolean GetPrefSuppressBacklightingInSelection(void)
+{
+    return (Boolean)PrefData.suppressBacklightingInSelection;
+}
+
+void SetPrefSuppressBacklightingInSelection(Boolean v) {
+    setIntPref(&PrefData.suppressBacklightingInSelection, v);
+}
+
+Boolean GetPrefShowNontextSelection(void)
+{
+    return (Boolean)PrefData.showNontextSelection;
+}
+
+void SetPrefShowNontextSelection(Boolean v) {
+    setIntPref(&PrefData.showNontextSelection, v);
 }
 
 
@@ -6584,6 +6636,19 @@ static void updateColors(colorDialog *cd)
 {
     WindowInfo *window;
     
+    Boolean suppressStyleInSelection;
+    Boolean suppressRainbowInSelection;
+    Boolean suppressBacklightingInSelection;
+    Boolean showNontextSelection;
+    XtVaGetValues(cd->suppressStyleInSelectionW, XmNset, &suppressStyleInSelection, NULL);
+    XtVaGetValues(cd->suppressRainbowInSelectionW, XmNset, &suppressRainbowInSelection, NULL);
+    XtVaGetValues(cd->suppressBacklightingInSelectionW, XmNset, &suppressBacklightingInSelection, NULL);
+    XtVaGetValues(cd->showNontextSelectionW, XmNset, &showNontextSelection, NULL);
+    SetPrefSuppressStyleInSelection(suppressStyleInSelection);
+    SetPrefSuppressRainbowInSelection(suppressRainbowInSelection);
+    SetPrefSuppressBacklightingInSelection(suppressBacklightingInSelection);
+    SetPrefShowNontextSelection(showNontextSelection);
+    
     saveColorProfileSettings(cd);
     
     ColorProfile *setProfile = NULL;
@@ -7905,7 +7970,7 @@ void ChooseColors(WindowInfo *window)
             NULL);
 
     /*
-     * Tab 1: Generral
+     * Tab 1: General
      */
     Widget tabForm = cd->tabForms[0];
   
@@ -7953,7 +8018,7 @@ void ChooseColors(WindowInfo *window)
     tmpW = addColorGroup( tabForm, "cursorLineBg", 'U', "Cursor Line Background",
             &(cd->cursorLineBgW), &(cd->cursorLineBgErrW), tmpW, 51, 99, cd );
     tmpW = addColorGroup( tabForm, "rightMarginBg", 'i', "Right Margin Background",
-            &(cd->rightMarginBgW), &(cd->rightMarginBgW), tmpW, 51, 99, cd );
+            &(cd->rightMarginBgW), &(cd->rightMarginBgErrW), tmpW, 51, 99, cd );
 
     tmpW = XtVaCreateManagedWidget("infoLbl",
             xmLabelGadgetClass, tabForm,
@@ -7969,6 +8034,74 @@ void ChooseColors(WindowInfo *window)
                 "NOTE: Foreground colors only apply when syntax highlighting "
                 "is DISABLED.\n", XmFONTLIST_DEFAULT_TAG),
             NULL);
+    
+   tmpW = XtVaCreateManagedWidget("separator", 
+            xmSeparatorWidgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, tmpW,
+            NULL
+            );
+    
+    s1 = XmStringCreateLocalized("Show selection in non-text areas");
+    cd->showNontextSelectionW = 
+        XtVaCreateManagedWidget("showNontextSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, tmpW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 8,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Suppress for selected text:\n");
+    tmpW = XtVaCreateManagedWidget("suppresInSelectionLbl",
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, cd->showNontextSelectionW,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftOffset, 8,
+            XmNlabelString, s1, 
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Highlight syntax");
+    cd->suppressStyleInSelectionW = 
+        XtVaCreateManagedWidget("suppressStyleInSelection", 
+            xmToggleButtonWidgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNlabelString, s1,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, tmpW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Indent rainbow");
+    cd->suppressRainbowInSelectionW = 
+        XtVaCreateManagedWidget("suppressRainbowInSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, cd->suppressStyleInSelectionW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
+            NULL);
+    
+    s1 = XmStringCreateLocalized("Backlighting");
+    cd->suppressBacklightingInSelectionW = 
+        XtVaCreateManagedWidget("suppressBacklightingInSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, cd->suppressRainbowInSelectionW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
+            NULL);
+    
     XmStringFree(s1);
     
     Dimension h = 60;
@@ -7976,9 +8109,9 @@ void ChooseColors(WindowInfo *window)
     
     tmpW = XtVaCreateManagedWidget("sepLbl", xmLabelGadgetClass, tabForm,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, tmpW,
+            XmNtopWidget, cd->suppressBacklightingInSelectionW,
             XmNbottomAttachment, XmATTACH_FORM,
-            XmNtopOffset, 3*h + 3*MARGIN_SPACING,
+            XmNtopOffset, 10,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
     
     /*
@@ -8299,6 +8432,10 @@ static void saveColorProfileSettings(colorDialog *cd)
     profile->lineHiBg = XmTextGetString(cd->cursorLineBgW);
     profile->rightMargin = XmTextGetString(cd->rightMarginFgW);
     profile->textBg2 = XmTextGetString(cd->rightMarginBgW);
+    Widget suppressStyleInSelectionW;
+    Widget suppressRainbowInSelectionW;
+    Widget suppressBacklightingInSelectionW;
+    Widget showNontextSelectionW;
     
     /*
      * Tab 2: Indent Rainbow Colors
@@ -8464,6 +8601,11 @@ static void loadColors(colorDialog *cd)
     XmTextSetString(cd->cursorLineBgW, selectedProfile->lineHiBg);
     XmTextSetString(cd->rightMarginFgW, selectedProfile->rightMargin);
     XmTextSetString(cd->rightMarginBgW, selectedProfile->textBg2);
+    
+    XtVaSetValues(cd->suppressStyleInSelectionW, XmNset, PrefData.suppressStyleInSelection, NULL);
+    XtVaSetValues(cd->suppressRainbowInSelectionW, XmNset, PrefData.suppressRainbowInSelection, NULL);
+    XtVaSetValues(cd->suppressBacklightingInSelectionW, XmNset, PrefData.suppressBacklightingInSelection, NULL);
+    XtVaSetValues(cd->showNontextSelectionW, XmNset, PrefData.showNontextSelection, NULL);
 }
 
 static void loadColorProfileStyleSettings(colorDialog *cd)
