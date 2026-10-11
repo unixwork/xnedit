@@ -33,7 +33,7 @@
 
 #define REPEAT_TO_END -1
 #define REPEAT_IN_SEL -2
-	
+    
 void RegisterMacroSubroutines(void);
 void AddLastCommandActionHook(XtAppContext context);
 void BeginLearn(WindowInfo *window);
@@ -50,7 +50,7 @@ void RepeatMacro(WindowInfo *window, const char *command, int how);
 int ReadMacroFile(WindowInfo *window, const char *fileName, int warnNotExist);
 int ReadMacroString(WindowInfo *window, char *string, const char *errIn);
 int CheckMacroString(Widget dialogParent, char *string, const char *errIn,
-	char **errPos);
+    char **errPos);
 char *GetReplayMacro(void);
 void ReadMacroInitFile(WindowInfo *window);
 void ReturnShellCommandOutput(WindowInfo *window, const char *outText, int status);

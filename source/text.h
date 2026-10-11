@@ -1,6 +1,6 @@
 /*******************************************************************************
 *                                                                              *
-* text.h -- Nirvana Editor Text Widget Header File                            *
+* text.h -- Nirvana Editor Text Widget Header File                             *
 *                                                                              *
 * Copyright 2003 The NEdit Developers                                          *
 *                                                                              *
@@ -194,7 +194,7 @@ int TextFirstVisibleLine(Widget w);
 int TextNumVisibleLines(Widget w);
 int TextVisibleWidth(Widget w);
 void TextInsertAtCursor(Widget w, char *chars, XEvent *event,
-    	int allowPendingDelete, int allowWrap);
+        int allowPendingDelete, int allowWrap);
 int TextFirstVisiblePos(Widget w);
 int TextLastVisiblePos(Widget w);
 char *TextGetWrapped(Widget w, int startPos, int endPos, int *length);

@@ -1,9 +1,9 @@
 /*******************************************************************************
-*									       *
-* nedit.c -- Nirvana Editor main program				       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* nedit.c -- Nirvana Editor main program                                       *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
@@ -13,21 +13,21 @@
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* May 10, 1991								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
-* Modifications:							       *
-*									       *
-*	8/18/93 - Mark Edel & Joy Kyriakopulos - Ported to VMS		       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* May 10, 1991                                                                 *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
+* Modifications:                                                               *
+*                                                                              *
+*   8/18/93 - Mark Edel & Joy Kyriakopulos - Ported to VMS                     *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -185,7 +185,7 @@ static char *fallbackResources[] = {
     "*XmText.FontList: "        NEDIT_FIXED_FONT,
     "*XmTextField.FontList: "   NEDIT_FIXED_FONT,
     "*XmList.FontList: "        NEDIT_FIXED_FONT,
-    "*XmFileSelectionBox*XmList.FontList: " 	 NEDIT_FIXED_FONT,
+    "*XmFileSelectionBox*XmList.FontList: "      NEDIT_FIXED_FONT,
 #else
     "*buttonFontList: "         NEDIT_DEFAULT_FONT,
     "*labelFontList: "          NEDIT_DEFAULT_FONT,
@@ -214,9 +214,9 @@ static char *fallbackResources[] = {
     
     "*tabButton.shadowThickness: 1",
        
-    "*XmContainer.outlineIndentation:	30",
-    "*XmContainer.outlineColumnWidth:	6cm",
-    "*XmContainer.detailTabList:		+3cm,+3cm,+3cm",
+    "*XmContainer.outlineIndentation:   30",
+    "*XmContainer.outlineColumnWidth:   6cm",
+    "*XmContainer.detailTabList:        +3cm,+3cm,+3cm",
     
     /* Use baseTranslations as per Xt Programmer's Manual, 10.2.12 */
     "*XmText.baseTranslations: " NEDIT_TEXT_TRANSLATIONS,
@@ -421,14 +421,14 @@ Ctrl<Key>G:help-button-action(\"findAgain\")\\n\
 
 static const char cmdLineHelp[] =
 "Usage: xnedit [-read] [-create] [-line n | +n] [-server] [-do command]\n\
-	      [-tags file] [-tabs n] [-wrap] [-nowrap] [-autowrap]\n\
-	      [-autoindent] [-noautoindent] [-autosave] [-noautosave]\n\
-	      [-lm languagemode] [-rows n] [-columns n] [-font font]\n\
-	      [-geometry geometry] [-iconic] [-noiconic] [-svrname name]\n\
-	      [-display [host]:server[.screen] [-xrm resourcestring]\n\
-	      [-import file] [-background color] [-foreground color]\n\
-	      [-tabbed] [-untabbed] [-group] [-bgrun] [-V|-version]\n\
-	      [-h|-help] [--] [file...]\n";
+          [-tags file] [-tabs n] [-wrap] [-nowrap] [-autowrap]\n\
+          [-autoindent] [-noautoindent] [-autosave] [-noautosave]\n\
+          [-lm languagemode] [-rows n] [-columns n] [-font font]\n\
+          [-geometry geometry] [-iconic] [-noiconic] [-svrname name]\n\
+          [-display [host]:server[.screen] [-xrm resourcestring]\n\
+          [-import file] [-background color] [-foreground color]\n\
+          [-tabbed] [-untabbed] [-group] [-bgrun] [-V|-version]\n\
+          [-h|-help] [--] [file...]\n";
 
 /* This constant will be used in preference keys. Hence, for now we do not
  * change it for maintaining backwards compatibility to NEdit preferences
@@ -481,7 +481,7 @@ int main(int argc, char **argv)
     WindowInfo *window = NULL, *lastFile = NULL;
     static const char *protectedKeywords[] = {"-iconic", "-icon", "-geometry",
             "-g", "-rv", "-reverse", "-bd", "-bordercolor", "-borderwidth",
-	    "-bw", "-title", NULL};
+        "-bw", "-title", NULL};
     unsigned char* invalidBindings = NULL;
     
     XSetErrorHandler(XErrorFunction);
@@ -590,7 +590,7 @@ int main(int argc, char **argv)
        the display is opened (empirically verified). */
     putenv("XLIB_SKIP_ARGB_VISUALS=1");
     TheDisplay = XtOpenDisplay (context, NULL, APP_NAME, APP_CLASS,
-	    NULL, 0, &argc, argv);
+        NULL, 0, &argc, argv);
     unmaskArgvKeywords(argc, argv, protectedKeywords);
     if (!TheDisplay) {
         /* Respond to -V or -version even if there is no display */
@@ -602,8 +602,8 @@ int main(int argc, char **argv)
                 exit(EXIT_SUCCESS);
             }
         }
-	fputs ("XNEdit: Can't open display\n", stderr);
-	exit(EXIT_FAILURE);
+    fputs ("XNEdit: Can't open display\n", stderr);
+    exit(EXIT_FAILURE);
     }
     
     defaultResourceDB = XtScreenDatabase(DefaultScreenOfDisplay(TheDisplay)); //XrmGetDatabase(TheDisplay);
@@ -683,15 +683,15 @@ int main(int argc, char **argv)
        open windows (loading preferences doesn't update menu settings,
        which would then be out of sync with the real preference settings) */
     for (i=1; i<argc; i++) {
-      	if(!strcmp(argv[i], "--")) {
-	    break; /* treat all remaining arguments as filenames */
-	} else if (!strcmp(argv[i], "-import")) {
-    	    nextArg(argc, argv, &i);
-    	    ImportPrefFile(argv[i], False);
-	} else if (!strcmp(argv[i], "-importold")) {
-    	    nextArg(argc, argv, &i);
-    	    ImportPrefFile(argv[i], True);
-	}
+        if(!strcmp(argv[i], "--")) {
+        break; /* treat all remaining arguments as filenames */
+    } else if (!strcmp(argv[i], "-import")) {
+            nextArg(argc, argv, &i);
+            ImportPrefFile(argv[i], False);
+    } else if (!strcmp(argv[i], "-importold")) {
+            nextArg(argc, argv, &i);
+            ImportPrefFile(argv[i], True);
+    }
     }
     
     /* Load the default tags file. Don't complain if it doesn't load, the tag
@@ -711,150 +711,150 @@ int main(int argc, char **argv)
     fileSpecified = FALSE;
     for (i=1; i<argc; i++) {
         if (opts && !strcmp(argv[i], "--")) { 
-    	    opts = False; /* treat all remaining arguments as filenames */
-	    continue;
-	} else if (opts && !strcmp(argv[i], "-tags")) {
-    	    nextArg(argc, argv, &i);
-    	    if (!AddTagsFile(argv[i], TAG))
-    	    	fprintf(stderr, "XNEdit: Unable to load tags file\n");
-    	} else if (opts && !strcmp(argv[i], "-do")) {
-    	    nextArg(argc, argv, &i);
-	    if (checkDoMacroArg(argv[i]))
-    	    	toDoCommand = argv[i];
-    	} else if (opts && !strcmp(argv[i], "-read")) {
-    	    editFlags |= PREF_READ_ONLY;
-    	} else if (opts && !strcmp(argv[i], "-create")) {
-    	    editFlags |= SUPPRESS_CREATE_WARN;
-    	} else if (opts && !strcmp(argv[i], "-tabbed")) {
-    	    tabbed = 1;
-    	    group = 0;	/* override -group option */
-    	} else if (opts && !strcmp(argv[i], "-untabbed")) {
-    	    tabbed = 0;
-    	    group = 0;	/* override -group option */
-    	} else if (opts && !strcmp(argv[i], "-group")) {
-    	    group = 2; /* 2: start new group, 1: in group */
-    	} else if (opts && !strcmp(argv[i], "-line")) {
-    	    nextArg(argc, argv, &i);
-	    nRead = sscanf(argv[i], "%d", &lineNum);
-	    if (nRead != 1)
-    		fprintf(stderr, "XNEdit: argument to line should be a number\n");
-    	    else
-    	    	gotoLine = True;
-    	} else if (opts && (*argv[i] == '+')) {
-    	    nRead = sscanf((argv[i]+1), "%d", &lineNum);
-	    if (nRead != 1)
-    		fprintf(stderr, "XNEdit: argument to + should be a number\n");
-    	    else
-    	    	gotoLine = True;
-    	} else if (opts && !strcmp(argv[i], "-server")) {
-    	    IsServer = True;
+            opts = False; /* treat all remaining arguments as filenames */
+        continue;
+    } else if (opts && !strcmp(argv[i], "-tags")) {
+            nextArg(argc, argv, &i);
+            if (!AddTagsFile(argv[i], TAG))
+                fprintf(stderr, "XNEdit: Unable to load tags file\n");
+        } else if (opts && !strcmp(argv[i], "-do")) {
+            nextArg(argc, argv, &i);
+        if (checkDoMacroArg(argv[i]))
+                toDoCommand = argv[i];
+        } else if (opts && !strcmp(argv[i], "-read")) {
+            editFlags |= PREF_READ_ONLY;
+        } else if (opts && !strcmp(argv[i], "-create")) {
+            editFlags |= SUPPRESS_CREATE_WARN;
+        } else if (opts && !strcmp(argv[i], "-tabbed")) {
+            tabbed = 1;
+            group = 0;  /* override -group option */
+        } else if (opts && !strcmp(argv[i], "-untabbed")) {
+            tabbed = 0;
+            group = 0;  /* override -group option */
+        } else if (opts && !strcmp(argv[i], "-group")) {
+            group = 2; /* 2: start new group, 1: in group */
+        } else if (opts && !strcmp(argv[i], "-line")) {
+            nextArg(argc, argv, &i);
+        nRead = sscanf(argv[i], "%d", &lineNum);
+        if (nRead != 1)
+            fprintf(stderr, "XNEdit: argument to line should be a number\n");
+            else
+                gotoLine = True;
+        } else if (opts && (*argv[i] == '+')) {
+            nRead = sscanf((argv[i]+1), "%d", &lineNum);
+        if (nRead != 1)
+            fprintf(stderr, "XNEdit: argument to + should be a number\n");
+            else
+                gotoLine = True;
+        } else if (opts && !strcmp(argv[i], "-server")) {
+            IsServer = True;
         } else if (opts && !strcmp(argv[i], "-bgrun")) {
-    	    /* noop */
+            /* noop */
         } else if (opts && !strcmp(argv[i], "-xwarn")) {
             XtAppSetWarningHandler(context, showWarningFilter);
-	} else if (opts && (!strcmp(argv[i], "-iconic") || 
-	                    !strcmp(argv[i], "-icon"))) {
-    	    iconic = True;
-	} else if (opts && !strcmp(argv[i], "-noiconic")) {
-    	    iconic = False;
-	} else if (opts && (!strcmp(argv[i], "-geometry") || 
-	                    !strcmp(argv[i], "-g"))) {
-	    nextArg(argc, argv, &i);
-    	    geometry = argv[i];
-	} else if (opts && !strcmp(argv[i], "-lm")) {
-	    nextArg(argc, argv, &i);
-    	    langMode = argv[i];
-	} else if (opts && !strcmp(argv[i], "-import")) {
-	    nextArg(argc, argv, &i); /* already processed, skip */
-	} else if (opts && (!strcmp(argv[i], "-V") || 
-	                    !strcmp(argv[i], "-version"))) {
-	    PrintVersion();
-	    exit(EXIT_SUCCESS);
-	} else if (opts && (!strcmp(argv[i], "-h") ||
-			    !strcmp(argv[i], "-help"))) {
-	    fprintf(stderr, "%s", cmdLineHelp);
-	    exit(EXIT_SUCCESS);
-	} else if (opts && (*argv[i] == '-')) {
-    	    fprintf(stderr, "xnedit: Unrecognized option %s\n%s", argv[i],
-    	    	    cmdLineHelp);
-    	    exit(EXIT_FAILURE);
-    	} else {
-	    if (ParseFilename(argv[i], filename, pathname) == 0 ) {
-		/* determine if file is to be openned in new tab, by
-		   factoring the options -group, -tabbed & -untabbed */
-    		if (group == 2) {
-	            isTabbed = 0;  /* start a new window for new group */
-		    group = 1;     /* next file will be within group */
-		} else if (group == 1) {
-	    	    isTabbed = 1;  /* new tab for file in group */
-		} else {           /* not in group */
-	    	    isTabbed = tabbed==-1? GetPrefOpenInTab() : tabbed; 
-		}
-		
+    } else if (opts && (!strcmp(argv[i], "-iconic") || 
+                        !strcmp(argv[i], "-icon"))) {
+            iconic = True;
+    } else if (opts && !strcmp(argv[i], "-noiconic")) {
+            iconic = False;
+    } else if (opts && (!strcmp(argv[i], "-geometry") || 
+                        !strcmp(argv[i], "-g"))) {
+        nextArg(argc, argv, &i);
+            geometry = argv[i];
+    } else if (opts && !strcmp(argv[i], "-lm")) {
+        nextArg(argc, argv, &i);
+            langMode = argv[i];
+    } else if (opts && !strcmp(argv[i], "-import")) {
+        nextArg(argc, argv, &i); /* already processed, skip */
+    } else if (opts && (!strcmp(argv[i], "-V") || 
+                        !strcmp(argv[i], "-version"))) {
+        PrintVersion();
+        exit(EXIT_SUCCESS);
+    } else if (opts && (!strcmp(argv[i], "-h") ||
+                !strcmp(argv[i], "-help"))) {
+        fprintf(stderr, "%s", cmdLineHelp);
+        exit(EXIT_SUCCESS);
+    } else if (opts && (*argv[i] == '-')) {
+            fprintf(stderr, "xnedit: Unrecognized option %s\n%s", argv[i],
+                    cmdLineHelp);
+            exit(EXIT_FAILURE);
+        } else {
+        if (ParseFilename(argv[i], filename, pathname) == 0 ) {
+        /* determine if file is to be openned in new tab, by
+           factoring the options -group, -tabbed & -untabbed */
+            if (group == 2) {
+                isTabbed = 0;  /* start a new window for new group */
+            group = 1;     /* next file will be within group */
+        } else if (group == 1) {
+                isTabbed = 1;  /* new tab for file in group */
+        } else {           /* not in group */
+                isTabbed = tabbed==-1? GetPrefOpenInTab() : tabbed; 
+        }
+        
                 /* determine filter */
                 const char *filter_name = GetFilterNameForPath(pathname, filename);
                 
-		/* Files are opened in background to improve opening speed
-		   by defering certain time  consuiming task such as syntax
-		   highlighting. At the end of the file-opening loop, the 
-		   last file opened will be raised to restore those deferred
-		   items. The current file may also be raised if there're
-		   macros to execute on. */
-		window = EditExistingFile(WindowList, filename, pathname, NULL,
+        /* Files are opened in background to improve opening speed
+           by defering certain time  consuiming task such as syntax
+           highlighting. At the end of the file-opening loop, the 
+           last file opened will be raised to restore those deferred
+           items. The current file may also be raised if there're
+           macros to execute on. */
+        window = EditExistingFile(WindowList, filename, pathname, NULL,
                         filter_name, editFlags, geometry, iconic, langMode, isTabbed,
                         True);
-    	    	fileSpecified = TRUE;
-		if (window) {
-		    CleanUpTabBarExposeQueue(window);
+                fileSpecified = TRUE;
+        if (window) {
+            CleanUpTabBarExposeQueue(window);
 
-		    /* raise the last tab of previous window */
-		    if (lastFile && window->shell != lastFile->shell) {
-			CleanUpTabBarExposeQueue(lastFile);
-			RaiseDocument(lastFile);
-		    }
+            /* raise the last tab of previous window */
+            if (lastFile && window->shell != lastFile->shell) {
+            CleanUpTabBarExposeQueue(lastFile);
+            RaiseDocument(lastFile);
+            }
 
-		    if (!macroFileRead) {
-			ReadMacroInitFile(WindowList);
-			macroFileRead = True;
-		    }
-		    if (gotoLine)
-			SelectNumberedLine(window, lineNum);
-		    if (toDoCommand != NULL) {
-			DoMacro(window, toDoCommand, "-do macro");
-	    	    	toDoCommand = NULL;
-			if (!IsValidWindow(window))
-		    	    window = NULL; /* window closed by macro */
-			if (lastFile && !IsValidWindow(lastFile))
-		    	    lastFile = NULL; /* window closed by macro */
-		    }
-		}
-		
-		/* register last opened file for later use */
-		if (window)
-    	    	    lastFile = window;
-	    } else {
-		fprintf(stderr, "xnedit: file name too long: %s\n", argv[i]);
-	    }
+            if (!macroFileRead) {
+            ReadMacroInitFile(WindowList);
+            macroFileRead = True;
+            }
+            if (gotoLine)
+            SelectNumberedLine(window, lineNum);
+            if (toDoCommand != NULL) {
+            DoMacro(window, toDoCommand, "-do macro");
+                    toDoCommand = NULL;
+            if (!IsValidWindow(window))
+                    window = NULL; /* window closed by macro */
+            if (lastFile && !IsValidWindow(lastFile))
+                    lastFile = NULL; /* window closed by macro */
+            }
+        }
+        
+        /* register last opened file for later use */
+        if (window)
+                    lastFile = window;
+        } else {
+        fprintf(stderr, "xnedit: file name too long: %s\n", argv[i]);
+        }
 
             /* -line/+n does only affect the file following this switch */
             gotoLine = False;
-	}
+    }
     }
     
     /* Raise the last file opened */
     if (lastFile) {
-	CleanUpTabBarExposeQueue(lastFile);
-	RaiseDocument(lastFile);
+    CleanUpTabBarExposeQueue(lastFile);
+    RaiseDocument(lastFile);
     }
     CheckCloseDim();
 
     /* If no file to edit was specified, open a window to edit "Untitled" */
     if (!fileSpecified) {
-    	EditNewFile(NULL, geometry, iconic, langMode, NULL);
-	ReadMacroInitFile(WindowList);
-	CheckCloseDim();
-	if (toDoCommand != NULL)
-	    DoMacro(WindowList, toDoCommand, "-do macro");
+        EditNewFile(NULL, geometry, iconic, langMode, NULL);
+    ReadMacroInitFile(WindowList);
+    CheckCloseDim();
+    if (toDoCommand != NULL)
+        DoMacro(WindowList, toDoCommand, "-do macro");
     }
     
     /* Begin remembering last command invoked for "Repeat" menu item */
@@ -862,13 +862,13 @@ int main(int argc, char **argv)
 
     /* Set up communication port and write ~/.nedit_server_process file */
     if (IsServer)
-    	InitServerCommunication();
+        InitServerCommunication();
     
     /* Process events. */
     if (IsServer)
-    	ServerMainLoop(context);
+        ServerMainLoop(context);
     else
-    	XtAppMainLoop(context);
+        XtAppMainLoop(context);
 
     /* Not reached but this keeps some picky compilers happy */
     return EXIT_SUCCESS;
@@ -877,9 +877,9 @@ int main(int argc, char **argv)
 static void nextArg(int argc, char **argv, int *argIndex)
 {
     if (*argIndex + 1 >= argc) {
-    	fprintf(stderr, "XNEdit: %s requires an argument\n%s", argv[*argIndex],
-    	        cmdLineHelp);
-    	exit(EXIT_FAILURE);
+        fprintf(stderr, "XNEdit: %s requires an argument\n%s", argv[*argIndex],
+                cmdLineHelp);
+        exit(EXIT_FAILURE);
     }
     (*argIndex)++;
 }
@@ -905,8 +905,8 @@ static int checkDoMacroArg(const char *macro)
     prog = ParseMacro(tMacro, &errMsg, &stoppedAt);
     NEditFree(tMacro);
     if (prog == NULL) {
-    	ParseError(NULL, tMacro, stoppedAt, "argument to -do", errMsg);
-	return False;
+        ParseError(NULL, tMacro, stoppedAt, "argument to -do", errMsg);
+    return False;
     }
     FreeProgram(prog);
     return True;
@@ -926,9 +926,9 @@ static void maskArgvKeywords(int argc, char **argv, const char **maskArgs)
     int i, k;
 
     for (i=1; i<argc; i++)
-	for (k=0; maskArgs[k]!=NULL; k++)
-	    if (!strcmp(argv[i], maskArgs[k]))
-    		argv[i][0] = ' ';
+    for (k=0; maskArgs[k]!=NULL; k++)
+        if (!strcmp(argv[i], maskArgs[k]))
+            argv[i][0] = ' ';
 }
 
 
@@ -937,9 +937,9 @@ static void unmaskArgvKeywords(int argc, char **argv, const char **maskArgs)
     int i, k;
 
     for (i=1; i<argc; i++)
-	for (k=0; maskArgs[k]!=NULL; k++)
-	    if (argv[i][0]==' ' && !strcmp(&argv[i][1], &maskArgs[k][1]))
-    		argv[i][0] = '-';
+    for (k=0; maskArgs[k]!=NULL; k++)
+        if (argv[i][0]==' ' && !strcmp(&argv[i][1], &maskArgs[k][1]))
+            argv[i][0] = '-';
 }
 
 

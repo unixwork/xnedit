@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* shell.c -- Nirvana Editor shell command execution			       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* shell.c -- Nirvana Editor shell command execution                            *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* December, 1993							       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* December, 1993                                                               *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -78,13 +78,13 @@
 
 
 /* Tuning parameters */
-#define IO_BUF_SIZE 4096	/* size of buffers for collecting cmd output */
-#define MAX_OUT_DIALOG_ROWS 30	/* max height of dialog for command output */
-#define MAX_OUT_DIALOG_COLS 80	/* max width of dialog for command output */
-#define OUTPUT_FLUSH_FREQ 1000	/* how often (msec) to flush output buffers
-    	    	    	    	   when process is taking too long */
-#define BANNER_WAIT_TIME 6000	/* how long to wait (msec) before putting up
-    	    	    	    	   Shell Command Executing... banner */
+#define IO_BUF_SIZE 4096    /* size of buffers for collecting cmd output */
+#define MAX_OUT_DIALOG_ROWS 30    /* max height of dialog for command output */
+#define MAX_OUT_DIALOG_COLS 80    /* max width of dialog for command output */
+#define OUTPUT_FLUSH_FREQ 1000    /* how often (msec) to flush output buffers
+                                   when process is taking too long */
+#define BANNER_WAIT_TIME 6000    /* how long to wait (msec) before putting up
+                                   Shell Command Executing... banner */
 
 /* flags for issueCommand */
 #define ACCUMULATE 1
@@ -120,14 +120,14 @@ typedef struct {
 } shellCmdInfo;
 
 static void issueCommand(WindowInfo *window, const char *command, char *input,
-	int inputLen, int flags, Widget textW, int replaceLeft,
-	int replaceRight, int fromMacro);
+    int inputLen, int flags, Widget textW, int replaceLeft,
+    int replaceRight, int fromMacro);
 static void stdoutReadProc(XtPointer clientData, int *source, XtInputId *id);
 static void stderrReadProc(XtPointer clientData, int *source, XtInputId *id);
 static void stdinWriteProc(XtPointer clientData, int *source, XtInputId *id);
 static void finishCmdExecution(WindowInfo *window, int terminatedOnError);
 static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
-	int *stdinFD, int *stdoutFD, int *stderrFD);
+    int *stdinFD, int *stdoutFD, int *stderrFD);
 static void addOutput(buffer **bufList, buffer *buf);
 static char *coalesceOutput(buffer **bufList, int *length);
 static void freeBufList(buffer **bufList);
@@ -135,16 +135,16 @@ static void removeTrailingNewlines(char *string);
 static void createOutputDialog(Widget parent, char *text);
 static void destroyOutDialogCB(Widget w, XtPointer callback, XtPointer closure);
 static void measureText(char *text, int wrapWidth, int *rows, int *cols,
-	int *wrapped);
+    int *wrapped);
 static void truncateString(char *string, int length);
 static void bannerTimeoutProc(XtPointer clientData, XtIntervalId *id);
 static void flushTimeoutProc(XtPointer clientData, XtIntervalId *id);
 static void safeBufReplace(textBuffer *buf, int *start, int *end, 
-	const char *text);
+    const char *text);
 static char *shellCommandSubstitutes(const char *inStr, const char *fileStr,
-	const char *lineStr);
+    const char *lineStr);
 static int shellSubstituter(char *outStr, const char *inStr, const char *fileStr,
-	const char *lineStr, int outLen, int predictOnly);
+    const char *lineStr, int outLen, int predictOnly);
 
 /*
 ** Filter the current selection through shell command "command".  The selection
@@ -158,17 +158,17 @@ void FilterSelection(WindowInfo *window, const char *command, int fromMacro)
 
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
 
     /* Get the selection and the range in character positions that it
        occupies.  Beep and return if no selection */
     text = BufGetSelectionText(window->buffer);
     if (*text == '\0') {
-	NEditFree(text);
-	XBell(TheDisplay, 0);
-	return;
+    NEditFree(text);
+    XBell(TheDisplay, 0);
+    return;
     }
     textLen = strlen(text);
     BufUnsubstituteNullChars(text, window->buffer);
@@ -177,7 +177,7 @@ void FilterSelection(WindowInfo *window, const char *command, int fromMacro)
     
     /* Issue the command and collect its output */
     issueCommand(window, command, text, textLen, ACCUMULATE | ERROR_DIALOGS |
-	    REPLACE_SELECTION, window->lastFocus, left, right, fromMacro);
+        REPLACE_SELECTION, window->lastFocus, left, right, fromMacro);
 }
 
 /*
@@ -194,16 +194,16 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
 
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
     
     /* get the selection or the insert position */
     pos = TextGetCursorPos(window->lastFocus);
     if (GetSimpleSelection(window->buffer, &left, &right))
-    	flags = ACCUMULATE | REPLACE_SELECTION;
+        flags = ACCUMULATE | REPLACE_SELECTION;
     else
-    	left = right = pos;
+        left = right = pos;
     
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
@@ -225,7 +225,7 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
 
     /* issue the command */
     issueCommand(window, subsCommand, NULL, 0, flags, window->lastFocus, left,
-	    right, fromMacro);
+        right, fromMacro);
     free(subsCommand);
 }
 
@@ -244,7 +244,7 @@ void ShellCmdToMacroString(WindowInfo *window, const char *command,
     
     /* fork the command and begin processing input/output */
     issueCommand(window, command, inputCopy, strlen(input),
-	    ACCUMULATE | OUTPUT_TO_STRING, NULL, 0, 0, True);
+        ACCUMULATE | OUTPUT_TO_STRING, NULL, 0, 0, True);
 }
 
 /*
@@ -261,19 +261,19 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
     
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
 
     /* get all of the text on the line with the insert position */
     pos = TextGetCursorPos(window->lastFocus);
     if (!GetSimpleSelection(window->buffer, &left, &right)) {
-	left = right = pos;
-	left = BufStartOfLine(window->buffer, left);
-	right = BufEndOfLine(window->buffer, right);
-	insertPos = right;
+    left = right = pos;
+    left = BufStartOfLine(window->buffer, left);
+    right = BufEndOfLine(window->buffer, right);
+    insertPos = right;
     } else
-    	insertPos = BufEndOfLine(window->buffer, right);
+        insertPos = BufEndOfLine(window->buffer, right);
     cmdText = BufGetRange(window->buffer, left, right);
     BufUnsubstituteNullChars(cmdText, window->buffer);
     
@@ -301,7 +301,7 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
 
     /* issue the command */
     issueCommand(window, subsCommand, NULL, 0, 0, window->lastFocus, insertPos+1,
-	    insertPos+1, fromMacro);
+        insertPos+1, fromMacro);
     free(subsCommand);
     NEditFree(cmdText);
 }
@@ -313,7 +313,7 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
 */
 void DoShellMenuCmd(WindowInfo *window, const char *command,
         int input, int output,
-	int outputReplacesInput, int saveFirst, int loadAfter, int fromMacro) 
+    int outputReplacesInput, int saveFirst, int loadAfter, int fromMacro) 
 {
     int flags = 0;
     char *text;
@@ -326,8 +326,8 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
 
     /* Can't do two shell commands at once in the same window */
     if (window->shellCmdData != NULL) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
 
     /* Substitute the current file name for % and the current line number
@@ -353,91 +353,91 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     /* Get the command input as a text string.  If there is input, errors
       shouldn't be mixed in with output, so set flags to ERROR_DIALOGS */
     if (input == FROM_SELECTION) {
-	text = BufGetSelectionText(window->buffer);
-	if (*text == '\0') {
-    	    NEditFree(text);
+    text = BufGetSelectionText(window->buffer);
+    if (*text == '\0') {
+            NEditFree(text);
             NEditFree(subsCommand);
-    	    XBell(TheDisplay, 0);
-    	    return;
-    	}
-    	flags |= ACCUMULATE | ERROR_DIALOGS;
+            XBell(TheDisplay, 0);
+            return;
+        }
+        flags |= ACCUMULATE | ERROR_DIALOGS;
     } else if (input == FROM_WINDOW) {
-	text = BufGetAll(window->buffer);
-    	flags |= ACCUMULATE | ERROR_DIALOGS;
+    text = BufGetAll(window->buffer);
+        flags |= ACCUMULATE | ERROR_DIALOGS;
     } else if (input == FROM_EITHER) {
-	text = BufGetSelectionText(window->buffer);
-	if (*text == '\0') {
-	    NEditFree(text);
-	    text = BufGetAll(window->buffer);
-    	}
-    	flags |= ACCUMULATE | ERROR_DIALOGS;
+    text = BufGetSelectionText(window->buffer);
+    if (*text == '\0') {
+        NEditFree(text);
+        text = BufGetAll(window->buffer);
+        }
+        flags |= ACCUMULATE | ERROR_DIALOGS;
     } else /* FROM_NONE */
-    	text = NULL;
+        text = NULL;
     
     /* If the buffer was substituting another character for ascii-nuls,
        put the nuls back in before exporting the text */
     if (text != NULL) {
-	textLen = strlen(text);
-	BufUnsubstituteNullChars(text, window->buffer);
+    textLen = strlen(text);
+    BufUnsubstituteNullChars(text, window->buffer);
     } else
-	textLen = 0;
+    textLen = 0;
     
     /* Assign the output destination.  If output is to a new window,
        create it, and run the command from it instead of the current
        one, to free the current one from waiting for lengthy execution */
     if (output == TO_DIALOG) {
-    	outWidget = NULL;
-	flags |= OUTPUT_TO_DIALOG;
-    	left = right = 0;
+        outWidget = NULL;
+    flags |= OUTPUT_TO_DIALOG;
+        left = right = 0;
     } else if (output == TO_NEW_WINDOW) {
-    	EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->path);
-    	outWidget = WindowList->textArea;
-	inWindow = WindowList;
-    	left = right = 0;
-	CheckCloseDim();
+        EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->path);
+        outWidget = WindowList->textArea;
+    inWindow = WindowList;
+        left = right = 0;
+    CheckCloseDim();
     } else { /* TO_SAME_WINDOW */
-    	outWidget = window->lastFocus;
-    	if (outputReplacesInput && input != FROM_NONE) {
-    	    if (input == FROM_WINDOW) {
-    		left = 0;
-    		right = window->buffer->length;
-    	    } else if (input == FROM_SELECTION) {
-    	    	GetSimpleSelection(window->buffer, &left, &right);
-	        flags |= ACCUMULATE | REPLACE_SELECTION;
-    	    } else if (input == FROM_EITHER) {
-    	    	if (GetSimpleSelection(window->buffer, &left, &right))
-	            flags |= ACCUMULATE | REPLACE_SELECTION;
-	        else {
-	            left = 0;
-	            right = window->buffer->length;
-	        }
-	    }
-    	} else {
-	    if (GetSimpleSelection(window->buffer, &left, &right))
-	        flags |= ACCUMULATE | REPLACE_SELECTION;
-	    else
-    		left = right = TextGetCursorPos(window->lastFocus);
-    	}
+        outWidget = window->lastFocus;
+        if (outputReplacesInput && input != FROM_NONE) {
+            if (input == FROM_WINDOW) {
+            left = 0;
+            right = window->buffer->length;
+            } else if (input == FROM_SELECTION) {
+                GetSimpleSelection(window->buffer, &left, &right);
+            flags |= ACCUMULATE | REPLACE_SELECTION;
+            } else if (input == FROM_EITHER) {
+                if (GetSimpleSelection(window->buffer, &left, &right))
+                flags |= ACCUMULATE | REPLACE_SELECTION;
+            else {
+                left = 0;
+                right = window->buffer->length;
+            }
+        }
+        } else {
+        if (GetSimpleSelection(window->buffer, &left, &right))
+            flags |= ACCUMULATE | REPLACE_SELECTION;
+        else
+            left = right = TextGetCursorPos(window->lastFocus);
+        }
     }
     
     /* If the command requires the file be saved first, save it */
     if (saveFirst) {
-    	if (!SaveWindow(window)) {
-    	    if (input != FROM_NONE)
-    		NEditFree(text);
+        if (!SaveWindow(window)) {
+            if (input != FROM_NONE)
+            NEditFree(text);
             free(subsCommand);
-    	    return;
-	}
+            return;
+    }
     }
     
     /* If the command requires the file to be reloaded after execution, set
        a flag for issueCommand to deal with it when execution is complete */
     if (loadAfter)
-    	flags |= RELOAD_FILE_AFTER;
-    	
+        flags |= RELOAD_FILE_AFTER;
+        
     /* issue the command */
     issueCommand(inWindow, subsCommand, text, textLen, flags, outWidget, left,
-	    right, fromMacro);
+        right, fromMacro);
     free(subsCommand);
 }
 
@@ -449,7 +449,7 @@ void AbortShellCommand(WindowInfo *window)
     shellCmdInfo *cmdData = window->shellCmdData;
 
     if (cmdData == NULL)
-    	return;
+        return;
     kill(- cmdData->childPid, SIGTERM);
     finishCmdExecution(window, True);
 }
@@ -462,24 +462,24 @@ void AbortShellCommand(WindowInfo *window)
 ** "input" is NULL, no input is fed to the process.  If an input string is
 ** provided, it is freed when the command completes.  Flags:
 **
-**   ACCUMULATE     	Causes output from the command to be saved up until
-**  	    	    	the command completes.
-**   ERROR_DIALOGS  	Presents stderr output separately in popup a dialog,
-**  	    	    	and also reports failed exit status as a popup dialog
-**  	    	    	including the command output.
+**   ACCUMULATE         Causes output from the command to be saved up until
+**                      the command completes.
+**   ERROR_DIALOGS      Presents stderr output separately in popup a dialog,
+**                      and also reports failed exit status as a popup dialog
+**                      including the command output.
 **   REPLACE_SELECTION  Causes output to replace the selection in textW.
 **   RELOAD_FILE_AFTER  Causes the file to be completely reloaded after the
-**  	    	    	command completes.
+**                      command completes.
 **   OUTPUT_TO_DIALOG   Send output to a pop-up dialog instead of textW
 **   OUTPUT_TO_STRING   Output to a macro-language string instead of a text
-**  	    	    	widget or dialog.
+**                      widget or dialog.
 **
 ** REPLACE_SELECTION, ERROR_DIALOGS, and OUTPUT_TO_STRING can only be used
 ** along with ACCUMULATE (these operations can't be done incrementally).
 */
 static void issueCommand(WindowInfo *window, const char *command, char *input,
-	int inputLen, int flags, Widget textW, int replaceLeft,
-	int replaceRight, int fromMacro)
+    int inputLen, int flags, Widget textW, int replaceLeft,
+    int replaceRight, int fromMacro)
 {
     int stdinFD, stdoutFD, stderrFD = 0;
     XtAppContext context = XtWidgetToApplicationContext(window->shell);
@@ -488,40 +488,40 @@ static void issueCommand(WindowInfo *window, const char *command, char *input,
     
     /* verify consistency of input parameters */
     if ((flags & ERROR_DIALOGS || flags & REPLACE_SELECTION ||
-	    flags & OUTPUT_TO_STRING) && !(flags & ACCUMULATE))
-    	return;
+        flags & OUTPUT_TO_STRING) && !(flags & ACCUMULATE))
+        return;
     
     /* a shell command called from a macro must be executed in the same
        window as the macro, regardless of where the output is directed,
        so the user can cancel them as a unit */
     if (fromMacro)
-    	window = MacroRunWindow();
+        window = MacroRunWindow();
     
     /* put up a watch cursor over the waiting window */
     if (!fromMacro)
-    	BeginWait(window->shell);
+        BeginWait(window->shell);
     
     /* enable the cancel menu item */
     if (!fromMacro)
-    	SetSensitive(window, window->cancelShellItem, True);
+        SetSensitive(window, window->cancelShellItem, True);
 
     /* fork the subprocess and issue the command */
     childPid = forkCommand(window->shell, command, window->path, &stdinFD,
-	    &stdoutFD, (flags & ERROR_DIALOGS) ? &stderrFD : NULL);
+        &stdoutFD, (flags & ERROR_DIALOGS) ? &stderrFD : NULL);
     
     /* set the pipes connected to the process for non-blocking i/o */
     if (fcntl(stdinFD, F_SETFL, O_NONBLOCK) < 0)
-    	perror("xnedit: Internal error (fcntl)");
+        perror("xnedit: Internal error (fcntl)");
     if (fcntl(stdoutFD, F_SETFL, O_NONBLOCK) < 0)
-    	perror("xnedit: Internal error (fcntl1)");
+        perror("xnedit: Internal error (fcntl1)");
     if (flags & ERROR_DIALOGS) {
-	if (fcntl(stderrFD, F_SETFL, O_NONBLOCK) < 0)
-    	    perror("xnedit: Internal error (fcntl2)");
+    if (fcntl(stderrFD, F_SETFL, O_NONBLOCK) < 0)
+            perror("xnedit: Internal error (fcntl2)");
     }
     
     /* if there's nothing to write to the process' stdin, close it now */
     if (input == NULL)
-    	close(stdinFD);
+        close(stdinFD);
     
     /* Create a data structure for passing process information around
        amongst the callback routines which will process i/o and completion */
@@ -545,36 +545,36 @@ static void issueCommand(WindowInfo *window, const char *command, char *input,
     
     /* Set up timer proc for putting up banner when process takes too long */
     if (fromMacro)
-    	cmdData->bannerTimeoutID = 0;
+        cmdData->bannerTimeoutID = 0;
     else
-    	cmdData->bannerTimeoutID = XtAppAddTimeOut(context, BANNER_WAIT_TIME,
-    	    	bannerTimeoutProc, window);
+        cmdData->bannerTimeoutID = XtAppAddTimeOut(context, BANNER_WAIT_TIME,
+                bannerTimeoutProc, window);
 
     /* Set up timer proc for flushing output buffers periodically */
     if ((flags & ACCUMULATE) || textW == NULL)
-    	cmdData->flushTimeoutID = 0;
+        cmdData->flushTimeoutID = 0;
     else
-	cmdData->flushTimeoutID = XtAppAddTimeOut(context, OUTPUT_FLUSH_FREQ,
-	    	flushTimeoutProc, window);
-    	
+    cmdData->flushTimeoutID = XtAppAddTimeOut(context, OUTPUT_FLUSH_FREQ,
+            flushTimeoutProc, window);
+        
     /* set up callbacks for activity on the file descriptors */
     cmdData->stdoutInputID = XtAppAddInput(context, stdoutFD,
-    	    (XtPointer)XtInputReadMask, stdoutReadProc, window);
+            (XtPointer)XtInputReadMask, stdoutReadProc, window);
     if (input != NULL)
-    	cmdData->stdinInputID = XtAppAddInput(context, stdinFD,
-    	    	(XtPointer)XtInputWriteMask, stdinWriteProc, window);
+        cmdData->stdinInputID = XtAppAddInput(context, stdinFD,
+                (XtPointer)XtInputWriteMask, stdinWriteProc, window);
     else
-    	cmdData->stdinInputID = 0;
+        cmdData->stdinInputID = 0;
     if (flags & ERROR_DIALOGS)
-	cmdData->stderrInputID = XtAppAddInput(context, stderrFD,
-    		(XtPointer)XtInputReadMask, stderrReadProc, window);
+    cmdData->stderrInputID = XtAppAddInput(context, stderrFD,
+            (XtPointer)XtInputReadMask, stderrReadProc, window);
     else
-    	cmdData->stderrInputID = 0;
+        cmdData->stderrInputID = 0;
     
     /* If this was called from a macro, preempt the macro untill shell
        command completes */
     if (fromMacro)
-    	PreemptMacro();
+        PreemptMacro();
 }
 
 /*
@@ -594,23 +594,23 @@ static void stdoutReadProc(XtPointer clientData, int *source, XtInputId *id)
     
     /* error in read */
     if (nRead == -1) { /* error */
-	if (errno != EWOULDBLOCK && errno != EAGAIN) {
-	    perror("xnedit: Error reading shell command output");
-	    NEditFree(buf);
-	    finishCmdExecution(window, True);
-	}
-	return;
+    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+        perror("xnedit: Error reading shell command output");
+        NEditFree(buf);
+        finishCmdExecution(window, True);
+    }
+    return;
     }
     
     /* end of data.  If the stderr stream is done too, execution of the
        shell process is complete, and we can display the results */
     if (nRead == 0) {
-    	NEditFree(buf);
-    	XtRemoveInput(cmdData->stdoutInputID);
-    	cmdData->stdoutInputID = 0;
-    	if (cmdData->stderrInputID == 0)
-    	    finishCmdExecution(window, False);
-    	return;
+        NEditFree(buf);
+        XtRemoveInput(cmdData->stdoutInputID);
+        cmdData->stdoutInputID = 0;
+        if (cmdData->stderrInputID == 0)
+            finishCmdExecution(window, False);
+        return;
     }
     
     /* characters were read successfully, add buf to linked list of buffers */
@@ -635,23 +635,23 @@ static void stderrReadProc(XtPointer clientData, int *source, XtInputId *id)
     
     /* error in read */
     if (nRead == -1) {
-	if (errno != EWOULDBLOCK && errno != EAGAIN) {
-	    perror("xnedit: Error reading shell command error stream");
-	    NEditFree(buf);
-	    finishCmdExecution(window, True);
-	}
-	return;
+    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+        perror("xnedit: Error reading shell command error stream");
+        NEditFree(buf);
+        finishCmdExecution(window, True);
+    }
+    return;
     }
     
     /* end of data.  If the stdout stream is done too, execution of the
        shell process is complete, and we can display the results */
     if (nRead == 0) {
-    	NEditFree(buf);
-    	XtRemoveInput(cmdData->stderrInputID);
-    	cmdData->stderrInputID = 0;
-    	if (cmdData->stdoutInputID == 0)
-    	    finishCmdExecution(window, False);
-    	return;
+        NEditFree(buf);
+        XtRemoveInput(cmdData->stderrInputID);
+        cmdData->stderrInputID = 0;
+        if (cmdData->stdoutInputID == 0)
+            finishCmdExecution(window, False);
+        return;
     }
     
     /* characters were read successfully, add buf to linked list of buffers */
@@ -671,26 +671,26 @@ static void stdinWriteProc(XtPointer clientData, int *source, XtInputId *id)
 
     nWritten = write(cmdData->stdinFD, cmdData->inPtr, cmdData->inLength);
     if (nWritten == -1) {
-	if (errno == EPIPE) {
-	    /* Just shut off input to broken pipes.  User is likely feeding
-	       it to a command which does not take input */
-	    XtRemoveInput(cmdData->stdinInputID);
-	    cmdData->stdinInputID = 0;
-    	    close(cmdData->stdinFD);
-    	    cmdData->inPtr = NULL;
-    	} else if (errno != EWOULDBLOCK && errno != EAGAIN) {
-    	    perror("xnedit: Write to shell command failed");
-    	    finishCmdExecution(window, True);
-    	}
+    if (errno == EPIPE) {
+        /* Just shut off input to broken pipes.  User is likely feeding
+           it to a command which does not take input */
+        XtRemoveInput(cmdData->stdinInputID);
+        cmdData->stdinInputID = 0;
+            close(cmdData->stdinFD);
+            cmdData->inPtr = NULL;
+        } else if (errno != EWOULDBLOCK && errno != EAGAIN) {
+            perror("xnedit: Write to shell command failed");
+            finishCmdExecution(window, True);
+        }
     } else {
-	cmdData->inPtr += nWritten;
-	cmdData->inLength -= nWritten;
-	if (cmdData->inLength <= 0) {
-	    XtRemoveInput(cmdData->stdinInputID);
-	    cmdData->stdinInputID = 0;
-    	    close(cmdData->stdinFD);
-    	    cmdData->inPtr = NULL;
-    	}
+    cmdData->inPtr += nWritten;
+    cmdData->inLength -= nWritten;
+    if (cmdData->inLength <= 0) {
+        XtRemoveInput(cmdData->stdinInputID);
+        cmdData->stdinInputID = 0;
+            close(cmdData->stdinFD);
+            cmdData->inPtr = NULL;
+        }
     }
 }
 
@@ -745,12 +745,12 @@ static void bannerTimeoutProc(XtPointer clientData, XtIntervalId *id)
 ** and ending positions (part of the state of the command) are corrected.
 */
 static void safeBufReplace(textBuffer *buf, int *start, int *end, 
-	const char *text)
+    const char *text)
 {
     if (*start > buf->length)
-	*start = buf->length;
+    *start = buf->length;
     if (*end > buf->length)
-	*end = buf->length;
+    *end = buf->length;
     BufReplace(buf, *start, *end, text);
 }
 
@@ -768,24 +768,24 @@ static void flushTimeoutProc(XtPointer clientData, XtIntervalId *id)
     
     /* shouldn't happen, but it would be bad if it did */
     if (cmdData->textW == NULL)
-    	return;
+        return;
 
     outText = coalesceOutput(&cmdData->outBufs, &len);
     if (len != 0) {
-	if (BufSubstituteNullChars(outText, len, buf)) {
-	    safeBufReplace(buf, &cmdData->leftPos, &cmdData->rightPos, outText);
-	    TextSetCursorPos(cmdData->textW, cmdData->leftPos+strlen(outText));
-	    cmdData->leftPos += len;
-	    cmdData->rightPos = cmdData->leftPos;
-	} else
-	    fprintf(stderr, "xnedit: Too much binary data\n");
+    if (BufSubstituteNullChars(outText, len, buf)) {
+        safeBufReplace(buf, &cmdData->leftPos, &cmdData->rightPos, outText);
+        TextSetCursorPos(cmdData->textW, cmdData->leftPos+strlen(outText));
+        cmdData->leftPos += len;
+        cmdData->rightPos = cmdData->leftPos;
+    } else
+        fprintf(stderr, "xnedit: Too much binary data\n");
     }
     NEditFree(outText);
 
     /* re-establish the timer proc (this routine) to continue processing */
     cmdData->flushTimeoutID = XtAppAddTimeOut(
-    	    XtWidgetToApplicationContext(window->shell),
-    	    OUTPUT_FLUSH_FREQ, flushTimeoutProc, clientData);
+            XtWidgetToApplicationContext(window->shell),
+            OUTPUT_FLUSH_FREQ, flushTimeoutProc, clientData);
 }
 
 /*
@@ -805,49 +805,49 @@ static void finishCmdExecution(WindowInfo *window, int terminatedOnError)
 
     /* Cancel any pending i/o on the file descriptors */
     if (cmdData->stdoutInputID != 0)
-    	XtRemoveInput(cmdData->stdoutInputID);
+        XtRemoveInput(cmdData->stdoutInputID);
     if (cmdData->stdinInputID != 0)
-    	XtRemoveInput(cmdData->stdinInputID);
+        XtRemoveInput(cmdData->stdinInputID);
     if (cmdData->stderrInputID != 0)
-    	XtRemoveInput(cmdData->stderrInputID);
+        XtRemoveInput(cmdData->stderrInputID);
 
     /* Close any file descriptors remaining open */
     close(cmdData->stdoutFD);
     if (cmdData->flags & ERROR_DIALOGS)
-    	close(cmdData->stderrFD);
+        close(cmdData->stderrFD);
     if (cmdData->inPtr != NULL)
-    	close(cmdData->stdinFD);
+        close(cmdData->stdinFD);
 
     /* Free the provided input text */
     NEditFree(cmdData->input);
     
     /* Cancel pending timeouts */
     if (cmdData->flushTimeoutID != 0)
-    	XtRemoveTimeOut(cmdData->flushTimeoutID);
+        XtRemoveTimeOut(cmdData->flushTimeoutID);
     if (cmdData->bannerTimeoutID != 0)
-    	XtRemoveTimeOut(cmdData->bannerTimeoutID);
+        XtRemoveTimeOut(cmdData->bannerTimeoutID);
     
     /* Clean up waiting-for-shell-command-to-complete mode */
     if (!cmdData->fromMacro) {
-	EndWait(window->shell);
-	SetSensitive(window, window->cancelShellItem, False);
-	if (cmdData->bannerIsUp)
-    	    ClearModeMessage(window);
+    EndWait(window->shell);
+    SetSensitive(window, window->cancelShellItem, False);
+    if (cmdData->bannerIsUp)
+            ClearModeMessage(window);
     }
     
     /* If the process was killed or became inaccessable, give up */
     if (terminatedOnError) {
-	freeBufList(&cmdData->outBufs);
-	freeBufList(&cmdData->errBufs);
-    	waitpid(cmdData->childPid, &status, 0);
-	goto cmdDone;
+    freeBufList(&cmdData->outBufs);
+    freeBufList(&cmdData->errBufs);
+        waitpid(cmdData->childPid, &status, 0);
+    goto cmdDone;
     }
 
     /* Assemble the output from the process' stderr and stdout streams into
        null terminated strings, and free the buffer lists used to collect it */
     outText = coalesceOutput(&cmdData->outBufs, &outTextLen);
     if (cmdData->flags & ERROR_DIALOGS)
-    	errText = coalesceOutput(&cmdData->errBufs, &errTextLen);
+        errText = coalesceOutput(&cmdData->errBufs, &errTextLen);
 
     /* Wait for the child process to complete and get its return status */
     waitpid(cmdData->childPid, &status, 0);
@@ -895,32 +895,32 @@ static void finishCmdExecution(WindowInfo *window, int terminatedOnError)
        (remaining) output in the text widget as requested, and move the
        insert point to the end */
     if (cmdData->flags & OUTPUT_TO_DIALOG) {
-    	removeTrailingNewlines(outText);
-	if (*outText != '\0')
-    	    createOutputDialog(window->shell, outText);
+        removeTrailingNewlines(outText);
+    if (*outText != '\0')
+            createOutputDialog(window->shell, outText);
     } else if (cmdData->flags & OUTPUT_TO_STRING) {
-    	ReturnShellCommandOutput(window,outText, WEXITSTATUS(status));
+        ReturnShellCommandOutput(window,outText, WEXITSTATUS(status));
     } else {
-	buf = TextGetBuffer(cmdData->textW);
-	if (!BufSubstituteNullChars(outText, outTextLen, buf)) {
-	    fprintf(stderr,"xnedit: Too much binary data in shell cmd output\n");
-	    outText[0] = '\0';
-	}
-	if (cmdData->flags & REPLACE_SELECTION) {
-	    reselectStart = buf->primary.rectangular ? -1 : buf->primary.start;
-	    BufReplaceSelected(buf, outText);
-	    TextSetCursorPos(cmdData->textW, buf->cursorPosHint);
-	    if (reselectStart != -1)
-	    	BufSelect(buf, reselectStart, reselectStart + strlen(outText));
-	} else {
-	    safeBufReplace(buf, &cmdData->leftPos, &cmdData->rightPos, outText);
-	    TextSetCursorPos(cmdData->textW, cmdData->leftPos+strlen(outText));
-	}
+    buf = TextGetBuffer(cmdData->textW);
+    if (!BufSubstituteNullChars(outText, outTextLen, buf)) {
+        fprintf(stderr,"xnedit: Too much binary data in shell cmd output\n");
+        outText[0] = '\0';
+    }
+    if (cmdData->flags & REPLACE_SELECTION) {
+        reselectStart = buf->primary.rectangular ? -1 : buf->primary.start;
+        BufReplaceSelected(buf, outText);
+        TextSetCursorPos(cmdData->textW, buf->cursorPosHint);
+        if (reselectStart != -1)
+            BufSelect(buf, reselectStart, reselectStart + strlen(outText));
+    } else {
+        safeBufReplace(buf, &cmdData->leftPos, &cmdData->rightPos, outText);
+        TextSetCursorPos(cmdData->textW, cmdData->leftPos+strlen(outText));
+    }
     }
 
     /* If the command requires the file to be reloaded afterward, reload it */
     if (cmdData->flags & RELOAD_FILE_AFTER)
-    	RevertToSaved(window, NULL);
+        RevertToSaved(window, NULL);
 
     /* Command is complete, free data structure and continue macro execution */
     NEditFree(outText);
@@ -928,7 +928,7 @@ cmdDone:
     NEditFree(cmdData);
     window->shellCmdData = NULL;
     if (fromMacro)
-    	ResumeMacroExecution(window);
+        ResumeMacroExecution(window);
 }
 
 /*
@@ -940,7 +940,7 @@ cmdDone:
 ** if an error occured.
 */
 static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
-	int *stdinFD, int *stdoutFD, int *stderrFD)
+    int *stdinFD, int *stdoutFD, int *stderrFD)
 {
     int childStdoutFD, childStdinFD, childStderrFD, pipeFDs[2];
     int dupFD;
@@ -954,26 +954,26 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
        returned to the caller, the other half is spliced to stdin, stdout
        and stderr in the child process */
     if (pipe(pipeFDs) != 0) {
-    	perror("xnedit: Internal error (opening stdout pipe)");
+        perror("xnedit: Internal error (opening stdout pipe)");
         return -1;
     }
     *stdoutFD = pipeFDs[0];
     childStdoutFD = pipeFDs[1];
     if (pipe(pipeFDs) != 0) {
-    	perror("xnedit: Internal error (opening stdin pipe)");
+        perror("xnedit: Internal error (opening stdin pipe)");
         return -1;
     }
     *stdinFD = pipeFDs[1];
     childStdinFD = pipeFDs[0];
     if (stderrFD == NULL)
-    	childStderrFD = childStdoutFD;
+        childStderrFD = childStdoutFD;
     else {
-	if (pipe(pipeFDs) != 0) {
-    	    perror("xnedit: Internal error (opening stdin pipe)");
+    if (pipe(pipeFDs) != 0) {
+            perror("xnedit: Internal error (opening stdin pipe)");
             return -1;
         }
-	*stderrFD = pipeFDs[0];
-	childStderrFD = pipeFDs[1];
+    *stderrFD = pipeFDs[0];
+    childStderrFD = pipeFDs[1];
     }
     
     /* Fork the process */
@@ -988,30 +988,30 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
     ** child ends of the pipes and execute the command
     */
     if (0 == childPid) {
-	/* close the parent end of the pipes in the child process   */
-	close(*stdinFD);
-	close(*stdoutFD);
-	if (stderrFD != NULL)
-	    close(*stderrFD);
+    /* close the parent end of the pipes in the child process   */
+    close(*stdinFD);
+    close(*stdoutFD);
+    if (stderrFD != NULL)
+        close(*stderrFD);
 
-	/* close current stdin, stdout, and stderr file descriptors before
-	   substituting pipes */
-	close(fileno(stdin));
-	close(fileno(stdout));
-	close(fileno(stderr));
+    /* close current stdin, stdout, and stderr file descriptors before
+       substituting pipes */
+    close(fileno(stdin));
+    close(fileno(stdout));
+    close(fileno(stderr));
 
-	/* duplicate the child ends of the pipes to have the same numbers
-	   as stdout & stderr, so it can substitute for stdout & stderr */
- 	dupFD = dup2(childStdinFD, fileno(stdin));
-	if (dupFD == -1) {
+    /* duplicate the child ends of the pipes to have the same numbers
+       as stdout & stderr, so it can substitute for stdout & stderr */
+     dupFD = dup2(childStdinFD, fileno(stdin));
+    if (dupFD == -1) {
             perror("dup of stdin failed");
         }
- 	dupFD = dup2(childStdoutFD, fileno(stdout));
-	if (dupFD == -1) {
+     dupFD = dup2(childStdoutFD, fileno(stdout));
+    if (dupFD == -1) {
             perror("dup of stdout failed");
         }
- 	dupFD = dup2(childStderrFD, fileno(stderr));
-	if (dupFD == -1) {
+     dupFD = dup2(childStderrFD, fileno(stderr));
+    if (dupFD == -1) {
             perror("dup of stderr failed");
         }
 
@@ -1020,10 +1020,10 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
         close(childStdinFD);
         close(childStdoutFD);
         close(childStderrFD);
-	
-	/* make this process the leader of a new process group, so the sub
-	   processes can be killed, if necessary, with a killpg call */
-	setsid();
+    
+    /* make this process the leader of a new process group, so the sub
+       processes can be killed, if necessary, with a killpg call */
+    setsid();
      
         /* change the current working directory to the directory of the
             current file. */ 
@@ -1033,12 +1033,12 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
            }
         }
      
-	/* execute the command using the shell specified by preferences */
-	execlp(GetPrefShell(), GetPrefShell(), "-c", command, NULL);
+    /* execute the command using the shell specified by preferences */
+    execlp(GetPrefShell(), GetPrefShell(), "-c", command, NULL);
 
-	/* if we reach here, execlp failed */
-	fprintf(stderr, "Error starting shell: %s\n", GetPrefShell());
-	exit(EXIT_FAILURE);
+    /* if we reach here, execlp failed */
+    fprintf(stderr, "Error starting shell: %s\n", GetPrefShell());
+    exit(EXIT_FAILURE);
     }
 
     /* Parent process context, check if fork succeeded */
@@ -1053,7 +1053,7 @@ static pid_t forkCommand(Widget parent, const char *command, const char *cmdDir,
     close(childStdinFD);
     close(childStdoutFD);
     if (stderrFD != NULL)
-    	close(childStderrFD);
+        close(childStderrFD);
 
     return childPid;
 }    
@@ -1080,25 +1080,25 @@ static char *coalesceOutput(buffer **bufList, int *outLength)
     
     /* find the total length of data read */
     for (buf=*bufList; buf!=NULL; buf=buf->next)
-    	length += buf->length;
+        length += buf->length;
     
     /* allocate contiguous memory for returning data */
     outBuf = (char*)NEditMalloc(length+1);
     
     /* reverse the buffer list */
     while (*bufList != NULL) {
-    	buf = *bufList;
-    	*bufList = buf->next;
-    	buf->next = rBufList;
-    	rBufList = buf;
+        buf = *bufList;
+        *bufList = buf->next;
+        buf->next = rBufList;
+        rBufList = buf;
     }
     
     /* copy the buffers into the output buffer */
     outPtr = outBuf;
     for (buf=rBufList; buf!=NULL; buf=buf->next) {
-    	p = buf->contents;
-    	for (i=0; i<buf->length; i++)
-    	    *outPtr++ = *p++;
+        p = buf->contents;
+        for (i=0; i<buf->length; i++)
+            *outPtr++ = *p++;
     }
     
     /* terminate with a null */
@@ -1116,9 +1116,9 @@ static void freeBufList(buffer **bufList)
     buffer *buf;
     
     while (*bufList != NULL) {
-    	buf = *bufList;
-    	*bufList = buf->next;
-    	NEditFree(buf);
+        buf = *bufList;
+        *bufList = buf->next;
+        NEditFree(buf);
     }
 }
 
@@ -1130,7 +1130,7 @@ static void removeTrailingNewlines(char *string)
     char *endPtr = &string[strlen(string)-1];
     
     while (endPtr >= string && *endPtr == '\n')
-    	*endPtr-- = '\0';
+        *endPtr-- = '\0';
 }
 
 /*
@@ -1147,20 +1147,20 @@ static void createOutputDialog(Widget parent, char *text)
     /* measure the width and height of the text to determine size for dialog */
     measureText(text, MAX_OUT_DIALOG_COLS, &rows, &cols, &wrapped);
     if (rows > MAX_OUT_DIALOG_ROWS) {
-    	rows = MAX_OUT_DIALOG_ROWS;
-    	hasScrollBar = True;
+        rows = MAX_OUT_DIALOG_ROWS;
+        hasScrollBar = True;
     } else
-    	hasScrollBar = False;
+        hasScrollBar = False;
     if (cols > MAX_OUT_DIALOG_COLS)
-    	cols = MAX_OUT_DIALOG_COLS;
+        cols = MAX_OUT_DIALOG_COLS;
     if (cols == 0)
-    	cols = 1;
+        cols = 1;
     /* Without completely emulating Motif's wrapping algorithm, we can't
        be sure that we haven't underestimated the number of lines in case
        a line has wrapped, so let's assume that some lines could be obscured
        */
     if (wrapped)
-	hasScrollBar = True;
+    hasScrollBar = True;
     ac = 0;
     form = CreateFormDialog(parent, "shellOutForm", al, ac);
 
@@ -1176,7 +1176,7 @@ static void createOutputDialog(Widget parent, char *text)
     XtVaSetValues(form, XmNcancelButton, button, NULL);
     XmStringFree(st1);
     XtAddCallback(button, XmNactivateCallback, destroyOutDialogCB,
-    	    XtParent(form));
+            XtParent(form));
     
     ac = 0;
     XtSetArg(al[ac], XmNrows, rows);  ac++;
@@ -1229,32 +1229,32 @@ static void destroyOutDialogCB(Widget w, XtPointer callback, XtPointer closure)
 ** tabs.  wrapWidth specifies a number of columns at which text wraps.
 */
 static void measureText(char *text, int wrapWidth, int *rows, int *cols,
-	int *wrapped)
+    int *wrapped)
 {
     int maxCols = 0, line = 1, col = 0, wrapCol;
     char *c;
     
     *wrapped = 0;
     for (c=text; *c!='\0'; c++) {
-    	if (*c=='\n') {
-	    line++;
-	    col = 0;
-	    continue;
-	} 
+        if (*c=='\n') {
+        line++;
+        col = 0;
+        continue;
+    } 
 
-	if (*c == '\t') {
-	    col += 8 - (col % 8);
-	    wrapCol = 0; /* Tabs at end of line are not drawn when wrapped */
-	} else if (*c == ' ') {
-	    col++;
-	    wrapCol = 0; /* Spaces at end of line are not drawn when wrapped */
-	} else {
-	    col++;
-	    wrapCol = 1;
-	}
+    if (*c == '\t') {
+        col += 8 - (col % 8);
+        wrapCol = 0; /* Tabs at end of line are not drawn when wrapped */
+    } else if (*c == ' ') {
+        col++;
+        wrapCol = 0; /* Spaces at end of line are not drawn when wrapped */
+    } else {
+        col++;
+        wrapCol = 1;
+    }
 
-	/* Note: there is a small chance that the number of lines is
-	   over-estimated when a line ends with a space or a tab (ie, followed
+    /* Note: there is a small chance that the number of lines is
+       over-estimated when a line ends with a space or a tab (ie, followed
            by a newline) and that whitespace crosses the boundary, because
            whitespace at the end of a line does not cause wrapping. Taking
            this into account is very hard, but an over-estimation is harmless.
@@ -1266,14 +1266,14 @@ static void measureText(char *text, int wrapWidth, int *rows, int *cols,
            of lines (Motif uses word wrap, and this counting algorithm uses
            character wrap). Therefore, we remember whether there is a line
            that has wrapped. In that case we allways install a scroll bar.
-	   */
-	if (col > wrapWidth) {
-	    line++;
-	    *wrapped = 1;
-	    col = wrapCol;
-	} else if (col > maxCols) {
-	    maxCols = col;
-	}
+       */
+    if (col > wrapWidth) {
+        line++;
+        *wrapped = 1;
+        col = wrapCol;
+    } else if (col > maxCols) {
+        maxCols = col;
+    }
     }
     *rows = line;
     *cols = maxCols;
@@ -1287,7 +1287,7 @@ static void measureText(char *text, int wrapWidth, int *rows, int *cols,
 static void truncateString(char *string, int length)
 {
     if ((int)strlen(string) > length)
-	memcpy(&string[length-3], "...", 4);
+    memcpy(&string[length-3], "...", 4);
 }
 
 /*

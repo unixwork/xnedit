@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* server.c -- Nirvana Editor edit-server component			       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* server.c -- Nirvana Editor edit-server component                             *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* November, 1995							       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* November, 1995                                                               *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -85,7 +85,7 @@ void InitServerCommunication(void)
     /* Create the server property atoms on the current DISPLAY. */
     CreateServerPropertyAtoms(GetPrefServerName(),
                               &ServerExistsAtom,
-    	                      &ServerRequestAtom);
+                              &ServerRequestAtom);
 
     /* Pay attention to PropertyChangeNotify events on the root window.
        Do this before putting up the server atoms, to avoid a race 
@@ -97,7 +97,7 @@ void InitServerCommunication(void)
        whether to try a request (otherwise clients would always have to
        try and wait for their timeouts to expire) */
     XChangeProperty(TheDisplay, rootWindow, ServerExistsAtom, XA_STRING, 8,
-    	    PropModeReplace, (unsigned char *)"True", 4);
+            PropModeReplace, (unsigned char *)"True", 4);
     
     /* Set up exit handler for cleaning up server-exists property */
     atexit(cleanUpServerCommunication);
@@ -112,8 +112,8 @@ static void deleteProperty(Atom* atom)
 
     if (*atom != None) {
        XDeleteProperty(TheDisplay,
-	               RootWindow(TheDisplay, DefaultScreen(TheDisplay)),
-	               *atom);
+                   RootWindow(TheDisplay, DefaultScreen(TheDisplay)),
+                   *atom);
        *atom = None;
     }    
 }
@@ -171,10 +171,10 @@ static void processServerCommand(void)
 
     /* Get the value of the property, and delete it from the root window */
     if (XGetWindowProperty(TheDisplay, RootWindow(TheDisplay,
-    	    DefaultScreen(TheDisplay)), ServerRequestAtom, 0, INT_MAX, True,
-    	    XA_STRING, &dummyAtom, &getFmt, &nItems, &dummyULong, &propValue)
-    	    != Success || getFmt != 8)
-    	return;
+            DefaultScreen(TheDisplay)), ServerRequestAtom, 0, INT_MAX, True,
+            XA_STRING, &dummyAtom, &getFmt, &nItems, &dummyULong, &propValue)
+            != Success || getFmt != 8)
+        return;
     
     /* Invoke the command line processor on the string to process the request */
     processServerCommandString((char *)propValue);
@@ -193,11 +193,11 @@ Boolean ServerDispatchEvent(XEvent *event)
                     processServerCommand();
                 else if (e->atom == ServerExistsAtom && e->state == PropertyDelete)
                     XChangeProperty(TheDisplay,
-	                            rootWindow,
-	                            ServerExistsAtom, XA_STRING,
-	                            8, PropModeReplace,
-	                            (unsigned char *)"True", 4);
-	    }
+                                rootWindow,
+                                ServerExistsAtom, XA_STRING,
+                                8, PropModeReplace,
+                                (unsigned char *)"True", 4);
+        }
         }
     }
     return XtDispatchEvent(event);
@@ -343,22 +343,22 @@ static void processServerCommandString(char *string)
     /* If the command string is empty, put up an empty, Untitled window
        (or just pop one up if it already exists) */
     if (string[0] == '\0') {
-    	for (window=WindowList; window!=NULL; window=window->next)
-    	    if (!window->filenameSet && !window->fileChanged &&
+        for (window=WindowList; window!=NULL; window=window->next)
+            if (!window->filenameSet && !window->fileChanged &&
                 isLocatedOnDesktop(window, currentDesktop))
-    	    	break;
-    	if (window == NULL) {
+                break;
+        if (window == NULL) {
             EditNewFile(findWindowOnDesktop(tabbed, currentDesktop), NULL, 
                         False, NULL, NULL);
-    	    CheckCloseDim();
-    	} 
-	else {
-	    RaiseDocument(window);
+            CheckCloseDim();
+        } 
+    else {
+        RaiseDocument(window);
             WmClientMsg(TheDisplay, XtWindow(window->shell),
                     "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0);
-    	    XMapRaised(TheDisplay, XtWindow(window->shell));
-    	}
-	return;
+            XMapRaised(TheDisplay, XtWindow(window->shell));
+        }
+    return;
     }
 
     /*
@@ -366,99 +366,99 @@ static void processServerCommandString(char *string)
     */
     inPtr = string;
     while (TRUE) {
-	
-	if (*inPtr == '\0')
-	    break;
-	    
-	/* Read a server command from the input string.  Header contains:
-	   linenum createFlag fileLen doLen\n, followed by a filename and -do
-	   command both followed by newlines.  This bit of code reads the
-	   header, and converts the newlines following the filename and do
-	   command to nulls to terminate the filename and doCommand strings */
-	itemsRead = sscanf(inPtr, "%d %d %d %d %d %d %d %d %d%n", &lineNum,
-		&readFlag, &createFlag, &iconicFlag, &tabbed, &fileLen,
-		&doLen, &lmLen, &geomLen, &charsRead);
-	if (itemsRead != 9)
-    	    goto readError;
-	inPtr += charsRead + 1;
-	if (inPtr - string + fileLen > stringLen)
-	    goto readError;
-	fullname = inPtr;
-	inPtr += fileLen;
-	*inPtr++ = '\0';
-	if (inPtr - string + doLen > stringLen)
-	    goto readError;
-	doCommand = inPtr;
-	inPtr += doLen;
-	*inPtr++ = '\0';
-	if (inPtr - string + lmLen > stringLen)
-	    goto readError;
-	langMode = inPtr;
-	inPtr += lmLen;
-	*inPtr++ = '\0';
-	if (inPtr - string + geomLen > stringLen)
-	    goto readError;
-	geometry = inPtr;
-	inPtr += geomLen;
-	*inPtr++ = '\0';
-	
-	/* An empty file name means: 
-	 *   put up an empty, Untitled window, or use an existing one
-	 *   choose a random window for executing the -do macro upon
-	 */
-	if (fileLen <= 0) {
-    	    for (window=WindowList; window!=NULL; window=window->next) {
+    
+    if (*inPtr == '\0')
+        break;
+        
+    /* Read a server command from the input string.  Header contains:
+       linenum createFlag fileLen doLen\n, followed by a filename and -do
+       command both followed by newlines.  This bit of code reads the
+       header, and converts the newlines following the filename and do
+       command to nulls to terminate the filename and doCommand strings */
+    itemsRead = sscanf(inPtr, "%d %d %d %d %d %d %d %d %d%n", &lineNum,
+        &readFlag, &createFlag, &iconicFlag, &tabbed, &fileLen,
+        &doLen, &lmLen, &geomLen, &charsRead);
+    if (itemsRead != 9)
+            goto readError;
+    inPtr += charsRead + 1;
+    if (inPtr - string + fileLen > stringLen)
+        goto readError;
+    fullname = inPtr;
+    inPtr += fileLen;
+    *inPtr++ = '\0';
+    if (inPtr - string + doLen > stringLen)
+        goto readError;
+    doCommand = inPtr;
+    inPtr += doLen;
+    *inPtr++ = '\0';
+    if (inPtr - string + lmLen > stringLen)
+        goto readError;
+    langMode = inPtr;
+    inPtr += lmLen;
+    *inPtr++ = '\0';
+    if (inPtr - string + geomLen > stringLen)
+        goto readError;
+    geometry = inPtr;
+    inPtr += geomLen;
+    *inPtr++ = '\0';
+    
+    /* An empty file name means: 
+     *   put up an empty, Untitled window, or use an existing one
+     *   choose a random window for executing the -do macro upon
+     */
+    if (fileLen <= 0) {
+            for (window=WindowList; window!=NULL; window=window->next) {
                 if(!window->filenameSet && !window->fileChanged &&
                   (isLocatedOnDesktop(window, currentDesktop))) {
                     break;
                 }
             }
 
-    	    if (*doCommand == '\0') {
+            if (*doCommand == '\0') {
                 if (window == NULL) {
-    		    EditNewFile(findWindowOnDesktop(tabbed, currentDesktop), 
+                EditNewFile(findWindowOnDesktop(tabbed, currentDesktop), 
                                 NULL, iconicFlag, lmLen==0?NULL:langMode, NULL);
-    	        } else {
-	            if (iconicFlag)
-		    	RaiseDocument(window);
-		    else
-		    	RaiseDocumentWindow(window);
-	        }
+                } else {
+                if (iconicFlag)
+                RaiseDocument(window);
+            else
+                RaiseDocumentWindow(window);
+            }
             } else {
                 WindowInfo *win = WindowList;
-		/* Starting a new command while another one is still running
-		   in the same window is not possible (crashes). */
-		while (win != NULL && win->macroCmdData != NULL) {
-		    win = win->next;
-		}
-		
-		if (!win) {
-		    XBell(TheDisplay, 0);
-		} else {
-		    /* Raise before -do (macro could close window). */
-	            if (iconicFlag)
-		    	RaiseDocument(win);
-		    else
-		    	RaiseDocumentWindow(win);
-		    DoMacro(win, doCommand, "-do macro");
-		}
-	    }
-	    CheckCloseDim();
-	    return;
-	}
-	
-	/* Process the filename by looking for the files in an
-	   existing window, or opening if they don't exist */
-	editFlags = (readFlag ? PREF_READ_ONLY : 0) | CREATE |
-		(createFlag ? SUPPRESS_CREATE_WARN : 0);
-	if (ParseFilename(fullname, filename, pathname) != 0) {
-	   fprintf(stderr, "XNEdit: invalid file name\n");
+        /* Starting a new command while another one is still running
+           in the same window is not possible (crashes). */
+        while (win != NULL && win->macroCmdData != NULL) {
+            win = win->next;
+        }
+        
+        if (!win) {
+            XBell(TheDisplay, 0);
+        } else {
+            /* Raise before -do (macro could close window). */
+                if (iconicFlag)
+                RaiseDocument(win);
+            else
+                RaiseDocumentWindow(win);
+            DoMacro(win, doCommand, "-do macro");
+        }
+        }
+        CheckCloseDim();
+        return;
+    }
+    
+    /* Process the filename by looking for the files in an
+       existing window, or opening if they don't exist */
+    editFlags = (readFlag ? PREF_READ_ONLY : 0) | CREATE |
+        (createFlag ? SUPPRESS_CREATE_WARN : 0);
+    if (ParseFilename(fullname, filename, pathname) != 0) {
+       fprintf(stderr, "XNEdit: invalid file name\n");
            deleteFileClosedProperty2(filename, pathname);
-	   break;
-	}
+       break;
+    }
 
-    	window = FindWindowWithFile(filename, pathname);
-    	if (window == NULL) {
+        window = FindWindowWithFile(filename, pathname);
+        if (window == NULL) {
             /* determine filter */
             size_t pathlen = strlen(pathname);
             size_t namelen = strlen(filename);
@@ -470,66 +470,66 @@ static void processServerCommandString(char *string)
             const char *filter_name = filter ? filter->name : NULL;
             NEditFree(fullpath);
             
-	    /* Files are opened in background to improve opening speed
-	       by defering certain time  consuiming task such as syntax
-	       highlighting. At the end of the file-opening loop, the 
-	       last file opened will be raised to restore those deferred
-	       items. The current file may also be raised if there're
-	       macros to execute on. */
-	    window = EditExistingFile(findWindowOnDesktop(tabbed, currentDesktop),
-		    filename, pathname, NULL, filter_name, editFlags, geometry, iconicFlag, 
-		    lmLen == 0 ? NULL : langMode, 
-		    tabbed == -1? GetPrefOpenInTab() : tabbed, True);
+        /* Files are opened in background to improve opening speed
+           by defering certain time  consuiming task such as syntax
+           highlighting. At the end of the file-opening loop, the 
+           last file opened will be raised to restore those deferred
+           items. The current file may also be raised if there're
+           macros to execute on. */
+        window = EditExistingFile(findWindowOnDesktop(tabbed, currentDesktop),
+            filename, pathname, NULL, filter_name, editFlags, geometry, iconicFlag, 
+            lmLen == 0 ? NULL : langMode, 
+            tabbed == -1? GetPrefOpenInTab() : tabbed, True);
 
-    	    if (window) {
-	    	CleanUpTabBarExposeQueue(window);
-		if (lastFile && window->shell != lastFile->shell) {
-		    CleanUpTabBarExposeQueue(lastFile);
-		    RaiseDocument(lastFile);
-		}
-	    }
-	    
-	}
-	
-	/* Do the actions requested (note DoMacro is last, since the do
-	   command can do anything, including closing the window!) */
-	if (window != NULL) {
+            if (window) {
+            CleanUpTabBarExposeQueue(window);
+        if (lastFile && window->shell != lastFile->shell) {
+            CleanUpTabBarExposeQueue(lastFile);
+            RaiseDocument(lastFile);
+        }
+        }
+        
+    }
+    
+    /* Do the actions requested (note DoMacro is last, since the do
+       command can do anything, including closing the window!) */
+    if (window != NULL) {
             deleteFileOpenProperty(window);
             getFileClosedProperty(window);
 
-	    if (lineNum > 0)
-		SelectNumberedLine(window, lineNum);
+        if (lineNum > 0)
+        SelectNumberedLine(window, lineNum);
 
-	    if (*doCommand != '\0') {
-		RaiseDocument(window);
+        if (*doCommand != '\0') {
+        RaiseDocument(window);
 
                 if (!iconicFlag) {
                     WmClientMsg(TheDisplay, XtWindow(window->shell),
                             "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0);
-		    XMapRaised(TheDisplay, XtWindow(window->shell));
+            XMapRaised(TheDisplay, XtWindow(window->shell));
                 }
 
-		/* Starting a new command while another one is still running
-		   in the same window is not possible (crashes). */
-		if (window->macroCmdData != NULL) {
-		    XBell(TheDisplay, 0);
-		} else {
-		    DoMacro(window, doCommand, "-do macro");
-		    /* in case window is closed by macro functions
-		       such as close() or detach_document() */
-		    if (!IsValidWindow(window))
-		    	window = NULL;
-		    if (lastFile && !IsValidWindow(lastFile))
-		    	lastFile = NULL;
-		}
-	    }
-	    
-	    /* register the last file opened for later use */
-	    if (window) {
-	    	lastFile = window;
-		lastIconic = iconicFlag;
-	    }
-	} else {
+        /* Starting a new command while another one is still running
+           in the same window is not possible (crashes). */
+        if (window->macroCmdData != NULL) {
+            XBell(TheDisplay, 0);
+        } else {
+            DoMacro(window, doCommand, "-do macro");
+            /* in case window is closed by macro functions
+               such as close() or detach_document() */
+            if (!IsValidWindow(window))
+                window = NULL;
+            if (lastFile && !IsValidWindow(lastFile))
+                lastFile = NULL;
+        }
+        }
+        
+        /* register the last file opened for later use */
+        if (window) {
+            lastFile = window;
+        lastIconic = iconicFlag;
+        }
+    } else {
             deleteFileOpenProperty2(filename, pathname);
             deleteFileClosedProperty2(filename, pathname);
         }
@@ -537,12 +537,12 @@ static void processServerCommandString(char *string)
     
     /* Raise the last file opened */
     if (lastFile) {
-	CleanUpTabBarExposeQueue(lastFile);
-	if (lastIconic)
-	    RaiseDocument(lastFile);
-	else
-	    RaiseDocumentWindow(lastFile);
-	CheckCloseDim();
+    CleanUpTabBarExposeQueue(lastFile);
+    if (lastIconic)
+        RaiseDocument(lastFile);
+    else
+        RaiseDocumentWindow(lastFile);
+    CheckCloseDim();
     }
     return;
 

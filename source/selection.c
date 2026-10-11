@@ -1,27 +1,27 @@
 /*******************************************************************************
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* May 10, 1991								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* May 10, 1991                                                                 *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -62,24 +62,24 @@
 
 
 static void gotoCB(Widget widget, XtPointer window, Atom *sel,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void fileCB(Widget widget, XtPointer window, Atom *sel,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getAnySelectionCB(Widget widget, XtPointer result, Atom *sel,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void processMarkEvent(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch, char *action, int extend);
+        Boolean *continueDispatch, char *action, int extend);
 static void markTimeoutProc(XtPointer clientData, XtIntervalId *id);
 static void markKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch);
+        Boolean *continueDispatch);
 static void gotoMarkKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch);
+        Boolean *continueDispatch);
 static void gotoMarkExtendKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch);
+        Boolean *continueDispatch);
 static void maintainSelection(selection *sel, int pos, int nInserted,
-    	int nDeleted);
+        int nDeleted);
 static void maintainPosition(int *position, int modPos, int nInserted,
-    	int nDeleted);
+        int nDeleted);
 
 /*
 ** Extract the line and column number from the text string.
@@ -128,11 +128,11 @@ void GotoLineNumber(WindowInfo *window)
     response = DialogF(DF_PROMPT, window->shell, 2, "Goto Line Number",
             "Goto Line (and/or Column)  Number:", lineNumText, "OK", "Cancel");
     if (response == 2)
-    	return;
+        return;
 
     if (StringToLineAndCol(lineNumText, &lineNum, &column) == -1) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     params[0] = lineNumText;
     XtCallActionProc(window->lastFocus, "goto_line_number", NULL, params, 1);
@@ -141,13 +141,13 @@ void GotoLineNumber(WindowInfo *window)
 void GotoSelectedLineNumber(WindowInfo *window, Time time)
 {
     XtGetSelectionValue(window->textArea, XA_PRIMARY, XA_STRING,
-    	    gotoCB, window, time);
+            gotoCB, window, time);
 }
 
 void OpenSelectedFile(WindowInfo *window, Time time)
 {
     XtGetSelectionValue(window->textArea, XA_PRIMARY, XA_STRING,
-    	    fileCB, window, time);
+            fileCB, window, time);
 }
 
 /*
@@ -159,32 +159,32 @@ char *GetAnySelection(WindowInfo *window)
 {
     static char waitingMarker[1] = "";
     char *selText = waitingMarker;
-    XEvent nextEvent;	 
+    XEvent nextEvent;     
     
     /* If the selection is in the window's own buffer get it from there,
        but substitute null characters as if it were an external selection */
     if (window->buffer->primary.selected) {
-	selText = BufGetSelectionText(window->buffer);
-	BufUnsubstituteNullChars(selText, window->buffer);
-	return selText;
+    selText = BufGetSelectionText(window->buffer);
+    BufUnsubstituteNullChars(selText, window->buffer);
+    return selText;
     }
     
     /* Request the selection value to be delivered to getAnySelectionCB */
     XtGetSelectionValue(window->textArea, XA_PRIMARY, XA_STRING,
-	    getAnySelectionCB, &selText, 
-	    XtLastTimestampProcessed(XtDisplay(window->textArea)));
+        getAnySelectionCB, &selText, 
+        XtLastTimestampProcessed(XtDisplay(window->textArea)));
 
     /* Wait for the value to appear */
     while (selText == waitingMarker) {
-	XtAppNextEvent(XtWidgetToApplicationContext(window->textArea), 
-		&nextEvent);
-	ServerDispatchEvent(&nextEvent);
+    XtAppNextEvent(XtWidgetToApplicationContext(window->textArea), 
+        &nextEvent);
+    ServerDispatchEvent(&nextEvent);
     }
     return selText;
 }
 
 static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
-    	Atom *type, XtPointer v, unsigned long *length, int *format)
+        Atom *type, XtPointer v, unsigned long *length, int *format)
 {
     WindowInfo *window = wi;
     char *value = v;
@@ -195,20 +195,20 @@ static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
     
     /* skip if we can't get the selection data, or it's obviously not a number */
     if (*type == XT_CONVERT_FAIL || value == NULL) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     if (((size_t) *length) > sizeof(lineText) - 1) {
-    	XBell(TheDisplay, 0);
-	NEditFree(value);
-	return;
+        XBell(TheDisplay, 0);
+    NEditFree(value);
+    return;
     }
     /* should be of type text??? */
     if (*format != 8) {
         fprintf(stderr, "XNEdit: Can't handle non 8-bit text\n");
-    	XBell(TheDisplay, 0);
-	NEditFree(value);
-	return;
+        XBell(TheDisplay, 0);
+    NEditFree(value);
+    return;
     }
     strncpy(lineText, value, sizeof(lineText));
     lineText[sizeof(lineText) - 1] = '\0';
@@ -216,8 +216,8 @@ static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
     rc = StringToLineAndCol(lineText, &lineNum, &column);
     NEditFree(value);
     if (rc == -1) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
 
     /* User specified column, but not line number */
@@ -243,7 +243,7 @@ static void gotoCB(Widget widget, XtPointer wi, Atom *sel,
 }
 
 static void fileCB(Widget widget, XtPointer wi, Atom *sel,
-    	Atom *type, XtPointer v, unsigned long *length, int *format)
+        Atom *type, XtPointer v, unsigned long *length, int *format)
 {
     WindowInfo *window = wi;
     char *value = v;
@@ -257,20 +257,20 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     /* get the string, or skip if we can't get the selection data, or it's
        obviously not a file name */
     if (*type == XT_CONVERT_FAIL || value == NULL) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     if (*length + 2 > MAXPATHLEN || *length == 0) {
-    	XBell(TheDisplay, 0);
-	NEditFree(value);
-	return;
+        XBell(TheDisplay, 0);
+    NEditFree(value);
+    return;
     }
     /* should be of type text??? */
     if (*format != 8) {
         fprintf(stderr, "XNEdit: Can't handle non 8-bit text\n");
-    	XBell(TheDisplay, 0);
-	NEditFree(value);
-	return;
+        XBell(TheDisplay, 0);
+    NEditFree(value);
+    return;
     }
     strncpy(nameText, value, *length);
     NEditFree(value);
@@ -278,15 +278,15 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     
     /* extract name from #include syntax */
     if (sscanf(nameText, "#include \"%[^\"]\"", includeName) == 1)
-    	strcpy(nameText, includeName);
+        strcpy(nameText, includeName);
     else if (sscanf(nameText, "#include <%[^<>]>", includeName) == 1)
-    	snprintf(nameText, MAXPATHLEN-1, "%s%s", includeDir, includeName);
+        snprintf(nameText, MAXPATHLEN-1, "%s%s", includeDir, includeName);
     
     /* strip whitespace from name */
     /* is there a reason for this?? */
     //for (inPtr=nameText, outPtr=nameText; *inPtr!='\0'; inPtr++)
-    //	if (*inPtr != ' ' && *inPtr != '\t' && *inPtr != '\n')
-    //	    *outPtr++ = *inPtr;
+    //    if (*inPtr != ' ' && *inPtr != '\t' && *inPtr != '\n')
+    //        *outPtr++ = *inPtr;
     //*outPtr = '\0';
 
     /* Process ~ characters in name */
@@ -294,9 +294,9 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
         
     /* If path name is relative, make it refer to current window's directory */
     if (nameText[0] != '/') {
-	strcpy(filename, window->path);
-	strcat(filename, nameText);
-	strcpy(nameText, filename);
+    strcpy(filename, window->path);
+    strcat(filename, nameText);
+    strcpy(nameText, filename);
     }
     
     /* Expand wildcards in file name.
@@ -308,7 +308,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     /* Open the file */
     if (ParseFilename(nameText, filename, pathname) != 0) {
         XBell(TheDisplay, 0);
-	return;
+    return;
     }
     const char *filter_name = GetFilterNameForPath(pathname, filename);
     EditExistingFile(window, filename, 
@@ -319,23 +319,23 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 
       if (ParseFilename(nameText, filename, pathname) != 0) {
            XBell(TheDisplay, 0);
-	   return;
+       return;
       }
       _XmOSGetDirEntries(pathname, filename, XmFILE_ANY_TYPE, False, True,
-	      &nameList, &nFiles, &maxFiles);
+          &nameList, &nFiles, &maxFiles);
       for (i=0; i<nFiles; i++) {
-	  if (ParseFilename(nameList[i], filename, pathname) != 0) {
-	      XBell(TheDisplay, 0);
-	  }
+      if (ParseFilename(nameList[i], filename, pathname) != 0) {
+          XBell(TheDisplay, 0);
+      }
         else {
             const char *filter_name = GetFilterNameForPath(pathname, filename);
             EditExistingFile(window, filename, pathname, NULL, filter_name, 0, 
                     NULL, False, NULL, GetPrefOpenInTab(), False);
-	  }
+      }
       }
       for (i=0; i<nFiles; i++) {
-	   NEditFree(nameList[i]);
-	}
+       NEditFree(nameList[i]);
+    }
       NEditFree(nameList);
     }
 #else
@@ -344,7 +344,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 
       glob(nameText, GLOB_NOCHECK, NULL, &globbuf);
       for (i=0; i<(int)globbuf.gl_pathc; i++) {
-	  if (ParseFilename(globbuf.gl_pathv[i], filename, pathname) != 0) {
+      if (ParseFilename(globbuf.gl_pathv[i], filename, pathname) != 0) {
               XBell(TheDisplay, 0);
           } else {
             const char *filter_name = GetFilterNameForPath(pathname, filename);
@@ -360,17 +360,17 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 }
 
 static void getAnySelectionCB(Widget widget, XtPointer voidresult, Atom *sel,
-	Atom *type, XtPointer voidvalue, unsigned long *length, int *format)
+    Atom *type, XtPointer voidvalue, unsigned long *length, int *format)
 {
     char **result = voidresult;
     char *value = voidvalue;
     
     /* Confirm that the returned value is of the correct type */
     if (*type != XA_STRING || *format != 8) {
-	XBell(TheDisplay, 0);
+    XBell(TheDisplay, 0);
         NEditFree(value);
-	*result = NULL;
-	return;
+    *result = NULL;
+    return;
     }
 
     /* Append a null, and return the string */
@@ -386,28 +386,28 @@ void SelectNumberedLine(WindowInfo *window, int lineNum)
 
     /* count lines to find the start and end positions for the selection */
     if (lineNum < 1)
-    	lineNum = 1;
+        lineNum = 1;
     lineEnd = -1;
     for (i=1; i<=lineNum && lineEnd<window->buffer->length; i++) {
-    	lineStart = lineEnd + 1;
-    	lineEnd = BufEndOfLine(window->buffer, lineStart);
+        lineStart = lineEnd + 1;
+        lineEnd = BufEndOfLine(window->buffer, lineStart);
     }
     
     /* highlight the line */
     if (i>lineNum) {
-	/* Line was found */
-	if (lineEnd < window->buffer->length) {
-	    BufSelect(window->buffer, lineStart, lineEnd+1);
-	} else { 
-	    /* Don't select past the end of the buffer ! */
-	    BufSelect(window->buffer, lineStart, window->buffer->length);
-	}
+    /* Line was found */
+    if (lineEnd < window->buffer->length) {
+        BufSelect(window->buffer, lineStart, lineEnd+1);
+    } else { 
+        /* Don't select past the end of the buffer ! */
+        BufSelect(window->buffer, lineStart, window->buffer->length);
+    }
     } else {
-	/* Line was not found -> position the selection & cursor at the end 
-	   without making a real selection and beep */
-	lineStart = window->buffer->length;
-	BufSelect(window->buffer, lineStart, lineStart);
-	XBell(TheDisplay, 0);
+    /* Line was not found -> position the selection & cursor at the end 
+       without making a real selection and beep */
+    lineStart = window->buffer->length;
+    BufSelect(window->buffer, lineStart, lineStart);
+    XBell(TheDisplay, 0);
     }     
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, lineStart);
@@ -425,10 +425,10 @@ void MarkDialog(WindowInfo *window)
             "followed immediately by a letter key (a-z))", letterText, "OK",
             "Cancel");
     if (response == 2)
-    	return;
+        return;
     if (strlen(letterText) != 1 || !isalpha((unsigned char)letterText[0])) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     params[0] = letterText;
     XtCallActionProc(window->lastFocus, "mark", NULL, params, 1);
@@ -446,15 +446,15 @@ void GotoMarkDialog(WindowInfo *window, int extend)
             "key, followed immediately by the letter)", letterText, "OK",
             "Cancel");
     if (response == 2)
-    	return;
+        return;
     if (strlen(letterText) != 1 || !isalpha((unsigned char)letterText[0])) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     params[0] = letterText;
     params[1] = "extend";
     XtCallActionProc(window->lastFocus, "goto_mark", NULL, params,
-	    extend ? 2 : 1);
+        extend ? 2 : 1);
 }
 
 /*
@@ -466,10 +466,10 @@ void GotoMarkDialog(WindowInfo *window, int extend)
 void BeginMarkCommand(WindowInfo *window)
 {
     XtInsertEventHandler(window->lastFocus, KeyPressMask, False,
-    	    markKeyCB, window, XtListHead);
+            markKeyCB, window, XtListHead);
     window->markTimeoutID = XtAppAddTimeOut(
-    	    XtWidgetToApplicationContext(window->shell), 4000,
-    	    markTimeoutProc, window->lastFocus);
+            XtWidgetToApplicationContext(window->shell), 4000,
+            markTimeoutProc, window->lastFocus);
 }
 
 /*
@@ -481,10 +481,10 @@ void BeginMarkCommand(WindowInfo *window)
 void BeginGotoMarkCommand(WindowInfo *window, int extend)
 {
     XtInsertEventHandler(window->lastFocus, KeyPressMask, False,
-    	    extend ? gotoMarkExtendKeyCB : gotoMarkKeyCB, window, XtListHead);
+            extend ? gotoMarkExtendKeyCB : gotoMarkKeyCB, window, XtListHead);
     window->markTimeoutID = XtAppAddTimeOut(
-    	    XtWidgetToApplicationContext(window->shell), 4000,
-    	    markTimeoutProc, window->lastFocus);
+            XtWidgetToApplicationContext(window->shell), 4000,
+            markTimeoutProc, window->lastFocus);
 }
 
 /*
@@ -509,7 +509,7 @@ static void markTimeoutProc(XtPointer clientData, XtIntervalId *id)
 ** and give up.
 */
 static void processMarkEvent(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch, char *action, int extend)
+        Boolean *continueDispatch, char *action, int extend)
 {
     XKeyEvent *e = (XKeyEvent *)event;
     WindowInfo *window = WidgetToWindow(w);
@@ -518,15 +518,15 @@ static void processMarkEvent(Widget w, XtPointer clientData, XEvent *event,
     char *params[2], string[2];
 
     XtTranslateKeycode(TheDisplay, e->keycode, e->state, &modifiers,
-    	    &keysym);
+            &keysym);
     if ((keysym >= 'A' && keysym <= 'Z') || (keysym >= 'a' && keysym <= 'z')) {
-    	string[0] = toupper(keysym);
-    	string[1] = '\0';
-    	params[0] = string;
-	params[1] = "extend";
-    	XtCallActionProc(window->lastFocus, action, event, params,
-		extend ? 2 : 1);
-    	*continueDispatch = False;
+        string[0] = toupper(keysym);
+        string[1] = '\0';
+        params[0] = string;
+    params[1] = "extend";
+        XtCallActionProc(window->lastFocus, action, event, params,
+        extend ? 2 : 1);
+        *continueDispatch = False;
     }
     XtRemoveEventHandler(w, KeyPressMask, False, markKeyCB, window);
     XtRemoveEventHandler(w, KeyPressMask, False, gotoMarkKeyCB, window);
@@ -534,17 +534,17 @@ static void processMarkEvent(Widget w, XtPointer clientData, XEvent *event,
     XtRemoveTimeOut(window->markTimeoutID);
 }
 static void markKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch)
+        Boolean *continueDispatch)
 {
     processMarkEvent(w, clientData, event, continueDispatch, "mark", False);
 }
 static void gotoMarkKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch)
+        Boolean *continueDispatch)
 {
     processMarkEvent(w, clientData, event, continueDispatch, "goto_mark",False);
 }
 static void gotoMarkExtendKeyCB(Widget w, XtPointer clientData, XEvent *event,
-    	Boolean *continueDispatch)
+        Boolean *continueDispatch)
 {
     processMarkEvent(w, clientData, event, continueDispatch, "goto_mark", True);
 }
@@ -557,20 +557,20 @@ void AddMark(WindowInfo *window, Widget widget, char label)
        nMarks to create a new one */
     label = toupper(label);
     for (index=0; index<window->nMarks; index++) {
-    	if (window->markTable[index].label == label)
-   	    break;
+        if (window->markTable[index].label == label)
+           break;
     }
     if (index >= MAX_MARKS) {
-    	fprintf(stderr, "no more marks allowed\n"); /* shouldn't happen */
-    	return;
+        fprintf(stderr, "no more marks allowed\n"); /* shouldn't happen */
+        return;
     }
     if (index == window->nMarks)
-    	window->nMarks++;
+        window->nMarks++;
     
     /* store the cursor location and selection position in the table */
     window->markTable[index].label = label;
     memcpy(&window->markTable[index].sel, &window->buffer->primary,
-    	    sizeof(selection));
+            sizeof(selection));
     window->markTable[index].cursorPos = TextGetCursorPos(widget);
 }
 
@@ -582,12 +582,12 @@ void GotoMark(WindowInfo *window, Widget w, char label, int extendSel)
     /* look up the mark in the mark table */
     label = toupper(label);
     for (index=0; index<window->nMarks; index++) {
-    	if (window->markTable[index].label == label)
-   	    break;
+        if (window->markTable[index].label == label)
+           break;
     }
     if (index == window->nMarks) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
     
     /* reselect marked the selection, and move the cursor to the marked pos */
@@ -595,21 +595,21 @@ void GotoMark(WindowInfo *window, Widget w, char label, int extendSel)
     oldSel = &window->buffer->primary;
     cursorPos = window->markTable[index].cursorPos;
     if (extendSel) {
-	oldStart = oldSel->selected ? oldSel->start : TextGetCursorPos(w);
-	oldEnd = oldSel->selected ? oldSel->end : TextGetCursorPos(w);
-	newStart = sel->selected ? sel->start : cursorPos;
-	newEnd = sel->selected ? sel->end : cursorPos;
-	BufSelect(window->buffer, oldStart < newStart ? oldStart : newStart,
-		oldEnd > newEnd ? oldEnd : newEnd);
+    oldStart = oldSel->selected ? oldSel->start : TextGetCursorPos(w);
+    oldEnd = oldSel->selected ? oldSel->end : TextGetCursorPos(w);
+    newStart = sel->selected ? sel->start : cursorPos;
+    newEnd = sel->selected ? sel->end : cursorPos;
+    BufSelect(window->buffer, oldStart < newStart ? oldStart : newStart,
+        oldEnd > newEnd ? oldEnd : newEnd);
     } else {
-	if (sel->selected) {
-    	    if (sel->rectangular)
-    		BufRectSelect(window->buffer, sel->start, sel->end,
-			sel->rectStart, sel->rectEnd);
-    	    else
-    		BufSelect(window->buffer, sel->start, sel->end);
-	} else
-    	    BufUnselect(window->buffer);
+    if (sel->selected) {
+            if (sel->rectangular)
+            BufRectSelect(window->buffer, sel->start, sel->end,
+            sel->rectStart, sel->rectEnd);
+            else
+            BufSelect(window->buffer, sel->start, sel->end);
+    } else
+            BufUnselect(window->buffer);
     }
     
     /* Move the window into a pleasing position relative to the selection
@@ -629,15 +629,15 @@ void GotoMark(WindowInfo *window, Widget w, char label, int extendSel)
 ** changes to the underlying buffer
 */
 void UpdateMarkTable(WindowInfo *window, int pos, int nInserted,
-    	int nDeleted)
+        int nDeleted)
 {
     int i;
     
     for (i=0; i<window->nMarks; i++) {
-    	maintainSelection(&window->markTable[i].sel, pos, nInserted,
-    	    	nDeleted);
-    	maintainPosition(&window->markTable[i].cursorPos, pos, nInserted,
-    	    	nDeleted);
+        maintainSelection(&window->markTable[i].sel, pos, nInserted,
+                nDeleted);
+        maintainPosition(&window->markTable[i].cursorPos, pos, nInserted,
+                nDeleted);
     }
 }
 
@@ -646,14 +646,14 @@ void UpdateMarkTable(WindowInfo *window, int pos, int nInserted,
 ** "pos", "nDeleted", and "nInserted".
 */
 static void maintainSelection(selection *sel, int pos, int nInserted,
-	int nDeleted)
+    int nDeleted)
 {
     if (!sel->selected || pos > sel->end)
-    	return;
+        return;
     maintainPosition(&sel->start, pos, nInserted, nDeleted);
     maintainPosition(&sel->end, pos, nInserted, nDeleted);
     if (sel->end <= sel->start)
-	sel->selected = False;
+    sel->selected = False;
 }
 
 /*
@@ -661,12 +661,12 @@ static void maintainSelection(selection *sel, int pos, int nInserted,
 ** "modPos", "nDeleted", and "nInserted".
 */
 static void maintainPosition(int *position, int modPos, int nInserted,
-    	int nDeleted)
+        int nDeleted)
 {
     if (modPos > *position)
-    	return;
+        return;
     if (modPos+nDeleted <= *position)
-    	*position += nInserted - nDeleted;
+        *position += nInserted - nDeleted;
     else
-    	*position = modPos;
+        *position = modPos;
 }

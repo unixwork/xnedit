@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* file.c -- Nirvana Editor file i/o					       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* file.c -- Nirvana Editor file i/o                                            *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute versions of this program linked to  *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* May 10, 1991								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* May 10, 1991                                                                 *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -305,9 +305,9 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
 
     /* create new window/document */
     if (inWindow)
-	window = CreateDocument(inWindow, name);
+    window = CreateDocument(inWindow, name);
     else 
-	window = CreateWindow(name, geometry, iconic);
+    window = CreateWindow(name, geometry, iconic);
 
     path = window->path;
     strcpy(window->filename, name);
@@ -327,17 +327,17 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
     RefreshTabState(window);
     
     if (languageMode == NULL) 
-    	DetermineLanguageMode(window, True);
+        DetermineLanguageMode(window, True);
     else
-	SetLanguageMode(window, FindLanguageMode(languageMode), True);
-	
+    SetLanguageMode(window, FindLanguageMode(languageMode), True);
+    
     ShowTabBar(window, GetShowTabBar(window));
 
     if (iconic && IsIconic(window))
         RaiseDocument(window);
     else
         RaiseDocumentWindow(window);
-	
+    
     SortTabBar(window);
     return window;
 }
@@ -412,10 +412,10 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
 ** (displays a file other than Untitled, or is Untitled but modified).  Flags
 ** can be any of:
 **
-**	CREATE: 		If file is not found, (optionally) prompt the
-**				user whether to create
-**	SUPPRESS_CREATE_WARN	When creating a file, don't ask the user
-**	PREF_READ_ONLY		Make the file read-only regardless
+**    CREATE:         If file is not found, (optionally) prompt the
+**                    user whether to create
+**    SUPPRESS_CREATE_WARN    When creating a file, don't ask the user
+**    PREF_READ_ONLY          Make the file read-only regardless
 **
 ** If languageMode is passed as NULL, it will be determined automatically
 ** from the file extension or file contents.
@@ -436,35 +436,35 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     /* first look to see if file is already displayed in a window */
     window = FindWindowWithFile(name, path);
     if (window != NULL) {
-    	if (!bgOpen) {
-	    if (iconic)
-		RaiseDocument(window);
-	    else
-		RaiseDocumentWindow(window);
-    	}	    
-	return window;
+        if (!bgOpen) {
+        if (iconic)
+        RaiseDocument(window);
+        else
+        RaiseDocumentWindow(window);
+        }        
+    return window;
     }
     
     /* If an existing window isn't specified; or the window is already
        in use (not Untitled or Untitled and modified), or is currently
        busy running a macro; create the window */
     if (inWindow == NULL) {
-	window = CreateWindow(name, geometry, iconic);
+    window = CreateWindow(name, geometry, iconic);
     }
     else if (inWindow->filenameSet || inWindow->fileChanged ||
-	    inWindow->macroCmdData != NULL) {
-	if (tabbed) {
-	    window = CreateDocument(inWindow, name);
-    	}
-	else {
-	    window = CreateWindow(name, geometry, iconic);
-	}
+        inWindow->macroCmdData != NULL) {
+    if (tabbed) {
+        window = CreateDocument(inWindow, name);
+        }
+    else {
+        window = CreateWindow(name, geometry, iconic);
+    }
     }
     else {
-    	/* open file in untitled document */
-    	window = inWindow;
-    	strcpy(window->path, path);
-    	strcpy(window->filename, name); 
+        /* open file in untitled document */
+        window = inWindow;
+        strcpy(window->path, path);
+        strcpy(window->filename, name); 
         if(encoding) {
             SetEncoding(window, encoding);
         } else {
@@ -492,12 +492,12 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     
     /* Open the file */
     if (!doOpen(window, name, path, encoding, filter, flags)) {
-	/* The user may have destroyed the window instead of closing the 
-	   warning dialog; don't close it twice */
-	safeClose(window);
-	
+    /* The user may have destroyed the window instead of closing the 
+       warning dialog; don't close it twice */
+    safeClose(window);
+    
         free(ec.charset);
-    	return NULL;
+        return NULL;
     }
     forceShowLineNumbers(window);
     
@@ -535,7 +535,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     strcpy(fullname, path);
     strcat(fullname, name);
     if(GetPrefAlwaysCheckRelTagsSpecs())
-      	AddRelTagsFile(GetPrefTagFile(), path, TAG);
+          AddRelTagsFile(GetPrefTagFile(), path, TAG);
     AddToPrevOpenMenu(fullname);
     
     if(ec.found) {
@@ -568,9 +568,9 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     
     /* save insert & scroll positions of all of the panes to restore later */
     for (i=0; i<=window->nPanes; i++) {
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-    	insertPositions[i] = TextGetCursorPos(text);
-    	TextGetScroll(text, &topLines[i], &horizOffsets[i]);
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+        insertPositions[i] = TextGetCursorPos(text);
+        TextGetScroll(text, &topLines[i], &horizOffsets[i]);
     }
 
     /* re-read the file, update the window title if new file is different */
@@ -590,18 +590,18 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     ClearUndoList(window);
     openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
     if (!doOpen(window, name, path, encoding, window->filter, openFlags)) {
-	/* This is a bit sketchy.  The only error in doOpen that irreperably
+    /* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
             that now it has too much binary data. */
         if (!window->fileMissing)
-	    safeClose(window);
+        safeClose(window);
         else {
             /* Treat it like an externally modified file */
             window->lastModTime=0;
             window->fileMissing=FALSE;
         }
-    	return;
+        return;
     }
     forceShowLineNumbers(window);
     UpdateWindowTitle(window);
@@ -609,9 +609,9 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     
     /* restore the insert and scroll positions of each pane */
     for (i=0; i<=window->nPanes; i++) {
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-	TextSetCursorPos(text, insertPositions[i]);
-	TextSetScroll(text, topLines[i], horizOffsets[i]);
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+    TextSetCursorPos(text, insertPositions[i]);
+    TextSetScroll(text, topLines[i], horizOffsets[i]);
     }
 }
 
@@ -627,7 +627,7 @@ static void safeClose(WindowInfo *window)
     WindowInfo* p = WindowList;
     while(p) {
         if (p == window) {
-	    CloseWindow(window);
+        CloseWindow(window);
             return;
         }
         p = p->next;
@@ -719,7 +719,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             /* Give option to create (or to exit if this is the only window) */
             if (!(flags & SUPPRESS_CREATE_WARN)) {
                 /* on Solaris 2.6, and possibly other OSes, dialog won't 
-		   show if parent window is iconized. */
+           show if parent window is iconized. */
                 RaiseShellWindow(window->shell, False);
                 
                 /* ask user for next action if file not found */
@@ -755,8 +755,8 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             if ((flags & PREF_READ_ONLY) != 0) {
                 SET_USER_LOCKED(window->lockReasons, TRUE);
             }
-	    UpdateWindowReadOnly(window);
-	    return TRUE;
+        UpdateWindowReadOnly(window);
+        return TRUE;
         } else if(content.isdir) {
             window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
@@ -883,12 +883,12 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         SET_ENCODING_LOCKED(window->lockReasons, lock_enc_error);
     }
     if (IS_PERM_LOCKED(window->lockReasons)) {
-	window->fileChanged = FALSE;
-	UpdateWindowTitle(window);
+    window->fileChanged = FALSE;
+    UpdateWindowTitle(window);
     } else {
-	SetWindowModified(window, FALSE);
-	if (IS_ANY_LOCKED(window->lockReasons)) {
-	    UpdateWindowTitle(window);
+    SetWindowModified(window, FALSE);
+    if (IS_ANY_LOCKED(window->lockReasons)) {
+        UpdateWindowTitle(window);
         }
     }
     UpdateWindowReadOnly(window);
@@ -1302,7 +1302,7 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
     if(content.skipped > 0) {
         int btn = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
-    		"Include anyway?", "NO", "YES",
+            "Include anyway?", "NO", "YES",
                 content.skipped);
         if(btn == 1) {
             err = TRUE;
@@ -1338,7 +1338,7 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
 int CloseAllFilesAndWindows(void)
 {
     while (WindowList->next != NULL || 
-    		WindowList->filenameSet || WindowList->fileChanged) {
+            WindowList->filenameSet || WindowList->fileChanged) {
         /*
          * When we're exiting through a macro, the document running the 
          * macro does not disappear from the list, so we could get stuck
@@ -1369,7 +1369,7 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
     
     /* Make sure that the window is not in iconified state */
     if (window->fileChanged)
-    	RaiseDocumentWindow(window);
+        RaiseDocumentWindow(window);
 
     /* If the window is a normal & unmodified file or an empty new file, 
        or if the user wants to ignore external modifications then
@@ -1431,10 +1431,10 @@ int SaveWindow(WindowInfo *window)
     if ( (!window->fileChanged && !window->fileMissing && 
             window->lastModTime > 0) || 
             IS_ANY_LOCKED_IGNORING_PERM(window->lockReasons))
-    	return TRUE;
+        return TRUE;
     /* Prompt for a filename if this is an Untitled window */
     if (!window->filenameSet)
-    	return SaveWindowAs(window, NULL);
+        return SaveWindowAs(window, NULL);
 
     /* Check for external modifications and warn the user */
     if (GetPrefWarnFileMods() && fileWasModifiedExternally(window))
@@ -1458,7 +1458,7 @@ int SaveWindow(WindowInfo *window)
     }
     
     if (writeBckVersion(window))
-    	return FALSE;
+        return FALSE;
     stat = doSave(window, 0);
     if (stat) 
         RemoveBackupFile(window);
@@ -1482,11 +1482,11 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         newFile.format = window->fileFormat;
         newFile.writebom = window->bom;
         
-	response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
-	if (response != GFN_OK)
-    	    return FALSE;
+    response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
+    if (response != GFN_OK)
+            return FALSE;
         window->bom = newFile.writebom;
-	window->fileFormat = newFile.format;
+    window->fileFormat = newFile.format;
         SetFilter(window, newFile.filter);
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
@@ -1527,7 +1527,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     
     /* Add newlines if requested */
     if (file->addwrap)
-    	addWrapNewlines(window);
+        addWrapNewlines(window);
     
     if (ParseFilename(fullname, filename, pathname) != 0) {
         return FALSE;
@@ -1535,10 +1535,10 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
 
     /* If the requested file is this file, just save it and return */
     if (!strcmp(window->filename, filename) &&
-    	    !strcmp(window->path, pathname)) {
-	if (writeBckVersion(window))
-    	    return FALSE;
-	return doSave(window, file->setxattr);
+            !strcmp(window->path, pathname)) {
+    if (writeBckVersion(window))
+            return FALSE;
+    return doSave(window, file->setxattr);
     }
     
     /* If the file is open in another window, make user close it.  Note that
@@ -1802,26 +1802,26 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
                 /* Conversion succeeded but output buffer is full */
                 break;
             default:
-            	/* Unknown error encountered */
-            	++unerr;
+                /* Unknown error encountered */
+                ++unerr;
             }
         }
 
         if (inleft == 0) {
-        	/* add # of nonreversible conversions */
-        	nonreversible += rc;
+            /* add # of nonreversible conversions */
+            nonreversible += rc;
         }
     }
 
     unsigned int eresp = 0;
     int show_infobar = FALSE;
     if (skipped > 0 || nonreversible > 0 || unerr > 0) {
-    	/*
+        /*
         eresp = DialogF(DF_WARN, window->shell, 2, "Encoding warning",
                 "%d non-convertible characters skipped\n"
-    			"%d non-reversible characters encountered\n"
-    			"%d unknown errors occurred\n"
-    			"Save anyway?", "YES", "NO",
+                "%d non-reversible characters encountered\n"
+                "%d unknown errors occurred\n"
+                "Save anyway?", "YES", "NO",
                 skipped, nonreversible, unerr);
         */
         char msgbuf[256];
@@ -1905,14 +1905,14 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     
     /* update the modification time */
     if (stat(fullname, &statbuf) == 0) {
-	window->lastModTime = statbuf.st_mtime;
+    window->lastModTime = statbuf.st_mtime;
         window->fileMissing = FALSE;
         window->device = statbuf.st_dev;
         window->inode = statbuf.st_ino;
     } else {
         /* This needs to produce an error message -- the file can't be 
             accessed! */
-	window->lastModTime = 0;
+    window->lastModTime = 0;
         window->fileMissing = TRUE;
         window->device = 0;
         window->inode = 0;
@@ -1967,7 +1967,7 @@ int WriteBackupFile(WindowInfo *window)
     
     /* add a terminating newline if the file doesn't already have one */
     if (fileLen != 0 && fileString[fileLen-1] != '\n')
-    	fileString[fileLen++] = '\n'; 	 /* null terminator no longer needed */
+        fileString[fileLen++] = '\n';      /* null terminator no longer needed */
     
     /* write out the file */
     fwrite(fileString, sizeof(char), fileLen, fp);
@@ -1986,8 +1986,8 @@ int WriteBackupFile(WindowInfo *window)
     
     /* close the backup file */
     if (fclose(fp) != 0) {
-	NEditFree(fileString);
-	return FALSE;
+    NEditFree(fileString);
+    return FALSE;
     }
 
     /* Free the text buffer copy returned from XmTextGetString */
@@ -2044,7 +2044,7 @@ static int writeBckVersion(WindowInfo *window)
 
     /* Do only if version backups are turned on */
     if (!window->saveOldVersion) {
-    	return False;
+        return False;
     }
     
     /* Get the full name of the file */
@@ -2067,7 +2067,7 @@ static int writeBckVersion(WindowInfo *window)
        old file, don't bother the user, just skip the backup */
     in_fd = open(fullname, O_RDONLY);
     if (in_fd<0) {
-    	return FALSE;
+        return FALSE;
     }
 
     /* Get permissions of the file.
@@ -2075,7 +2075,7 @@ static int writeBckVersion(WindowInfo *window)
        attributes, et cetera. */
     if (fstat(in_fd, &statbuf) != 0) {
         close(in_fd);
-	return FALSE;
+    return FALSE;
     }
 
     /* open the destination file exclusive and with restrictive permissions. */
@@ -2099,7 +2099,7 @@ static int writeBckVersion(WindowInfo *window)
         close(in_fd);
         close(out_fd);
         remove(bckname);
-	return bckError(window, "out of memory", bckname);
+    return bckError(window, "out of memory", bckname);
     }
 
     /* copy loop */
@@ -2152,10 +2152,10 @@ static int bckError(WindowInfo *window, const char *errString, const char *file)
             "Couldn't write .bck (last version) file.\n%s: %s", "Cancel Save",
             "Turn off Backups", "Continue", file, errString);
     if (resp == 1)
-    	return TRUE;
+        return TRUE;
     if (resp == 2) {
-    	window->saveOldVersion = FALSE;
-    	SetToggleButtonState(window, window->saveLastItem, FALSE, FALSE);
+        window->saveOldVersion = FALSE;
+        SetToggleButtonState(window, window->saveLastItem, FALSE, FALSE);
     }
     return FALSE;
 }
@@ -2170,25 +2170,25 @@ void PrintWindow(WindowInfo *window, int selectedOnly)
     /* get the contents of the text buffer from the text area widget.  Add
        wrapping newlines if necessary to make it match the displayed text */
     if (selectedOnly) {
-    	if (!sel->selected) {
-    	    XBell(TheDisplay, 0);
-	    return;
-	}
-	if (sel->rectangular) {
-    	    fileString = BufGetSelectionText(buf);
-    	    fileLen = strlen(fileString);
-    	} else
-    	    fileString = TextGetWrapped(window->textArea, sel->start, sel->end,
-    	    	    &fileLen);
+        if (!sel->selected) {
+            XBell(TheDisplay, 0);
+        return;
+    }
+    if (sel->rectangular) {
+            fileString = BufGetSelectionText(buf);
+            fileLen = strlen(fileString);
+        } else
+            fileString = TextGetWrapped(window->textArea, sel->start, sel->end,
+                    &fileLen);
     } else
-    	fileString = TextGetWrapped(window->textArea, 0, buf->length, &fileLen);
+        fileString = TextGetWrapped(window->textArea, 0, buf->length, &fileLen);
     
     /* If null characters are substituted for, put them back */
     BufUnsubstituteNullChars(fileString, buf);
 
         /* add a terminating newline if the file doesn't already have one */
     if (fileLen != 0 && fileString[fileLen-1] != '\n')
-    	fileString[fileLen++] = '\n'; 	 /* null terminator no longer needed */
+        fileString[fileLen++] = '\n';      /* null terminator no longer needed */
     
     /* Print the string */
     PrintString(fileString, fileLen, window->shell, window->filename);
@@ -2209,11 +2209,11 @@ void PrintString(const char *string, int length, Widget parent, const char *jobN
 
     /* Generate a temporary file name */
     /*  If the glibc is used, the linker issues a warning at this point. This is
-	very thoughtful of him, but does not apply to NEdit. The recommended
-	replacement mkstemp(3) uses the same algorithm as NEdit, namely
-	    1. Create a filename
-	    2. Open the file with the O_CREAT|O_EXCL flags
-	So all an attacker can do is a DoS on the print function. */
+    very thoughtful of him, but does not apply to NEdit. The recommended
+    replacement mkstemp(3) uses the same algorithm as NEdit, namely
+        1. Create a filename
+        2. Open the file with the O_CREAT|O_EXCL flags
+    So all an attacker can do is a DoS on the print function. */
 #if defined(__GLIBC__) || _POSIX_VERSION >= 200112L || defined(__sun)
     fd = mkstemp(tmpFileName);
 #else
@@ -2271,10 +2271,10 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
     if (*window->path != '\0')
-    	SetFileDialogDefaultDirectory(window->path);
+        SetFileDialogDefaultDirectory(window->path);
     retVal = GetExistingFilename(window->shell, prompt, file);
     if (retVal != GFN_OK)
-    	SetFileDialogDefaultDirectory(savedDefaultDir);
+        SetFileDialogDefaultDirectory(savedDefaultDir);
 
     NEditFree(savedDefaultDir);
 
@@ -2287,7 +2287,7 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
 ** to make wrapping permanent.
 */
 int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
-    	int *fileFormat)
+        int *fileFormat)
 {
     int retVal;
     char *savedDefaultDir;
@@ -2299,7 +2299,7 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
     if (*window->path != '\0')
-    	SetFileDialogDefaultDirectory(window->path);
+        SetFileDialogDefaultDirectory(window->path);
     
     char *prevPath = NULL;
     if(window->path[0] != '\0' && window->filename[0] != '\0' && window->filenameSet) {
@@ -2322,7 +2322,7 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     }
 
     if (retVal != GFN_OK)
-    	SetFileDialogDefaultDirectory(savedDefaultDir);
+        SetFileDialogDefaultDirectory(savedDefaultDir);
 
     NEditFree(savedDefaultDir);
 
@@ -2340,15 +2340,15 @@ void UniqueUntitledName(char *name)
     int i;
 
    for (i=0; i<INT_MAX; i++) {
-    	if (i == 0)
-    	    sprintf(name, "Untitled");
-    	else
-    	    sprintf(name, "Untitled_%d", i);
-	for (w=WindowList; w!=NULL; w=w->next)
-     	    if (!strcmp(w->filename, name))
-    	    	break;
-    	if (w == NULL)
-    	    break;
+        if (i == 0)
+            sprintf(name, "Untitled");
+        else
+            sprintf(name, "Untitled_%d", i);
+    for (w=WindowList; w!=NULL; w=w->next)
+             if (!strcmp(w->filename, name))
+                break;
+        if (w == NULL)
+            break;
     }
 }
 
@@ -2553,11 +2553,11 @@ void CheckForChangesToFile(WindowInfo *window)
         if (!GetPrefWarnFileMods())
             return;
         if (GetPrefWarnRealFileMods() &&
-	    !cmpWinAgainstFile(window, fullname)) {
-	    /* Contents hasn't changed. Update the modification time. */
-	    window->lastModTime = statbuf.st_mtime;
-	    return;
-	}
+        !cmpWinAgainstFile(window, fullname)) {
+        /* Contents hasn't changed. Update the modification time. */
+        window->lastModTime = statbuf.st_mtime;
+        return;
+    }
         XUngrabPointer(XtDisplay(window->shell), timestamp);
         if (window->fileChanged)
             resp = DialogF(DF_WARN, window->shell, 2,
@@ -2588,16 +2588,16 @@ static int fileWasModifiedExternally(WindowInfo *window)
     if(!window->filenameSet)
         return FALSE;
     /* if (window->lastModTime == 0)
-	return FALSE; */
+    return FALSE; */
     strcpy(fullname, window->path);
     strcat(fullname, window->filename);
     if (stat(fullname, &statbuf) != 0)
         return FALSE;
     if (window->lastModTime == statbuf.st_mtime)
-	return FALSE;
+    return FALSE;
     if (GetPrefWarnRealFileMods() &&
-	!cmpWinAgainstFile(window, fullname)) {
-	return FALSE;
+    !cmpWinAgainstFile(window, fullname)) {
+    return FALSE;
     }
     return TRUE;
 }
@@ -2609,8 +2609,8 @@ static int fileWasModifiedExternally(WindowInfo *window)
 int CheckReadOnly(WindowInfo *window)
 {
     if (IS_ANY_LOCKED(window->lockReasons)) {
-    	XBell(TheDisplay, 0);
-	return True;
+        XBell(TheDisplay, 0);
+    return True;
     }
     return False;
 }
@@ -2671,25 +2671,25 @@ static void addWrapNewlines(WindowInfo *window)
     int horizOffset;
     Widget text;
     char *fileString;
-	
+    
     /* save the insert and scroll positions of each pane */
     for (i=0; i<=window->nPanes; i++) {
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-    	insertPositions[i] = TextGetCursorPos(text);
-    	TextGetScroll(text, &topLines[i], &horizOffset);
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+        insertPositions[i] = TextGetCursorPos(text);
+        TextGetScroll(text, &topLines[i], &horizOffset);
     }
 
     /* Modify the buffer to add wrapping */
     fileString = TextGetWrapped(window->textArea, 0,
-    	    window->buffer->length, &fileLen);
+            window->buffer->length, &fileLen);
     BufSetAll(window->buffer, fileString);
     NEditFree(fileString);
 
     /* restore the insert and scroll positions of each pane */
     for (i=0; i<=window->nPanes; i++) {
-    	text = i==0 ? window->textArea : window->textPanes[i-1];
-	TextSetCursorPos(text, insertPositions[i]);
-	TextSetScroll(text, topLines[i], 0);
+        text = i==0 ? window->textArea : window->textPanes[i-1];
+    TextSetCursorPos(text, insertPositions[i]);
+    TextSetScroll(text, topLines[i], 0);
     }
 
     /* Show the user that something has happened by turning off
@@ -2717,7 +2717,7 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     struct  stat statbuf;
     int     fileLen, restLen, nRead, bufPos, rv, offset, filePos;
     char    pendingCR = 0;
-    int	    fileFormat = window->fileFormat;
+    int     fileFormat = window->fileFormat;
     char    message[MAXPATHLEN+50];
     textBuffer *buf = window->buffer;
     FILE   *fp;
@@ -2733,16 +2733,16 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     fileLen = statbuf.st_size;
     /* For DOS files, we can't simply check the length */
     if (fileFormat != DOS_FILE_FORMAT) {
-	if (fileLen != buf->length) {
-	    fclose(fp);
-	    return (1);
+    if (fileLen != buf->length) {
+        fclose(fp);
+        return (1);
         }
     } else {
-	/* If a DOS file is smaller on disk, it's certainly different */
-	if (fileLen < buf->length) {
-	    fclose(fp);
-	    return (1);
-	}
+    /* If a DOS file is smaller on disk, it's certainly different */
+    if (fileLen < buf->length) {
+        fclose(fp);
+        return (1);
+    }
     }
     
     /* For large files, the comparison can take a while. If it takes too long,
@@ -2796,14 +2796,14 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     AllWindowsUnbusy();
     fclose(fp);
     if (pendingCR) {
-	rv = BufCmp(buf, bufPos, 1, &pendingCR);
-	if (rv) {
-	    return (rv);
-	}
-	bufPos += 1;
+    rv = BufCmp(buf, bufPos, 1, &pendingCR);
+    if (rv) {
+        return (rv);
+    }
+    bufPos += 1;
     }
     if (bufPos != buf->length) { 
-	return (1);
+    return (1);
     }
     return (0);
 }

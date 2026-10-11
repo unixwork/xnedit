@@ -40,7 +40,7 @@ void ShellCmdToMacroString(WindowInfo *window, const char *command,
         const char *input);
 void DoShellMenuCmd(WindowInfo *window, const char *command, int input,
         int output, int outputReplaceInput,
-	int saveFirst, int loadAfter, int fromMacro);
+    int saveFirst, int loadAfter, int fromMacro);
 void AbortShellCommand(WindowInfo *window);
 
 #endif /* NEDIT_SHELL_H_INCLUDED */

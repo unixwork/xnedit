@@ -44,31 +44,31 @@ void UpdateReplaceActionButtons(WindowInfo* window);
 void DoFindDlog(WindowInfo *window, int direction, int keepDialogs,
         int searchType, Time time);
 int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap);
+    int searchType, int searchWrap);
 int SearchAndSelectSame(WindowInfo *window, int direction, int searchWrap);
 int SearchAndSelectIncremental(WindowInfo *window, int direction,
-	const char *searchString, int searchType, int searchWrap, int continued);
+    const char *searchString, int searchType, int searchWrap, int continued);
 void SearchForSelected(WindowInfo *window, int direction, int searchType,
     int searchWrap, Time time);
 int SearchAndReplace(WindowInfo *window, int direction, const char *searchString,
-	const char *replaceString, int searchType, int searchWrap);
+    const char *replaceString, int searchType, int searchWrap);
 int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString,
-	const char *replaceString, int searchType, int searchWrap);
+    const char *replaceString, int searchType, int searchWrap);
 int ReplaceFindSame(WindowInfo *window, int direction, int searchWrap);
 int ReplaceSame(WindowInfo *window, int direction, int searchWrap);
 int ReplaceAll(WindowInfo *window, const char *searchString, const char *replaceString,
-	int searchType);
+    int searchType);
 void ReplaceInSelection(const WindowInfo* window, const char* searchString,
         const char* replaceString, int searchType);
 int SearchWindow(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap, int beginPos, int *startPos, int *endPos, 
-	int *extentBW, int* extentFW);
+    int searchType, int searchWrap, int beginPos, int *startPos, int *endPos, 
+    int *extentBW, int* extentFW);
 int SearchString(const char *string, const char *searchString, int direction,
        int searchType, int wrap, int beginPos, int *startPos, int *endPos,
        int *searchExtentBW, int*searchExtentFW, const char *delimiters);
 char *ReplaceAllInString(const char *inString, const char *searchString,
-	const char *replaceString, int searchType, int *copyStart,
-	int *copyEnd, int *replacementLength, const char *delimiters);
+    const char *replaceString, int searchType, int *copyStart,
+    int *copyEnd, int *replacementLength, const char *delimiters);
 void BeginISearch(WindowInfo *window, int direction);
 void EndISearch(WindowInfo *window);
 void SetISearchTextCallbacks(WindowInfo *window);
@@ -93,8 +93,8 @@ void DownCaseString(char *outString, const char *inString, Boolean addFiller);
 **
 */
 enum SearchType {
-      	SEARCH_LITERAL, SEARCH_CASE_SENSE, SEARCH_REGEX, 
-	SEARCH_LITERAL_WORD, SEARCH_CASE_SENSE_WORD, SEARCH_REGEX_NOCASE,
+          SEARCH_LITERAL, SEARCH_CASE_SENSE, SEARCH_REGEX, 
+    SEARCH_LITERAL_WORD, SEARCH_CASE_SENSE_WORD, SEARCH_REGEX_NOCASE,
         N_SEARCH_TYPES /* must be last in enum SearchType */ };
 
 #ifdef REPLACE_SCOPE
@@ -105,8 +105,8 @@ enum ReplaceScope { REPL_SCOPE_WIN, REPL_SCOPE_SEL, REPL_SCOPE_MULTI };
    "Smart" means "In Selection" if the selection spans more than
    one line; "In Window" otherwise. */
 enum ReplaceAllDefaultScope { REPL_DEF_SCOPE_WINDOW,
-			      REPL_DEF_SCOPE_SELECTION,
-			      REPL_DEF_SCOPE_SMART };				  
+                  REPL_DEF_SCOPE_SELECTION,
+                  REPL_DEF_SCOPE_SMART };                  
 #endif
 
 /*

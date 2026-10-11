@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* search.c -- Nirvana Editor search and replace functions		       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* search.c -- Nirvana Editor search and replace functions                      *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* May 10, 1991								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* May 10, 1991                                                                 *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -78,9 +78,9 @@
 #include <Xm/Text.h>
 #include <Xm/ToggleB.h>
 #include <Xm/List.h>
-#include <X11/Xatom.h>		/* for getting selection */
+#include <X11/Xatom.h>        /* for getting selection */
 #include <X11/keysym.h>
-#include <X11/X.h>		/* " " */
+#include <X11/X.h>        /* " " */
 
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
@@ -122,17 +122,17 @@ static int HistStart = 0;
 static int textFieldNonEmpty(Widget w);
 static void setTextField(WindowInfo* window, Time time, Widget textField);
 static void getSelectionCB(Widget w, XtPointer selectionInfo, Atom *selection,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void fFocusCB(Widget w, WindowInfo *window, caddr_t *callData);
 static void rFocusCB(Widget w, WindowInfo *window, caddr_t *callData);
 static void rKeepCB(Widget w, WindowInfo *window, caddr_t *callData);
 static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData);
 static void replaceCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData); 
+    XmAnyCallbackStruct *callData); 
 static void replaceAllCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void rInSelCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData); 
+    XmAnyCallbackStruct *callData); 
 static void rCancelCB(Widget w, WindowInfo *window, caddr_t callData);
 static void fCancelCB(Widget w, WindowInfo *window, caddr_t callData);
 static void rFindCB(Widget w,WindowInfo *window,XmAnyCallbackStruct *callData);
@@ -150,13 +150,13 @@ static void rSetActionButtons(WindowInfo* window,
                               int replaceAllBtn);
 #ifdef REPLACE_SCOPE
 static void rScopeWinCB(Widget w, WindowInfo *window, 
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void rScopeSelCB(Widget w, WindowInfo *window, 
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void rScopeMultiCB(Widget w, WindowInfo *window, 
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void replaceAllScopeCB(Widget w, WindowInfo *window, 
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 #endif
 
 static void replaceArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event);
@@ -166,7 +166,7 @@ static void findArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event);
 static void replaceFindCB(Widget w, WindowInfo *window, XmAnyCallbackStruct *callData);
 static void findCB(Widget w, WindowInfo *window,XmAnyCallbackStruct *callData); 
 static void replaceMultiFileCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void rMultiFileReplaceCB(Widget w, WindowInfo *window,  
        XmAnyCallbackStruct * callData);
 static void rMultiFileCancelCB(Widget w, WindowInfo *window, caddr_t callData);
@@ -175,7 +175,7 @@ static void rMultiFileSelectAllCB(Widget w, WindowInfo *window,
 static void rMultiFileDeselectAllCB(Widget w, WindowInfo *window, 
        XmAnyCallbackStruct * callData);
 static void rMultiFilePathCB(Widget w, WindowInfo *window,  
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void uploadFileListItems(WindowInfo* window, Bool replace);
 static int countWindows(void);
 static int countWritableWindows(void);
@@ -189,44 +189,44 @@ static void unmanageReplaceDialogs(const WindowInfo *window);
 static void flashTimeoutProc(XtPointer clientData, XtIntervalId *id);
 static void eraseFlash(WindowInfo *window);
 static int getReplaceDlogInfo(WindowInfo *window, int *direction,
-	char *searchString, char *replaceString, int *searchType);
+    char *searchString, char *replaceString, int *searchType);
 static int getFindDlogInfo(WindowInfo *window, int *direction,
-	char *searchString, int *searchType);
+    char *searchString, int *searchType);
 static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void iSearchTextClearAndPasteAP(Widget w, XEvent *event, String *args,
         Cardinal *nArg);
 static void iSearchTextClearCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void iSearchTextActivateCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData);
+    XmAnyCallbackStruct *callData);
 static void iSearchTextKeyEH(Widget w, WindowInfo *window,
-	XKeyEvent *event, Boolean *continueDispatch);
+    XKeyEvent *event, Boolean *continueDispatch);
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos,
-	int *searchExtentBW, int *searchExtentFW);
+    int direction, int wrap, int beginPos, int *startPos, int *endPos,
+    int *searchExtentBW, int *searchExtentFW);
 static int searchLiteralWord(const char *string, const char *searchString, int caseSense,
- 	int direction, int wrap, int beginPos, int *startPos, int *endPos, 
+     int direction, int wrap, int beginPos, int *startPos, int *endPos, 
         const char * delimiters);
 static int searchRegex(const char *string, const char *searchString, int direction,
-	int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags);
+    int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int *searchExtentFW, const char *delimiters, int defaultFlags);
 static int forwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int beginPos, int *startPos, int *endPos, int *searchExtentBW,
         int *searchExtentFW, const char *delimiters, int defaultFlags);
 static int backwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int beginPos, int *startPos, int *endPos, int *searchExtentBW,
         int *searchExtentFW, const char *delimiters, int defaultFlags);
 static void resetFindTabGroup(WindowInfo *window);
 static void resetReplaceTabGroup(WindowInfo *window);
 static int searchMatchesSelection(WindowInfo *window, const char *searchString,
-	int searchType, int *left, int *right, int *searchExtentBW, 
-	int *searchExtentFW);
+    int searchType, int *left, int *right, int *searchExtentBW, 
+    int *searchExtentFW);
 static int findMatchingChar(WindowInfo *window, char toMatch,
-	void *toMatchStyle, int charPos, int startLimit, int endLimit, 
-	int *matchPos);
+    void *toMatchStyle, int charPos, int startLimit, int endLimit, 
+    int *matchPos);
 static Boolean replaceUsingRE(const char* searchStr, const char* replaceStr,
         const char* sourceStr, int beginPos, char* destStr, int maxDestLen,
         int prevChar, const char* delimiters, int defaultFlags);
@@ -240,21 +240,21 @@ static char *directionArg(int direction);
 static int isRegexType(int searchType);
 static int defaultRegexFlags(int searchType);
 static void findRegExpToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void replaceRegExpToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void iSearchRegExpToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void findCaseToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void replaceCaseToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void iSearchCaseToggleCB(Widget w, XtPointer clientData, 
-	XtPointer callData);
+    XtPointer callData);
 static void iSearchTryBeepOnWrap(WindowInfo *window, int direction, 
-      	int beginPos, int startPos); 
+          int beginPos, int startPos); 
 static void iSearchRecordLastBeginPos(WindowInfo *window, int direction, 
-	int initPos); 
+    int initPos); 
 static Boolean prefOrUserCancelsSubst(const Widget parent,
         const Display* display);
 
@@ -344,19 +344,19 @@ static void initToggleButtons(int searchType, Widget regexToggle,
       case SEARCH_LITERAL:
               *lastLiteralCase = False;
               *lastRegexCase   = True;
-	      XmToggleButtonSetState(regexToggle, False, False);
-	      XmToggleButtonSetState(caseToggle,  False, False);
-	      if (wordToggle) {
-		  XmToggleButtonSetState(*wordToggle, False, False);
+          XmToggleButtonSetState(regexToggle, False, False);
+          XmToggleButtonSetState(caseToggle,  False, False);
+          if (wordToggle) {
+          XmToggleButtonSetState(*wordToggle, False, False);
                   XtSetSensitive(*wordToggle, True);
               }
       break;
       case SEARCH_CASE_SENSE:
               *lastLiteralCase = True;
               *lastRegexCase   = True;
-	      XmToggleButtonSetState(regexToggle, False, False);
-	      XmToggleButtonSetState(caseToggle,  True,  False);
-	      if (wordToggle) {
+          XmToggleButtonSetState(regexToggle, False, False);
+          XmToggleButtonSetState(caseToggle,  True,  False);
+          if (wordToggle) {
                   XmToggleButtonSetState(*wordToggle, False, False);
                   XtSetSensitive(*wordToggle, True);
               }
@@ -364,9 +364,9 @@ static void initToggleButtons(int searchType, Widget regexToggle,
       case SEARCH_LITERAL_WORD:
               *lastLiteralCase = False;
               *lastRegexCase   = True;
-	      XmToggleButtonSetState(regexToggle, False, False);
-	      XmToggleButtonSetState(caseToggle, False, False);
-	      if (wordToggle) {
+          XmToggleButtonSetState(regexToggle, False, False);
+          XmToggleButtonSetState(caseToggle, False, False);
+          if (wordToggle) {
                   XmToggleButtonSetState(*wordToggle,  True,  False);
                   XtSetSensitive(*wordToggle, True);
               }
@@ -374,9 +374,9 @@ static void initToggleButtons(int searchType, Widget regexToggle,
       case SEARCH_CASE_SENSE_WORD:
               *lastLiteralCase = True;
               *lastRegexCase   = True;
-	      XmToggleButtonSetState(regexToggle, False, False);
-	      XmToggleButtonSetState(caseToggle,  True,  False);
-	      if (wordToggle) {
+          XmToggleButtonSetState(regexToggle, False, False);
+          XmToggleButtonSetState(caseToggle,  True,  False);
+          if (wordToggle) {
                   XmToggleButtonSetState(*wordToggle,  True,  False);
                   XtSetSensitive(*wordToggle, True);
               }
@@ -384,9 +384,9 @@ static void initToggleButtons(int searchType, Widget regexToggle,
       case SEARCH_REGEX:
               *lastLiteralCase = False;
               *lastRegexCase   = True;
-	      XmToggleButtonSetState(regexToggle, True,  False);
-	      XmToggleButtonSetState(caseToggle,  True,  False);
-	      if (wordToggle) {
+          XmToggleButtonSetState(regexToggle, True,  False);
+          XmToggleButtonSetState(caseToggle,  True,  False);
+          if (wordToggle) {
                   XmToggleButtonSetState(*wordToggle,  False, False);
                   XtSetSensitive(*wordToggle, False);
               }
@@ -394,9 +394,9 @@ static void initToggleButtons(int searchType, Widget regexToggle,
       case SEARCH_REGEX_NOCASE:
               *lastLiteralCase = False;
               *lastRegexCase   = False;
-	      XmToggleButtonSetState(regexToggle, True,  False);
-	      XmToggleButtonSetState(caseToggle,  False, False);
-	      if (wordToggle) {
+          XmToggleButtonSetState(regexToggle, True,  False);
+          XmToggleButtonSetState(caseToggle,  False, False);
+          if (wordToggle) {
                   XmToggleButtonSetState(*wordToggle,  False, False);
                   XtSetSensitive(*wordToggle, False);
               }
@@ -419,8 +419,8 @@ static int selectionSpansMultipleLines(WindowInfo *window)
     textDisp *textD;
     
     if (!BufGetSelectionPos(window->buffer, &selStart, &selEnd, &isRect,
-    	    &rectStart, &rectEnd))
-    	return FALSE;
+            &rectStart, &rectEnd))
+        return FALSE;
 
     /* This is kind of tricky. The perception of a line depends on the
        line wrap mode being used. So in theory, we should take into 
@@ -429,28 +429,28 @@ static int selectionSpansMultipleLines(WindowInfo *window)
        (TextDPosToLineAndCol) only works for displayed lines, so we cannot
        use it. Therefore, we use this simple heuristic:
         - If a newline is found between the start and end of the selection,
-	  we obviously have a multi-line selection.
-	- If no newline is found, but the distance between the start and the
+      we obviously have a multi-line selection.
+    - If no newline is found, but the distance between the start and the
           end of the selection is larger than the number of characters 
-	  displayed on a line, and we're in continuous wrap mode,
-	  we also assume a multi-line selection.
+      displayed on a line, and we're in continuous wrap mode,
+      we also assume a multi-line selection.
     */
      
     lineStartStart = BufStartOfLine(window->buffer, selStart);
     lineStartEnd = BufStartOfLine(window->buffer, selEnd);
     /* If the line starts differ, we have a "\n" in between. */
     if (lineStartStart != lineStartEnd ) 
-	return TRUE;     
+    return TRUE;     
     
     if (window->wrapMode != CONTINUOUS_WRAP)
-	return FALSE; /* Same line */
-	    
+    return FALSE; /* Same line */
+        
     /* Estimate the number of characters on a line */
     textD = ((TextWidget)window->textArea)->text.textD;
     if (textD->font->fonts->font->max_advance_width > 0)
-	lineWidth = textD->width / textD->font->fonts->font->max_advance_width;
+    lineWidth = textD->width / textD->font->fonts->font->max_advance_width;
     else
-	lineWidth = 1;
+    lineWidth = 1;
     if (lineWidth < 1) lineWidth = 1; /* Just in case */
     
     /* Estimate the numbers of line breaks from the start of the line to
@@ -469,16 +469,16 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
 
     /* Create the dialog if it doesn't already exist */
     if (window->replaceDlog == NULL)
-    	CreateReplaceDlog(window->shell, window);
+        CreateReplaceDlog(window->shell, window);
     
     setTextField(window, time, window->replaceText);
 
     /* If the window is already up, just pop it to the top */
     if (XtIsManaged(window->replaceDlog)) {
-	RaiseDialogWindow(XtParent(window->replaceDlog));
-	return;
+    RaiseDialogWindow(XtParent(window->replaceDlog));
+    return;
     }
-    	
+        
     /* Blank the Replace with field */
     XNETextSetString(window->replaceWithText, "");
         
@@ -490,7 +490,7 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
     
     /* Set the initial direction based on the direction argument */
     XmToggleButtonSetState(window->replaceRevToggle, 
-	direction == SEARCH_FORWARD ? False: True, True);
+    direction == SEARCH_FORWARD ? False: True, True);
     
     /* Set the state of the Keep Dialog Up button */
     XmToggleButtonSetState(window->replaceKeepBtn, keepDialogs, True);
@@ -502,40 +502,40 @@ void DoFindReplaceDlog(WindowInfo *window, int direction, int keepDialogs,
        get stuck after resetting the scope to "In Window". Therefore we must
        use RadioButtonChangeState(), which contains a workaround. */
     if (window->wasSelected) {
-	/* If a selection exists, the default scope depends on the preference
+    /* If a selection exists, the default scope depends on the preference
            of the user. */
-	switch(GetPrefReplaceDefScope()) {
-	   case REPL_DEF_SCOPE_SELECTION:
-		/* The user prefers selection scope, no matter what the
-		   size of the selection is. */	   
-		RadioButtonChangeState(window->replaceScopeSelToggle, 
+    switch(GetPrefReplaceDefScope()) {
+       case REPL_DEF_SCOPE_SELECTION:
+        /* The user prefers selection scope, no matter what the
+           size of the selection is. */       
+        RadioButtonChangeState(window->replaceScopeSelToggle, 
                                        True, True);
-		break;
-	   case REPL_DEF_SCOPE_SMART:
-		if (selectionSpansMultipleLines(window)) {
-		    /* If the selection spans multiple lines, the user most
-		       likely wants to perform a replacement in the selection */
-		    RadioButtonChangeState(window->replaceScopeSelToggle, 
+        break;
+       case REPL_DEF_SCOPE_SMART:
+        if (selectionSpansMultipleLines(window)) {
+            /* If the selection spans multiple lines, the user most
+               likely wants to perform a replacement in the selection */
+            RadioButtonChangeState(window->replaceScopeSelToggle, 
                                            True, True);
-		}
-		else {
-		    /* It's unlikely that the user wants a replacement in a
-		       tiny selection only. */
-		    RadioButtonChangeState(window->replaceScopeWinToggle,
+        }
+        else {
+            /* It's unlikely that the user wants a replacement in a
+               tiny selection only. */
+            RadioButtonChangeState(window->replaceScopeWinToggle,
                                            True, True);
-		}
-		break;
-	   default:
-	   	/* The user always wants window scope as default. */
-		RadioButtonChangeState(window->replaceScopeWinToggle, 
+        }
+        break;
+       default:
+           /* The user always wants window scope as default. */
+        RadioButtonChangeState(window->replaceScopeWinToggle, 
                                        True, True);
                 window->replaceScope = REPL_SCOPE_WIN;
-		break;
-	}
+        break;
+    }
     }
     else {
        /* No selection -> always choose "In Window" as default. */
-	RadioButtonChangeState(window->replaceScopeWinToggle, True, True);
+    RadioButtonChangeState(window->replaceScopeWinToggle, True, True);
         window->replaceScope = REPL_SCOPE_WIN;
     }
 #endif
@@ -631,14 +631,14 @@ void DoFindDlog(WindowInfo *window, int direction, int keepDialogs,
 
     /* Create the dialog if it doesn't already exist */
     if (window->findDlog == NULL)
-    	CreateFindDlog(window->shell, window);
+        CreateFindDlog(window->shell, window);
     
     setTextField(window, time, window->findText);
 
     /* If the window is already up, just pop it to the top */
     if (XtIsManaged(window->findDlog)) {
-	RaiseDialogWindow(XtParent(window->findDlog));
-	return;
+    RaiseDialogWindow(XtParent(window->findDlog));
+    return;
     }
 
     /* Set the initial search type */
@@ -649,7 +649,7 @@ void DoFindDlog(WindowInfo *window, int direction, int keepDialogs,
   
     /* Set the initial direction based on the direction argument */
     XmToggleButtonSetState(window->findRevToggle,
-	direction == SEARCH_FORWARD ? False : True, True);
+    direction == SEARCH_FORWARD ? False : True, True);
     
     /* Set the state of the Keep Dialog Up button */
     XmToggleButtonSetState(window->findKeepBtn, keepDialogs, True);
@@ -675,13 +675,13 @@ void DoFindDlog(WindowInfo *window, int direction, int keepDialogs,
 
 void DoReplaceMultiFileDlog(WindowInfo *window)
 {
-    char	searchString[SEARCHMAX], replaceString[SEARCHMAX];
-    int		direction, searchType;
+    char    searchString[SEARCHMAX], replaceString[SEARCHMAX];
+    int        direction, searchType;
     
     /* Validate and fetch the find and replace strings from the dialog */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
-    	    &searchType))
-  	return;
+            &searchType))
+      return;
     
     /* Don't let the user select files when no replacement can be made */
     if (*searchString == '\0') {
@@ -689,13 +689,13 @@ void DoReplaceMultiFileDlog(WindowInfo *window)
        resetReplaceTabGroup(window);
        /* pop down the replace dialog */
        if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	   unmanageReplaceDialogs(window);
+           unmanageReplaceDialogs(window);
        return;
     }
     
     /* Create the dialog if it doesn't already exist */
     if (window->replaceMultiFileDlog == NULL)
-    	CreateReplaceMultiFileDlog(window);
+        CreateReplaceMultiFileDlog(window);
 
     /* Raising the window doesn't make sense. It is modal, so we 
        can't get here unless it is unmanaged */
@@ -729,34 +729,34 @@ void RemoveFromMultiReplaceDialog(WindowInfo *doomedWindow)
 
 void CreateReplaceDlog(Widget parent, WindowInfo *window)
 {
-    Arg    	args[50];
-    int    	argcnt, defaultBtnOffset;
-    XmString	st1;
-    Widget	form, btnForm;
+    Arg        args[50];
+    int        argcnt, defaultBtnOffset;
+    XmString    st1;
+    Widget    form, btnForm;
 #ifdef REPLACE_SCOPE
-    Widget	scopeForm, replaceAllBtn;
+    Widget    scopeForm, replaceAllBtn;
 #else
-    Widget	label3, allForm;
+    Widget    label3, allForm;
 #endif
-    Widget	inWinBtn, inSelBtn, inMultiBtn;
-    Widget    	searchTypeBox;
-    Widget    	label2, label1, label, replaceText, findText;
-    Widget    	findBtn,  cancelBtn, replaceBtn;
-    Widget    	replaceFindBtn;
-    Widget	searchDirBox, reverseBtn, keepBtn;
-    char 	title[MAXPATHLEN + 19];
-    Dimension	shadowThickness;
+    Widget    inWinBtn, inSelBtn, inMultiBtn;
+    Widget        searchTypeBox;
+    Widget        label2, label1, label, replaceText, findText;
+    Widget        findBtn,  cancelBtn, replaceBtn;
+    Widget        replaceFindBtn;
+    Widget    searchDirBox, reverseBtn, keepBtn;
+    char     title[MAXPATHLEN + 19];
+    Dimension    shadowThickness;
  
     argcnt = 0;
     XtSetArg(args[argcnt], XmNautoUnmanage, False); argcnt++;
     form = CreateFormDialog(parent, "replaceDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-    	snprintf(title, sizeof(title),
+        snprintf(title, sizeof(title),
                 "Replace/Find (in %s)", window->filename);
-    	XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
+        XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
-    	XtVaSetValues(XtParent(form), XmNtitle, "Replace/Find", NULL);
+        XtVaSetValues(XtParent(form), XmNtitle, "Replace/Find", NULL);
 
     argcnt = 0;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
@@ -767,7 +767,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_BEGINNING); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, st1=MKSTRING("String to Find:"));
-    	    argcnt++;
+            argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 't'); argcnt++;
     label1 = XmCreateLabel(form, "label1", args, argcnt);
     XmStringFree(st1);
@@ -782,7 +782,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_END); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, st1=MKSTRING(
-    	   "(use up arrow key to recall previous)")); argcnt++;
+           "(use up arrow key to recall previous)")); argcnt++;
     label2 = XmCreateLabel(form, "label2", args, argcnt);
     XmStringFree(st1);
     XtManageChild(label2);
@@ -803,7 +803,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtAddCallback(findText, XmNvalueChangedCallback, 
       (XtCallbackProc)rFindTextValueChangedCB, window);
     XtAddEventHandler(findText, KeyPressMask, False,
-    	    (XtEventHandler)rFindArrowKeyCB, window);
+            (XtEventHandler)rFindArrowKeyCB, window);
     RemapDeleteKey(findText);
     XtManageChild(findText);
     XmAddTabGroup(findText);
@@ -819,7 +819,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_BEGINNING); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Replace With:")); argcnt++;
+             st1=MKSTRING("Replace With:")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'W'); argcnt++;
     label = XmCreateLabel(form, "label", args, argcnt);
     XmStringFree(st1);
@@ -838,7 +838,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNmaxLength, SEARCHMAX); argcnt++;
     replaceText = XNECreateText(form, "replaceWithString", args, argcnt);
     XtAddEventHandler(replaceText, KeyPressMask, False,
-    	    (XtEventHandler)replaceArrowKeyCB, window);
+            (XtEventHandler)replaceArrowKeyCB, window);
     RemapDeleteKey(replaceText);
     XtManageChild(replaceText);
     XmAddTabGroup(replaceText);
@@ -862,7 +862,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, 
-    	     st1=MKSTRING("Regular Expression")); argcnt++;
+             st1=MKSTRING("Regular Expression")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'R'); argcnt++;
     window->replaceRegexToggle = XmCreateToggleButton(searchTypeBox, "regExp", args, argcnt);
     XmStringFree(st1);
@@ -904,7 +904,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
  
     argcnt = 0;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Search Backward")); argcnt++;
+             st1=MKSTRING("Search Backward")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'B'); argcnt++;
     reverseBtn = XmCreateToggleButton(searchDirBox, "reverse", args, argcnt);
     XmStringFree(st1);
@@ -912,7 +912,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     
     argcnt = 0;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Keep Dialog")); argcnt++;
+             st1=MKSTRING("Keep Dialog")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'K'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_WIDGET); argcnt++;
     XtSetArg(args[argcnt], XmNtopOffset, 0); argcnt++;
@@ -921,7 +921,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNrightOffset, 4); argcnt++;
     keepBtn = XmCreateToggleButton(form, "keep", args, argcnt);
     XtAddCallback(keepBtn, XmNvalueChangedCallback,
-    	    (XtCallbackProc)rKeepCB, window);
+            (XtCallbackProc)rKeepCB, window);
     XmStringFree(st1);
     XtManageChild(keepBtn);
     XmAddTabGroup(keepBtn);
@@ -956,7 +956,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNrightAttachment, XmATTACH_NONE); argcnt++;
     inWinBtn = XmCreateToggleButton(scopeForm, "inWindow", args, argcnt);
     XtAddCallback(inWinBtn, XmNvalueChangedCallback, 
-    	(XtCallbackProc)rScopeWinCB, window);
+        (XtCallbackProc)rScopeWinCB, window);
     XmStringFree(st1);
     XtManageChild(inWinBtn);
  
@@ -964,7 +964,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("In Selection")); argcnt++;
+             st1=MKSTRING("In Selection")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'S'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
     XtSetArg(args[argcnt], XmNbottomAttachment, XmATTACH_NONE); argcnt++;
@@ -973,7 +973,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftWidget, inWinBtn); argcnt++;
     inSelBtn = XmCreateToggleButton(scopeForm, "inSel", args, argcnt);
     XtAddCallback(inSelBtn, XmNvalueChangedCallback, 
-	(XtCallbackProc)rScopeSelCB, window);
+    (XtCallbackProc)rScopeSelCB, window);
     XmStringFree(st1);
     XtManageChild(inSelBtn);
     
@@ -981,7 +981,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("In Multiple Documents")); argcnt++;
+             st1=MKSTRING("In Multiple Documents")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'M'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
     XtSetArg(args[argcnt], XmNbottomAttachment, XmATTACH_NONE); argcnt++;
@@ -990,7 +990,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftWidget, inSelBtn); argcnt++;
     inMultiBtn = XmCreateToggleButton(scopeForm, "multiFile", args, argcnt);
     XtAddCallback(inMultiBtn, XmNvalueChangedCallback,
-    	    (XtCallbackProc)rScopeMultiCB, window);
+            (XtCallbackProc)rScopeMultiCB, window);
     XmStringFree(st1);
     XtManageChild(inMultiBtn);
 #else
@@ -1015,7 +1015,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_BEGINNING); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, st1=MKSTRING("Replace all in:"));
-    	    argcnt++;
+            argcnt++;
     label3 = XmCreateLabel(allForm, "label3", args, argcnt);
     XmStringFree(st1);
     XtManageChild(label3);
@@ -1033,7 +1033,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftWidget, label3); argcnt++;
     inWinBtn = XmCreatePushButton(allForm, "inWindow", args, argcnt);
     XtAddCallback(inWinBtn, XmNactivateCallback, 
-    	(XtCallbackProc)replaceAllCB, window);
+        (XtCallbackProc)replaceAllCB, window);
     XmStringFree(st1);
     XtManageChild(inWinBtn);
  
@@ -1041,7 +1041,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Selection")); argcnt++;
+             st1=MKSTRING("Selection")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'S'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
     XtSetArg(args[argcnt], XmNbottomAttachment, XmATTACH_NONE); argcnt++;
@@ -1050,7 +1050,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftWidget, inWinBtn); argcnt++;
     inSelBtn = XmCreatePushButton(allForm, "inSel", args, argcnt);
     XtAddCallback(inSelBtn, XmNactivateCallback, 
-	(XtCallbackProc)rInSelCB, window);
+    (XtCallbackProc)rInSelCB, window);
     XmStringFree(st1);
     XtManageChild(inSelBtn);
     
@@ -1058,7 +1058,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Multiple Documents...")); argcnt++;
+             st1=MKSTRING("Multiple Documents...")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'M'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
     XtSetArg(args[argcnt], XmNbottomAttachment, XmATTACH_NONE); argcnt++;
@@ -1067,7 +1067,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNleftWidget, inSelBtn); argcnt++;
     inMultiBtn = XmCreatePushButton(allForm, "multiFile", args, argcnt);
     XtAddCallback(inMultiBtn, XmNactivateCallback,
-    	    (XtCallbackProc)replaceMultiFileCB, window);
+            (XtCallbackProc)replaceMultiFileCB, window);
     XmStringFree(st1);
     XtManageChild(inMultiBtn);
     
@@ -1111,7 +1111,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtManageChild(replaceBtn);
     XtVaGetValues(replaceBtn, XmNshadowThickness, &shadowThickness, NULL);
     defaultBtnOffset = shadowThickness + 4;
-	
+    
     argcnt = 0;
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
@@ -1163,7 +1163,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Replace All")); argcnt++;
+             st1=MKSTRING("Replace All")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'A'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
     XtSetArg(args[argcnt], XmNbottomAttachment, XmATTACH_NONE); argcnt++;
@@ -1174,7 +1174,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, defaultBtnOffset); argcnt++;
     replaceAllBtn = XmCreatePushButton(btnForm, "all", args, argcnt);
     XtAddCallback(replaceAllBtn, XmNactivateCallback,
-    	    (XtCallbackProc)replaceAllScopeCB, window);
+            (XtCallbackProc)replaceAllScopeCB, window);
     XmStringFree(st1);
     XtManageChild(replaceAllBtn);
 #endif
@@ -1199,7 +1199,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     cancelBtn = XmCreatePushButton(btnForm, "cancel", args, argcnt);
     XmStringFree(st1);
     XtAddCallback(cancelBtn, XmNactivateCallback, (XtCallbackProc)rCancelCB,
-    	    window);
+            window);
     XtManageChild(cancelBtn);
 
     XtVaSetValues(form, XmNcancelButton, cancelBtn, NULL);
@@ -1229,24 +1229,24 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
 
 void CreateFindDlog(Widget parent, WindowInfo *window)
 {
-    Arg    	args[50];
-    int    	argcnt, defaultBtnOffset;
-    XmString	st1;
-    Widget	form, btnForm, searchTypeBox;
-    Widget	findText, label1, label2, cancelBtn, findBtn;
-    Widget	searchDirBox, reverseBtn, keepBtn;
-    char 	title[MAXPATHLEN + 11];
-    Dimension	shadowThickness;
+    Arg        args[50];
+    int        argcnt, defaultBtnOffset;
+    XmString    st1;
+    Widget    form, btnForm, searchTypeBox;
+    Widget    findText, label1, label2, cancelBtn, findBtn;
+    Widget    searchDirBox, reverseBtn, keepBtn;
+    char     title[MAXPATHLEN + 11];
+    Dimension    shadowThickness;
  
     argcnt = 0;
     XtSetArg(args[argcnt], XmNautoUnmanage, False); argcnt++;
     form = CreateFormDialog(parent, "findDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
-    	XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
+        snprintf(title, sizeof(title), "Find (in %s)", window->filename);
+        XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
-    	XtVaSetValues(XtParent(form), XmNtitle, "Find", NULL);
+        XtVaSetValues(XtParent(form), XmNtitle, "Find", NULL);
  
     argcnt = 0;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_FORM); argcnt++;
@@ -1257,7 +1257,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_BEGINNING); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, st1=MKSTRING("String to Find:"));
-    	    argcnt++;
+            argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'S'); argcnt++;
     label1 = XmCreateLabel(form, "label1", args, argcnt);
     XmStringFree(st1);
@@ -1272,7 +1272,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_END); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, st1=MKSTRING(
-    	   "(use up arrow key to recall previous)")); argcnt++;
+           "(use up arrow key to recall previous)")); argcnt++;
     label2 = XmCreateLabel(form, "label2", args, argcnt);
     XmStringFree(st1);
     XtManageChild(label2);
@@ -1293,7 +1293,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtAddCallback(findText, XmNvalueChangedCallback, 
       (XtCallbackProc)findTextValueChangedCB, window);
     XtAddEventHandler(findText, KeyPressMask, False,
-    	    (XtEventHandler)findArrowKeyCB, window);
+            (XtEventHandler)findArrowKeyCB, window);
     RemapDeleteKey(findText);
     XtManageChild(findText);
     XmAddTabGroup(findText);
@@ -1318,7 +1318,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtraversalOn, True); argcnt++;
     XtSetArg(args[argcnt], XmNhighlightThickness, 2); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString, 
-    	     st1=MKSTRING("Regular Expression")); argcnt++;
+             st1=MKSTRING("Regular Expression")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'R'); argcnt++;
     window->findRegexToggle = XmCreateToggleButton(searchTypeBox, "regExp", args, argcnt);
     XmStringFree(st1);
@@ -1360,7 +1360,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     
     argcnt = 0;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Search Backward")); argcnt++;
+             st1=MKSTRING("Search Backward")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'B'); argcnt++;
     reverseBtn = XmCreateToggleButton(searchDirBox, "reverse", args, argcnt);
     XmStringFree(st1);
@@ -1368,7 +1368,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     
     argcnt = 0;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Keep Dialog")); argcnt++;
+             st1=MKSTRING("Keep Dialog")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'K'); argcnt++;
     XtSetArg(args[argcnt], XmNtopAttachment, XmATTACH_WIDGET); argcnt++;
     XtSetArg(args[argcnt], XmNtopOffset, 0); argcnt++;
@@ -1377,7 +1377,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNrightOffset, 4); argcnt++;
     keepBtn = XmCreateToggleButton(form, "keep", args, argcnt);
     XtAddCallback(keepBtn, XmNvalueChangedCallback,
-    	    (XtCallbackProc)fKeepCB, window);
+            (XtCallbackProc)fKeepCB, window);
     XmStringFree(st1);
     XtManageChild(keepBtn);
     XmAddTabGroup(keepBtn);
@@ -1424,7 +1424,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, defaultBtnOffset); argcnt++;
     cancelBtn = XmCreatePushButton(btnForm, "cancel", args, argcnt);
     XtAddCallback(cancelBtn, XmNactivateCallback, (XtCallbackProc)fCancelCB,
-    	    window);
+            window);
     XmStringFree(st1);
     XtManageChild(cancelBtn);
     XtVaSetValues(form, XmNcancelButton, cancelBtn, NULL);
@@ -1441,17 +1441,17 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
 
 void CreateReplaceMultiFileDlog(WindowInfo *window) 
 {
-    Arg		args[50];
-    int		argcnt, defaultBtnOffset;
-    XmString	st1;
-    Widget	list, label1, form, pathBtn;
-    Widget	btnForm, replaceBtn, selectBtn, deselectBtn, cancelBtn;
-    Dimension	shadowThickness;
+    Arg        args[50];
+    int        argcnt, defaultBtnOffset;
+    XmString    st1;
+    Widget    list, label1, form, pathBtn;
+    Widget    btnForm, replaceBtn, selectBtn, deselectBtn, cancelBtn;
+    Dimension    shadowThickness;
     
     argcnt = 0;
     XtSetArg(args[argcnt], XmNautoUnmanage, False); argcnt++;
     XtSetArg (args[argcnt], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL);
-	    argcnt ++;
+        argcnt ++;
 
     /* Ideally, we should create the multi-file dialog as a child widget
        of the replace dialog. However, if we do this, the main window
@@ -1461,10 +1461,10 @@ void CreateReplaceMultiFileDlog(WindowInfo *window)
        covers the multi-file dialog, but this much better than the multi-file
        dialog being covered completely by the main window */
     form = CreateFormDialog(window->shell, "replaceMultiFileDialog", 
-           			     args, argcnt);
+                            args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     XtVaSetValues(XtParent(form), XmNtitle, "Replace All in Multiple Documents", 
-		  NULL);
+          NULL);
     
     /* Label at top left. */
     argcnt = 0;
@@ -1502,12 +1502,12 @@ void CreateReplaceMultiFileDlog(WindowInfo *window)
     XtSetArg(args[argcnt], XmNtopOffset, 6); argcnt++;
     XtSetArg(args[argcnt], XmNalignment, XmALIGNMENT_END); argcnt++;
     XtSetArg(args[argcnt], XmNlabelString,
-    	     st1=MKSTRING("Show Path Names")); argcnt++;
+             st1=MKSTRING("Show Path Names")); argcnt++;
     XtSetArg(args[argcnt], XmNmnemonic, 'P'); argcnt++;
     pathBtn = XmCreateToggleButton(form, "path", args, argcnt);
     XmStringFree(st1);
     XtAddCallback(pathBtn, XmNvalueChangedCallback,
-    	    (XtCallbackProc)rMultiFilePathCB, window);
+            (XtCallbackProc)rMultiFilePathCB, window);
     XtManageChild(pathBtn);
     
     /*
@@ -1660,7 +1660,7 @@ void CreateReplaceMultiFileDlog(WindowInfo *window)
     /* Install a handler that frees the list of writable windows when
        the dialog is unmapped. */
     XtAddCallback(form, XmNunmapCallback, 
-	    	    (XtCallbackProc)freeWritableWindowsCB, window); 
+                (XtCallbackProc)freeWritableWindowsCB, window); 
 } 
 
 /*
@@ -1668,7 +1668,7 @@ void CreateReplaceMultiFileDlog(WindowInfo *window)
 ** the doomed window if necessary.
 */
 static void checkMultiReplaceListForDoomedW(WindowInfo* window, 
-						     WindowInfo* doomedWindow)
+                             WindowInfo* doomedWindow)
 {
     WindowInfo        *w;
     int               i;
@@ -1739,11 +1739,11 @@ static void rKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-    	snprintf(title, sizeof(title),
+        snprintf(title, sizeof(title),
                 "Replace/Find (in %s)", window->filename);
-    	XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
+        XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
     } else
-    	XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, "Replace/Find", NULL);
+        XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, "Replace/Find", NULL);
 }
 static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData) 
 {
@@ -1752,14 +1752,14 @@ static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
-    	XtVaSetValues(XtParent(window->findDlog), XmNtitle, title, NULL);
+        snprintf(title, sizeof(title), "Find (in %s)", window->filename);
+        XtVaSetValues(XtParent(window->findDlog), XmNtitle, title, NULL);
     } else
-    	XtVaSetValues(XtParent(window->findDlog), XmNtitle, "Find", NULL);
+        XtVaSetValues(XtParent(window->findDlog), XmNtitle, "Find", NULL);
 }
 
 static void replaceCB(Widget w, WindowInfo *window,
-		      XmAnyCallbackStruct *callData) 
+              XmAnyCallbackStruct *callData) 
 {
     char searchString[SEARCHMAX], replaceString[SEARCHMAX];
     int direction, searchType;
@@ -1769,8 +1769,8 @@ static void replaceCB(Widget w, WindowInfo *window,
 
     /* Validate and fetch the find and replace strings from the dialog */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
-    	    &searchType))
-    	return;
+            &searchType))
+        return;
 
     /* Set the initial focus of the dialog back to the search string */
     resetReplaceTabGroup(window);
@@ -1787,11 +1787,11 @@ static void replaceCB(Widget w, WindowInfo *window,
     
     /* Pop down the dialog */
     if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	unmanageReplaceDialogs(window);
+        unmanageReplaceDialogs(window);
 }
 
 static void replaceAllCB(Widget w, WindowInfo *window,
-			 XmAnyCallbackStruct *callData) 
+             XmAnyCallbackStruct *callData) 
 {
     char searchString[SEARCHMAX], replaceString[SEARCHMAX];
     int direction, searchType;
@@ -1801,10 +1801,10 @@ static void replaceAllCB(Widget w, WindowInfo *window,
 
     /* Validate and fetch the find and replace strings from the dialog */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
-    	    &searchType))
-    	return;
+            &searchType))
+        return;
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetReplaceTabGroup(window);
 
     /* do replacement */
@@ -1813,16 +1813,16 @@ static void replaceAllCB(Widget w, WindowInfo *window,
     params[2] = searchTypeArg(searchType);
     windowNotToClose = window;
     XtCallActionProc(window->lastFocus, "replace_all", callData->event,
-    	    params, 3);
+            params, 3);
     windowNotToClose = NULL;
     
     /* pop down the dialog */
     if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	unmanageReplaceDialogs(window);
+        unmanageReplaceDialogs(window);
 }
 
 static void replaceMultiFileCB(Widget w, WindowInfo *window,
-				   XmAnyCallbackStruct *callData) 
+                   XmAnyCallbackStruct *callData) 
 {
     window = WidgetToWindow(w);
     DoReplaceMultiFileDlog(window);
@@ -1847,7 +1847,7 @@ static void freeWritableWindowsCB(Widget w, WindowInfo* window,
 static int compareWindowNames(const void *windowA, const void *windowB)
 {
       return strcmp((*((WindowInfo**)windowA))->filename,
-      	    (*((WindowInfo**)windowB))->filename);
+              (*((WindowInfo**)windowB))->filename);
 }
  
 /*
@@ -1873,19 +1873,19 @@ static int countWritableWindows(void)
 
     nBefore = countWindows();
     for (w=WindowList, nWritable=0; w!=NULL; w=w->next) {
-	/* We must be very careful! The status check may trigger a pop-up
-	   dialog when the file has changed on disk, and the user may destroy
-	   arbitrary windows in response. */
-	CheckForChangesToFile(w);
-	nAfter = countWindows();
-	if (nAfter != nBefore) {
-	    /* The user has destroyed a file; start counting all over again */
-	    nBefore = nAfter;
-	    w = WindowList;
-	    nWritable = 0;
-	    continue;
-	}
-	if (!IS_ANY_LOCKED(w->lockReasons)) ++nWritable;
+    /* We must be very careful! The status check may trigger a pop-up
+       dialog when the file has changed on disk, and the user may destroy
+       arbitrary windows in response. */
+    CheckForChangesToFile(w);
+    nAfter = countWindows();
+    if (nAfter != nBefore) {
+        /* The user has destroyed a file; start counting all over again */
+        nBefore = nAfter;
+        w = WindowList;
+        nWritable = 0;
+        continue;
+    }
+    if (!IS_ANY_LOCKED(w->lockReasons)) ++nWritable;
     }
     return nWritable;
 }
@@ -1916,12 +1916,12 @@ static void collectWritableWindows(WindowInfo* window)
 static void rMultiFileReplaceCB(Widget w, WindowInfo *window, 
    XmAnyCallbackStruct *callData) 
 {
-    char 	searchString[SEARCHMAX], replaceString[SEARCHMAX];
-    int 	direction, searchType;
-    char 	*params[4];
-    int 	nSelected, i;
-    WindowInfo 	*writableWin;
-    Bool 	replaceFailed, noWritableLeft;
+    char     searchString[SEARCHMAX], replaceString[SEARCHMAX];
+    int     direction, searchType;
+    char     *params[4];
+    int     nSelected, i;
+    WindowInfo     *writableWin;
+    Bool     replaceFailed, noWritableLeft;
 
     window = WidgetToWindow(w);
     nSelected = 0;
@@ -1957,8 +1957,8 @@ static void rMultiFileReplaceCB(Widget w, WindowInfo *window,
        honor modal dialogs, it is possible that the user modified the 
        strings again, so we should verify them again too. */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
- 	 		  &searchType))
-	return;
+                &searchType))
+    return;
 
     /* Set the initial focus of the dialog back to the search string */
     resetReplaceTabGroup(window);
@@ -1971,26 +1971,26 @@ static void rMultiFileReplaceCB(Widget w, WindowInfo *window,
     noWritableLeft = True;
     /* Perform the replacements and mark the selected files (history) */
     for (i=0; i<window->nWritableWindows; ++i) {
-	writableWin = window->writableWindows[i];
-	if (XmListPosSelected(window->replaceMultiFileList, i+1)) {
-	/* First check again whether the file is still writable. If the
-	   file status has changed or the file was locked in the mean time
-	   (possible due to Lesstif modal dialog bug), we just skip the 
-	   window. */
-	    if (!IS_ANY_LOCKED(writableWin->lockReasons)) {
-		noWritableLeft = False;
-		writableWin->multiFileReplSelected = True;
-		writableWin->multiFileBusy = True; /* Avoid multi-beep/dialog */
-		writableWin->replaceFailed = False;
-		XtCallActionProc(writableWin->lastFocus, "replace_all",
-		    callData->event, params, 3);
-		writableWin->multiFileBusy = False;
-		if (!writableWin->replaceFailed)
-		    replaceFailed = False;
-	    }
-	} else {
-	    writableWin->multiFileReplSelected = False;
-	}
+    writableWin = window->writableWindows[i];
+    if (XmListPosSelected(window->replaceMultiFileList, i+1)) {
+    /* First check again whether the file is still writable. If the
+       file status has changed or the file was locked in the mean time
+       (possible due to Lesstif modal dialog bug), we just skip the 
+       window. */
+        if (!IS_ANY_LOCKED(writableWin->lockReasons)) {
+        noWritableLeft = False;
+        writableWin->multiFileReplSelected = True;
+        writableWin->multiFileBusy = True; /* Avoid multi-beep/dialog */
+        writableWin->replaceFailed = False;
+        XtCallActionProc(writableWin->lastFocus, "replace_all",
+            callData->event, params, 3);
+        writableWin->multiFileBusy = False;
+        if (!writableWin->replaceFailed)
+            replaceFailed = False;
+        }
+    } else {
+        writableWin->multiFileReplSelected = False;
+    }
     }                          
         
     if (!XmToggleButtonGetState(window->replaceKeepBtn)) {
@@ -2004,15 +2004,15 @@ static void rMultiFileReplaceCB(Widget w, WindowInfo *window,
     /* We suppressed multiple beeps/dialogs. If there wasn't any file in
        which the replacement succeeded, we should still warn the user */
     if (replaceFailed) {
-	if (GetPrefSearchDlogs()) {
-	    if (noWritableLeft) {
-		DialogF(DF_INF, window->shell, 1, "Read-only Files",
+    if (GetPrefSearchDlogs()) {
+        if (noWritableLeft) {
+        DialogF(DF_INF, window->shell, 1, "Read-only Files",
                         "All selected files have become read-only.", "OK");
-	    } else {
-		DialogF(DF_INF, window->shell, 1, "String not found",
+        } else {
+        DialogF(DF_INF, window->shell, 1, "String not found",
                         "String was not found", "OK");
             }
-	} else {
+    } else {
            XBell(TheDisplay, 0);
         }
     }
@@ -2022,7 +2022,7 @@ static void rMultiFileCancelCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(w);
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetReplaceTabGroup(window);
 
     /* pop down the multi-window replace dialog */
@@ -2215,7 +2215,7 @@ static void unmanageReplaceDialogs(const WindowInfo *window)
 }
 
 static void rInSelCB(Widget w, WindowInfo *window,
-			 XmAnyCallbackStruct *callData) 
+             XmAnyCallbackStruct *callData) 
 {
     char searchString[SEARCHMAX], replaceString[SEARCHMAX];
     int direction, searchType;
@@ -2225,8 +2225,8 @@ static void rInSelCB(Widget w, WindowInfo *window,
 
     /* Validate and fetch the find and replace strings from the dialog */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
-    	    &searchType))
-    	return;
+            &searchType))
+        return;
 
     /* Set the initial focus of the dialog back to the search string */
     resetReplaceTabGroup(window);
@@ -2237,19 +2237,19 @@ static void rInSelCB(Widget w, WindowInfo *window,
     params[2] = searchTypeArg(searchType);
     windowNotToClose = window;
     XtCallActionProc(window->lastFocus, "replace_in_selection",
-    	    callData->event, params, 3);
+            callData->event, params, 3);
     windowNotToClose = NULL;
     
     /* pop down the dialog */
     if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	unmanageReplaceDialogs(window);
+        unmanageReplaceDialogs(window);
 }
 
 static void rCancelCB(Widget w, WindowInfo *window, caddr_t callData) 
 {
     window = WidgetToWindow(w);
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetReplaceTabGroup(window);
 
     /* pop down the dialog */
@@ -2260,7 +2260,7 @@ static void fCancelCB(Widget w, WindowInfo *window, caddr_t callData)
 {
     window = WidgetToWindow(w);
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetFindTabGroup(window);
     
     /* pop down the dialog */
@@ -2277,10 +2277,10 @@ static void rFindCB(Widget w, WindowInfo *window,XmAnyCallbackStruct *callData)
 
     /* Validate and fetch the find and replace strings from the dialog */
     if (!getReplaceDlogInfo(window, &direction, searchString, replaceString,
-    	    &searchType))
-    	return;
+            &searchType))
+        return;
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetReplaceTabGroup(window);
     
     /* Find the text and mark it */
@@ -2296,14 +2296,14 @@ static void rFindCB(Widget w, WindowInfo *window,XmAnyCallbackStruct *callData)
        replace string (if any), so the replace string can be used on
        subsequent replaces, even though no actual replacement was done. */
     if (historyIndex(1) != -1 &&
-    		!strcmp(SearchHistory[historyIndex(1)], searchString)) {
-	NEditFree(ReplaceHistory[historyIndex(1)]);
-	ReplaceHistory[historyIndex(1)] = NEditStrdup(replaceString);
+            !strcmp(SearchHistory[historyIndex(1)], searchString)) {
+    NEditFree(ReplaceHistory[historyIndex(1)]);
+    ReplaceHistory[historyIndex(1)] = NEditStrdup(replaceString);
     }
 
     /* Pop down the dialog */
     if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	unmanageReplaceDialogs(window);
+        unmanageReplaceDialogs(window);
 }
 
 static void replaceFindCB(Widget w, WindowInfo *window, XmAnyCallbackStruct *callData) 
@@ -2333,7 +2333,7 @@ static void replaceFindCB(Widget w, WindowInfo *window, XmAnyCallbackStruct *cal
     
     /* Pop down the dialog */
     if (!XmToggleButtonGetState(window->replaceKeepBtn))
-    	unmanageReplaceDialogs(window);
+        unmanageReplaceDialogs(window);
 }
 
 static void rSetActionButtons(WindowInfo* window,
@@ -2364,18 +2364,18 @@ void UpdateReplaceActionButtons(WindowInfo* window)
     switch (window->replaceScope)
     {
         case REPL_SCOPE_WIN:
-	    /* Enable all buttons, if there is any text in the search field. */
-	    rSetActionButtons(window, searchText, searchText, searchText, searchText);
+        /* Enable all buttons, if there is any text in the search field. */
+        rSetActionButtons(window, searchText, searchText, searchText, searchText);
             break;
 
         case REPL_SCOPE_SEL:
-	    /* Only enable Replace All, if a selection exists and text in search field. */
-	    rSetActionButtons(window, False, False, False, searchText && window->wasSelected);
+        /* Only enable Replace All, if a selection exists and text in search field. */
+        rSetActionButtons(window, False, False, False, searchText && window->wasSelected);
             break;
 
         case REPL_SCOPE_MULTI:
-	    /* Only enable Replace All, if text in search field. */
-	    rSetActionButtons(window, False, False, False, searchText);
+        /* Only enable Replace All, if text in search field. */
+        rSetActionButtons(window, False, False, False, searchText);
             break;
     }
 #else
@@ -2395,7 +2395,7 @@ static void rScopeWinCB(Widget w, WindowInfo *window,
 {
     window = WidgetToWindow(w);
     if (XmToggleButtonGetState(window->replaceScopeWinToggle)) {
-	window->replaceScope = REPL_SCOPE_WIN;
+    window->replaceScope = REPL_SCOPE_WIN;
         UpdateReplaceActionButtons(window);
     }
 }
@@ -2405,7 +2405,7 @@ static void rScopeSelCB(Widget w, WindowInfo *window,
 {
     window = WidgetToWindow(w);
     if (XmToggleButtonGetState(window->replaceScopeSelToggle)) {
-	window->replaceScope = REPL_SCOPE_SEL;
+    window->replaceScope = REPL_SCOPE_SEL;
         UpdateReplaceActionButtons(window);
     }
 }
@@ -2415,7 +2415,7 @@ static void rScopeMultiCB(Widget w, WindowInfo *window,
 {
     window = WidgetToWindow(w);
     if (XmToggleButtonGetState(window->replaceScopeMultiToggle)) {
-	window->replaceScope = REPL_SCOPE_MULTI;
+    window->replaceScope = REPL_SCOPE_MULTI;
         UpdateReplaceActionButtons(window);
     }
 }
@@ -2429,7 +2429,7 @@ static void replaceAllScopeCB(Widget w, WindowInfo *window,
 {
     window = WidgetToWindow(w);
     switch(window->replaceScope) {
-	case REPL_SCOPE_WIN:
+    case REPL_SCOPE_WIN:
            replaceAllCB(w, window, callData);
            break;
         case REPL_SCOPE_SEL:
@@ -2468,28 +2468,28 @@ static void rFindArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
     
     /* only process up and down arrow keys */
     if (keysym != XK_Up && keysym != XK_Down)
-    	return;
+        return;
     
     /* increment or decrement the index depending on which arrow was pressed */
     index += (keysym == XK_Up) ? 1 : -1;
 
     /* if the index is out of range, beep and return */
     if (index != 0 && historyIndex(index) == -1) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
     
     window = WidgetToWindow(w);
 
     /* determine the strings and button settings to use */
     if (index == 0) {
-    	searchStr = "";
-    	replaceStr = "";
-    	searchType = GetPrefSearch();
+        searchStr = "";
+        replaceStr = "";
+        searchType = GetPrefSearch();
     } else {
-	searchStr = SearchHistory[historyIndex(index)];
-	replaceStr = ReplaceHistory[historyIndex(index)];
-	searchType = SearchTypeHistory[historyIndex(index)];
+    searchStr = SearchHistory[historyIndex(index)];
+    replaceStr = ReplaceHistory[historyIndex(index)];
+    searchType = SearchTypeHistory[historyIndex(index)];
     }
     
     /* Set the buttons and fields with the selected search type */
@@ -2517,25 +2517,25 @@ static void replaceArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
 
     /* only process up and down arrow keys */
     if (keysym != XK_Up && keysym != XK_Down)
-    	return;
+        return;
     
     /* increment or decrement the index depending on which arrow was pressed */
     index += (keysym == XK_Up) ? 1 : -1;
 
     /* if the index is out of range, beep and return */
     if (index != 0 && historyIndex(index) == -1) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
     
     window = WidgetToWindow(w);
 
     /* change only the replace field information */
     if (index == 0)
-    	XNETextSetString(window->replaceWithText, "");
+        XNETextSetString(window->replaceWithText, "");
     else
-    	XNETextSetString(window->replaceWithText,
-    		ReplaceHistory[historyIndex(index)]);
+        XNETextSetString(window->replaceWithText,
+            ReplaceHistory[historyIndex(index)]);
     window->rHistIndex = index;
 }
 
@@ -2563,25 +2563,25 @@ static void findArrowKeyCB(Widget w, WindowInfo *window, XKeyEvent *event)
     
     /* only process up and down arrow keys */
     if (keysym != XK_Up && keysym != XK_Down)
-    	return;
+        return;
     
     /* increment or decrement the index depending on which arrow was pressed */
     index += (keysym == XK_Up) ? 1 : -1;
 
     /* if the index is out of range, beep and return */
     if (index != 0 && historyIndex(index) == -1) {
-    	XBell(TheDisplay, 0);
-    	return;
+        XBell(TheDisplay, 0);
+        return;
     }
     
 
     /* determine the strings and button settings to use */
     if (index == 0) {
-    	searchStr = "";
-    	searchType = GetPrefSearch();
+        searchStr = "";
+        searchType = GetPrefSearch();
     } else {
-	searchStr = SearchHistory[historyIndex(index)];
-	searchType = SearchTypeHistory[historyIndex(index)];
+    searchStr = SearchHistory[historyIndex(index)];
+    searchType = SearchTypeHistory[historyIndex(index)];
     }
     
     /* Set the buttons and fields with the selected search type */
@@ -2607,9 +2607,9 @@ static void findCB(Widget w, WindowInfo *window,XmAnyCallbackStruct *callData)
 
     /* fetch find string, direction and type from the dialog */
     if (!getFindDlogInfo(window, &direction, searchString, &searchType))
-    	return;
+        return;
 
-    /* Set the initial focus of the dialog back to the search string	*/
+    /* Set the initial focus of the dialog back to the search string    */
     resetFindTabGroup(window);
     
     /* find the text and mark it */
@@ -2635,7 +2635,7 @@ static void findCB(Widget w, WindowInfo *window,XmAnyCallbackStruct *callData)
 ** value.  Otherwise, return FALSE.
 */
 static int getReplaceDlogInfo(WindowInfo *window, int *direction,
-	char *searchString, char *replaceString, int *searchType)
+    char *searchString, char *replaceString, int *searchType)
 {
     char *replaceText, *replaceWithText;
     regexp *compiledRE = NULL;
@@ -2649,56 +2649,56 @@ static int getReplaceDlogInfo(WindowInfo *window, int *direction,
     if(XmToggleButtonGetState(window->replaceRegexToggle)) {
       int regexDefault;
       if(XmToggleButtonGetState(window->replaceCaseToggle)) {
-      	*searchType = SEARCH_REGEX;
-	regexDefault = REDFLT_STANDARD;
+          *searchType = SEARCH_REGEX;
+    regexDefault = REDFLT_STANDARD;
       } else {
-      	*searchType = SEARCH_REGEX_NOCASE;
-	regexDefault = REDFLT_CASE_INSENSITIVE;
+          *searchType = SEARCH_REGEX_NOCASE;
+    regexDefault = REDFLT_CASE_INSENSITIVE;
       }
       /* If the search type is a regular expression, test compile it 
          immediately and present error messages */
       compiledRE = CompileRE(replaceText, &compileMsg, regexDefault);
       if (compiledRE == NULL) {
-   	  DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "Search String",
+         DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "Search String",
                   "Please respecify the search string:\n%s", "OK", compileMsg);
-	  NEditFree(replaceText);
-	  NEditFree(replaceWithText);
- 	  return FALSE;
+      NEditFree(replaceText);
+      NEditFree(replaceWithText);
+       return FALSE;
       }
       NEditFree(compiledRE);
     } else {
       if(XmToggleButtonGetState(window->replaceCaseToggle)) {
-      	if(XmToggleButtonGetState(window->replaceWordToggle))
-	  *searchType = SEARCH_CASE_SENSE_WORD;
-	else
-	  *searchType = SEARCH_CASE_SENSE;
+          if(XmToggleButtonGetState(window->replaceWordToggle))
+      *searchType = SEARCH_CASE_SENSE_WORD;
+    else
+      *searchType = SEARCH_CASE_SENSE;
       } else {
-      	if(XmToggleButtonGetState(window->replaceWordToggle))
-	  *searchType = SEARCH_LITERAL_WORD;
-	else
-	  *searchType = SEARCH_LITERAL;
+          if(XmToggleButtonGetState(window->replaceWordToggle))
+      *searchType = SEARCH_LITERAL_WORD;
+    else
+      *searchType = SEARCH_LITERAL;
       }
     }
     
     *direction = XmToggleButtonGetState(window->replaceRevToggle) ? 
-	SEARCH_BACKWARD : SEARCH_FORWARD;
+    SEARCH_BACKWARD : SEARCH_FORWARD;
     
     /* Return strings */
     size_t replaceTextLen = strlen(replaceText);
     if (replaceTextLen >= SEARCHMAX) {
-	DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
+    DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
                 "Search string too long.", "OK");
-	NEditFree(replaceText);
-	NEditFree(replaceWithText);
-	return FALSE;
+    NEditFree(replaceText);
+    NEditFree(replaceWithText);
+    return FALSE;
     }
     size_t replaceWithTextLen = strlen(replaceWithText);
     if (replaceWithTextLen >= SEARCHMAX) {
-	DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
+    DialogF(DF_WARN, XtParent(window->replaceDlog), 1, "String too long",
                 "Replace string too long.", "OK");
-	NEditFree(replaceText);
-	NEditFree(replaceWithText);
-	return FALSE;
+    NEditFree(replaceText);
+    NEditFree(replaceWithText);
+    return FALSE;
     }
     memcpy(searchString, replaceText, replaceTextLen+1);
     memcpy(replaceString, replaceWithText, replaceWithTextLen+1);
@@ -2716,7 +2716,7 @@ static int getReplaceDlogInfo(WindowInfo *window, int *direction,
 ** return FALSE.
 */
 static int getFindDlogInfo(WindowInfo *window, int *direction,
-	char *searchString, int *searchType)
+    char *searchString, int *searchType)
 {
     char *findText;
     regexp *compiledRE = NULL;
@@ -2728,37 +2728,37 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
     if(XmToggleButtonGetState(window->findRegexToggle)) {
       int regexDefault;
       if(XmToggleButtonGetState(window->findCaseToggle)) {
-      	*searchType = SEARCH_REGEX;
-	regexDefault = REDFLT_STANDARD;
+          *searchType = SEARCH_REGEX;
+    regexDefault = REDFLT_STANDARD;
       } else {
-      	*searchType = SEARCH_REGEX_NOCASE;
-	regexDefault = REDFLT_CASE_INSENSITIVE;
+          *searchType = SEARCH_REGEX_NOCASE;
+    regexDefault = REDFLT_CASE_INSENSITIVE;
       }
       /* If the search type is a regular expression, test compile it 
          immediately and present error messages */
       compiledRE = CompileRE(findText, &compileMsg, regexDefault);
       if (compiledRE == NULL) {
-   	  DialogF(DF_WARN, XtParent(window->findDlog), 1, "Regex Error",
+         DialogF(DF_WARN, XtParent(window->findDlog), 1, "Regex Error",
                   "Please respecify the search string:\n%s", "OK", compileMsg);
- 	  return FALSE;
+       return FALSE;
       }
       NEditFree(compiledRE);
     } else {
       if(XmToggleButtonGetState(window->findCaseToggle)) {
-      	if(XmToggleButtonGetState(window->findWordToggle))
-	  *searchType = SEARCH_CASE_SENSE_WORD;
-	else
-	  *searchType = SEARCH_CASE_SENSE;
+          if(XmToggleButtonGetState(window->findWordToggle))
+      *searchType = SEARCH_CASE_SENSE_WORD;
+    else
+      *searchType = SEARCH_CASE_SENSE;
       } else {
-      	if(XmToggleButtonGetState(window->findWordToggle))
-	  *searchType = SEARCH_LITERAL_WORD;
-	else
-	  *searchType = SEARCH_LITERAL;
+          if(XmToggleButtonGetState(window->findWordToggle))
+      *searchType = SEARCH_LITERAL_WORD;
+    else
+      *searchType = SEARCH_LITERAL;
       }
     }
     
     *direction = XmToggleButtonGetState(window->findRevToggle) ? 
-	SEARCH_BACKWARD : SEARCH_FORWARD;
+    SEARCH_BACKWARD : SEARCH_FORWARD;
     
     if (isRegexType(*searchType)) {
     }
@@ -2766,10 +2766,10 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
     /* Return the search string */
     size_t findTextLen = strlen(findText);
     if (findTextLen >= SEARCHMAX) {
-	DialogF(DF_WARN, XtParent(window->findDlog), 1, "String too long",
+    DialogF(DF_WARN, XtParent(window->findDlog), 1, "String too long",
                 "Search string too long.", "OK");
-	NEditFree(findText);
-	return FALSE;
+    NEditFree(findText);
+    return FALSE;
     }
     memcpy(searchString, findText, findTextLen+1);
     NEditFree(findText);
@@ -2779,12 +2779,12 @@ static int getFindDlogInfo(WindowInfo *window, int *direction,
 int SearchAndSelectSame(WindowInfo *window, int direction, int searchWrap)
 {
     if (NHist < 1) {
-    	XBell(TheDisplay, 0);
-    	return FALSE;
+        XBell(TheDisplay, 0);
+        return FALSE;
     }
     
     return SearchAndSelect(window, direction, SearchHistory[historyIndex(1)],
-    	    SearchTypeHistory[historyIndex(1)], searchWrap);
+            SearchTypeHistory[historyIndex(1)], searchWrap);
 }
 
 /*
@@ -2793,7 +2793,7 @@ int SearchAndSelectSame(WindowInfo *window, int direction, int searchWrap)
 ** adds the search string to the global search history.
 */
 int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap)
+    int searchType, int searchWrap)
 {
     int startPos, endPos;
     int beginPos, cursorPos, selStart, selEnd;
@@ -2803,27 +2803,27 @@ int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
     saveSearchHistory(searchString, NULL, searchType, FALSE);
         
     /* set the position to start the search so we don't find the same
-       string that was found on the last search	*/
+       string that was found on the last search    */
     if (searchMatchesSelection(window, searchString, searchType,
-    	    &selStart, &selEnd, NULL, NULL)) {
-    	/* selection matches search string, start before or after sel.	*/
-	if (direction == SEARCH_BACKWARD) {
-	    beginPos = selStart - 1;
-	} else {
+            &selStart, &selEnd, NULL, NULL)) {
+        /* selection matches search string, start before or after sel.    */
+    if (direction == SEARCH_BACKWARD) {
+        beginPos = selStart - 1;
+    } else {
             beginPos = selStart + 1;
             movedFwd = 1;
-	}
+    }
     } else {
-    	selStart = -1; selEnd = -1;
-    	/* no selection, or no match, search relative cursor */
-    	cursorPos = TextGetCursorPos(window->lastFocus);
-	if (direction == SEARCH_BACKWARD) {
-	    /* use the insert position - 1 for backward searches */
-	    beginPos = cursorPos-1;
-	} else {
-	    /* use the insert position for forward searches */
-	    beginPos = cursorPos;
-	}
+        selStart = -1; selEnd = -1;
+        /* no selection, or no match, search relative cursor */
+        cursorPos = TextGetCursorPos(window->lastFocus);
+    if (direction == SEARCH_BACKWARD) {
+        /* use the insert position - 1 for backward searches */
+        beginPos = cursorPos-1;
+    } else {
+        /* use the insert position for forward searches */
+        beginPos = cursorPos;
+    }
     }
 
     /* when the i-search bar is active and search is repeated there 
@@ -2837,9 +2837,9 @@ int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
 
     /* do the search.  SearchWindow does appropriate dialogs and beeps */
     if (!SearchWindow(window, direction, searchString, searchType, searchWrap,
-    	    beginPos, &startPos, &endPos, NULL, NULL))
-    	return FALSE;
-    	
+            beginPos, &startPos, &endPos, NULL, NULL))
+        return FALSE;
+        
     /* if the search matched an empty string (possible with regular exps)
        beginning at the start of the search, go to the next occurrence,
        otherwise repeated finds will get "stuck" at zero-length matches */
@@ -2847,13 +2847,13 @@ int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
         if (!movedFwd &&
             !SearchWindow(window, direction, searchString, searchType,
                 searchWrap, beginPos+1, &startPos, &endPos, NULL, NULL))
-    	    return FALSE;
+            return FALSE;
     }
 
     /* if matched text is already selected, just beep */
     if (selStart==startPos && selEnd==endPos) {
-    	XBell(TheDisplay, 0);
-    	return FALSE;
+        XBell(TheDisplay, 0);
+        return FALSE;
     }
 
     /* select the text found string */
@@ -2880,9 +2880,9 @@ void SearchForSelected(WindowInfo *window, int direction, int searchType,
    Atom targets[2] = {XA_STRING, UTF8StringAtom(XtDisplay(window->textArea))};
    
    XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[0],
-    	    selectedSearchCB, callData, time);
+            selectedSearchCB, callData, time);
    XtGetSelectionValue(window->textArea, XA_PRIMARY, targets[1],
-    	    selectedSearchCB, callData, time);
+            selectedSearchCB, callData, time);
 }
 
 static void freeSearchSelectedCallData(SearchSelectedCallData *callData) {
@@ -2892,7 +2892,7 @@ static void freeSearchSelectedCallData(SearchSelectedCallData *callData) {
 }
 
 static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
-	Atom *type, XtPointer v, unsigned long *length, int *format)
+    Atom *type, XtPointer v, unsigned long *length, int *format)
 {
     WindowInfo *window = WidgetToWindow(w);
     SearchSelectedCallData *callDataItems = (SearchSelectedCallData *)callData;
@@ -2937,27 +2937,27 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
 
     /* skip if we can't get the selection data or it's too long */
     if (*type == XT_CONVERT_FAIL || value == NULL) {
-    	if (GetPrefSearchDlogs())
-   	    DialogF(DF_WARN, window->shell, 1, "Wrong Selection",
+        if (GetPrefSearchDlogs())
+           DialogF(DF_WARN, window->shell, 1, "Wrong Selection",
                     "Selection not appropriate for searching", "OK");
-    	else
-    	    XBell(TheDisplay, 0);
+        else
+            XBell(TheDisplay, 0);
         freeSearchSelectedCallData(callData);
-	return;
+    return;
     }
     if (len > SEARCHMAX) {
-    	if (GetPrefSearchDlogs())
-   	    DialogF(DF_WARN, window->shell, 1, "Selection too long",
+        if (GetPrefSearchDlogs())
+           DialogF(DF_WARN, window->shell, 1, "Selection too long",
                     "Selection too long", "OK");
-    	else
-    	    XBell(TheDisplay, 0);
+        else
+            XBell(TheDisplay, 0);
         freeSearchSelectedCallData(callData);
-	return;
+    return;
     }
     if (len == 0) {
-    	XBell(TheDisplay, 0);
+        XBell(TheDisplay, 0);
         freeSearchSelectedCallData(callData);
-	return;
+    return;
     }
     /* make the selection the current search string */
     strncpy(searchString, value, len);
@@ -2969,7 +2969,7 @@ static void selectedSearchCB(Widget w, XtPointer callData, Atom *selection,
     if (searchType == SEARCH_REGEX )
       searchType = SEARCH_CASE_SENSE;
     else if (searchType == SEARCH_REGEX_NOCASE)
-	      searchType = SEARCH_LITERAL;
+          searchType = SEARCH_LITERAL;
 
     /* search for it in the window */
     SearchAndSelect(window, callDataItems->direction, searchString,
@@ -2989,7 +2989,7 @@ void BeginISearch(WindowInfo *window, int direction)
     window->iSearchStartPos = -1;
     XNETextSetString(window->iSearchText, "");
     XmToggleButtonSetState(window->iSearchRevToggle,
-	    direction == SEARCH_BACKWARD, FALSE);
+        direction == SEARCH_BACKWARD, FALSE);
     /* Note: in contrast to the replace and find dialogs, the regex and
        case toggles are not reset to their default state when the incremental
        search bar is redisplayed. I'm not sure whether this is the best
@@ -3027,11 +3027,11 @@ void EndISearch(WindowInfo *window)
 ** search begin position for incremental searches.
 */
 static void iSearchRecordLastBeginPos(WindowInfo *window, int direction, 
-	int initPos) 
+    int initPos) 
 {
     window->iSearchLastBeginPos = initPos;
     if (direction == SEARCH_BACKWARD) 
-      	window->iSearchLastBeginPos--;
+          window->iSearchLastBeginPos--;
 }      
 
 /*
@@ -3042,15 +3042,15 @@ static void iSearchRecordLastBeginPos(WindowInfo *window, int direction,
 ** current cursor position.
 */
 int SearchAndSelectIncremental(WindowInfo *window, int direction,
-	const char *searchString, int searchType, int searchWrap, int continued)
+    const char *searchString, int searchType, int searchWrap, int continued)
 {
     int beginPos, startPos, endPos;
 
     /* If there's a search in progress, start the search from the original
        starting position, otherwise search from the cursor position. */
     if (!continued || window->iSearchStartPos == -1) {
-	window->iSearchStartPos = TextGetCursorPos(window->lastFocus);
-	iSearchRecordLastBeginPos(window, direction, window->iSearchStartPos);
+    window->iSearchStartPos = TextGetCursorPos(window->lastFocus);
+    iSearchRecordLastBeginPos(window, direction, window->iSearchStartPos);
     }
     beginPos = window->iSearchStartPos;
 
@@ -3059,32 +3059,32 @@ int SearchAndSelectIncremental(WindowInfo *window, int direction,
        clear the selection, set the cursor back to what would be the 
        beginning of the search, and return. */
     if(searchString[0] == 0) {
-     	int beepBeginPos = (direction == SEARCH_BACKWARD) ? beginPos-1:beginPos;
-      	iSearchTryBeepOnWrap(window, direction, beepBeginPos, beepBeginPos);
-	iSearchRecordLastBeginPos(window, direction, window->iSearchStartPos);
-	BufUnselect(window->buffer);
-	TextSetCursorPos(window->lastFocus, beginPos);
-	return TRUE;
+         int beepBeginPos = (direction == SEARCH_BACKWARD) ? beginPos-1:beginPos;
+          iSearchTryBeepOnWrap(window, direction, beepBeginPos, beepBeginPos);
+    iSearchRecordLastBeginPos(window, direction, window->iSearchStartPos);
+    BufUnselect(window->buffer);
+    TextSetCursorPos(window->lastFocus, beginPos);
+    return TRUE;
     }
 
     /* Save the string in the search history, unless we're cycling thru
        the search history itself, which can be detected by matching the
        search string with the search string of the current history index. */
     if(!(window->iSearchHistIndex > 1 && !strcmp(searchString, 
-	    SearchHistory[historyIndex(window->iSearchHistIndex)]))) {
-   	saveSearchHistory(searchString, NULL, searchType, TRUE);
-	/* Reset the incremental search history pointer to the beginning */
-	window->iSearchHistIndex = 1;
+        SearchHistory[historyIndex(window->iSearchHistIndex)]))) {
+       saveSearchHistory(searchString, NULL, searchType, TRUE);
+    /* Reset the incremental search history pointer to the beginning */
+    window->iSearchHistIndex = 1;
     }
         
     /* begin at insert position - 1 for backward searches */
     if (direction == SEARCH_BACKWARD)
-	beginPos--;
+    beginPos--;
 
     /* do the search.  SearchWindow does appropriate dialogs and beeps */
     if (!SearchWindow(window, direction, searchString, searchType, searchWrap,
-	    beginPos, &startPos, &endPos, NULL, NULL))
-	return FALSE;
+        beginPos, &startPos, &endPos, NULL, NULL))
+    return FALSE;
 
     window->iSearchLastBeginPos = startPos;
 
@@ -3092,9 +3092,9 @@ int SearchAndSelectIncremental(WindowInfo *window, int direction,
        beginning at the start of the search, go to the next occurrence,
        otherwise repeated finds will get "stuck" at zero-length matches */
     if (direction==SEARCH_FORWARD && beginPos==startPos && beginPos==endPos)
-	if (!SearchWindow(window, direction, searchString, searchType, searchWrap,
-	    beginPos+1, &startPos, &endPos, NULL, NULL))
-	    return FALSE;
+    if (!SearchWindow(window, direction, searchString, searchType, searchWrap,
+        beginPos+1, &startPos, &endPos, NULL, NULL))
+        return FALSE;
 
     window->iSearchLastBeginPos = startPos;
 
@@ -3129,7 +3129,7 @@ void SetISearchTextCallbacks(WindowInfo *window)
     };
 
     if (tableText == NULL)
-    	tableText = XtParseTranslationTable(translationsText);
+        tableText = XtParseTranslationTable(translationsText);
     XtOverrideTranslations(window->iSearchText, tableText);
     
     if (tableClear == NULL) {
@@ -3151,24 +3151,24 @@ void SetISearchTextCallbacks(WindowInfo *window)
        behaviour. Do this before installing the search callbacks to make 
        sure that the proper search parameters are taken into account. */
     XtAddCallback(window->iSearchCaseToggle, XmNvalueChangedCallback,
-	    (XtCallbackProc)iSearchCaseToggleCB, window);
+        (XtCallbackProc)iSearchCaseToggleCB, window);
     XtAddCallback(window->iSearchRegexToggle, XmNvalueChangedCallback,
-	    (XtCallbackProc)iSearchRegExpToggleCB, window);
+        (XtCallbackProc)iSearchRegExpToggleCB, window);
     
     /* When search parameters (direction or search type), redo the search */
     XtAddCallback(window->iSearchCaseToggle, XmNvalueChangedCallback,
-	    (XtCallbackProc)iSearchTextValueChangedCB, window);
+        (XtCallbackProc)iSearchTextValueChangedCB, window);
     XtAddCallback(window->iSearchRegexToggle, XmNvalueChangedCallback,
-	    (XtCallbackProc)iSearchTextValueChangedCB, window);
+        (XtCallbackProc)iSearchTextValueChangedCB, window);
     XtAddCallback(window->iSearchRevToggle, XmNvalueChangedCallback,
-	    (XtCallbackProc)iSearchTextValueChangedCB, window);
+        (XtCallbackProc)iSearchTextValueChangedCB, window);
 
     /* find button: just like pressing return */
     XtAddCallback(window->iSearchFindButton, XmNactivateCallback,
-	    (XtCallbackProc)iSearchTextActivateCB, window);
+        (XtCallbackProc)iSearchTextActivateCB, window);
     /* clear button: empty the search text widget */
     XtAddCallback(window->iSearchClearButton, XmNactivateCallback,
-	    (XtCallbackProc)iSearchTextClearCB, window);
+        (XtCallbackProc)iSearchTextClearCB, window);
 }
 
 /*
@@ -3176,7 +3176,7 @@ void SetISearchTextCallbacks(WindowInfo *window)
 ** cursor movement and/or clearing of selections.
 */
 static void iSearchTextSetString(Widget w, WindowInfo *window,
-	char *str)
+    char *str)
 {
     /* remove callbacks which would be activated by emptying the text */
     XtRemoveAllCallbacks(window->iSearchText, XmNvalueChangedCallback);
@@ -3221,7 +3221,7 @@ static void iSearchTextClearAndPasteAP(Widget w, XEvent *event, String *args,
 ** of selections.
 */
 static void iSearchTextClearCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData)
+    XmAnyCallbackStruct *callData)
 {
     window = WidgetToWindow(w);
 
@@ -3234,7 +3234,7 @@ static void iSearchTextClearCB(Widget w, WindowInfo *window,
 ** the Ctrl key or the Shift key is pressed when the text field is activated.
 */
 static void iSearchTextActivateCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData) 
+    XmAnyCallbackStruct *callData) 
 {
     char *params[4];
     char *searchString;
@@ -3247,23 +3247,23 @@ static void iSearchTextActivateCB(Widget w, WindowInfo *window,
     searchString = XNETextGetString(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
-	searchType = SEARCH_REGEX;
+    searchType = SEARCH_REGEX;
       else 
-	searchType = SEARCH_CASE_SENSE;
+    searchType = SEARCH_CASE_SENSE;
     } else {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
-	searchType = SEARCH_REGEX_NOCASE;
+    searchType = SEARCH_REGEX_NOCASE;
       else 
-	searchType = SEARCH_LITERAL;
+    searchType = SEARCH_LITERAL;
     }
     direction = XmToggleButtonGetState(window->iSearchRevToggle) ?
-	    SEARCH_BACKWARD : SEARCH_FORWARD;
+        SEARCH_BACKWARD : SEARCH_FORWARD;
     
     /* Reverse the search direction if the Ctrl or Shift key was pressed */
     if (callData->event->xbutton.state & (ShiftMask | ControlMask))
-	direction = direction == SEARCH_FORWARD ?
-		SEARCH_BACKWARD : SEARCH_FORWARD;
-	
+    direction = direction == SEARCH_FORWARD ?
+        SEARCH_BACKWARD : SEARCH_FORWARD;
+    
     /* find the text and mark it */
     params[0] = searchString;
     params[1] = directionArg(direction);
@@ -3278,7 +3278,7 @@ static void iSearchTextActivateCB(Widget w, WindowInfo *window,
 ** search for the new search string.
 */
 static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
-	XmAnyCallbackStruct *callData) 
+    XmAnyCallbackStruct *callData) 
 {
     char *params[5];
     char *searchString;
@@ -3291,32 +3291,32 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
     searchString = XNETextGetString(window->iSearchText);
     if(XmToggleButtonGetState(window->iSearchCaseToggle)) {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
-	searchType = SEARCH_REGEX;
+    searchType = SEARCH_REGEX;
       else 
-	searchType = SEARCH_CASE_SENSE;
+    searchType = SEARCH_CASE_SENSE;
     } else {
       if(XmToggleButtonGetState(window->iSearchRegexToggle)) 
-	searchType = SEARCH_REGEX_NOCASE;
+    searchType = SEARCH_REGEX_NOCASE;
       else 
-	searchType = SEARCH_LITERAL;
+    searchType = SEARCH_LITERAL;
     }
     direction = XmToggleButtonGetState(window->iSearchRevToggle) ?
-	    SEARCH_BACKWARD : SEARCH_FORWARD;
+        SEARCH_BACKWARD : SEARCH_FORWARD;
 
     /* If the search type is a regular expression, test compile it.  If it
        fails, silently skip it.  (This allows users to compose the expression
        in peace when they have unfinished syntax, but still get beeps when
        correct syntax doesn't match) */
     if (isRegexType(searchType)) {
-	regexp *compiledRE = NULL;
-	char *compileMsg;
-	compiledRE = CompileRE(searchString, &compileMsg, 
-	                       defaultRegexFlags(searchType));
-	if (compiledRE == NULL) {
-	    NEditFree(searchString);
-	    return;
-	}
-	NEditFree(compiledRE);
+    regexp *compiledRE = NULL;
+    char *compileMsg;
+    compiledRE = CompileRE(searchString, &compileMsg, 
+                           defaultRegexFlags(searchType));
+    if (compiledRE == NULL) {
+        NEditFree(searchString);
+        return;
+    }
+    NEditFree(compiledRE);
     }
     
     /* Call the incremental search action proc to do the searching and
@@ -3330,9 +3330,9 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
     params[nParams++] = searchTypeArg(searchType);
     params[nParams++] = searchWrapArg(GetPrefSearchWraps());
     if (window->iSearchStartPos != -1)
-	params[nParams++] = "continued";
+    params[nParams++] = "continued";
     XtCallActionProc(window->lastFocus, "find_incremental",
-	    callData->event, params, nParams);
+        callData->event, params, nParams);
     NEditFree(searchString);
 }
 
@@ -3341,7 +3341,7 @@ static void iSearchTextValueChangedCB(Widget w, WindowInfo *window,
 ** incremental search bar.
 */
 static void iSearchTextKeyEH(Widget w, WindowInfo *window,
-	XKeyEvent *event, Boolean *continueDispatch)
+    XKeyEvent *event, Boolean *continueDispatch)
 {
     KeySym keysym = XLookupKeysym(event, 0);
     int index;
@@ -3350,8 +3350,8 @@ static void iSearchTextKeyEH(Widget w, WindowInfo *window,
 
     /* only process up and down arrow keys */
     if (keysym != XK_Up && keysym != XK_Down && keysym != XK_Escape) {
-	*continueDispatch = TRUE;
-	return;
+    *continueDispatch = TRUE;
+    return;
     }
 
     window = WidgetToWindow(w);
@@ -3360,9 +3360,9 @@ static void iSearchTextKeyEH(Widget w, WindowInfo *window,
 
     /* allow escape key to cancel search */
     if (keysym == XK_Escape) {
-	XmProcessTraversal(window->lastFocus, XmTRAVERSE_CURRENT);
-	EndISearch(window);
-	return;
+    XmProcessTraversal(window->lastFocus, XmTRAVERSE_CURRENT);
+    EndISearch(window);
+    return;
     }
     
     /* increment or decrement the index depending on which arrow was pressed */
@@ -3370,17 +3370,17 @@ static void iSearchTextKeyEH(Widget w, WindowInfo *window,
 
     /* if the index is out of range, beep and return */
     if (index != 0 && historyIndex(index) == -1) {
-	XBell(TheDisplay, 0);
-	return;
+    XBell(TheDisplay, 0);
+    return;
     }
 
     /* determine the strings and button settings to use */
     if (index == 0) {
-	searchStr = "";
-	searchType = GetPrefSearch();
+    searchStr = "";
+    searchType = GetPrefSearch();
     } else {
-	searchStr = SearchHistory[historyIndex(index)];
-	searchType = SearchTypeHistory[historyIndex(index)];
+    searchStr = SearchHistory[historyIndex(index)];
+    searchType = SearchTypeHistory[historyIndex(index)];
     }
 
     /* Set the info used in the value changed callback before calling
@@ -3394,7 +3394,7 @@ static void iSearchTextKeyEH(Widget w, WindowInfo *window,
     /* Beware the value changed callback is processed as part of this call */
     XNETextSetString(window->iSearchText, searchStr);
     XNETextSetInsertionPosition(window->iSearchText, 
-	    XNETextGetLastPosition(window->iSearchText));
+        XNETextGetLastPosition(window->iSearchText));
 }
 
 /*
@@ -3413,34 +3413,34 @@ void FlashMatching(WindowInfo *window, Widget textW)
     
     /* if a marker is already drawn, erase it and cancel the timeout */
     if (window->flashTimeoutID != 0) {
-    	eraseFlash(window);
-    	XtRemoveTimeOut(window->flashTimeoutID);
-    	window->flashTimeoutID = 0;
+        eraseFlash(window);
+        XtRemoveTimeOut(window->flashTimeoutID);
+        window->flashTimeoutID = 0;
     }
     
     /* no flashing required */
     if (window->showMatchingStyle == NO_FLASH) {
-	return;
+    return;
     }
 
     /* don't flash matching characters if there's a selection */
     if (window->buffer->primary.selected)
-   	return;
+       return;
 
     /* get the character to match and the position to start from */
     pos = TextGetCursorPos(textW) - 1;
     if (pos < 0)
-    	return;
+        return;
     c = BufGetCharacter(window->buffer, pos);
     style = GetHighlightInfo(window, pos);
     
     /* is the character one we want to flash? */
     for (matchIndex = 0; matchIndex<N_FLASH_CHARS; matchIndex++) {
         if (MatchingChars[matchIndex].c == c)
-	    break;
+        break;
     }
     if (matchIndex == N_FLASH_CHARS)
-	return;
+    return;
 
     /* constrain the search to visible text only when in single-pane mode
        AND using delimiter flashing (otherwise search the whole buffer) */
@@ -3448,37 +3448,37 @@ void FlashMatching(WindowInfo *window, Widget textW)
         (window->showMatchingStyle == FLASH_DELIMIT));
           
     if (MatchingChars[matchIndex].direction == SEARCH_BACKWARD) {
-    	startPos = constrain ? TextFirstVisiblePos(textW) : 0;
-    	endPos = pos;
-    	searchPos = endPos;
+        startPos = constrain ? TextFirstVisiblePos(textW) : 0;
+        endPos = pos;
+        searchPos = endPos;
     } else {
-    	startPos = pos;
-    	endPos = constrain ? TextLastVisiblePos(textW) :
-    	    	window->buffer->length;
-    	searchPos = startPos;
+        startPos = pos;
+        endPos = constrain ? TextLastVisiblePos(textW) :
+                window->buffer->length;
+        searchPos = startPos;
     }
     
     /* do the search */
     if (!findMatchingChar(window, c, style, searchPos, startPos, endPos, 
         &matchPos))
-    	return;
+        return;
 
     if (window->showMatchingStyle == FLASH_DELIMIT) {
-	/* Highlight either the matching character ... */
-	BufHighlight(window->buffer, matchPos, matchPos+1);
+    /* Highlight either the matching character ... */
+    BufHighlight(window->buffer, matchPos, matchPos+1);
     } else {
-	/* ... or the whole range. */
-  	if (MatchingChars[matchIndex].direction == SEARCH_BACKWARD) {
-	    BufHighlight(window->buffer, matchPos, pos+1);
-	} else {
-	    BufHighlight(window->buffer, matchPos+1, pos);
-	}
+    /* ... or the whole range. */
+      if (MatchingChars[matchIndex].direction == SEARCH_BACKWARD) {
+        BufHighlight(window->buffer, matchPos, pos+1);
+    } else {
+        BufHighlight(window->buffer, matchPos+1, pos);
+    }
     }
       
     /* Set up a timer to erase the box after 1.5 seconds */
     window->flashTimeoutID = XtAppAddTimeOut(
-    	    XtWidgetToApplicationContext(window->shell), 1500,
-    	    flashTimeoutProc, window);
+            XtWidgetToApplicationContext(window->shell), 1500,
+            flashTimeoutProc, window);
     window->flashPos = matchPos;
 }
 
@@ -3492,25 +3492,25 @@ void SelectToMatchingCharacter(WindowInfo *window)
        the character before the insert point if nothing is selected.
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
-	selEnd = TextGetCursorPos(window->lastFocus);
+    selEnd = TextGetCursorPos(window->lastFocus);
         if (window->overstrike)
-	    selEnd += 1;
-	selStart = selEnd - 1;
-	if (selStart < 0) {
-	    XBell(TheDisplay, 0);
-	    return;
-	}
+        selEnd += 1;
+    selStart = selEnd - 1;
+    if (selStart < 0) {
+        XBell(TheDisplay, 0);
+        return;
+    }
     }
     if ((selEnd - selStart) != 1) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     
     /* Search for it in the buffer */
     if (!findMatchingChar(window, BufGetCharacter(buf, selStart),
         GetHighlightInfo(window, selStart), selStart, 0, buf->length, &matchPos)) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     startPos = (matchPos > selStart) ? selStart : matchPos;
     endPos = (matchPos > selStart) ? matchPos : selStart;
@@ -3537,26 +3537,26 @@ void GotoMatchingCharacter(WindowInfo *window)
        the character before the insert point if nothing is selected.
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
-	selEnd = TextGetCursorPos(window->lastFocus);
+    selEnd = TextGetCursorPos(window->lastFocus);
         if (window->overstrike)
-	    selEnd += 1;
-	selStart = selEnd - 1;
-	if (selStart < 0) {
-	    XBell(TheDisplay, 0);
-	    return;
-	}
+        selEnd += 1;
+    selStart = selEnd - 1;
+    if (selStart < 0) {
+        XBell(TheDisplay, 0);
+        return;
+    }
     }
     if ((selEnd - selStart) != 1) {
-    	XBell(TheDisplay, 0);
-	return;
+        XBell(TheDisplay, 0);
+    return;
     }
     
     /* Search for it in the buffer */
     if (!findMatchingChar(window, BufGetCharacter(buf, selStart),
-	    GetHighlightInfo(window, selStart), selStart, 0, 
-	    buf->length, &matchPos)) {
-    	XBell(TheDisplay, 0);
-	return;
+        GetHighlightInfo(window, selStart), selStart, 0, 
+        buf->length, &matchPos)) {
+        XBell(TheDisplay, 0);
+    return;
     }
     
     /* temporarily shut off autoShowInsertPos before setting the cursor
@@ -3586,10 +3586,10 @@ static int findMatchingChar(WindowInfo *window, char toMatch,
     /* Look up the matching character and match direction */
     for (matchIndex = 0; matchIndex<N_MATCH_CHARS; matchIndex++) {
         if (MatchingChars[matchIndex].c == toMatch)
-	    break;
+        break;
     }
     if (matchIndex == N_MATCH_CHARS)
-	return FALSE;
+    return FALSE;
     matchChar = MatchingChars[matchIndex].match;
     direction = MatchingChars[matchIndex].direction;
     
@@ -3597,41 +3597,41 @@ static int findMatchingChar(WindowInfo *window, char toMatch,
     beginPos = (direction==SEARCH_FORWARD) ? charPos+1 : charPos-1;
     nestDepth = 1;
     if (direction == SEARCH_FORWARD) {
-    	for (pos=beginPos; pos<endLimit; pos++) {
-	    c=BufGetCharacter(buf, pos);
-	    if (c == matchChar) {
-		if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
-		if (style == styleToMatch) {
-		    nestDepth--;
-		    if (nestDepth == 0) {
-			*matchPos = pos;
-			return TRUE;
-		    }
-		}
-	    } else if (c == toMatch) {
-		if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
-		if (style == styleToMatch)
-		    nestDepth++;
-	    }
-	}
+        for (pos=beginPos; pos<endLimit; pos++) {
+        c=BufGetCharacter(buf, pos);
+        if (c == matchChar) {
+        if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
+        if (style == styleToMatch) {
+            nestDepth--;
+            if (nestDepth == 0) {
+            *matchPos = pos;
+            return TRUE;
+            }
+        }
+        } else if (c == toMatch) {
+        if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
+        if (style == styleToMatch)
+            nestDepth++;
+        }
+    }
     } else { /* SEARCH_BACKWARD */
-	for (pos=beginPos; pos>=startLimit; pos--) {
-	    c=BufGetCharacter(buf, pos);
-	    if (c == matchChar) {
-		if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
-		if (style == styleToMatch) {
-		    nestDepth--;
-		    if (nestDepth == 0) {
-			*matchPos = pos;
-			return TRUE;
-		    }
-		}
-	    } else if (c == toMatch) {
-		if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
-		if (style == styleToMatch)
-		    nestDepth++;
-	    }
-	}
+    for (pos=beginPos; pos>=startLimit; pos--) {
+        c=BufGetCharacter(buf, pos);
+        if (c == matchChar) {
+        if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
+        if (style == styleToMatch) {
+            nestDepth--;
+            if (nestDepth == 0) {
+            *matchPos = pos;
+            return TRUE;
+            }
+        }
+        } else if (c == toMatch) {
+        if (matchSyntaxBased) style = GetHighlightInfo(window, pos);
+        if (style == styleToMatch)
+            nestDepth++;
+        }
+    }
     }
     return FALSE;
 }
@@ -3661,13 +3661,13 @@ static void eraseFlash(WindowInfo *window)
 int ReplaceSame(WindowInfo *window, int direction, int searchWrap)
 {
     if (NHist < 1) {
-    	XBell(TheDisplay, 0);
-    	return FALSE;
+        XBell(TheDisplay, 0);
+        return FALSE;
     }
 
     return SearchAndReplace(window, direction, SearchHistory[historyIndex(1)],
-    	    ReplaceHistory[historyIndex(1)],
-    	    SearchTypeHistory[historyIndex(1)], searchWrap);
+            ReplaceHistory[historyIndex(1)],
+            SearchTypeHistory[historyIndex(1)], searchWrap);
 }
 
 /*
@@ -3704,25 +3704,25 @@ int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString
 
     /* Replace the selected text only if it matches the search string */
     if (searchMatchesSelection(window, searchString, searchType,
-	                       &startPos, &endPos, &searchExtentBW,
-			       &searchExtentFW)) {
-	/* replace the text */
-	if (isRegexType(searchType)) {
-    	    char replaceResult[SEARCHMAX+1], *foundString;
-	    foundString = BufGetRange(window->buffer, searchExtentBW,
-				      searchExtentFW+1);
-    	    replaceUsingRE(searchString, replaceString, foundString,
-		    startPos-searchExtentBW,
-		    replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-		    BufGetCharacter(window->buffer, startPos-1),
-		    GetWindowDelimiters(window), defaultRegexFlags(searchType));
-	    NEditFree(foundString);
-    	    BufReplace(window->buffer, startPos, endPos, replaceResult);
-    	    replaceLen = strlen(replaceResult);
-	} else {
+                           &startPos, &endPos, &searchExtentBW,
+                   &searchExtentFW)) {
+    /* replace the text */
+    if (isRegexType(searchType)) {
+            char replaceResult[SEARCHMAX+1], *foundString;
+        foundString = BufGetRange(window->buffer, searchExtentBW,
+                      searchExtentFW+1);
+            replaceUsingRE(searchString, replaceString, foundString,
+            startPos-searchExtentBW,
+            replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
+            BufGetCharacter(window->buffer, startPos-1),
+            GetWindowDelimiters(window), defaultRegexFlags(searchType));
+        NEditFree(foundString);
+            BufReplace(window->buffer, startPos, endPos, replaceResult);
+            replaceLen = strlen(replaceResult);
+    } else {
             BufReplace(window->buffer, startPos, endPos, replaceString);
             replaceLen = strlen(replaceString);
-	}
+    }
 
         /* Position the cursor so the next search will work correctly based */
         /* on the direction of the search */
@@ -3743,7 +3743,7 @@ int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString
 ** Also adds the search and replace strings to the global search history.
 */
 int SearchAndReplace(WindowInfo *window, int direction, const char *searchString,
-	const char *replaceString, int searchType, int searchWrap)
+    const char *replaceString, int searchType, int searchWrap)
 {
     int startPos, endPos, replaceLen, searchExtentBW, searchExtentFW;
     int found;
@@ -3752,43 +3752,43 @@ int SearchAndReplace(WindowInfo *window, int direction, const char *searchString
     /* Save a copy of search and replace strings in the search history */
     saveSearchHistory(searchString, replaceString, searchType, FALSE);
     
-    /* If the text selected in the window matches the search string, 	*/
-    /* the user is probably using search then replace method, so	*/
-    /* replace the selected text regardless of where the cursor is.	*/
-    /* Otherwise, search for the string.				*/
+    /* If the text selected in the window matches the search string,     */
+    /* the user is probably using search then replace method, so    */
+    /* replace the selected text regardless of where the cursor is.    */
+    /* Otherwise, search for the string.                */
     if (!searchMatchesSelection(window, searchString, searchType,
-    	    &startPos, &endPos, &searchExtentBW, &searchExtentFW)) {
-	/* get the position to start the search */
-	cursorPos = TextGetCursorPos(window->lastFocus);
-	if (direction == SEARCH_BACKWARD) {
-	    /* use the insert position - 1 for backward searches */
-	    beginPos = cursorPos-1;
-	} else {
-	    /* use the insert position for forward searches */
-	    beginPos = cursorPos;
-	}
-	/* do the search */
-	found = SearchWindow(window, direction, searchString, searchType, searchWrap,
-		beginPos, &startPos, &endPos, &searchExtentBW, &searchExtentFW);
-	if (!found)
-	    return FALSE;
+            &startPos, &endPos, &searchExtentBW, &searchExtentFW)) {
+    /* get the position to start the search */
+    cursorPos = TextGetCursorPos(window->lastFocus);
+    if (direction == SEARCH_BACKWARD) {
+        /* use the insert position - 1 for backward searches */
+        beginPos = cursorPos-1;
+    } else {
+        /* use the insert position for forward searches */
+        beginPos = cursorPos;
+    }
+    /* do the search */
+    found = SearchWindow(window, direction, searchString, searchType, searchWrap,
+        beginPos, &startPos, &endPos, &searchExtentBW, &searchExtentFW);
+    if (!found)
+        return FALSE;
     }
     
     /* replace the text */
     if (isRegexType(searchType)) {
-    	char replaceResult[SEARCHMAX], *foundString;
-	foundString = BufGetRange(window->buffer, searchExtentBW, searchExtentFW+1);
-    	replaceUsingRE(searchString, replaceString, foundString,
-		startPos - searchExtentBW,
-		replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-		BufGetCharacter(window->buffer, startPos-1),
-		GetWindowDelimiters(window), defaultRegexFlags(searchType));
-	NEditFree(foundString);
-    	BufReplace(window->buffer, startPos, endPos, replaceResult);
-    	replaceLen = strlen(replaceResult);
+        char replaceResult[SEARCHMAX], *foundString;
+    foundString = BufGetRange(window->buffer, searchExtentBW, searchExtentFW+1);
+        replaceUsingRE(searchString, replaceString, foundString,
+        startPos - searchExtentBW,
+        replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
+        BufGetCharacter(window->buffer, startPos-1),
+        GetWindowDelimiters(window), defaultRegexFlags(searchType));
+    NEditFree(foundString);
+        BufReplace(window->buffer, startPos, endPos, replaceResult);
+        replaceLen = strlen(replaceResult);
     } else {
-    	BufReplace(window->buffer, startPos, endPos, replaceString);
-    	replaceLen = strlen(replaceString);
+        BufReplace(window->buffer, startPos, endPos, replaceString);
+        replaceLen = strlen(replaceString);
     }
     
     /* after successfully completing a replace, selected text attracts
@@ -3803,7 +3803,7 @@ int SearchAndReplace(WindowInfo *window, int direction, const char *searchString
        nothing) */
     XtVaSetValues(window->lastFocus, textNautoShowInsertPos, False, NULL);
     TextSetCursorPos(window->lastFocus, startPos +
-    	((direction == SEARCH_FORWARD) ? replaceLen : 0));
+        ((direction == SEARCH_FORWARD) ? replaceLen : 0));
     MakeSelectionVisible(window, window->lastFocus);
     XtVaSetValues(window->lastFocus, textNautoShowInsertPos, True, NULL);
     
@@ -3889,16 +3889,16 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
     
     /* find out where the selection is */
     if (!BufGetSelectionPos(window->buffer, &selStart, &selEnd, &isRect,
-    	    &rectStart, &rectEnd))
-    	return;
-	
+            &rectStart, &rectEnd))
+        return;
+    
     /* get the selected text */
     if (isRect) {
-    	selStart = BufStartOfLine(window->buffer, selStart);
-    	selEnd = BufEndOfLine(window->buffer, selEnd);
-    	fileString = BufGetRange(window->buffer, selStart, selEnd);
+        selStart = BufStartOfLine(window->buffer, selStart);
+        selEnd = BufEndOfLine(window->buffer, selEnd);
+        fileString = BufGetRange(window->buffer, selStart, selEnd);
     } else
-    	fileString = BufGetSelectionText(window->buffer);
+        fileString = BufGetSelectionText(window->buffer);
     
     /* create a temporary buffer in which to do the replacements to hide the
        intermediate steps from the display routines, and so everything can
@@ -3913,58 +3913,58 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
     cursorPos = 0;
     realOffset = 0;
     while (found) {
-	found = SearchString(fileString, searchString, SEARCH_FORWARD,
-		searchType, FALSE, beginPos, &startPos, &endPos, &extentBW,
+    found = SearchString(fileString, searchString, SEARCH_FORWARD,
+        searchType, FALSE, beginPos, &startPos, &endPos, &extentBW,
                 &extentFW, GetWindowDelimiters(window));
-	if (!found)
-	    break;
+    if (!found)
+        break;
 
         anyFound = True;
-	/* if the selection is rectangular, verify that the found
-	   string is in the rectangle */
-	if (isRect) {
-	    lineStart = BufStartOfLine(window->buffer, selStart+startPos);
-	    if (BufCountDispChars(window->buffer, lineStart, selStart+startPos) <
-		    rectStart || BufCountDispChars(window->buffer, lineStart,
-		    selStart+endPos) > rectEnd) {
-		if (fileString[endPos] == '\0')
-		    break;
-		/* If the match starts before the left boundary of the
-		   selection, and extends past it, we should not continue
-		   search after the end of the (false) match, because we 
-		   could miss a valid match starting between the left boundary
-		   and the end of the false match. */
-		if (BufCountDispChars(window->buffer, lineStart, 
-				      selStart+startPos) < rectStart && 
-		    BufCountDispChars(window->buffer, lineStart,
-				      selStart+endPos) > rectStart) 
-		    beginPos += 1;
-		else
-		    beginPos = (startPos == endPos) ? endPos+1 : endPos;
-		continue;
-	    }
-	}
+    /* if the selection is rectangular, verify that the found
+       string is in the rectangle */
+    if (isRect) {
+        lineStart = BufStartOfLine(window->buffer, selStart+startPos);
+        if (BufCountDispChars(window->buffer, lineStart, selStart+startPos) <
+            rectStart || BufCountDispChars(window->buffer, lineStart,
+            selStart+endPos) > rectEnd) {
+        if (fileString[endPos] == '\0')
+            break;
+        /* If the match starts before the left boundary of the
+           selection, and extends past it, we should not continue
+           search after the end of the (false) match, because we 
+           could miss a valid match starting between the left boundary
+           and the end of the false match. */
+        if (BufCountDispChars(window->buffer, lineStart, 
+                      selStart+startPos) < rectStart && 
+            BufCountDispChars(window->buffer, lineStart,
+                      selStart+endPos) > rectStart) 
+            beginPos += 1;
+        else
+            beginPos = (startPos == endPos) ? endPos+1 : endPos;
+        continue;
+        }
+    }
 
-	/* Make sure the match did not start past the end (regular expressions
-	   can consider the artificial end of the range as the end of a line,
-	   and match a fictional whole line beginning there) */
+    /* Make sure the match did not start past the end (regular expressions
+       can consider the artificial end of the range as the end of a line,
+       and match a fictional whole line beginning there) */
         if (startPos == (selEnd - selStart)) {
-	    found = False;
-	    break;
-	}
+        found = False;
+        break;
+    }
 
-	/* replace the string and compensate for length change */
-	if (isRegexType(searchType)) {
-    	    char replaceResult[SEARCHMAX], *foundString;
-	    foundString = BufGetRange(tempBuf, extentBW+realOffset,
-		    extentFW+realOffset+1);
+    /* replace the string and compensate for length change */
+    if (isRegexType(searchType)) {
+            char replaceResult[SEARCHMAX], *foundString;
+        foundString = BufGetRange(tempBuf, extentBW+realOffset,
+            extentFW+realOffset+1);
             substSuccess = replaceUsingRE(searchString, replaceString,
                     foundString, startPos - extentBW, replaceResult, SEARCHMAX,
                     0 == (startPos + realOffset)
                         ? '\0'
                         : BufGetCharacter(tempBuf, startPos + realOffset - 1),
                     GetWindowDelimiters(window), defaultRegexFlags(searchType));
-	    NEditFree(foundString);
+        NEditFree(foundString);
 
             if (!substSuccess) {
                 /*  The substitution failed. Primary reason for this would be
@@ -3978,22 +3978,22 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
                 }
             }
 
-    	    BufReplace(tempBuf, startPos+realOffset, endPos+realOffset,
-    		    replaceResult);
-    	    replaceLen = strlen(replaceResult);
+            BufReplace(tempBuf, startPos+realOffset, endPos+realOffset,
+                replaceResult);
+            replaceLen = strlen(replaceResult);
         } else {
             /* at this point plain substitutions (should) always work */
-    	    BufReplace(tempBuf, startPos+realOffset, endPos+realOffset,
-    		    replaceString);
+            BufReplace(tempBuf, startPos+realOffset, endPos+realOffset,
+                replaceString);
             substSuccess = True;
         }
 
-    	realOffset += replaceLen - (endPos - startPos);
-    	/* start again after match unless match was empty, then endPos+1 */
-    	beginPos = (startPos == endPos) ? endPos+1 : endPos;
-    	cursorPos = endPos;
-	if (fileString[endPos] == '\0')
-	    break;
+        realOffset += replaceLen - (endPos - startPos);
+        /* start again after match unless match was empty, then endPos+1 */
+        beginPos = (startPos == endPos) ? endPos+1 : endPos;
+        cursorPos = endPos;
+    if (fileString[endPos] == '\0')
+        break;
     }
     NEditFree(fileString);
 
@@ -4016,19 +4016,19 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
         }
     } else {
         /*  Nothing found, tell the user about it  */
-    	if (GetPrefSearchDlogs()) {
-    	    /* Avoid bug in Motif 1.1 by putting away search dialog
-    	       before DialogF */
-    	    if (window->findDlog && XtIsManaged(window->findDlog) &&
-    	    	    !XmToggleButtonGetState(window->findKeepBtn))
-    		XtUnmanageChild(window->findDlog);
-    	    if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
-    	    	    !XmToggleButtonGetState(window->replaceKeepBtn))
-    		unmanageReplaceDialogs(window);
-   	    DialogF(DF_INF, window->shell, 1, "String not found",
+        if (GetPrefSearchDlogs()) {
+            /* Avoid bug in Motif 1.1 by putting away search dialog
+               before DialogF */
+            if (window->findDlog && XtIsManaged(window->findDlog) &&
+                    !XmToggleButtonGetState(window->findKeepBtn))
+            XtUnmanageChild(window->findDlog);
+            if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
+                    !XmToggleButtonGetState(window->replaceKeepBtn))
+            unmanageReplaceDialogs(window);
+           DialogF(DF_INF, window->shell, 1, "String not found",
                 "String was not found", "OK");
-    	} else
-    	    XBell(TheDisplay, 0);
+        } else
+            XBell(TheDisplay, 0);
     }
 
     BufFree(tempBuf);
@@ -4048,7 +4048,7 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
     
     /* reject empty string */
     if (*searchString == '\0')
-    	return FALSE;
+        return FALSE;
 
     /* save a copy of search and replace strings in the search history */
     saveSearchHistory(searchString, replaceString, searchType, FALSE);
@@ -4057,25 +4057,25 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
     fileString = BufAsString(window->buffer);
 
     newFileString = ReplaceAllInString(fileString, searchString, replaceString,
-	    searchType, &copyStart, &copyEnd, &replacementLen,
-	    GetWindowDelimiters(window));
+        searchType, &copyStart, &copyEnd, &replacementLen,
+        GetWindowDelimiters(window));
 
     if (newFileString == NULL) {
         if (window->multiFileBusy) {
             window->replaceFailed = TRUE; /* only needed during multi-file 
                                              replacements */
         } else if (GetPrefSearchDlogs()) {
-    	    if (window->findDlog && XtIsManaged(window->findDlog) &&
-    	    	    !XmToggleButtonGetState(window->findKeepBtn))
-    		XtUnmanageChild(window->findDlog);
-    	    if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
-    	    	    !XmToggleButtonGetState(window->replaceKeepBtn))
-    		unmanageReplaceDialogs(window);
-   	    DialogF(DF_INF, window->shell, 1, "String not found",
+            if (window->findDlog && XtIsManaged(window->findDlog) &&
+                    !XmToggleButtonGetState(window->findKeepBtn))
+            XtUnmanageChild(window->findDlog);
+            if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
+                    !XmToggleButtonGetState(window->replaceKeepBtn))
+            unmanageReplaceDialogs(window);
+           DialogF(DF_INF, window->shell, 1, "String not found",
                 "String was not found", "OK");
-    	} else
-    	    XBell(TheDisplay, 0);
-	return FALSE;
+        } else
+            XBell(TheDisplay, 0);
+    return FALSE;
     }
     
     /* replace the contents of the text widget with the substituted text */
@@ -4085,7 +4085,7 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
     TextSetCursorPos(window->lastFocus, copyStart + replacementLen);
 
     NEditFree(newFileString);
-    return TRUE;	
+    return TRUE;    
 }    
 
 /*
@@ -4095,8 +4095,8 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
 ** replacement (returned in "copyEnd")
 */
 char *ReplaceAllInString(const char *inString, const char *searchString,
-	const char *replaceString, int searchType, int *copyStart,
-	int *copyEnd, int *replacementLength, const char *delimiters)
+    const char *replaceString, int searchType, int *copyStart,
+    int *copyEnd, int *replacementLength, const char *delimiters)
 {
     int beginPos, startPos, endPos, lastEndPos;
     int found, nFound, removeLen, replaceLen, copyLen, addLen;
@@ -4105,7 +4105,7 @@ char *ReplaceAllInString(const char *inString, const char *searchString,
     
     /* reject empty string */
     if (*searchString == '\0')
-    	return NULL;
+        return NULL;
     
     /* rehearse the search first to determine the size of the buffer needed
        to hold the substituted text.  No substitution done here yet */
@@ -4117,33 +4117,33 @@ char *ReplaceAllInString(const char *inString, const char *searchString,
     beginPos = 0;
     *copyStart = -1;
     while (found) {
-    	found = SearchString(inString, searchString, SEARCH_FORWARD, searchType,
-		FALSE, beginPos, &startPos, &endPos, &searchExtentBW, 
+        found = SearchString(inString, searchString, SEARCH_FORWARD, searchType,
+        FALSE, beginPos, &startPos, &endPos, &searchExtentBW, 
                 &searchExtentFW, delimiters);
-	if (found) {
-	    if (*copyStart < 0)
-	    	*copyStart = startPos;
-    	    *copyEnd = endPos;
-    	    /* start next after match unless match was empty, then endPos+1 */
-    	    beginPos = (startPos == endPos) ? endPos+1 : endPos;
-	    nFound++;
-	    removeLen += endPos - startPos;
-	    if (isRegexType(searchType)) {
-    		char replaceResult[SEARCHMAX];
-    		replaceUsingRE(searchString, replaceString, &inString[searchExtentBW],
- 			startPos-searchExtentBW,
-     			replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-			inString[startPos-1], delimiters,
+    if (found) {
+        if (*copyStart < 0)
+            *copyStart = startPos;
+            *copyEnd = endPos;
+            /* start next after match unless match was empty, then endPos+1 */
+            beginPos = (startPos == endPos) ? endPos+1 : endPos;
+        nFound++;
+        removeLen += endPos - startPos;
+        if (isRegexType(searchType)) {
+            char replaceResult[SEARCHMAX];
+            replaceUsingRE(searchString, replaceString, &inString[searchExtentBW],
+             startPos-searchExtentBW,
+                 replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
+            inString[startPos-1], delimiters,
                         defaultRegexFlags(searchType));
-    		addLen += strlen(replaceResult);
-    	    } else
-    	    	addLen += replaceLen;
-	    if (inString[endPos] == '\0')
-		break;
-	}
+            addLen += strlen(replaceResult);
+            } else
+                addLen += replaceLen;
+        if (inString[endPos] == '\0')
+        break;
+    }
     }
     if (nFound == 0)
-	return NULL;
+    return NULL;
     
     /* Allocate a new buffer to hold all of the new text between the first
        and last substitutions */
@@ -4157,33 +4157,33 @@ char *ReplaceAllInString(const char *inString, const char *searchString,
     lastEndPos = 0;
     fillPtr = outString;
     while (found) {
-    	found = SearchString(inString, searchString, SEARCH_FORWARD, searchType,
-		FALSE, beginPos, &startPos, &endPos, &searchExtentBW,
+        found = SearchString(inString, searchString, SEARCH_FORWARD, searchType,
+        FALSE, beginPos, &startPos, &endPos, &searchExtentBW,
                 &searchExtentFW, delimiters);
-	if (found) {
-	    if (beginPos != 0) {
-		memcpy(fillPtr, &inString[lastEndPos], startPos - lastEndPos);
-		fillPtr += startPos - lastEndPos;
-	    }
-	    if (isRegexType(searchType)) {
-    		char replaceResult[SEARCHMAX];
-    		replaceUsingRE(searchString, replaceString, &inString[searchExtentBW],
-			startPos-searchExtentBW, 
-    			replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-			inString[startPos-1], delimiters,
-	      	      	defaultRegexFlags(searchType));
-    		replaceLen = strlen(replaceResult);
-    		memcpy(fillPtr, replaceResult, replaceLen);
-	    } else {
-		memcpy(fillPtr, replaceString, replaceLen);
-	    }
-	    fillPtr += replaceLen;
-	    lastEndPos = endPos;
-	    /* start next after match unless match was empty, then endPos+1 */
-	    beginPos = (startPos == endPos) ? endPos+1 : endPos;
-	    if (inString[endPos] == '\0')
-		break;
-	}
+    if (found) {
+        if (beginPos != 0) {
+        memcpy(fillPtr, &inString[lastEndPos], startPos - lastEndPos);
+        fillPtr += startPos - lastEndPos;
+        }
+        if (isRegexType(searchType)) {
+            char replaceResult[SEARCHMAX];
+            replaceUsingRE(searchString, replaceString, &inString[searchExtentBW],
+            startPos-searchExtentBW, 
+                replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
+            inString[startPos-1], delimiters,
+                        defaultRegexFlags(searchType));
+            replaceLen = strlen(replaceResult);
+            memcpy(fillPtr, replaceResult, replaceLen);
+        } else {
+        memcpy(fillPtr, replaceString, replaceLen);
+        }
+        fillPtr += replaceLen;
+        lastEndPos = endPos;
+        /* start next after match unless match was empty, then endPos+1 */
+        beginPos = (startPos == endPos) ? endPos+1 : endPos;
+        if (inString[endPos] == '\0')
+        break;
+    }
     }
     *fillPtr = '\0';
     *replacementLength = fillPtr - outString;
@@ -4196,7 +4196,7 @@ char *ReplaceAllInString(const char *inString, const char *searchString,
 ** the last startPos of the current incremental search.
 */
 static void iSearchTryBeepOnWrap(WindowInfo *window, int direction, 
-	int beginPos, int startPos) 
+    int beginPos, int startPos) 
 {
     if (GetPrefBeepOnSearchWrap()) {
         if (direction == SEARCH_FORWARD) {
@@ -4221,7 +4221,7 @@ static void iSearchTryBeepOnWrap(WindowInfo *window, int direction,
 ** Search the text in "window", attempting to match "searchString"
 */
 int SearchWindow(WindowInfo *window, int direction, const char *searchString,
-	int searchType, int searchWrap, int beginPos, int *startPos, 
+    int searchType, int searchWrap, int beginPos, int *startPos, 
         int *endPos, int *extentBW, int *extentFW)
 {
     const char *fileString;
@@ -4229,7 +4229,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
     
     /* reject empty string */
     if (*searchString == '\0')
-    	return FALSE;
+        return FALSE;
 
     /* get the entire text buffer from the text area widget */
     EscSeqArray *esc;
@@ -4251,76 +4251,76 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
        dialogs, or just beep.  iSearchStartPos is not a perfect indicator that
        an incremental search is in progress.  A parameter would be better. */
     if (window->iSearchStartPos == -1) { /* normal search */
-    	found = !outsideBounds &&
-		SearchString(fileString, searchString, direction, searchType,
-    	    	FALSE, beginPos, startPos, endPos, extentBW, extentFW,
-		GetWindowDelimiters(window));
-    	/* Avoid Motif 1.1 bug by putting away search dialog before DialogF */
-    	if (window->findDlog && XtIsManaged(window->findDlog) &&
-    	    	!XmToggleButtonGetState(window->findKeepBtn))
-    	    XtUnmanageChild(window->findDlog);
-    	if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
-    	    	!XmToggleButtonGetState(window->replaceKeepBtn))
-    	    unmanageReplaceDialogs(window);
+        found = !outsideBounds &&
+        SearchString(fileString, searchString, direction, searchType,
+                FALSE, beginPos, startPos, endPos, extentBW, extentFW,
+        GetWindowDelimiters(window));
+        /* Avoid Motif 1.1 bug by putting away search dialog before DialogF */
+        if (window->findDlog && XtIsManaged(window->findDlog) &&
+                !XmToggleButtonGetState(window->findKeepBtn))
+            XtUnmanageChild(window->findDlog);
+        if (window->replaceDlog && XtIsManaged(window->replaceDlog) &&
+                !XmToggleButtonGetState(window->replaceKeepBtn))
+            unmanageReplaceDialogs(window);
         if (!found) {
             if (searchWrap) {
-		if (direction == SEARCH_FORWARD && beginPos != 0) {
-		    if(GetPrefBeepOnSearchWrap()) {
-			XBell(TheDisplay, 0);
-		    } else if (GetPrefSearchDlogs()) {
-			resp = DialogF(DF_QUES, window->shell, 2, "Wrap Search",
-				"Continue search from\nbeginning of file?", 
+        if (direction == SEARCH_FORWARD && beginPos != 0) {
+            if(GetPrefBeepOnSearchWrap()) {
+            XBell(TheDisplay, 0);
+            } else if (GetPrefSearchDlogs()) {
+            resp = DialogF(DF_QUES, window->shell, 2, "Wrap Search",
+                "Continue search from\nbeginning of file?", 
                                 "Continue", "Cancel");
-			if (resp == 2) {
+            if (resp == 2) {
                             translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
-			    return False;
-			}
-		    }
-		    found = SearchString(fileString, searchString, direction,
-			searchType, FALSE, 0, startPos, endPos, extentBW,
-			extentFW, GetWindowDelimiters(window));
-		} else if (direction == SEARCH_BACKWARD && beginPos != fileEnd) {
-		    if(GetPrefBeepOnSearchWrap()) {
-			XBell(TheDisplay, 0);
-		    } else if (GetPrefSearchDlogs()) {
-			resp = DialogF(DF_QUES, window->shell, 2, "Wrap Search",
-				"Continue search\nfrom end of file?", "Continue",
-				"Cancel");
-			if (resp == 2) {
+                return False;
+            }
+            }
+            found = SearchString(fileString, searchString, direction,
+            searchType, FALSE, 0, startPos, endPos, extentBW,
+            extentFW, GetWindowDelimiters(window));
+        } else if (direction == SEARCH_BACKWARD && beginPos != fileEnd) {
+            if(GetPrefBeepOnSearchWrap()) {
+            XBell(TheDisplay, 0);
+            } else if (GetPrefSearchDlogs()) {
+            resp = DialogF(DF_QUES, window->shell, 2, "Wrap Search",
+                "Continue search\nfrom end of file?", "Continue",
+                "Cancel");
+            if (resp == 2) {
                             translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
-			    return False;
-			}
-		    }
+                return False;
+            }
+            }
                     found = SearchString(fileString, searchString, direction,
-			searchType, FALSE, fileEnd + 1, startPos, endPos, extentBW,
-			extentFW, GetWindowDelimiters(window));
-		}
-	    }
+            searchType, FALSE, fileEnd + 1, startPos, endPos, extentBW,
+            extentFW, GetWindowDelimiters(window));
+        }
+        }
             translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
             esc = NULL;
             if (!found) {
-		if (GetPrefSearchDlogs()) {
-		    DialogF(DF_INF, window->shell, 1, "String not found",
+        if (GetPrefSearchDlogs()) {
+            DialogF(DF_INF, window->shell, 1, "String not found",
                     "String was not found","OK");
-		} else {
-		    XBell(TheDisplay, 0);
-		}
-	    }
-	}
+        } else {
+            XBell(TheDisplay, 0);
+        }
+        }
+    }
     } else { /* incremental search */
         if (outsideBounds && searchWrap) {
-	    if (direction == SEARCH_FORWARD) beginPos = 0;
-	    else beginPos = fileEnd+1;
+        if (direction == SEARCH_FORWARD) beginPos = 0;
+        else beginPos = fileEnd+1;
             outsideBounds = FALSE;
         }
-	found = !outsideBounds &&
+    found = !outsideBounds &&
             SearchString(fileString, searchString, direction,
-	    searchType, searchWrap, beginPos, startPos, endPos,
-	    extentBW, extentFW, GetWindowDelimiters(window));
-	if (found) {
-	    iSearchTryBeepOnWrap(window, direction, beginPos, *startPos);
-	} else
-	    XBell(TheDisplay, 0);
+        searchType, searchWrap, beginPos, startPos, endPos,
+        extentBW, extentFW, GetWindowDelimiters(window));
+    if (found) {
+        iSearchTryBeepOnWrap(window, direction, beginPos, *startPos);
+    } else
+        XBell(TheDisplay, 0);
     }
     
     translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
@@ -4343,25 +4343,25 @@ int SearchString(const char *string, const char *searchString, int direction,
 {
     switch (searchType) {
       case SEARCH_CASE_SENSE_WORD:
-      	 return searchLiteralWord(string, searchString, TRUE,  direction, wrap,
-	 		       beginPos, startPos, endPos, delimiters);
+           return searchLiteralWord(string, searchString, TRUE,  direction, wrap,
+                    beginPos, startPos, endPos, delimiters);
       case SEARCH_LITERAL_WORD:
-      	 return  searchLiteralWord(string, searchString, FALSE, direction, wrap,
-	 		       beginPos, startPos, endPos, delimiters);
+           return  searchLiteralWord(string, searchString, FALSE, direction, wrap,
+                    beginPos, startPos, endPos, delimiters);
       case SEARCH_CASE_SENSE:
-      	 return searchLiteral(string, searchString, TRUE, direction, wrap,
-	 		       beginPos, startPos, endPos, searchExtentBW, 
+           return searchLiteral(string, searchString, TRUE, direction, wrap,
+                    beginPos, startPos, endPos, searchExtentBW, 
                                searchExtentFW);
       case SEARCH_LITERAL:
-      	 return  searchLiteral(string, searchString, FALSE, direction, wrap,
-	 	beginPos, startPos, endPos, searchExtentBW, searchExtentFW);
+           return  searchLiteral(string, searchString, FALSE, direction, wrap,
+         beginPos, startPos, endPos, searchExtentBW, searchExtentFW);
       case SEARCH_REGEX:
-      	 return  searchRegex(string, searchString, direction, wrap,
-      	 	beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
+           return  searchRegex(string, searchString, direction, wrap,
+               beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
                 delimiters, REDFLT_STANDARD);
       case SEARCH_REGEX_NOCASE:
-      	 return  searchRegex(string, searchString, direction, wrap,
-      	 	beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
+           return  searchRegex(string, searchString, direction, wrap,
+               beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
                 delimiters, REDFLT_CASE_INSENSITIVE);
     }
     return FALSE; /* never reached, just makes compilers happy */
@@ -4403,39 +4403,39 @@ int StringToSearchType(const char * string, int *searchType)
 **  
 */
 static int searchLiteralWord(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos, 
+    int direction, int wrap, int beginPos, int *startPos, int *endPos, 
         const char * delimiters)
 {
-/* This is critical code for the speed of searches.			    */
+/* This is critical code for the speed of searches.                */
 /* For efficiency, we define the macro DOSEARCH with the guts of the search */
 /* routine and repeat it, changing the parameters of the outer loop for the */
-/* searching, forwards, backwards, and before and after the begin point	    */
+/* searching, forwards, backwards, and before and after the begin point        */
 #define DOSEARCHWORD() \
     if (*filePtr == *ucString || *filePtr == *lcString) { \
-	/* matched first character */ \
-	ucPtr = ucString; \
-	lcPtr = lcString; \
-	tempPtr = filePtr; \
-	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
+    /* matched first character */ \
+    ucPtr = ucString; \
+    lcPtr = lcString; \
+    tempPtr = filePtr; \
+    while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
             if(*ucPtr == 0 && ucMatch) ucSkipped++; \
             ucMatch = *tempPtr == *ucPtr; \
             lcMatch = *tempPtr == *lcPtr; \
             tempPtr++; ucPtr++; lcPtr++; \
-	    if (   *ucPtr == 0 && *lcPtr == 0 /* matched whole string */ \
-		&& (cignore_R ||\
-		    isspace((unsigned char)*tempPtr) ||\
-		    strchr(delimiters, *tempPtr) ) \
-		    /* next char right delimits word ? */ \
-		&& (cignore_L ||\
+        if (   *ucPtr == 0 && *lcPtr == 0 /* matched whole string */ \
+        && (cignore_R ||\
+            isspace((unsigned char)*tempPtr) ||\
+            strchr(delimiters, *tempPtr) ) \
+            /* next char right delimits word ? */ \
+        && (cignore_L ||\
                     filePtr==string || /* border case */ \
                     isspace((unsigned char)filePtr[-1]) ||\
                     strchr(delimiters,filePtr[-1]) ))\
                     /* next char left delimits word ? */ { \
-		*startPos = filePtr - string; \
-		*endPos = tempPtr - string; \
-		return TRUE; \
-	    } \
-	} \
+        *startPos = filePtr - string; \
+        *endPos = tempPtr - string; \
+        return TRUE; \
+        } \
+    } \
     }
 
     register const char *filePtr, *tempPtr, *ucPtr, *lcPtr;
@@ -4443,67 +4443,67 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
     int ucSkipped = 0;
     int lcMatch = 0;
     int ucMatch = 0;
-						
+                        
     int cignore_L=0, cignore_R=0;
-		
+        
     /* SEARCHMAX was fine in the original NEdit, but it should be done away 
        with now that searching can be done from macros without limits. 
        Returning search failure here is cheating users.  This limit is not 
        documented. */
     size_t searchStringLen = strlen(searchString);
     if (searchStringLen >= SEARCHMAX)
-	return FALSE;
+    return FALSE;
     
     /* If there is no language mode, we use the default list of delimiters */
     if (delimiters==NULL) delimiters = GetPrefDelimiters();
-		
+        
     if (   isspace((unsigned char)*searchString) 
-	|| strchr(delimiters, *searchString))
-	cignore_L=1;
+    || strchr(delimiters, *searchString))
+    cignore_L=1;
 
     if (   isspace((unsigned char)searchString[strlen(searchString)-1])
-	|| strchr(delimiters, searchString[strlen(searchString)-1]) )
-	cignore_R=1;
+    || strchr(delimiters, searchString[strlen(searchString)-1]) )
+    cignore_R=1;
    
     if (caseSense) {
         memcpy(ucString, searchString, searchStringLen+1);
         memcpy(lcString, searchString, searchStringLen+1);
     } else {
-    	UpCaseString(ucString, searchString, True);
-    	DownCaseString(lcString, searchString, True);
+        UpCaseString(ucString, searchString, True);
+        DownCaseString(lcString, searchString, True);
     }
 
     if (direction == SEARCH_FORWARD) {
-	/* search from beginPos to end of string */
-	for (filePtr=string+beginPos; *filePtr!=0; filePtr++) {
-      	    DOSEARCHWORD() 
-	}
-	if (!wrap)
-	    return FALSE;
+    /* search from beginPos to end of string */
+    for (filePtr=string+beginPos; *filePtr!=0; filePtr++) {
+              DOSEARCHWORD() 
+    }
+    if (!wrap)
+        return FALSE;
 
-	/* search from start of file to beginPos */
-	for (filePtr=string; filePtr<=string+beginPos; filePtr++) {
-      	    DOSEARCHWORD() 
-	}
-	return FALSE;
+    /* search from start of file to beginPos */
+    for (filePtr=string; filePtr<=string+beginPos; filePtr++) {
+              DOSEARCHWORD() 
+    }
+    return FALSE;
     } else {
-	/* SEARCH_BACKWARD */
-	/* search from beginPos to start of file. A negative begin pos */
-	/* says begin searching from the far end of the file */
-	if (beginPos >= 0) {
-	    for (filePtr=string+beginPos; filePtr>=string; filePtr--) {
-	    	DOSEARCHWORD() 
-	    }
-	}
-	if (!wrap)
-	    return FALSE;
-	/* search from end of file to beginPos */
-	/*... this strlen call is extreme inefficiency, but it's not obvious */
-	/* how to get the text string length from the text widget (under 1.1)*/
-	for (filePtr=string+strlen(string); filePtr>=string+beginPos; filePtr--) {
-      	    DOSEARCHWORD() 
-	}
-	return FALSE;
+    /* SEARCH_BACKWARD */
+    /* search from beginPos to start of file. A negative begin pos */
+    /* says begin searching from the far end of the file */
+    if (beginPos >= 0) {
+        for (filePtr=string+beginPos; filePtr>=string; filePtr--) {
+            DOSEARCHWORD() 
+        }
+    }
+    if (!wrap)
+        return FALSE;
+    /* search from end of file to beginPos */
+    /*... this strlen call is extreme inefficiency, but it's not obvious */
+    /* how to get the text string length from the text widget (under 1.1)*/
+    for (filePtr=string+strlen(string); filePtr>=string+beginPos; filePtr--) {
+              DOSEARCHWORD() 
+    }
+    return FALSE;
     }
 }
 
@@ -4511,8 +4511,8 @@ static int searchLiteralWord(const char *string, const char *searchString, int c
 #ifdef USE_STRSTR
 
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos,
-	int *searchExtentBW, int *searchExtentFW)
+    int direction, int wrap, int beginPos, int *startPos, int *endPos,
+    int *searchExtentBW, int *searchExtentFW)
 {
     if(direction == SEARCH_FORWARD) {
         const char *beginString = string + beginPos;
@@ -4545,8 +4545,8 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
         }
     } else {
         /* SEARCH_BACKWARD */
-	/* search from beginPos to start of file.  A negative begin pos	*/
-	/* says begin searching from the far end of the file            */
+    /* search from beginPos to start of file.  A negative begin pos    */
+    /* says begin searching from the far end of the file            */
         int begin = beginPos >= 0 ? beginPos : (int)strlen(string);
         char *result = NULL;
         char *s = NULL;
@@ -4595,36 +4595,36 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
 #else
 
 static int searchLiteral(const char *string, const char *searchString, int caseSense, 
-	int direction, int wrap, int beginPos, int *startPos, int *endPos,
-	int *searchExtentBW, int *searchExtentFW)
+    int direction, int wrap, int beginPos, int *startPos, int *endPos,
+    int *searchExtentBW, int *searchExtentFW)
 {
-/* This is critical code for the speed of searches.			    */
+/* This is critical code for the speed of searches.                */
 /* For efficiency, we define the macro DOSEARCH with the guts of the search */
 /* routine and repeat it, changing the parameters of the outer loop for the */
-/* searching, forwards, backwards, and before and after the begin point	    */
+/* searching, forwards, backwards, and before and after the begin point        */
 #define DOSEARCH() \
     if (*filePtr == *ucString || *filePtr == *lcString) { \
-	/* matched first character */ \
-	ucPtr = ucString; \
-	lcPtr = lcString; \
-	tempPtr = filePtr; \
+    /* matched first character */ \
+    ucPtr = ucString; \
+    lcPtr = lcString; \
+    tempPtr = filePtr; \
         ucSkipped = 0; \
-	while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
+    while (*tempPtr == *ucPtr || *tempPtr == *lcPtr || (*ucPtr == 0 && *lcPtr != 0)) { \
             if(*ucPtr == 0 && ucMatch) ucSkipped++; \
             ucMatch = *tempPtr == *ucPtr; \
             lcMatch = *tempPtr == *lcPtr; \
-	    tempPtr++; ucPtr++; lcPtr++; \
-	    if (*ucPtr == 0 && *lcPtr == 0) { \
-		/* matched whole string */ \
-		*startPos = filePtr - string; \
-		*endPos = tempPtr - string - ucSkipped; \
-		if (searchExtentBW != NULL) \
-		    *searchExtentBW = *startPos; \
-		if (searchExtentFW != NULL) \
-		    *searchExtentFW = *endPos; \
-		return TRUE; \
-	    } \
-	} \
+        tempPtr++; ucPtr++; lcPtr++; \
+        if (*ucPtr == 0 && *lcPtr == 0) { \
+        /* matched whole string */ \
+        *startPos = filePtr - string; \
+        *endPos = tempPtr - string - ucSkipped; \
+        if (searchExtentBW != NULL) \
+            *searchExtentBW = *startPos; \
+        if (searchExtentFW != NULL) \
+            *searchExtentFW = *endPos; \
+        return TRUE; \
+        } \
+    } \
     } \
 
     register const char *filePtr, *tempPtr, *ucPtr, *lcPtr;
@@ -4638,68 +4638,68 @@ static int searchLiteral(const char *string, const char *searchString, int caseS
        now that searching can be done from macros without limits.  Returning
        search failure here is cheating users.  This limit is not documented. */
     if (searchLen >= SEARCHMAX)
-	return FALSE;
+    return FALSE;
     
     if (caseSense) {
         memcpy(ucString, searchString, searchLen+1);
         memcpy(lcString, searchString, searchLen+1);
     } else {
-    	UpCaseString(ucString, searchString, True);
-    	DownCaseString(lcString, searchString, False);
+        UpCaseString(ucString, searchString, True);
+        DownCaseString(lcString, searchString, False);
     }
 
     if (direction == SEARCH_FORWARD) {
-	/* search from beginPos to end of string */
-	for (filePtr=string+beginPos; *filePtr!=0; filePtr++) {
-	    DOSEARCH()
-	}
-	if (!wrap)
-	    return FALSE;
-	/* search from start of file to beginPos	*/
-	for (filePtr=string; filePtr<=string+beginPos; filePtr++) {
-	    DOSEARCH()
-	}
-	return FALSE;
+    /* search from beginPos to end of string */
+    for (filePtr=string+beginPos; *filePtr!=0; filePtr++) {
+        DOSEARCH()
+    }
+    if (!wrap)
+        return FALSE;
+    /* search from start of file to beginPos    */
+    for (filePtr=string; filePtr<=string+beginPos; filePtr++) {
+        DOSEARCH()
+    }
+    return FALSE;
     } else {
-    	/* SEARCH_BACKWARD */
-	/* search from beginPos to start of file.  A negative begin pos	*/
-	/* says begin searching from the far end of the file		*/
-	if (beginPos >= 0) {
-	    for (filePtr=string+beginPos; filePtr>=string; filePtr--) {
-		DOSEARCH()
-	    }
-	}
-	if (!wrap)
-	    return FALSE;
-	/* search from end of file to beginPos */
-	/*... this strlen call is extreme inefficiency, but it's not obvious */
-	/* how to get the text string length from the text widget (under 1.1)*/
-	for (filePtr=string+strlen(string);
-		filePtr>=string+beginPos; filePtr--) {
-	    DOSEARCH()
-	}
-	return FALSE;
+        /* SEARCH_BACKWARD */
+    /* search from beginPos to start of file.  A negative begin pos    */
+    /* says begin searching from the far end of the file        */
+    if (beginPos >= 0) {
+        for (filePtr=string+beginPos; filePtr>=string; filePtr--) {
+        DOSEARCH()
+        }
+    }
+    if (!wrap)
+        return FALSE;
+    /* search from end of file to beginPos */
+    /*... this strlen call is extreme inefficiency, but it's not obvious */
+    /* how to get the text string length from the text widget (under 1.1)*/
+    for (filePtr=string+strlen(string);
+        filePtr>=string+beginPos; filePtr--) {
+        DOSEARCH()
+    }
+    return FALSE;
     }
 }
 
 #endif
 
 static int searchRegex(const char *string, const char *searchString, int direction,
-	int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags)
+    int wrap, int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     if (direction == SEARCH_FORWARD)
-	return forwardRegexSearch(string, searchString, wrap, 
+    return forwardRegexSearch(string, searchString, wrap, 
             beginPos, startPos, endPos, searchExtentBW, searchExtentFW, 
-	    delimiters, defaultFlags);
+        delimiters, defaultFlags);
     else
-    	return backwardRegexSearch(string, searchString, wrap, 
-	    beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
+        return backwardRegexSearch(string, searchString, wrap, 
+        beginPos, startPos, endPos, searchExtentBW, searchExtentFW,
             delimiters, defaultFlags);
 }
 
 static int forwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int beginPos, int *startPos, int *endPos, int *searchExtentBW,
         int *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     regexp *compiledRE = NULL;
@@ -4710,39 +4710,39 @@ static int forwardRegexSearch(const char *string, const char *searchString, int 
        assumes that the expression was checked earlier. */
     compiledRE = CompileRE(searchString, &compileMsg, defaultFlags);
     if (compiledRE == NULL)
-	return FALSE;
+    return FALSE;
 
     /* search from beginPos to end of string */
     if (ExecRE(compiledRE, string + beginPos, NULL, FALSE,
             (beginPos == 0) ? '\0' : string[beginPos-1], '\0', delimiters,
             string, NULL)) {
-	*startPos = compiledRE->startp[0] - string;
-	*endPos = compiledRE->endp[0] - string;
-	if (searchExtentFW != NULL)
-	    *searchExtentFW = compiledRE->extentpFW - string;
-	if (searchExtentBW != NULL)
+    *startPos = compiledRE->startp[0] - string;
+    *endPos = compiledRE->endp[0] - string;
+    if (searchExtentFW != NULL)
+        *searchExtentFW = compiledRE->extentpFW - string;
+    if (searchExtentBW != NULL)
            *searchExtentBW = compiledRE->extentpBW - string;
-	NEditFree(compiledRE);
-	return TRUE;
+    NEditFree(compiledRE);
+    return TRUE;
     }
     
     /* if wrap turned off, we're done */
     if (!wrap) {
-    	NEditFree(compiledRE);
-	return FALSE;
+        NEditFree(compiledRE);
+    return FALSE;
     }
     
     /* search from the beginning of the string to beginPos */
     if (ExecRE(compiledRE, string, string + beginPos, FALSE, '\0',
             string[beginPos], delimiters, string, NULL)) {
-	*startPos = compiledRE->startp[0] - string;
-	*endPos = compiledRE->endp[0] - string;
-	if (searchExtentFW != NULL)
-       	    *searchExtentFW = compiledRE->extentpFW - string;
-	if (searchExtentBW != NULL)
-	    *searchExtentBW = compiledRE->extentpBW - string;
-	NEditFree(compiledRE);
-	return TRUE;
+    *startPos = compiledRE->startp[0] - string;
+    *endPos = compiledRE->endp[0] - string;
+    if (searchExtentFW != NULL)
+               *searchExtentFW = compiledRE->extentpFW - string;
+    if (searchExtentBW != NULL)
+        *searchExtentBW = compiledRE->extentpBW - string;
+    NEditFree(compiledRE);
+    return TRUE;
     }
 
     NEditFree(compiledRE);
@@ -4750,8 +4750,8 @@ static int forwardRegexSearch(const char *string, const char *searchString, int 
 }
 
 static int backwardRegexSearch(const char *string, const char *searchString, int wrap,
-	int beginPos, int *startPos, int *endPos, int *searchExtentBW,
-	int *searchExtentFW, const char *delimiters, int defaultFlags)
+    int beginPos, int *startPos, int *endPos, int *searchExtentBW,
+    int *searchExtentFW, const char *delimiters, int defaultFlags)
 {
     regexp *compiledRE = NULL;
     char *compileMsg;
@@ -4760,45 +4760,45 @@ static int backwardRegexSearch(const char *string, const char *searchString, int
     /* compile the search string for searching with ExecRE */
     compiledRE = CompileRE(searchString, &compileMsg, defaultFlags);
     if (compiledRE == NULL)
-	return FALSE;
+    return FALSE;
 
-    /* search from beginPos to start of file.  A negative begin pos	*/
-    /* says begin searching from the far end of the file.		*/
+    /* search from beginPos to start of file.  A negative begin pos    */
+    /* says begin searching from the far end of the file.        */
     if (beginPos >= 0) {
-	if (ExecRE(compiledRE, string, string + beginPos, TRUE, '\0', '\0',
+    if (ExecRE(compiledRE, string, string + beginPos, TRUE, '\0', '\0',
                 delimiters, string, NULL)) {
-	    *startPos = compiledRE->startp[0] - string;
-	    *endPos = compiledRE->endp[0] - string;
-	    if (searchExtentFW != NULL)
-		*searchExtentFW = compiledRE->extentpFW - string;
-	    if (searchExtentBW != NULL)
-		*searchExtentBW = compiledRE->extentpBW - string;
-	    NEditFree(compiledRE);
-	    return TRUE;
-	}
+        *startPos = compiledRE->startp[0] - string;
+        *endPos = compiledRE->endp[0] - string;
+        if (searchExtentFW != NULL)
+        *searchExtentFW = compiledRE->extentpFW - string;
+        if (searchExtentBW != NULL)
+        *searchExtentBW = compiledRE->extentpBW - string;
+        NEditFree(compiledRE);
+        return TRUE;
+    }
     }
     
     /* if wrap turned off, we're done */
     if (!wrap) {
-    	NEditFree(compiledRE);
-    	return FALSE;
+        NEditFree(compiledRE);
+        return FALSE;
     }
     
     /* search from the end of the string to beginPos */
     if (beginPos < 0)
-    	beginPos = 0;
+        beginPos = 0;
     length = strlen(string); /* sadly, this means scanning entire string */
     if (ExecRE(compiledRE, string + beginPos, string + length, TRUE,
             (beginPos == 0) ? '\0' : string[beginPos-1], '\0', delimiters,
             string, NULL)) {
-	*startPos = compiledRE->startp[0] - string;
-	*endPos = compiledRE->endp[0] - string;
-	if (searchExtentFW != NULL)
-	    *searchExtentFW = compiledRE->extentpFW - string;
-	if (searchExtentBW != NULL)
-	    *searchExtentBW = compiledRE->extentpBW - string;
-	NEditFree(compiledRE);
-	return TRUE;
+    *startPos = compiledRE->startp[0] - string;
+    *endPos = compiledRE->endp[0] - string;
+    if (searchExtentFW != NULL)
+        *searchExtentFW = compiledRE->extentpFW - string;
+    if (searchExtentBW != NULL)
+        *searchExtentBW = compiledRE->extentpBW - string;
+    NEditFree(compiledRE);
+    return TRUE;
     }
     NEditFree(compiledRE);
     return FALSE;
@@ -4854,7 +4854,7 @@ void UpCaseString(char *outString, const char *inString, Boolean addFiller)
             inPtr += in_len - 1;
             outPtr += out_len - 1;
         }
-    	
+        
     }
     *outPtr = 0;
 }
@@ -4865,7 +4865,7 @@ void DownCaseString(char *outString, const char *inString, Boolean addFiller)
     const char *inPtr;
     
     for (outPtr=outString, inPtr=inString; *inPtr!=0; inPtr++, outPtr++) {
-    	if(*inPtr >= 0) {
+        if(*inPtr >= 0) {
             *outPtr = tolower((unsigned char)*inPtr);
         } else {
             int in_len, out_len;
@@ -4901,8 +4901,8 @@ static void resetReplaceTabGroup(WindowInfo *window)
 ** also return the position of the selection in "left" and "right".
 */
 static int searchMatchesSelection(WindowInfo *window, const char *searchString,
-	int searchType, int *left, int *right, int *searchExtentBW, 
-	int *searchExtentFW)
+    int searchType, int *left, int *right, int *searchExtentBW, 
+    int *searchExtentFW)
 {
     int selLen, selStart, selEnd, startPos, endPos, extentBW, extentFW, beginPos;
     int regexLookContext = isRegexType(searchType) ? 1000 : 0;
@@ -4911,66 +4911,66 @@ static int searchMatchesSelection(WindowInfo *window, const char *searchString,
     
     /* find length of selection, give up on no selection or too long */
     if (!BufGetEmptySelectionPos(window->buffer, &selStart, &selEnd, &isRect,
-    	    &rectStart, &rectEnd))
-	return FALSE;
+            &rectStart, &rectEnd))
+    return FALSE;
     if (selEnd - selStart > SEARCHMAX)
-	return FALSE;
+    return FALSE;
     
     /* if the selection is rectangular, don't match if it spans lines */
     if (isRect) {
-    	lineStart = BufStartOfLine(window->buffer, selStart);
-    	if (lineStart != BufStartOfLine(window->buffer, selEnd))
-    	    return FALSE;
+        lineStart = BufStartOfLine(window->buffer, selStart);
+        if (lineStart != BufStartOfLine(window->buffer, selEnd))
+            return FALSE;
     }
     
     /* get the selected text plus some additional context for regular
        expression lookahead */
     if (isRect) {
-	int stringStart = lineStart + rectStart - regexLookContext;
-	if (stringStart < 0) stringStart = 0;
-    	string = BufGetRange(window->buffer, stringStart,
-		lineStart + rectEnd + regexLookContext);
-    	selLen = rectEnd - rectStart;
-	beginPos = lineStart + rectStart - stringStart;
+    int stringStart = lineStart + rectStart - regexLookContext;
+    if (stringStart < 0) stringStart = 0;
+        string = BufGetRange(window->buffer, stringStart,
+        lineStart + rectEnd + regexLookContext);
+        selLen = rectEnd - rectStart;
+    beginPos = lineStart + rectStart - stringStart;
     } else {
-	int stringStart = selStart - regexLookContext;
-	if (stringStart < 0) stringStart = 0;
-	string = BufGetRange(window->buffer, stringStart,
-		selEnd + regexLookContext);
-    	selLen = selEnd - selStart;
-	beginPos = selStart - stringStart;
+    int stringStart = selStart - regexLookContext;
+    if (stringStart < 0) stringStart = 0;
+    string = BufGetRange(window->buffer, stringStart,
+        selEnd + regexLookContext);
+        selLen = selEnd - selStart;
+    beginPos = selStart - stringStart;
     }
     if (*string == '\0') {
-    	NEditFree(string);
-    	return FALSE;
+        NEditFree(string);
+        return FALSE;
     }
 
-    /* search for the string in the selection (we are only interested 	*/
+    /* search for the string in the selection (we are only interested     */
     /* in an exact match, but the procedure SearchString does important */
-    /* stuff like applying the correct matching algorithm)		*/
+    /* stuff like applying the correct matching algorithm)        */
     found = SearchString(string, searchString, SEARCH_FORWARD, searchType,
-    	    FALSE, beginPos, &startPos, &endPos, &extentBW, &extentFW,
+            FALSE, beginPos, &startPos, &endPos, &extentBW, &extentFW,
             GetWindowDelimiters(window));
     NEditFree(string);
 
     /* decide if it is an exact match */
     if (!found)
-    	return FALSE;
+        return FALSE;
     if (startPos != beginPos || endPos - beginPos != selLen )
-    	return FALSE;
+        return FALSE;
     
     /* return the start and end of the selection */
     if (isRect)
-    	GetSimpleSelection(window->buffer, left, right);
+        GetSimpleSelection(window->buffer, left, right);
     else {
-    	*left = selStart;
-    	*right = selEnd;
+        *left = selStart;
+        *right = selEnd;
     }
     if (searchExtentBW != NULL)
-	*searchExtentBW = *left - (startPos - extentBW);
+    *searchExtentBW = *left - (startPos - extentBW);
     
     if (searchExtentFW != NULL)
-	*searchExtentFW = *right + extentFW - endPos;
+    *searchExtentFW = *right + extentFW - endPos;
     return TRUE;
 }
 
@@ -5218,34 +5218,34 @@ static void saveSearchHistory(const char *searchString,
     /* Cancel accumulation of contiguous incremental searches (even if the
        information is not worthy of saving) if search is not incremental */
     if (!isIncremental)
-	currentItemIsIncremental = FALSE;
+    currentItemIsIncremental = FALSE;
     
     /* Don't save empty search strings */
     if (searchString[0] == '\0')
-	return;
+    return;
     
     /* If replaceString is NULL, duplicate the last one (if any) */
     if (replaceString == NULL)
-    	replaceString = NHist >= 1 ? ReplaceHistory[historyIndex(1)] : "";
+        replaceString = NHist >= 1 ? ReplaceHistory[historyIndex(1)] : "";
     
     /* Compare the current search and replace strings against the saved ones.
        If they are identical, don't bother saving */
     if (NHist >= 1 && searchType == SearchTypeHistory[historyIndex(1)] &&
-    	    !strcmp(SearchHistory[historyIndex(1)], searchString) &&
-    	    !strcmp(ReplaceHistory[historyIndex(1)], replaceString)) {
-    	return;
+            !strcmp(SearchHistory[historyIndex(1)], searchString) &&
+            !strcmp(ReplaceHistory[historyIndex(1)], replaceString)) {
+        return;
     }
     
     /* If the current history item came from an incremental search, and the
        new one is also incremental, just update the entry */
     if (currentItemIsIncremental && isIncremental) {
-    	NEditFree(SearchHistory[historyIndex(1)]);
-    	SearchHistory[historyIndex(1)] = NEditStrdup(searchString);
-	SearchTypeHistory[historyIndex(1)] = searchType;
+        NEditFree(SearchHistory[historyIndex(1)]);
+        SearchHistory[historyIndex(1)] = NEditStrdup(searchString);
+    SearchTypeHistory[historyIndex(1)] = searchType;
 
         /* Save history to file */
         WriteSearchHistory();
-	return;
+    return;
     }
     currentItemIsIncremental = isIncremental;
     
@@ -5260,10 +5260,10 @@ static void saveSearchHistory(const char *searchString,
     /* If there are more than MAX_SEARCH_HISTORY strings saved, recycle
        some space, free the entry that's about to be overwritten */
     if (NHist == MAX_SEARCH_HISTORY) {
-    	NEditFree(SearchHistory[HistStart]);
-    	NEditFree(ReplaceHistory[HistStart]);
+        NEditFree(SearchHistory[HistStart]);
+        NEditFree(ReplaceHistory[HistStart]);
     } else
-    	NHist++;
+        NHist++;
 
     /* Allocate and copy the search and replace strings and add them to the
        circular buffers at HistStart, bump the buffer pointer to next pos. */
@@ -5274,7 +5274,7 @@ static void saveSearchHistory(const char *searchString,
     SearchTypeHistory[HistStart] = searchType;
     HistStart++;
     if (HistStart >= MAX_SEARCH_HISTORY)
-    	HistStart = 0;
+        HistStart = 0;
 
     /* Save history to file */
     WriteSearchHistory();
@@ -5290,10 +5290,10 @@ static int historyIndex(int nCycles)
     int index;
     
     if (nCycles > NHist || nCycles <= 0)
-    	return -1;
+        return -1;
     index = HistStart - nCycles;
     if (index < 0)
-    	index = MAX_SEARCH_HISTORY + index;
+        index = MAX_SEARCH_HISTORY + index;
     return index;
 }
 
@@ -5316,7 +5316,7 @@ static char *searchTypeArg(int searchType)
 static char *searchWrapArg(int searchWrap)
 {
     if (searchWrap) {
-    	return "wrap";
+        return "wrap";
     }
     return "nowrap";
 }
@@ -5328,7 +5328,7 @@ static char *searchWrapArg(int searchWrap)
 static char *directionArg(int direction)
 {
     if (direction == SEARCH_BACKWARD)
-    	return "backward";
+        return "backward";
     return "forward";
 }
 
@@ -5347,13 +5347,13 @@ static int isRegexType(int searchType)
 static int defaultRegexFlags(int searchType)
 {
     switch (searchType) {
-	case SEARCH_REGEX:
-	    return REDFLT_STANDARD;
-	case SEARCH_REGEX_NOCASE:
-	    return REDFLT_CASE_INSENSITIVE;
-	default:
-	    /* We should never get here, but just in case ... */
-	    return REDFLT_STANDARD;
+    case SEARCH_REGEX:
+        return REDFLT_STANDARD;
+    case SEARCH_REGEX_NOCASE:
+        return REDFLT_CASE_INSENSITIVE;
+    default:
+        /* We should never get here, but just in case ... */
+        return REDFLT_STANDARD;
     }
 }   
 
@@ -5386,15 +5386,15 @@ static void findRegExpToggleCB(Widget w, XtPointer clientData, XtPointer callDat
     
     /* In sticky mode, restore the state of the Case Sensitive button */
     if(GetPrefStickyCaseSenseBtn()) {
-	if(searchRegex) {
-	    window->findLastLiteralCase = searchCaseSense;
-	    XmToggleButtonSetState(window->findCaseToggle, 
-		window->findLastRegexCase, False);
-	} else {
-	    window->findLastRegexCase = searchCaseSense;
-	    XmToggleButtonSetState(window->findCaseToggle, 
-		window->findLastLiteralCase, False);
-	}
+    if(searchRegex) {
+        window->findLastLiteralCase = searchCaseSense;
+        XmToggleButtonSetState(window->findCaseToggle, 
+        window->findLastRegexCase, False);
+    } else {
+        window->findLastRegexCase = searchCaseSense;
+        XmToggleButtonSetState(window->findCaseToggle, 
+        window->findLastLiteralCase, False);
+    }
     }
     /* make the Whole Word button insensitive for regex searches */
     XtSetSensitive(window->findWordToggle, !searchRegex);
@@ -5408,15 +5408,15 @@ static void replaceRegExpToggleCB(Widget w, XtPointer clientData, XtPointer call
     
     /* In sticky mode, restore the state of the Case Sensitive button */
     if(GetPrefStickyCaseSenseBtn()) {
-	if(searchRegex) {
-      	    window->replaceLastLiteralCase = searchCaseSense;
-	    XmToggleButtonSetState(window->replaceCaseToggle, 
-		window->replaceLastRegexCase, False);
-	} else {
-      	    window->replaceLastRegexCase = searchCaseSense;
-	    XmToggleButtonSetState(window->replaceCaseToggle, 
-		window->replaceLastLiteralCase, False);
-	}
+    if(searchRegex) {
+              window->replaceLastLiteralCase = searchCaseSense;
+        XmToggleButtonSetState(window->replaceCaseToggle, 
+        window->replaceLastRegexCase, False);
+    } else {
+              window->replaceLastRegexCase = searchCaseSense;
+        XmToggleButtonSetState(window->replaceCaseToggle, 
+        window->replaceLastLiteralCase, False);
+    }
     }
     /* make the Whole Word button insensitive for regex searches */
     XtSetSensitive(window->replaceWordToggle, !searchRegex);
@@ -5430,15 +5430,15 @@ static void iSearchRegExpToggleCB(Widget w, XtPointer clientData, XtPointer call
     
     /* In sticky mode, restore the state of the Case Sensitive button */
     if(GetPrefStickyCaseSenseBtn()) {
-	if(searchRegex) {
-      	    window->iSearchLastLiteralCase = searchCaseSense;
-	    XmToggleButtonSetState(window->iSearchCaseToggle, 
-		window->iSearchLastRegexCase, False);
-	} else {
-      	    window->iSearchLastRegexCase = searchCaseSense;
-	    XmToggleButtonSetState(window->iSearchCaseToggle, 
-		window->iSearchLastLiteralCase, False);
-	}
+    if(searchRegex) {
+              window->iSearchLastLiteralCase = searchCaseSense;
+        XmToggleButtonSetState(window->iSearchCaseToggle, 
+        window->iSearchLastRegexCase, False);
+    } else {
+              window->iSearchLastRegexCase = searchCaseSense;
+        XmToggleButtonSetState(window->iSearchCaseToggle, 
+        window->iSearchLastLiteralCase, False);
+    }
     }
     /* The iSearch bar has no Whole Word button to enable/disable. */
 }
@@ -5450,9 +5450,9 @@ static void findCaseToggleCB(Widget w, XtPointer clientData, XtPointer callData)
     /* Save the state of the Case Sensitive button 
        depending on the state of the Regex button*/
     if(XmToggleButtonGetState(window->findRegexToggle))
-    	window->findLastRegexCase = searchCaseSense;
+        window->findLastRegexCase = searchCaseSense;
     else
-	window->findLastLiteralCase = searchCaseSense;
+    window->findLastLiteralCase = searchCaseSense;
 }
 
 static void replaceCaseToggleCB(Widget w, XtPointer clientData, XtPointer callData)
@@ -5463,9 +5463,9 @@ static void replaceCaseToggleCB(Widget w, XtPointer clientData, XtPointer callDa
     /* Save the state of the Case Sensitive button 
        depending on the state of the Regex button*/
     if(XmToggleButtonGetState(window->replaceRegexToggle))
-    	window->replaceLastRegexCase = searchCaseSense;
+        window->replaceLastRegexCase = searchCaseSense;
     else
-	window->replaceLastLiteralCase = searchCaseSense;
+    window->replaceLastLiteralCase = searchCaseSense;
 }
 
 static void iSearchCaseToggleCB(Widget w, XtPointer clientData, XtPointer callData)
@@ -5476,9 +5476,9 @@ static void iSearchCaseToggleCB(Widget w, XtPointer clientData, XtPointer callDa
     /* Save the state of the Case Sensitive button 
        depending on the state of the Regex button*/
     if(XmToggleButtonGetState(window->iSearchRegexToggle))
-    	window->iSearchLastRegexCase = searchCaseSense;
+        window->iSearchLastRegexCase = searchCaseSense;
     else
-	window->iSearchLastLiteralCase = searchCaseSense;
+    window->iSearchLastLiteralCase = searchCaseSense;
 }
 
 

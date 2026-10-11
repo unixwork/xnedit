@@ -1,29 +1,29 @@
 /*******************************************************************************
-*									       *
-* textSel.c - Selection and clipboard routines for NEdit text widget		       *
-*									       *
-* Copyright (C) 1999 Mark Edel						       *
-*									       *
+*                                                                              *
+* textSel.c - Selection and clipboard routines for NEdit text widget           *
+*                                                                              *
+* Copyright (C) 1999 Mark Edel                                                 *
+*                                                                              *
 * This is free software; you can redistribute it and/or modify it under the    *
 * terms of the GNU General Public License as published by the Free Software    *
 * Foundation; either version 2 of the License, or (at your option) any later   *
 * version. In addition, you may distribute version of this program linked to   *
 * Motif or Open Motif. See README for details.                                 *
-* 									       *
+*                                                                              *
 * This software is distributed in the hope that it will be useful, but WITHOUT *
 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License        *
-* for more details.							       *
-* 									       *
+* for more details.                                                            *
+*                                                                              *
 * You should have received a copy of the GNU General Public License along with *
 * software; if not, write to the Free Software Foundation, Inc., 59 Temple     *
-* Place, Suite 330, Boston, MA  02111-1307 USA		                       *
-*									       *
-* Nirvana Text Editor	    						       *
-* Dec. 15, 1995								       *
-*									       *
-* Written by Mark Edel							       *
-*									       *
+* Place, Suite 330, Boston, MA  02111-1307 USA                                 *
+*                                                                              *
+* Nirvana Text Editor                                                          *
+* Dec. 15, 1995                                                                *
+*                                                                              *
+* Written by Mark Edel                                                         *
+*                                                                              *
 *******************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -60,8 +60,8 @@ static Time selectionTime = 0;
 #define N_SELECT_TARGETS 8
 #define N_ATOMS 12
 enum atomIndex {A_TEXT, A_TARGETS, A_MULTIPLE, A_TIMESTAMP,
-	A_INSERT_SELECTION, A_DELETE, A_CLIPBOARD, A_INSERT_INFO,
-	A_ATOM_PAIR, A_MOTIF_DESTINATION, A_COMPOUND_TEXT, A_UTF8_STRING};
+    A_INSERT_SELECTION, A_DELETE, A_CLIPBOARD, A_INSERT_INFO,
+    A_ATOM_PAIR, A_MOTIF_DESTINATION, A_COMPOUND_TEXT, A_UTF8_STRING};
 
 /* Results passed back to the convert proc processing an INSERT_SELECTION
    request, by getInsertSelection when the selection to insert has been
@@ -71,8 +71,8 @@ enum insertResultFlags {INSERT_WAITING, UNSUCCESSFUL_INSERT, SUCCESSFUL_INSERT};
 /* Actions for selection notify event handler upon receiving confermation
    of a successful convert selection request */
 enum selectNotifyActions {UNSELECT_SECONDARY, REMOVE_SECONDARY,
-	EXCHANGE_SECONDARY};
-	
+    EXCHANGE_SECONDARY};
+    
 /* temporary structure for passing data to the event handler for completing
    selection requests (the hard way, via xlib calls) */
 typedef struct {
@@ -94,26 +94,26 @@ typedef struct {
 } stringSelection;
 
 static void modifiedCB(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg);
+    int nRestyled, const char *deletedText, void *cbArg);
 static void sendSecondary(Widget w, Time time, Atom sel, int action,
-	char *actionText, int actionTextLen);
+    char *actionText, int actionTextLen);
 static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static void getExchSelCB(Widget w, XtPointer clientData, Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format);
+    Atom *type, XtPointer value, unsigned long *length, int *format);
 static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format);
+    Atom *type, XtPointer *value, unsigned long *length, int *format);
 static void loseSelectionCB(Widget w, Atom *selType);
 static Boolean convertSecondaryCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format);
+    Atom *type, XtPointer *value, unsigned long *length, int *format);
 static void loseSecondaryCB(Widget w, Atom *selType);
 static Boolean convertMotifDestCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format);
+    Atom *type, XtPointer *value, unsigned long *length, int *format);
 static void loseMotifDestCB(Widget w, Atom *selType);
 static void selectNotifyEH(Widget w, XtPointer data, XEvent *event,
-	Boolean *continueDispatch);
+    Boolean *continueDispatch);
 static void selectNotifyTimerProc(XtPointer clientData, XtIntervalId *id);
 static Atom getAtom(Display *display, int atomNum);
 
@@ -128,10 +128,10 @@ void HandleXSelections(Widget w)
     
     /* Remove any existing selection handlers for other widgets */
     for (i=0; i<buf->nModifyProcs; i++) {
-    	if (buf->modifyProcs[i] == modifiedCB) {
-    	    BufRemoveModifyCB(buf, modifiedCB, buf->cbArgs[i]);
-    	    break;
-    	}
+        if (buf->modifyProcs[i] == modifiedCB) {
+            BufRemoveModifyCB(buf, modifiedCB, buf->cbArgs[i]);
+            break;
+        }
     }
     
     /* Add a handler with this widget as the CB arg (and thus the sel. owner) */
@@ -148,10 +148,10 @@ void StopHandlingXSelections(Widget w)
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     
     for (i=0; i<buf->nModifyProcs; i++) {
-    	if (buf->modifyProcs[i] == modifiedCB && buf->cbArgs[i] == w) {
-    	    BufRemoveModifyCB(buf, modifiedCB, buf->cbArgs[i]);
-    	    return;
-    	}
+        if (buf->modifyProcs[i] == modifiedCB && buf->cbArgs[i] == w) {
+            BufRemoveModifyCB(buf, modifiedCB, buf->cbArgs[i]);
+            return;
+        }
     }
 }
 
@@ -183,11 +183,11 @@ void CopyStringToClipboard(Widget w, Time time, const char *text, size_t length)
        If errors occur, just give up.  */
     s = XmStringCreateSimple("NEdit");
     stat = SpinClipboardStartCopy(XtDisplay(w), XtWindow(w), s,
-    	    time, w, NULL, &itemID);
+            time, w, NULL, &itemID);
     XmStringFree(s);
     if (stat != ClipboardSuccess) {
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return;
+        return;
     }
 
     /* Note that we were previously passing length + 1 here, but I suspect
@@ -195,7 +195,7 @@ void CopyStringToClipboard(Widget w, Time time, const char *text, size_t length)
        including a terminating null but not mentioning it in the length */
     
     res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "UTF8_STRING",
-    	    (char*)text, length, 0, NULL);
+            (char*)text, length, 0, NULL);
     if(res == ClipboardSuccess) {
         int l_length = length;
         const char *l_text = text;
@@ -204,7 +204,7 @@ void CopyStringToClipboard(Widget w, Time time, const char *text, size_t length)
             l_length = strlen(locale_text);
         }
         res = SpinClipboardCopy(XtDisplay(w), XtWindow(w), itemID, "STRING",
-    	    (char*)l_text, l_length, 0, NULL);
+            (char*)l_text, l_length, 0, NULL);
     }
     
     if(locale_text) {
@@ -265,7 +265,7 @@ void InsertPrimarySelection(Widget w, Time time, int isColumnar)
 void SendSecondarySelection(Widget w, Time time, int removeAfter)
 {
     sendSecondary(w, time, getAtom(XtDisplay(w), A_MOTIF_DESTINATION),
-    	    removeAfter ? REMOVE_SECONDARY : UNSELECT_SECONDARY, NULL, 0);
+            removeAfter ? REMOVE_SECONDARY : UNSELECT_SECONDARY, NULL, 0);
 }
 
 /*
@@ -352,18 +352,18 @@ char* GetClipboard(Widget w) {
          * a failure, so we try to remove the lock, just to be sure.
          */
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return NULL;
+        return NULL;
     }
     string = (char*)NEditMalloc(length+1);
     if (SpinClipboardRetrieve(XtDisplay(w), XtWindow(w), type, string,
-    	    length, &retLength, &id) != ClipboardSuccess || retLength == 0) {
-    	NEditFree(string);
+            length, &retLength, &id) != ClipboardSuccess || retLength == 0) {
+        NEditFree(string);
         /*
          * Possibly, the clipboard can remain in a locked state after
          * a failure, so we try to remove the lock, just to be sure.
          */
         SpinClipboardUnlock(XtDisplay(w), XtWindow(w));
-    	return NULL;
+        return NULL;
     }
     string[retLength] = '\0';
     
@@ -399,29 +399,29 @@ void InsertClipboard(Widget w, int isColumnar)
     /* If the string contains ascii-nul characters, substitute something
        else, or give up, warn, and refuse */
     if (!BufSubstituteNullChars(string, retLength, buf)) {
-	fprintf(stderr, "Too much binary data, text not pasted\n");
-	NEditFree(string);
-	return;
+    fprintf(stderr, "Too much binary data, text not pasted\n");
+    NEditFree(string);
+    return;
     }
 
     /* Insert it in the text widget */
     if (isColumnar && !buf->primary.selected) {
-    	cursorPos = TextDGetInsertPosition(textD);
-    	cursorLineStart = BufStartOfLine(buf, cursorPos);
-    	column = BufCountDispChars(buf, cursorLineStart, cursorPos);
+        cursorPos = TextDGetInsertPosition(textD);
+        cursorLineStart = BufStartOfLine(buf, cursorPos);
+        column = BufCountDispChars(buf, cursorLineStart, cursorPos);
         if (((TextWidget)w)->text.overstrike) {
-	    BufOverlayRect(buf, cursorLineStart, column, -1, string, NULL,
-			   NULL);
-	} else {
-	    BufInsertCol(buf, column, cursorLineStart, string, NULL, NULL);
-	}
-    	TextDSetInsertPosition(textD,
-    	    	BufCountForwardDispChars(buf, cursorLineStart, column));
-	if (((TextWidget)w)->text.autoShowInsertPos)
-    	    TextDMakeInsertPosVisible(textD);
+        BufOverlayRect(buf, cursorLineStart, column, -1, string, NULL,
+               NULL);
+    } else {
+        BufInsertCol(buf, column, cursorLineStart, string, NULL, NULL);
+    }
+        TextDSetInsertPosition(textD,
+                BufCountForwardDispChars(buf, cursorLineStart, column));
+    if (((TextWidget)w)->text.autoShowInsertPos)
+            TextDMakeInsertPosVisible(textD);
     } else
-    	TextInsertAtCursor(w, string, NULL, True,
-		((TextWidget)w)->text.autoWrapPastedText);
+        TextInsertAtCursor(w, string, NULL, True,
+        ((TextWidget)w)->text.autoWrapPastedText);
     NEditFree(string);
 }
 
@@ -434,12 +434,12 @@ void InsertClipboard(Widget w, int isColumnar)
 void TakeMotifDestination(Widget w, Time time)
 {
     if (((TextWidget)w)->text.motifDestOwner || ((TextWidget)w)->text.readOnly)
-    	return;
-    	
+        return;
+        
     /* Take ownership of the MOTIF_DESTINATION selection */
     if (!XtOwnSelection(w, getAtom(XtDisplay(w), A_MOTIF_DESTINATION), time,
-    	    convertMotifDestCB, loseMotifDestCB, NULL)) {
-    	return;
+            convertMotifDestCB, loseMotifDestCB, NULL)) {
+        return;
     }
     ((TextWidget)w)->text.motifDestOwner = True;
 }
@@ -456,7 +456,7 @@ void TakeMotifDestination(Widget w, Time time)
 ** result, since later callbacks will see the second modifications first).
 */
 static void modifiedCB(int pos, int nInserted, int nDeleted,
-	int nRestyled, const char *deletedText, void *cbArg)
+    int nRestyled, const char *deletedText, void *cbArg)
 {
     TextWidget w = (TextWidget)cbArg;
     Time time = XtLastTimestampProcessed(XtDisplay((Widget)w));
@@ -466,7 +466,7 @@ static void modifiedCB(int pos, int nInserted, int nDeleted,
     /* If the widget owns the selection and the buffer text is still selected,
        or if the widget doesn't own it and there's no selection, do nothing */
     if ((isOwner && selected) || (!isOwner && !selected))
-    	return;
+        return;
 
     /* Don't disown the selection here.  Another application (namely: klipper)
        may try to take it when it thinks nobody has the selection.  We then
@@ -476,10 +476,10 @@ static void modifiedCB(int pos, int nInserted, int nDeleted,
 
     /* Take ownership of the selection */
     if (!XtOwnSelection((Widget)w, XA_PRIMARY, time, convertSelectionCB,
-    	    loseSelectionCB, NULL))
-    	BufUnselect(w->text.textD->buffer);
+            loseSelectionCB, NULL))
+        BufUnselect(w->text.textD->buffer);
     else
-    	w->text.selectionOwner = True;
+        w->text.selectionOwner = True;
 }
 
 /*
@@ -489,7 +489,7 @@ static void modifiedCB(int pos, int nInserted, int nDeleted,
 ** not NULL) when done.
 */
 static void sendSecondary(Widget w, Time time, Atom sel, int action,
-	char *actionText, int actionTextLen)
+    char *actionText, int actionTextLen)
 {
     static Atom selInfoProp[2] = {XA_SECONDARY, XA_STRING};
     Display *disp = XtDisplay(w);
@@ -498,17 +498,17 @@ static void sendSecondary(Widget w, Time time, Atom sel, int action,
     
     /* Take ownership of the secondary selection, give up if we can't */
     if (!XtOwnSelection(w, XA_SECONDARY, time, convertSecondaryCB,
-    	    loseSecondaryCB, NULL)) {
-    	BufSecondaryUnselect(((TextWidget)w)->text.textD->buffer);
-    	return;
+            loseSecondaryCB, NULL)) {
+        BufSecondaryUnselect(((TextWidget)w)->text.textD->buffer);
+        return;
     }
 
     /* Set up a property on this window to pass along with the
        INSERT_SELECTION request to tell the MOTIF_DESTINATION owner what
        selection and what target from that selection to insert */
     XChangeProperty(disp, XtWindow(w), getAtom(disp, A_INSERT_INFO), 
-    	    getAtom(disp, A_ATOM_PAIR), 32, PropModeReplace,
-    	    (unsigned char *)selInfoProp, 2 /* 1? */);
+            getAtom(disp, A_ATOM_PAIR), 32, PropModeReplace,
+            (unsigned char *)selInfoProp, 2 /* 1? */);
 
     /* Make INSERT_SELECTION request to the owner of selection "sel"
        to do the insert.  This must be done using XLib calls to specify
@@ -517,7 +517,7 @@ static void sendSecondary(Widget w, Time time, Atom sel, int action,
        succeeded or not, and a backup timer to clean up if the select
        notify event is never returned */
     XConvertSelection(XtDisplay(w), sel, getAtom(disp, A_INSERT_SELECTION),
-    	    getAtom(disp, A_INSERT_INFO), XtWindow(w), time);
+            getAtom(disp, A_INSERT_INFO), XtWindow(w), time);
     cbInfo = (selectNotifyInfo *)NEditMalloc(sizeof(selectNotifyInfo));
     cbInfo->action = action;
     cbInfo->timeStamp = time;
@@ -526,8 +526,8 @@ static void sendSecondary(Widget w, Time time, Atom sel, int action,
     cbInfo->length = actionTextLen;
     XtAddEventHandler(w, 0, True, selectNotifyEH, (XtPointer)cbInfo);
     cbInfo->timeoutProcID = XtAppAddTimeOut(context,
-    	    XtAppGetSelectionTimeout(context),
-    	    selectNotifyTimerProc, (XtPointer)cbInfo);
+            XtAppGetSelectionTimeout(context),
+            selectNotifyTimerProc, (XtPointer)cbInfo);
 }
 
 
@@ -607,7 +607,7 @@ static void selectionSetValue(
 ** widget.
 */
 static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format)
+    Atom *type, XtPointer value, unsigned long *length, int *format)
 {
     selectionSetValue(w, clientData, *selType, *type, value, *length, *format);
 }
@@ -620,7 +620,7 @@ static void getSelectionCB(Widget w, XtPointer clientData, Atom *selType,
 ** depending on the success of the operation.
 */
 static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format)
+    Atom *type, XtPointer value, unsigned long *length, int *format)
 {
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     char *string;
@@ -629,8 +629,8 @@ static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
     /* Confirm that the returned value is of the correct type */
     if (*type != XA_STRING || *format != 8 || value == NULL) {
         NEditFree(value);
-    	*resultFlag = UNSUCCESSFUL_INSERT;
-    	return;
+        *resultFlag = UNSUCCESSFUL_INSERT;
+        return;
     }
     
     /* Copy the string just to make space for the null character */
@@ -641,15 +641,15 @@ static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
     /* If the string contains ascii-nul characters, substitute something
        else, or give up, warn, and refuse */
     if (!BufSubstituteNullChars(string, *length, buf)) {
-	fprintf(stderr, "Too much binary data, giving up\n");
-	NEditFree(string);
-	NEditFree(value);
-	return;
+    fprintf(stderr, "Too much binary data, giving up\n");
+    NEditFree(string);
+    NEditFree(value);
+    return;
     }
     
     /* Insert it in the text widget */
     TextInsertAtCursor(w, string, NULL, True,
-	    ((TextWidget)w)->text.autoWrapPastedText);
+        ((TextWidget)w)->text.autoWrapPastedText);
     NEditFree(string);
     *resultFlag = SUCCESSFUL_INSERT;
     
@@ -665,21 +665,21 @@ static void getInsertSelectionCB(Widget w, XtPointer clientData,Atom *selType,
 ** secondary selection.
 */
 static void getExchSelCB(Widget w, XtPointer clientData, Atom *selType,
-	Atom *type, XtPointer value, unsigned long *length, int *format)
+    Atom *type, XtPointer value, unsigned long *length, int *format)
 {
     /* Confirm that there is a value and it is of the correct type */
     if (*length == 0 || value == NULL || *type != XA_STRING || *format != 8) {
         NEditFree(value);
-    	XBell(XtDisplay(w), 0);
-    	BufSecondaryUnselect(((TextWidget)w)->text.textD->buffer);
-    	return;
+        XBell(XtDisplay(w), 0);
+        BufSecondaryUnselect(((TextWidget)w)->text.textD->buffer);
+        return;
     }
     
     /* Request the selection owner to replace the primary selection with
        this widget's secondary selection.  When complete, replace this
        widget's secondary selection with text "value" and free it. */
     sendSecondary(w, XtLastTimestampProcessed(XtDisplay(w)), XA_PRIMARY,
-    	    EXCHANGE_SECONDARY, (char *)value, *length);
+            EXCHANGE_SECONDARY, (char *)value, *length);
 }
 
 /*
@@ -691,7 +691,7 @@ static void getExchSelCB(Widget w, XtPointer clientData, Atom *selType,
 ** procdeure is registered
 */
 static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format)
+    Atom *type, XtPointer *value, unsigned long *length, int *format)
 {
     XSelectionRequestEvent *event = XtGetSelectionRequest(w, *selType, 0);
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
@@ -710,30 +710,30 @@ static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
         /* We really don't directly support COMPOUND_TEXT, but recent
            versions gnome-terminal incorrectly ask for it, even though
            don't declare that we do.  Just reply in string format. */
-    	*type = *target == utf8 ? utf8 : XA_STRING;
-    	*value = (XtPointer)BufGetSelectionText(buf);
-    	*length = strlen((char *)*value);
-    	*format = 8;
-	BufUnsubstituteNullChars(*value, buf);
-    	return True;
+        *type = *target == utf8 ? utf8 : XA_STRING;
+        *value = (XtPointer)BufGetSelectionText(buf);
+        *length = strlen((char *)*value);
+        *format = 8;
+    BufUnsubstituteNullChars(*value, buf);
+        return True;
     }
     
     /* target is "TARGETS", return a list of targets we can handle */
     if (*target == getAtom(display, A_TARGETS)) {
-	targets = (Atom *)NEditMalloc(sizeof(Atom) * N_SELECT_TARGETS);
-	targets[0] = XA_STRING;
+    targets = (Atom *)NEditMalloc(sizeof(Atom) * N_SELECT_TARGETS);
+    targets[0] = XA_STRING;
         targets[1] = utf8;
-	targets[2] = getAtom(display, A_TEXT);
-	targets[3] = getAtom(display, A_TARGETS);
-	targets[4] = getAtom(display, A_MULTIPLE);
-	targets[5] = getAtom(display, A_TIMESTAMP);
-	targets[6] = getAtom(display, A_INSERT_SELECTION);
-	targets[7] = getAtom(display, A_DELETE);
-	*type = XA_ATOM;
-	*value = (XtPointer)targets;
-	*length = N_SELECT_TARGETS;
-	*format = 32;
-	return True;
+    targets[2] = getAtom(display, A_TEXT);
+    targets[3] = getAtom(display, A_TARGETS);
+    targets[4] = getAtom(display, A_MULTIPLE);
+    targets[5] = getAtom(display, A_TIMESTAMP);
+    targets[6] = getAtom(display, A_INSERT_SELECTION);
+    targets[7] = getAtom(display, A_DELETE);
+    *type = XA_ATOM;
+    *value = (XtPointer)targets;
+    *length = N_SELECT_TARGETS;
+    *format = 32;
+    return True;
     }
     
     /* target is "INSERT_SELECTION":  1) get the information about what
@@ -742,38 +742,38 @@ static Boolean convertSelectionCB(Widget w, Atom *selType, Atom *target,
        2) initiate a get value request for the selection and target named
        in the property, and WAIT until it completes */
     if (*target == getAtom(display, A_INSERT_SELECTION)) {
-	if (((TextWidget)w)->text.readOnly)
-	    return False;
-	if (XGetWindowProperty(event->display, event->requestor,
-		event->property, 0, 2, False, AnyPropertyType, &dummyAtom,
-		&getFmt, &nItems, &dummyULong,
-		(unsigned char **)&reqAtoms) != Success ||
-		getFmt != 32 || nItems != 2)
-	    return False;
-	if (reqAtoms[1] != XA_STRING)
-	    return False;
-	XtGetSelectionValue(w, reqAtoms[0], reqAtoms[1],
-		getInsertSelectionCB, &result, event->time);
-	XFree((char *)reqAtoms);
-	while (result == INSERT_WAITING) {
-	    XtAppNextEvent(XtWidgetToApplicationContext(w), &nextEvent);
-	    XtDispatchEvent(&nextEvent);
-	}
-	*type = getAtom(display, A_INSERT_SELECTION);
-	*format = 8;
-	*value = NULL;
-	*length = 0;
-	return result == SUCCESSFUL_INSERT;
+    if (((TextWidget)w)->text.readOnly)
+        return False;
+    if (XGetWindowProperty(event->display, event->requestor,
+        event->property, 0, 2, False, AnyPropertyType, &dummyAtom,
+        &getFmt, &nItems, &dummyULong,
+        (unsigned char **)&reqAtoms) != Success ||
+        getFmt != 32 || nItems != 2)
+        return False;
+    if (reqAtoms[1] != XA_STRING)
+        return False;
+    XtGetSelectionValue(w, reqAtoms[0], reqAtoms[1],
+        getInsertSelectionCB, &result, event->time);
+    XFree((char *)reqAtoms);
+    while (result == INSERT_WAITING) {
+        XtAppNextEvent(XtWidgetToApplicationContext(w), &nextEvent);
+        XtDispatchEvent(&nextEvent);
+    }
+    *type = getAtom(display, A_INSERT_SELECTION);
+    *format = 8;
+    *value = NULL;
+    *length = 0;
+    return result == SUCCESSFUL_INSERT;
     }
     
     /* target is "DELETE": delete primary selection */
     if (*target == getAtom(display, A_DELETE)) {
-    	BufRemoveSelected(buf);
-    	*length = 0;
-    	*format = 8;
-    	*type = getAtom(display, A_DELETE);
-    	*value = NULL;
-    	return True;
+        BufRemoveSelected(buf);
+        *length = 0;
+        *format = 8;
+        *type = getAtom(display, A_DELETE);
+        *value = NULL;
+        return True;
     }
     
     /* targets TIMESTAMP and MULTIPLE are handled by the toolkit, any
@@ -800,13 +800,13 @@ static void loseSelectionCB(Widget w, Atom *selType)
 ** to insert it.
 */
 static Boolean convertSecondaryCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format)
+    Atom *type, XtPointer *value, unsigned long *length, int *format)
 {
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     
     /* target must be string */
     if (*target != XA_STRING && *target != getAtom(XtDisplay(w), A_TEXT))
-    	return False;
+        return False;
     
     /* Return the contents of the secondary selection.  The memory allocated
        here is freed by the X toolkit */
@@ -829,7 +829,7 @@ static void loseSecondaryCB(Widget w, Atom *selType)
 ** destination, to handle INSERT_SELECTION requests.
 */
 static Boolean convertMotifDestCB(Widget w, Atom *selType, Atom *target,
-	Atom *type, XtPointer *value, unsigned long *length, int *format)
+    Atom *type, XtPointer *value, unsigned long *length, int *format)
 {
     XSelectionRequestEvent *event = XtGetSelectionRequest(w, *selType, 0);
     Display *display = XtDisplay(w);
@@ -841,15 +841,15 @@ static Boolean convertMotifDestCB(Widget w, Atom *selType, Atom *target,
     
     /* target is "TARGETS", return a list of targets it can handle */
     if (*target == getAtom(display, A_TARGETS)) {
-	targets = (Atom *)NEditMalloc(sizeof(Atom) * 3);
-	targets[0] = getAtom(display, A_TARGETS);
-	targets[1] = getAtom(display, A_TIMESTAMP);
-	targets[2] = getAtom(display, A_INSERT_SELECTION);
-	*type = XA_ATOM;
-	*value = (XtPointer)targets;
-	*length = 3;
-	*format = 32;
-	return True;
+    targets = (Atom *)NEditMalloc(sizeof(Atom) * 3);
+    targets[0] = getAtom(display, A_TARGETS);
+    targets[1] = getAtom(display, A_TIMESTAMP);
+    targets[2] = getAtom(display, A_INSERT_SELECTION);
+    *type = XA_ATOM;
+    *value = (XtPointer)targets;
+    *length = 3;
+    *format = 32;
+    return True;
     }
     
     /* target is "INSERT_SELECTION":  1) get the information about what
@@ -858,28 +858,28 @@ static Boolean convertMotifDestCB(Widget w, Atom *selType, Atom *target,
        2) initiate a get value request for the selection and target named
        in the property, and WAIT until it completes */
     if (*target == getAtom(display, A_INSERT_SELECTION)) {
-	if (((TextWidget)w)->text.readOnly)
-	    return False;
-	if (XGetWindowProperty(event->display, event->requestor,
-		event->property, 0, 2, False, AnyPropertyType, &dummyAtom,
-		&getFmt, &nItems, &dummyULong,
-		(unsigned char **)&reqAtoms) != Success ||
-		getFmt != 32 || nItems != 2)
-	    return False;
-	if (reqAtoms[1] != XA_STRING)
-	    return False;
-	XtGetSelectionValue(w, reqAtoms[0], reqAtoms[1],
-		getInsertSelectionCB, &result, event->time);
-	XFree((char *)reqAtoms);
-	while (result == INSERT_WAITING) {
-	    XtAppNextEvent(XtWidgetToApplicationContext(w), &nextEvent);
-	    XtDispatchEvent(&nextEvent);
-	}
-	*type = getAtom(display, A_INSERT_SELECTION);
-	*format = 8;
-	*value = NULL;
-	*length = 0;
-	return result == SUCCESSFUL_INSERT;
+    if (((TextWidget)w)->text.readOnly)
+        return False;
+    if (XGetWindowProperty(event->display, event->requestor,
+        event->property, 0, 2, False, AnyPropertyType, &dummyAtom,
+        &getFmt, &nItems, &dummyULong,
+        (unsigned char **)&reqAtoms) != Success ||
+        getFmt != 32 || nItems != 2)
+        return False;
+    if (reqAtoms[1] != XA_STRING)
+        return False;
+    XtGetSelectionValue(w, reqAtoms[0], reqAtoms[1],
+        getInsertSelectionCB, &result, event->time);
+    XFree((char *)reqAtoms);
+    while (result == INSERT_WAITING) {
+        XtAppNextEvent(XtWidgetToApplicationContext(w), &nextEvent);
+        XtDispatchEvent(&nextEvent);
+    }
+    *type = getAtom(display, A_INSERT_SELECTION);
+    *format = 8;
+    *value = NULL;
+    *length = 0;
+    return result == SUCCESSFUL_INSERT;
     }
     
     /* target TIMESTAMP is handled by the toolkit and not passed here, any
@@ -891,7 +891,7 @@ static void loseMotifDestCB(Widget w, Atom *selType)
 {
     ((TextWidget)w)->text.motifDestOwner = False;
     if (((TextWidget)w)->text.textD->cursorStyle == CARET_CURSOR)
-    	TextDSetCursorStyle(((TextWidget)w)->text.textD, DIM_CURSOR);
+        TextDSetCursorStyle(((TextWidget)w)->text.textD, DIM_CURSOR);
 }
 
 /*
@@ -905,7 +905,7 @@ static void loseMotifDestCB(Widget w, Atom *selType)
 ** the clean up if the selectionNotify event never arrived.)
 */
 static void selectNotifyEH(Widget w, XtPointer data, XEvent *event,
-	Boolean *continueDispatch)
+    Boolean *continueDispatch)
 {
     textBuffer *buf = ((TextWidget)w)->text.textD->buffer;
     XSelectionEvent *e = (XSelectionEvent *)event;
@@ -916,8 +916,8 @@ static void selectNotifyEH(Widget w, XtPointer data, XEvent *event,
     /* Check if this was the selection request for which this handler was
        set up, if not, do nothing */
     if (event->type != SelectionNotify || e->time != cbInfo->timeStamp)
-    	return;
-    	
+        return;
+        
     /* The time stamp matched, remove this event handler and its
        backup timer procedure */
     XtRemoveEventHandler(w, 0, True, selectNotifyEH, data);
@@ -926,38 +926,38 @@ static void selectNotifyEH(Widget w, XtPointer data, XEvent *event,
     /* Check if the request succeeded, if not, beep, remove any existing
        secondary selection, and return */
     if (e->property == None) {
-    	XBell(XtDisplay(w), 0);
-    	BufSecondaryUnselect(buf);
+        XBell(XtDisplay(w), 0);
+        BufSecondaryUnselect(buf);
         XtDisownSelection(w, XA_SECONDARY, e->time);
         NEditFree(cbInfo->actionText);
-    	NEditFree(cbInfo);
-    	return;
+        NEditFree(cbInfo);
+        return;
     }
 
     /* Do the requested action, if the action is exchange, also clean up
        the properties created for returning the primary selection and making
        the MULTIPLE target request */
     if (cbInfo->action == REMOVE_SECONDARY) {
-    	BufRemoveSecSelect(buf);
+        BufRemoveSecSelect(buf);
     } else if (cbInfo->action == EXCHANGE_SECONDARY) {
-	string = (char*)NEditMalloc(cbInfo->length + 1);
-	memcpy(string, cbInfo->actionText, cbInfo->length);
-	string[cbInfo->length] = '\0';
-	selStart = buf->secondary.start;
-	if (BufSubstituteNullChars(string, cbInfo->length, buf)) {
-	    BufReplaceSecSelect(buf, string);
-	    if (buf->secondary.rectangular) {
-		/*... it would be nice to re-select, but probably impossible */
-		TextDSetInsertPosition(((TextWidget)w)->text.textD,
-	    		buf->cursorPosHint);
-	    } else {
-		selEnd = selStart + cbInfo->length;
-		BufSelect(buf, selStart, selEnd);
-		TextDSetInsertPosition(((TextWidget)w)->text.textD, selEnd);
-	    }
-	} else
-	    fprintf(stderr, "Too much binary data\n");
-	NEditFree(string);
+    string = (char*)NEditMalloc(cbInfo->length + 1);
+    memcpy(string, cbInfo->actionText, cbInfo->length);
+    string[cbInfo->length] = '\0';
+    selStart = buf->secondary.start;
+    if (BufSubstituteNullChars(string, cbInfo->length, buf)) {
+        BufReplaceSecSelect(buf, string);
+        if (buf->secondary.rectangular) {
+        /*... it would be nice to re-select, but probably impossible */
+        TextDSetInsertPosition(((TextWidget)w)->text.textD,
+                buf->cursorPosHint);
+        } else {
+        selEnd = selStart + cbInfo->length;
+        BufSelect(buf, selStart, selEnd);
+        TextDSetInsertPosition(((TextWidget)w)->text.textD, selEnd);
+        }
+    } else
+        fprintf(stderr, "Too much binary data\n");
+    NEditFree(string);
     }
     BufSecondaryUnselect(buf);
     XtDisownSelection(w, XA_SECONDARY, e->time);
@@ -991,12 +991,12 @@ static Atom getAtom(Display *display, int atomNum)
 {
     static Atom atomList[N_ATOMS] = {0};
     static char *atomNames[N_ATOMS] = {"TEXT", "TARGETS", "MULTIPLE",
-    	    "TIMESTAMP", "INSERT_SELECTION", "DELETE", "CLIPBOARD",
-    	    "INSERT_INFO", "ATOM_PAIR", "MOTIF_DESTINATION", "COMPOUND_TEXT",
+            "TIMESTAMP", "INSERT_SELECTION", "DELETE", "CLIPBOARD",
+            "INSERT_INFO", "ATOM_PAIR", "MOTIF_DESTINATION", "COMPOUND_TEXT",
             "UTF8_STRING"};
     
     if (atomList[atomNum] == 0)
-    	atomList[atomNum] = XInternAtom(display, atomNames[atomNum], False);
+        atomList[atomNum] = XInternAtom(display, atomNames[atomNum], False);
     return atomList[atomNum];
 }
 

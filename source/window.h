@@ -50,7 +50,7 @@ WindowInfo *FindWindowWithFile(const char *name, const char *path);
 void SetAutoIndent(WindowInfo *window, IndentStyle state);
 void SetShowMatching(WindowInfo *window, ShowMatchingStyle state);
 void SetFonts(WindowInfo *window, const char *fontName, const char *italicName,
-	const char *boldName, const char *boldItalicName);
+    const char *boldName, const char *boldItalicName);
 void SetColorProfile(WindowInfo *window, ColorProfile *profile);
 void LoadColorProfile(Widget w, ColorProfile *profile);
 void EnableWindowResourceDB(const WindowInfo *window);

@@ -38,7 +38,7 @@
 #include <X11/Xft/Xft.h>
 
 enum cursorStyles {NORMAL_CURSOR, CARET_CURSOR, DIM_CURSOR, BLOCK_CURSOR,
-	HEAVY_CURSOR};
+    HEAVY_CURSOR};
 
 #define NO_HINT -1
 
@@ -137,65 +137,65 @@ struct _textDisp {
     size_t mcursorSize;
     size_t mcursorSizeReal;
     int cursorOn;
-    int cursorToHint;			/* Tells the buffer modified callback
-    					   where to move the cursor, to reduce
-    					   the number of redraw calls */
-    int cursorStyle;			/* One of enum cursorStyles above */
+    int cursorToHint;            /* Tells the buffer modified callback
+                           where to move the cursor, to reduce
+                           the number of redraw calls */
+    int cursorStyle;            /* One of enum cursorStyles above */
     Position marginWidth;               /* textWidget marginWidth */
     Position marginHeight;              /* textWidget marginHeight */
-    //int cursorPreferredCol;		/* Column for vert. cursor movement */
+    //int cursorPreferredCol;        /* Column for vert. cursor movement */
     int xic_x;                          /* input method x */
     int xic_y;                          /* input method y */
-    int nVisibleLines;			/* # of visible (displayed) lines */
-    int nBufferLines;			/* # of newlines in the buffer */
-    textBuffer *buffer;     	    	/* Contains text to be displayed */
-    textBuffer *styleBuffer;   	    	/* Optional parallel buffer containing
-    	    	    	    	    	   color and font information */
-    int firstChar, lastChar;		/* Buffer positions of first and last
-    					   displayed character (lastChar points
-    					   either to a newline or one character
-    					   beyond the end of the buffer) */
-    int continuousWrap;     	    	/* Wrap long lines when displaying */
-    int wrapMargin; 	    	    	/* Margin in # of char positions for
-    	    	    	    	    	   wrapping in continuousWrap mode */
+    int nVisibleLines;            /* # of visible (displayed) lines */
+    int nBufferLines;            /* # of newlines in the buffer */
+    textBuffer *buffer;                 /* Contains text to be displayed */
+    textBuffer *styleBuffer;               /* Optional parallel buffer containing
+                                           color and font information */
+    int firstChar, lastChar;        /* Buffer positions of first and last
+                           displayed character (lastChar points
+                           either to a newline or one character
+                           beyond the end of the buffer) */
+    int continuousWrap;                 /* Wrap long lines when displaying */
+    int wrapMargin;                     /* Margin in # of char positions for
+                                           wrapping in continuousWrap mode */
     int *lineStarts;
-    int topLineNum;			/* Line number of top displayed line
-    					   of file (first line of file is 1) */
-    int absTopLineNum;			/* In continuous wrap mode, the line
-    					   number of the top line if the text
-					   were not wrapped (note that this is
-					   only maintained as needed). */
-    int needAbsTopLineNum;		/* Externally settable flag to continue
-    					   maintaining absTopLineNum even if
-					   it isn't needed for line # display */
-    int horizOffset;			/* Horizontal scroll pos. in pixels */
+    int topLineNum;            /* Line number of top displayed line
+                           of file (first line of file is 1) */
+    int absTopLineNum;            /* In continuous wrap mode, the line
+                           number of the top line if the text
+                       were not wrapped (note that this is
+                       only maintained as needed). */
+    int needAbsTopLineNum;        /* Externally settable flag to continue
+                           maintaining absTopLineNum even if
+                       it isn't needed for line # display */
+    int horizOffset;            /* Horizontal scroll pos. in pixels */
     int visibility;        /* Window visibility (see XVisibility event) */
-    int nStyles;			/* Number of entries in styleTable */
-    styleTableEntry *styleTable;    	/* Table of fonts and colors for
-    	    	    	    	    	   coloring/syntax-highlighting */
-    char unfinishedStyle;   	    	/* Style buffer entry which triggers
-    	    	    	    	    	   on-the-fly reparsing of region */
-    unfinishedStyleCBProc		/* Callback to parse "unfinished" */
-    	    unfinishedHighlightCB;  	/*     regions */
-    void *highlightCBArg;   	    	/* Arg to unfinishedHighlightCB */
+    int nStyles;            /* Number of entries in styleTable */
+    styleTableEntry *styleTable;        /* Table of fonts and colors for
+                                           coloring/syntax-highlighting */
+    char unfinishedStyle;               /* Style buffer entry which triggers
+                                           on-the-fly reparsing of region */
+    unfinishedStyleCBProc        /* Callback to parse "unfinished" */
+            unfinishedHighlightCB;      /*     regions */
+    void *highlightCBArg;               /* Arg to unfinishedHighlightCB */
     NFont *font;                        /* primary font */
     NFont *boldFont;
     NFont *italicFont;
     NFont *boldItalicFont;
-    int ascent, descent;		/* Composite ascent and descent for
-    					   primary font + all-highlight fonts */
-    int fixedFontWidth;			/* Font width if all current fonts are
-    					   fixed and match in width, else -1 */
+    int ascent, descent;        /* Composite ascent and descent for
+                           primary font + all-highlight fonts */
+    int fixedFontWidth;            /* Font width if all current fonts are
+                           fixed and match in width, else -1 */
     int rightMargin;                    /* right margin column */
     int rightMarginPos;                 /* right margin in pixels */
     Widget hScrollBar, vScrollBar;
     GC gc;
-    GC cursorFGGC;			/* GC for drawing the cursor */
+    GC cursorFGGC;            /* GC for drawing the cursor */
     
     XftColor styleGC;
-    XftColor *bgClassPixel;		/* table of colors for each BG class */
+    XftColor *bgClassPixel;        /* table of colors for each BG class */
     
-    unsigned char *bgClass;		/* obtains index into bgClassPixel[] */
+    unsigned char *bgClass;        /* obtains index into bgClassPixel[] */
     
     Boolean indentRainbow;
     //XftColor *indentRainbowColors;
@@ -211,14 +211,14 @@ struct _textDisp {
     calltipStruct calltip;              /* The info for the calltip itself */
     Pixel calltipFGPixel;
     Pixel calltipBGPixel;
-    int suppressResync;			/* Suppress resynchronization of line
+    int suppressResync;            /* Suppress resynchronization of line
                                            starts during buffer updates */
-    int nLinesDeleted;			/* Number of lines deleted during
-					   buffer modification (only used
-				           when resynchronization is 
+    int nLinesDeleted;            /* Number of lines deleted during
+                       buffer modification (only used
+                           when resynchronization is 
                                            suppressed) */
-    int modifyingTabDist;		/* Whether tab distance is being
-    					   modified */
+    int modifyingTabDist;        /* Whether tab distance is being
+                           modified */
     Boolean mcursorOn;                  /* Is there more than one cursor */
     Boolean pointerHidden;              /* true if the mouse pointer is 
                                            hidden */
@@ -248,8 +248,8 @@ void TextDInitXft(textDisp *textD);
 void TextDFree(textDisp *textD);
 void TextDSetBuffer(textDisp *textD, textBuffer *buffer);
 void TextDAttachHighlightData(textDisp *textD, textBuffer *styleBuffer,
-    	styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
-    	unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
+        styleTableEntry *styleTable, int nStyles, char unfinishedStyle,
+        unfinishedStyleCBProc unfinishedHighlightCB, void *cbArg);
 void TextDSetColorProfile(textDisp *textD, ColorProfile *profile);
 void TextDSetRightMargin(textDisp *textD, int rightMargin);
 void TextDSetFont(textDisp *textD, NFont *fontStruct);
@@ -260,7 +260,7 @@ int TextDMinFontWidth(textDisp *textD, Boolean considerStyles);
 int TextDMaxFontWidth(textDisp *textD, Boolean considerStyles);
 void TextDResize(textDisp *textD, int width, int height);
 void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
-	int height);
+    int height);
 void TextDRedisplayEdges(textDisp *textD, int width, int height,
                          int marginWidth, int marginHeight);
 void TextDSetScroll(textDisp *textD, int topLineNum, int horizOffset);
@@ -278,7 +278,7 @@ int TextDGetInsertPosition(textDisp *textD);
 int TextDXYToPosition(textDisp *textD, int x, int y);
 int TextDXYToCharPos(textDisp *textD, int x, int y);
 void TextDXYToUnconstrainedPosition(textDisp *textD, int x, int y, int *row,
-	int *column);
+    int *column);
 int TextDLineAndColToPos(textDisp *textD, int lineNum, int column);
 int TextDOffsetWrappedColumn(textDisp *textD, int row, int column);
 int TextDOffsetWrappedRow(textDisp *textD, int row);
@@ -303,13 +303,13 @@ int TextDCountForwardNLines(const textDisp* textD, int startPos,
         unsigned nLines, Boolean startPosIsLineStart);
 int TextDCountBackwardNLines(textDisp *textD, int startPos, int nLines);
 int TextDCountLines(textDisp *textD, int startPos, int endPos,
-    	int startPosIsLineStart);
+        int startPosIsLineStart);
 int TextDCountLinesW(textDisp *textD, int startPos, int endPos,
-    	int startPosIsLineStart, Boolean *retWrapped);
+        int startPosIsLineStart, Boolean *retWrapped);
 void TextDSetupBGClasses(Widget w, XmString str, XftColor **pp_bgClassPixel,
-	unsigned char **pp_bgClass, XftColor bgPixelDefault);
+    unsigned char **pp_bgClass, XftColor bgPixelDefault);
 void TextDSetLineNumberArea(textDisp *textD, int lineNumLeft, int lineNumWidth,
-	int textLeft);
+    int textLeft);
 void TextDMaintainAbsLineNum(textDisp *textD, int state);
 int TextDPosOfPreferredCol(textDisp *textD, int column, int lineStartPos);
 int TextDPreferredColumn(textDisp *textD, int *visLineNum, int *lineStartPos);

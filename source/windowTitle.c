@@ -100,16 +100,16 @@ static struct {
     Widget      oFileReadOnlyW;
     Widget      oServerEqualViewW;
     
-    char	filename[MAXPATHLEN];
-    char	path[MAXPATHLEN];
-    char	viewTag[MAXPATHLEN];
-    char	serverName[MAXPATHLEN];
+    char    filename[MAXPATHLEN];
+    char    path[MAXPATHLEN];
+    char    viewTag[MAXPATHLEN];
+    char    serverName[MAXPATHLEN];
     int         isServer;
     int         filenameSet;
     int         lockReasons;
     int         fileChanged;
     
-    int 	suppressFormatUpdate;
+    int     suppressFormatUpdate;
 } etDialog = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
               NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
               NULL,NULL,NULL,"","","","",0,0,0,0,0};
@@ -294,7 +294,7 @@ char *FormatWindowTitle(const char* filename,
             }  
             switch (c) {
                 case 'c': /* ClearCase view tag */
-		    clearCasePresent = True;
+            clearCasePresent = True;
                     if (clearCaseViewTag != NULL) {
                         if (serverNameSeen == False ||
                             strcmp(serverName, clearCaseViewTag) != 0) {
@@ -305,7 +305,7 @@ char *FormatWindowTitle(const char* filename,
                     break;
                    
                 case 's': /* server name */
-		    serverNamePresent = True;
+            serverNamePresent = True;
                     if (isServer && serverName[0] != '\0') { /* only applicable for servers */ 
                         if (clearCaseViewTagSeen == False ||
                             strcmp(serverName, clearCaseViewTag) != 0) {
@@ -316,7 +316,7 @@ char *FormatWindowTitle(const char* filename,
                     break;
                    
                 case 'd': /* directory without any limit to no. of components */
-		    dirNamePresent = True;
+            dirNamePresent = True;
                     if (filenameSet) {
                        titlePtr = safeStrCpy(titlePtr, titleEnd, path);
                     }
@@ -359,15 +359,15 @@ char *FormatWindowTitle(const char* filename,
                     break;
                     
                 case 'f': /* file name */
-		    fileNamePresent = True;
+            fileNamePresent = True;
                     titlePtr = safeStrCpy(titlePtr, titleEnd, filename);
                     break;
                     
                 case 'h': /* host name */
-		    hostNamePresent = True;
-		    titlePtr = safeStrCpy(titlePtr, titleEnd, GetNameOfHost());
+            hostNamePresent = True;
+            titlePtr = safeStrCpy(titlePtr, titleEnd, GetNameOfHost());
                     break;
-		    
+            
                 case 'S': /* file status */
                     fileStatusPresent = True;
                     if (IS_ANY_LOCKED_IGNORING_USER(lockReasons) && fileChanged)
@@ -383,7 +383,7 @@ char *FormatWindowTitle(const char* filename,
                     break;
                     
                 case 'u': /* user name */
-		    userNamePresent = True;
+            userNamePresent = True;
                     titlePtr = safeStrCpy(titlePtr, titleEnd, GetUserName());
                     break;
                    
@@ -391,24 +391,24 @@ char *FormatWindowTitle(const char* filename,
                     titlePtr = safeCharAdd(titlePtr, titleEnd, '%');
                     break;
                    
-		case '*': /* short file status ? */
+        case '*': /* short file status ? */
                     fileStatusPresent = True;
-		    if (*titleFormat == 'S')
-		    {
-			++titleFormat;
-			shortStatus = True;
-			if (IS_ANY_LOCKED_IGNORING_USER(lockReasons) && fileChanged)
-                	   titlePtr = safeStrCpy(titlePtr, titleEnd, "RO*");
-                	else if (IS_ANY_LOCKED_IGNORING_USER(lockReasons))
-                	   titlePtr = safeStrCpy(titlePtr, titleEnd, "RO");
-                	else if (IS_USER_LOCKED(lockReasons) && fileChanged)
-                	   titlePtr = safeStrCpy(titlePtr, titleEnd, "LO*");
-                	else if (IS_USER_LOCKED(lockReasons))
-                	   titlePtr = safeStrCpy(titlePtr, titleEnd, "LO");
-                	else if (fileChanged)
-                	   titlePtr = safeStrCpy(titlePtr, titleEnd, "*");
-			break;
-		    }
+            if (*titleFormat == 'S')
+            {
+            ++titleFormat;
+            shortStatus = True;
+            if (IS_ANY_LOCKED_IGNORING_USER(lockReasons) && fileChanged)
+                       titlePtr = safeStrCpy(titlePtr, titleEnd, "RO*");
+                    else if (IS_ANY_LOCKED_IGNORING_USER(lockReasons))
+                       titlePtr = safeStrCpy(titlePtr, titleEnd, "RO");
+                    else if (IS_USER_LOCKED(lockReasons) && fileChanged)
+                       titlePtr = safeStrCpy(titlePtr, titleEnd, "LO*");
+                    else if (IS_USER_LOCKED(lockReasons))
+                       titlePtr = safeStrCpy(titlePtr, titleEnd, "LO");
+                    else if (fileChanged)
+                       titlePtr = safeStrCpy(titlePtr, titleEnd, "*");
+            break;
+            }
                     /* fall-through */
                 default:
                     titlePtr = safeCharAdd(titlePtr, titleEnd, c);
@@ -424,16 +424,16 @@ char *FormatWindowTitle(const char* filename,
     
     if (title[0] == 0)
     {
-	snprintf(&title[0], WINDOWTITLE_MAX_LEN-1, "<empty>"); /* For preview purposes only */
+    snprintf(&title[0], WINDOWTITLE_MAX_LEN-1, "<empty>"); /* For preview purposes only */
     }
 
     if (etDialog.form)
     {
-	/* Prevent recursive callback loop */
+    /* Prevent recursive callback loop */
         etDialog.suppressFormatUpdate = True;
-	
-	/* Sync radio buttons with format string (in case the user entered
-	   the format manually) */
+    
+    /* Sync radio buttons with format string (in case the user entered
+       the format manually) */
         XmToggleButtonSetState(etDialog.fileW,   fileNamePresent,   False);
         XmToggleButtonSetState(etDialog.statusW, fileStatusPresent, False);
         XmToggleButtonSetState(etDialog.serverW, serverNamePresent, False);
@@ -442,48 +442,48 @@ char *FormatWindowTitle(const char* filename,
         XmToggleButtonSetState(etDialog.dirW,    dirNamePresent,    False);
         XmToggleButtonSetState(etDialog.hostW,   hostNamePresent,   False);
         XmToggleButtonSetState(etDialog.nameW,   userNamePresent,   False);
-	
+    
         XtSetSensitive(etDialog.shortStatusW,    fileStatusPresent);
-	if (fileStatusPresent)
-	{
-	    XmToggleButtonSetState(etDialog.shortStatusW, shortStatus, False);
-	}
-	
-	/* Directory components are also sensitive to presence of dir */
+    if (fileStatusPresent)
+    {
+        XmToggleButtonSetState(etDialog.shortStatusW, shortStatus, False);
+    }
+    
+    /* Directory components are also sensitive to presence of dir */
         XtSetSensitive(etDialog.ndirW,    dirNamePresent);
         XtSetSensitive(etDialog.mdirW,    dirNamePresent);
-	
+    
         if (dirNamePresent) /* Avoid erasing number when not active */
         {
-    	   if (noOfComponents >= 0)
-	   {
+           if (noOfComponents >= 0)
+       {
                char* value = XmTextGetString(etDialog.ndirW);
                char buf[16];
                snprintf(&buf[0], 16, "%d", noOfComponents);
                if (strcmp(&buf[0], value)) /* Don't overwrite unless diff. */
-       	           SetIntText(etDialog.ndirW, noOfComponents);
+                      SetIntText(etDialog.ndirW, noOfComponents);
                NEditFree(value);
-	   }
-	   else
-	   {
-	       XmTextSetString(etDialog.ndirW, "");
-	   }
+       }
+       else
+       {
+           XmTextSetString(etDialog.ndirW, "");
+       }
         }
-	
-	/* Enable/disable test buttons, depending on presence of codes */
+    
+    /* Enable/disable test buttons, depending on presence of codes */
         XtSetSensitive(etDialog.oFileChangedW,  fileStatusPresent);
         XtSetSensitive(etDialog.oFileReadOnlyW, fileStatusPresent);
         XtSetSensitive(etDialog.oFileLockedW,   fileStatusPresent &&
-						!IS_PERM_LOCKED(etDialog.lockReasons));
-	    
+                        !IS_PERM_LOCKED(etDialog.lockReasons));
+        
         XtSetSensitive(etDialog.oServerNameW, serverNamePresent);
 
         XtSetSensitive(etDialog.oCcViewTagW,       clearCasePresent);
         XtSetSensitive(etDialog.oServerEqualViewW, clearCasePresent &&
-	                                           serverNamePresent);
-	
+                                               serverNamePresent);
+    
         XtSetSensitive(etDialog.oDirW,    dirNamePresent);
-	
+    
         etDialog.suppressFormatUpdate = False;
     }        
     
@@ -496,20 +496,20 @@ char *FormatWindowTitle(const char* filename,
 static void setToggleButtons(void)
 {
     XmToggleButtonSetState(etDialog.oDirW,
-    	    	etDialog.filenameSet == True, False);
+                etDialog.filenameSet == True, False);
     XmToggleButtonSetState(etDialog.oFileChangedW,
-    	    	etDialog.fileChanged == True, False);
+                etDialog.fileChanged == True, False);
     XmToggleButtonSetState(etDialog.oFileReadOnlyW,
-    	    	IS_PERM_LOCKED(etDialog.lockReasons), False);
+                IS_PERM_LOCKED(etDialog.lockReasons), False);
     XmToggleButtonSetState(etDialog.oFileLockedW,
-    	    	IS_USER_LOCKED(etDialog.lockReasons), False);
+                IS_USER_LOCKED(etDialog.lockReasons), False);
     /* Read-only takes precedence on locked */
     XtSetSensitive(etDialog.oFileLockedW, !IS_PERM_LOCKED(etDialog.lockReasons));
 
     XmToggleButtonSetState(etDialog.oCcViewTagW,
-    	    	GetClearCaseViewTag() != NULL, False);
+                GetClearCaseViewTag() != NULL, False);
     XmToggleButtonSetState(etDialog.oServerNameW,
-    	    	etDialog.isServer, False);
+                etDialog.isServer, False);
 
     if (GetClearCaseViewTag() != NULL && etDialog.isServer
             && GetPrefServerName()[0] != '\0'
@@ -529,14 +529,14 @@ static void formatChangedCB(Widget w, XtPointer clientData, XtPointer callData)
     
     if (etDialog.suppressFormatUpdate)
     {
-	return; /* Prevent recursive feedback */
+    return; /* Prevent recursive feedback */
     }
     
     format = XmTextGetString(etDialog.formatW);
     
 #ifndef VMS
     if (XmToggleButtonGetState(etDialog.oServerEqualViewW) &&
-	XmToggleButtonGetState(etDialog.ccW)) {
+    XmToggleButtonGetState(etDialog.ccW)) {
        serverName = etDialog.viewTag;
     } else
 #endif /* VMS */
@@ -672,44 +672,44 @@ static void removeFromFormat(const char* string)
     /* There can be multiple occurences */
     while ((pos = strstr(format, string)))
     {
-	/* If the string is preceded or followed by a brace, include 
-	   the brace(s) for removal */
-	char* start = pos;
-	char* end = pos + strlen(string);
-	char post = *end;
-	
-	if (post == '}' || post == ')' || post == ']' || post == '>')
+    /* If the string is preceded or followed by a brace, include 
+       the brace(s) for removal */
+    char* start = pos;
+    char* end = pos + strlen(string);
+    char post = *end;
+    
+    if (post == '}' || post == ')' || post == ']' || post == '>')
         {
-	    end += 1;
-	    post = *end;
-	}
-	
-	if (start > format)
-	{
-	    char pre = *(start-1);
-	    if (pre == '{' || pre == '(' || pre == '[' || pre == '<')
-		start -= 1;
-	}
-	if (start > format)
-	{
-	    char pre = *(start-1);
-	    /* If there is a space in front and behind, remove one space 
-	       (there can be more spaces, but in that case it is likely
-	       that the user entered them manually); also remove trailing
-	       space */
-	    if (pre == ' ' && post == ' ')
-	    {
-		end += 1;
-	    }
-	    else if (pre == ' ' && post == (char)0)
-	    {
-		/* Remove (1) trailing space */
-		start -= 1; 
-	    }
-	}
-	
-	/* Contract the string: move end to start */
-	strcpy(start, end);
+        end += 1;
+        post = *end;
+    }
+    
+    if (start > format)
+    {
+        char pre = *(start-1);
+        if (pre == '{' || pre == '(' || pre == '[' || pre == '<')
+        start -= 1;
+    }
+    if (start > format)
+    {
+        char pre = *(start-1);
+        /* If there is a space in front and behind, remove one space 
+           (there can be more spaces, but in that case it is likely
+           that the user entered them manually); also remove trailing
+           space */
+        if (pre == ' ' && post == ' ')
+        {
+        end += 1;
+        }
+        else if (pre == ' ' && post == (char)0)
+        {
+        /* Remove (1) trailing space */
+        start -= 1; 
+        }
+    }
+    
+    /* Contract the string: move end to start */
+    strcpy(start, end);
     }
     
     /* Remove leading and trailing space */
@@ -720,7 +720,7 @@ static void removeFromFormat(const char* string)
     pos = format + strlen(format) - 1;
     while (pos >= format && *pos == ' ')
     {
-	--pos;
+    --pos;
     }
     *(pos+1) = (char)0;
     
@@ -732,34 +732,34 @@ static void removeFromFormat(const char* string)
 static void toggleFileCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.fileW))
-	appendToFormat(" %f");
+    appendToFormat(" %f");
     else
-	removeFromFormat("%f");
+    removeFromFormat("%f");
 }
 
 static void toggleServerCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.serverW))
-	appendToFormat(" [%s]");
+    appendToFormat(" [%s]");
     else
-	removeFromFormat("%s");
+    removeFromFormat("%s");
 }
 
 static void toggleHostCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.hostW))
-	appendToFormat(" [%h]");
+    appendToFormat(" [%h]");
     else
-	removeFromFormat("%h");
+    removeFromFormat("%h");
 }
 
 #ifndef VMS
 static void toggleClearCaseCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.ccW))
-	appendToFormat(" {%c}");
+    appendToFormat(" {%c}");
     else
-	removeFromFormat("%c");
+    removeFromFormat("%c");
 }
 #endif /* VMS */
 
@@ -767,15 +767,15 @@ static void toggleStatusCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.statusW))
     {
-	if (XmToggleButtonGetState(etDialog.shortStatusW))
-	    appendToFormat(" (%*S)");
-	else
-	    appendToFormat(" (%S)");
+    if (XmToggleButtonGetState(etDialog.shortStatusW))
+        appendToFormat(" (%*S)");
+    else
+        appendToFormat(" (%S)");
     }
     else
     {
-	removeFromFormat("%S");
-	removeFromFormat("%*S");
+    removeFromFormat("%S");
+    removeFromFormat("%*S");
     }
 }
 
@@ -785,42 +785,42 @@ static void toggleShortStatusCB(Widget w, XtPointer clientData, XtPointer callDa
     
     if (etDialog.suppressFormatUpdate)
     {
-	return;
+    return;
     }
     
     format = XmTextGetString(etDialog.formatW);
     
     if (XmToggleButtonGetState(etDialog.shortStatusW))
     {
-	/* Find all %S occurrences and replace them by %*S */
-	do
-	{
-	    pos = strstr(format, "%S");
-	    if (pos)
-	    {
-     	        char* tmp = (char*)NEditMalloc((strlen(format)+2)*sizeof(char));
-		strncpy(tmp, format, (size_t)(pos-format+1));
-		tmp[pos-format+1] = 0;
-		strcat(tmp, "*");
-		strcat(tmp, pos+1);
-		NEditFree(format);
-		format = tmp;
-	    }
-	}
-	while (pos);
+    /* Find all %S occurrences and replace them by %*S */
+    do
+    {
+        pos = strstr(format, "%S");
+        if (pos)
+        {
+                 char* tmp = (char*)NEditMalloc((strlen(format)+2)*sizeof(char));
+        strncpy(tmp, format, (size_t)(pos-format+1));
+        tmp[pos-format+1] = 0;
+        strcat(tmp, "*");
+        strcat(tmp, pos+1);
+        NEditFree(format);
+        format = tmp;
+        }
+    }
+    while (pos);
     }    
     else
     {
-	/* Replace all %*S occurences by %S */
-	do
-	{
+    /* Replace all %*S occurences by %S */
+    do
+    {
             pos = strstr(format, "%*S");
-	    if (pos)
-	    {
-		strcpy(pos+1, pos+2);
-	    }
-	}
-	while(pos);
+        if (pos)
+        {
+        strcpy(pos+1, pos+2);
+        }
+    }
+    while(pos);
     }
     
     XmTextSetString(etDialog.formatW, format);
@@ -830,17 +830,17 @@ static void toggleShortStatusCB(Widget w, XtPointer clientData, XtPointer callDa
 static void toggleUserCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.nameW))
-	appendToFormat(" %u");
+    appendToFormat(" %u");
     else
-	removeFromFormat("%u");
+    removeFromFormat("%u");
 }
 
 static void toggleEncodingCB(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (XmToggleButtonGetState(etDialog.encW))
-	appendToFormat(" %e");
+    appendToFormat(" %e");
     else
-	removeFromFormat("%e");
+    removeFromFormat("%e");
 }
 
 static void toggleDirectoryCB(Widget w, XtPointer clientData, XtPointer callData)
@@ -849,36 +849,36 @@ static void toggleDirectoryCB(Widget w, XtPointer clientData, XtPointer callData
     {
         char buf[20];
         buf[19] = 0;
-	int maxComp;
+    int maxComp;
         char *value = XmTextGetString(etDialog.ndirW);
-	if (*value)
-	{
-	   if (sscanf(value, "%d", &maxComp) > 0)
-	   {
-	      snprintf(&buf[0], 19, " %%%dd ", maxComp);
+    if (*value)
+    {
+       if (sscanf(value, "%d", &maxComp) > 0)
+       {
+          snprintf(&buf[0], 19, " %%%dd ", maxComp);
            }   
-	   else
-	   {
-   	      snprintf(&buf[0], 19, " %%d "); /* Should not be necessary */
- 	   }
+       else
+       {
+             snprintf(&buf[0], 19, " %%d "); /* Should not be necessary */
         }
-	else
-	{
-	   snprintf(&buf[0], 19, " %%d ");
-	}
-	NEditFree(value);
+        }
+    else
+    {
+       snprintf(&buf[0], 19, " %%d ");
+    }
+    NEditFree(value);
         appendToFormat(buf);
     }
     else
     {
-	int i;
-	removeFromFormat("%d");
-	for (i=0; i<=9; ++i)
-	{
-	    char buf[20];
-	    snprintf(&buf[0], 19, "%%%dd", i);
-	    removeFromFormat(buf);
-	}
+    int i;
+    removeFromFormat("%d");
+    for (i=0; i<=9; ++i)
+    {
+        char buf[20];
+        snprintf(&buf[0], 19, "%%%dd", i);
+        removeFromFormat(buf);
+    }
     }
 }
 
@@ -890,88 +890,88 @@ static void enterMaxDirCB(Widget w, XtPointer clientData, XtPointer callData)
     
     if (etDialog.suppressFormatUpdate)
     {
-	return;
+    return;
     }
-	
+    
     format = XmTextGetString(etDialog.formatW);
     value = XmTextGetString(etDialog.ndirW);
     
     if (*value)
     {
-	if (sscanf(value, "%d", &maxComp) <= 0)
-	{
-	   /* Don't allow non-digits to be entered */
-	   XBell(XtDisplay(w), 0);
-	   XmTextSetString(etDialog.ndirW, "");
-	}
+    if (sscanf(value, "%d", &maxComp) <= 0)
+    {
+       /* Don't allow non-digits to be entered */
+       XBell(XtDisplay(w), 0);
+       XmTextSetString(etDialog.ndirW, "");
+    }
     }
     
     if (maxComp >= 0)
     {
-	char *pos;
-	int found = False;
-	char insert[2];
+    char *pos;
+    int found = False;
+    char insert[2];
         insert[0] = (char)('0' + maxComp);
         insert[1] = (char)0; /* '0' digit and 0 char ! */
-	
-	/* Find all %d and %nd occurrences and replace them by the new value */
-	do
-	{
-	    int i;
-	    found = False;
-	    pos = strstr(format, "%d");
-	    if (pos)
-	    {
-     	        char* tmp = (char*)NEditMalloc((strlen(format)+2)*sizeof(char));
-		strncpy(tmp, format, (size_t)(pos-format+1));
-		tmp[pos-format+1] = 0;
-		strcat(tmp, &insert[0]);
-		strcat(tmp, pos+1);
-		NEditFree(format);
-		format = tmp;
-		found = True;
-	    }
-	      
-	    for (i=0; i<=9; ++i)
-	    {
-        	char buf[20];
-		snprintf(&buf[0], 20, "%%%dd", i);
-		if (i != maxComp)
-		{
-		    pos = strstr(format, &buf[0]);
-		    if (pos)
-		    {
-			*(pos+1) = insert[0];
-			found = True;
-		    }
-		}
-	    }
-	}
-	while (found);
+    
+    /* Find all %d and %nd occurrences and replace them by the new value */
+    do
+    {
+        int i;
+        found = False;
+        pos = strstr(format, "%d");
+        if (pos)
+        {
+                 char* tmp = (char*)NEditMalloc((strlen(format)+2)*sizeof(char));
+        strncpy(tmp, format, (size_t)(pos-format+1));
+        tmp[pos-format+1] = 0;
+        strcat(tmp, &insert[0]);
+        strcat(tmp, pos+1);
+        NEditFree(format);
+        format = tmp;
+        found = True;
+        }
+          
+        for (i=0; i<=9; ++i)
+        {
+            char buf[20];
+        snprintf(&buf[0], 20, "%%%dd", i);
+        if (i != maxComp)
+        {
+            pos = strstr(format, &buf[0]);
+            if (pos)
+            {
+            *(pos+1) = insert[0];
+            found = True;
+            }
+        }
+        }
+    }
+    while (found);
     }    
     else
     {
-	int found = True;
-	
-	/* Replace all %nd occurences by %d */
-	do
-	{
-   	    int i;
-	    found = False;
-	    for (i=0; i<=9; ++i)
-	    {
-        	char buf[20];
-		char *pos;
-		snprintf(&buf[0], 20, "%%%dd", i);
-		pos = strstr(format, &buf[0]);
-		if (pos)
-		{
-		    strcpy(pos+1, pos+2);
-		    found = True;
-		}
-	    }
-	}
-	while(found);
+    int found = True;
+    
+    /* Replace all %nd occurences by %d */
+    do
+    {
+           int i;
+        found = False;
+        for (i=0; i<=9; ++i)
+        {
+            char buf[20];
+        char *pos;
+        snprintf(&buf[0], 20, "%%%dd", i);
+        pos = strstr(format, &buf[0]);
+        if (pos)
+        {
+            strcpy(pos+1, pos+2);
+            found = True;
+        }
+        }
+    }
+    while(found);
     }
     
     XmTextSetString(etDialog.formatW, format);
@@ -994,8 +994,8 @@ static void createEditTitleDialog(Widget parent)
     XmFontList fontList;
     Arg args[20];
     int defaultBtnOffset;
-    Dimension	shadowThickness;
-    Dimension	radioHeight, textHeight;
+    Dimension    shadowThickness;
+    Dimension    radioHeight, textHeight;
     Pixel background;
     
     int ac = 0;
@@ -1014,139 +1014,139 @@ static void createEditTitleDialog(Widget parent)
     
     /* Definition form */
     selectFrame = XtVaCreateManagedWidget("selectionFrame", xmFrameWidgetClass,
-	    etDialog.form,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopAttachment, XmATTACH_FORM,
-	    XmNtopOffset, V_MARGIN,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, RIGHT_MARGIN_POS, NULL);
+        etDialog.form,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopAttachment, XmATTACH_FORM,
+        XmNtopOffset, V_MARGIN,
+        XmNrightAttachment, XmATTACH_POSITION,
+        XmNrightPosition, RIGHT_MARGIN_POS, NULL);
 
     XtVaCreateManagedWidget("titleLabel", xmLabelGadgetClass,
-    	    selectFrame,
-    	    XmNlabelString,
-	    s1=XmStringCreateSimple("Title definition"),
-	    XmNchildType, XmFRAME_TITLE_CHILD,
-	    XmNchildHorizontalAlignment, XmALIGNMENT_BEGINNING, NULL);
+            selectFrame,
+            XmNlabelString,
+        s1=XmStringCreateSimple("Title definition"),
+        XmNchildType, XmFRAME_TITLE_CHILD,
+        XmNchildHorizontalAlignment, XmALIGNMENT_BEGINNING, NULL);
     XmStringFree(s1);
     
     selectForm = XtVaCreateManagedWidget("selectForm", xmFormWidgetClass,
-	    selectFrame ,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopAttachment, XmATTACH_FORM,
-	    XmNtopOffset, V_MARGIN,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, RIGHT_MARGIN_POS, NULL);
+        selectFrame ,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopAttachment, XmATTACH_FORM,
+        XmNtopOffset, V_MARGIN,
+        XmNrightAttachment, XmATTACH_POSITION,
+        XmNrightPosition, RIGHT_MARGIN_POS, NULL);
     
     selectLbl = XtVaCreateManagedWidget("selectLabel", xmLabelGadgetClass,
-    	    selectForm,
-    	    XmNlabelString, s1=XmStringCreateSimple("Select title components to include:  "),
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopOffset, 5,
-	    XmNbottomOffset, 5,
-	    XmNtopAttachment, XmATTACH_FORM, NULL);
+            selectForm,
+            XmNlabelString, s1=XmStringCreateSimple("Select title components to include:  "),
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopOffset, 5,
+        XmNbottomOffset, 5,
+        XmNtopAttachment, XmATTACH_FORM, NULL);
     XmStringFree(s1);
 
     selectBox = XtVaCreateManagedWidget("selectBox", xmFormWidgetClass,
-    	    selectForm,
-    	    XmNorientation, XmHORIZONTAL,
-    	    XmNpacking, XmPACK_TIGHT,
-    	    XmNradioBehavior, False,
-	    XmNleftAttachment, XmATTACH_FORM,
-	    XmNrightAttachment, XmATTACH_FORM,
-	    XmNtopOffset, 5,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, selectLbl,
-	    NULL);
+            selectForm,
+            XmNorientation, XmHORIZONTAL,
+            XmNpacking, XmPACK_TIGHT,
+            XmNradioBehavior, False,
+        XmNleftAttachment, XmATTACH_FORM,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNtopOffset, 5,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, selectLbl,
+        NULL);
     
     etDialog.fileW = XtVaCreateManagedWidget("file", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_FORM,
-    	    XmNlabelString, s1=XmStringCreateSimple("File name (%f)"),
-    	    XmNmnemonic, 'F', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_FORM,
+            XmNlabelString, s1=XmStringCreateSimple("File name (%f)"),
+            XmNmnemonic, 'F', NULL);
     XtAddCallback(etDialog.fileW, XmNvalueChangedCallback, toggleFileCB, NULL);
     XmStringFree(s1);
 
     etDialog.statusW = XtVaCreateManagedWidget("status", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.fileW,
-    	    XmNlabelString, s1=XmStringCreateSimple("File status (%S) "),
-    	    XmNmnemonic, 't', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.fileW,
+            XmNlabelString, s1=XmStringCreateSimple("File status (%S) "),
+            XmNmnemonic, 't', NULL);
     XtAddCallback(etDialog.statusW, XmNvalueChangedCallback, toggleStatusCB, NULL);
     XmStringFree(s1);
 
     etDialog.shortStatusW = XtVaCreateManagedWidget("shortStatus", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, etDialog.statusW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.fileW,
-    	    XmNlabelString, s1=XmStringCreateSimple("brief"),
-    	    XmNmnemonic, 'b', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, etDialog.statusW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.fileW,
+            XmNlabelString, s1=XmStringCreateSimple("brief"),
+            XmNmnemonic, 'b', NULL);
     XtAddCallback(etDialog.shortStatusW, XmNvalueChangedCallback, toggleShortStatusCB, NULL);
     XmStringFree(s1);
 
     etDialog.ccW = XtVaCreateManagedWidget("ccView", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.statusW,
-    	    XmNlabelString, s1=XmStringCreateSimple("ClearCase view tag (%c) "),
-    	    XmNmnemonic, 'C', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.statusW,
+            XmNlabelString, s1=XmStringCreateSimple("ClearCase view tag (%c) "),
+            XmNmnemonic, 'C', NULL);
     XtAddCallback(etDialog.ccW, XmNvalueChangedCallback, toggleClearCaseCB, NULL);
     XmStringFree(s1);
 
     etDialog.encW = XtVaCreateManagedWidget("encoding", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.ccW,
-    	    XmNlabelString, s1=XmStringCreateSimple("Encoding (%e)"),
-    	    XmNmnemonic, 'E', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.ccW,
+            XmNlabelString, s1=XmStringCreateSimple("Encoding (%e)"),
+            XmNmnemonic, 'E', NULL);
     XtAddCallback(etDialog.encW, XmNvalueChangedCallback, toggleEncodingCB, NULL);
     XmStringFree(s1);
     
     etDialog.dirW = XtVaCreateManagedWidget("directory", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.encW,
-    	    XmNlabelString, s1=XmStringCreateSimple("Directory (%d),"),
-    	    XmNmnemonic, 'D', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.encW,
+            XmNlabelString, s1=XmStringCreateSimple("Directory (%d),"),
+            XmNmnemonic, 'D', NULL);
     XtAddCallback(etDialog.dirW, XmNvalueChangedCallback, toggleDirectoryCB, NULL);
     XmStringFree(s1);
     
     XtVaGetValues(etDialog.fileW, XmNheight, &radioHeight, NULL);
     etDialog.mdirW = XtVaCreateManagedWidget("componentLab", 
-    	    xmLabelGadgetClass, selectBox,
-	    XmNheight, radioHeight,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, etDialog.dirW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.encW,
-    	    XmNlabelString, s1=XmStringCreateSimple("max. components: "),
-    	    XmNmnemonic, 'x', NULL);
+            xmLabelGadgetClass, selectBox,
+        XmNheight, radioHeight,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, etDialog.dirW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.encW,
+            XmNlabelString, s1=XmStringCreateSimple("max. components: "),
+            XmNmnemonic, 'x', NULL);
     XmStringFree(s1);
     
     etDialog.ndirW = XtVaCreateManagedWidget("dircomp", 
-    	    xmTextWidgetClass, selectBox,
-   	    XmNcolumns, 1,
-   	    XmNmaxLength, 1,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, etDialog.mdirW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.encW,
-    	    NULL);
+            xmTextWidgetClass, selectBox,
+           XmNcolumns, 1,
+           XmNmaxLength, 1,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, etDialog.mdirW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.encW,
+            NULL);
     XtAddCallback(etDialog.ndirW, XmNvalueChangedCallback, enterMaxDirCB, NULL);
     RemapDeleteKey(etDialog.ndirW);
     XtVaSetValues(etDialog.mdirW, XmNuserData, etDialog.ndirW, NULL); /* mnemonic processing */
@@ -1156,59 +1156,59 @@ static void createEditTitleDialog(Widget parent)
     XtVaSetValues(etDialog.mdirW, XmNheight, textHeight, NULL);
     
     etDialog.hostW = XtVaCreateManagedWidget("host", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, 50 + RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_FORM,
-    	    XmNlabelString, s1=XmStringCreateSimple("Host name (%h)"),
-    	    XmNmnemonic, 'H', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, 50 + RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_FORM,
+            XmNlabelString, s1=XmStringCreateSimple("Host name (%h)"),
+            XmNmnemonic, 'H', NULL);
     XtAddCallback(etDialog.hostW, XmNvalueChangedCallback, toggleHostCB, NULL);
     XmStringFree(s1);
 
     etDialog.nameW = XtVaCreateManagedWidget("name", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, 50 + RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.hostW,
-    	    XmNlabelString, s1=XmStringCreateSimple("User name (%u)"),
-    	    XmNmnemonic, 'U', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, 50 + RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.hostW,
+            XmNlabelString, s1=XmStringCreateSimple("User name (%u)"),
+            XmNmnemonic, 'U', NULL);
     XtAddCallback(etDialog.nameW, XmNvalueChangedCallback, toggleUserCB, NULL);
     XmStringFree(s1);
 
     etDialog.serverW = XtVaCreateManagedWidget("server", 
-    	    xmToggleButtonWidgetClass, selectBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, 50 + RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.nameW,
-    	    XmNlabelString, s1=XmStringCreateSimple("NEdit server name (%s)"),
-    	    XmNmnemonic, 's', NULL);
+            xmToggleButtonWidgetClass, selectBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, 50 + RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.nameW,
+            XmNlabelString, s1=XmStringCreateSimple("NEdit server name (%s)"),
+            XmNmnemonic, 's', NULL);
     XtAddCallback(etDialog.serverW, XmNvalueChangedCallback, toggleServerCB, NULL);
     XmStringFree(s1);
 
     formatLbl = XtVaCreateManagedWidget("formatLbl", xmLabelGadgetClass,
-    	    selectForm,
-    	    XmNlabelString, s1=XmStringCreateSimple("Format:  "),
-    	    XmNmnemonic, 'r',
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, selectBox,
-	    XmNbottomAttachment, XmATTACH_FORM, NULL);
+            selectForm,
+            XmNlabelString, s1=XmStringCreateSimple("Format:  "),
+            XmNmnemonic, 'r',
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, selectBox,
+        XmNbottomAttachment, XmATTACH_FORM, NULL);
     XmStringFree(s1);
     etDialog.formatW = XtVaCreateManagedWidget("format", xmTextWidgetClass,
-    	    selectForm,
-	    XmNmaxLength, WINDOWTITLE_MAX_LEN,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, selectBox,
-	    XmNtopOffset, 5,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, formatLbl,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, RIGHT_MARGIN_POS,
-	    XmNbottomAttachment, XmATTACH_FORM, 
-	    XmNbottomOffset, 5, NULL);
+            selectForm,
+        XmNmaxLength, WINDOWTITLE_MAX_LEN,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, selectBox,
+        XmNtopOffset, 5,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, formatLbl,
+        XmNrightAttachment, XmATTACH_POSITION,
+        XmNrightPosition, RIGHT_MARGIN_POS,
+        XmNbottomAttachment, XmATTACH_FORM, 
+        XmNbottomOffset, 5, NULL);
     RemapDeleteKey(etDialog.formatW);
     XtVaSetValues(formatLbl, XmNuserData, etDialog.formatW, NULL);
     XtAddCallback(etDialog.formatW, XmNvalueChangedCallback, formatChangedCB, NULL);
@@ -1217,29 +1217,29 @@ static void createEditTitleDialog(Widget parent)
     XtVaSetValues(formatLbl,  XmNheight, textHeight, NULL);
     
     previewFrame = XtVaCreateManagedWidget("previewFrame", xmFrameWidgetClass,
-	    etDialog.form,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, selectFrame,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNrightAttachment, XmATTACH_POSITION, 
-	    XmNrightPosition, RIGHT_MARGIN_POS, NULL);
+        etDialog.form,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, selectFrame,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNrightAttachment, XmATTACH_POSITION, 
+        XmNrightPosition, RIGHT_MARGIN_POS, NULL);
 
     XtVaCreateManagedWidget("previewLabel", xmLabelGadgetClass,
-    	    previewFrame,
-    	    XmNlabelString, s1=XmStringCreateSimple("Preview"),
-	    XmNchildType, XmFRAME_TITLE_CHILD,
-	    XmNchildHorizontalAlignment, XmALIGNMENT_BEGINNING, NULL);
+            previewFrame,
+            XmNlabelString, s1=XmStringCreateSimple("Preview"),
+        XmNchildType, XmFRAME_TITLE_CHILD,
+        XmNchildHorizontalAlignment, XmALIGNMENT_BEGINNING, NULL);
     XmStringFree(s1);
     
     previewForm = XtVaCreateManagedWidget("previewForm", xmFormWidgetClass,
-	    previewFrame,
-	    XmNleftAttachment, XmATTACH_FORM,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopAttachment, XmATTACH_FORM,
-	    XmNtopOffset, V_MARGIN,
-	    XmNrightAttachment, XmATTACH_FORM,
-	    XmNrightPosition, RIGHT_MARGIN_POS, NULL);
+        previewFrame,
+        XmNleftAttachment, XmATTACH_FORM,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopAttachment, XmATTACH_FORM,
+        XmNtopOffset, V_MARGIN,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNrightPosition, RIGHT_MARGIN_POS, NULL);
     
     /* Copy a variable width font from one of the labels to use for the
        preview (no editing is allowed, and with a fixed size font the
@@ -1262,82 +1262,82 @@ static void createEditTitleDialog(Widget parent)
             NULL);
     
     previewBox = XtVaCreateManagedWidget("previewBox", xmFormWidgetClass,
-    	    previewForm,
-    	    XmNorientation, XmHORIZONTAL,
-    	    XmNpacking, XmPACK_TIGHT,
-    	    XmNradioBehavior, False,
-	    XmNleftAttachment, XmATTACH_FORM,
-	    XmNrightAttachment, XmATTACH_FORM,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.previewW, NULL);
+            previewForm,
+            XmNorientation, XmHORIZONTAL,
+            XmNpacking, XmPACK_TIGHT,
+            XmNradioBehavior, False,
+        XmNleftAttachment, XmATTACH_FORM,
+        XmNrightAttachment, XmATTACH_FORM,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.previewW, NULL);
     
     testLbl = XtVaCreateManagedWidget("testLabel", xmLabelGadgetClass,
-    	    previewBox,
-    	    XmNlabelString, s1=XmStringCreateSimple("Test settings:  "),
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopOffset, 5,
-	    XmNbottomOffset, 5,
-	    XmNtopAttachment, XmATTACH_FORM, NULL);
+            previewBox,
+            XmNlabelString, s1=XmStringCreateSimple("Test settings:  "),
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopOffset, 5,
+        XmNbottomOffset, 5,
+        XmNtopAttachment, XmATTACH_FORM, NULL);
     XmStringFree(s1);
 
     etDialog.oFileChangedW = XtVaCreateManagedWidget("fileChanged", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, testLbl,
-    	    XmNlabelString, s1=XmStringCreateSimple("File modified"),
-    	    XmNmnemonic, 'o', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, testLbl,
+            XmNlabelString, s1=XmStringCreateSimple("File modified"),
+            XmNmnemonic, 'o', NULL);
     XtAddCallback(etDialog.oFileChangedW, XmNvalueChangedCallback, fileChangedCB, NULL);
     XmStringFree(s1);
     
     etDialog.oFileReadOnlyW = XtVaCreateManagedWidget("fileReadOnly", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, etDialog.oFileChangedW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, testLbl,
-    	    XmNlabelString, s1=XmStringCreateSimple("File read only"),
-    	    XmNmnemonic, 'n', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, etDialog.oFileChangedW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, testLbl,
+            XmNlabelString, s1=XmStringCreateSimple("File read only"),
+            XmNmnemonic, 'n', NULL);
     XtAddCallback(etDialog.oFileReadOnlyW, XmNvalueChangedCallback, fileReadOnlyCB, NULL);
     XmStringFree(s1);
     
     etDialog.oFileLockedW = XtVaCreateManagedWidget("fileLocked", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-	    XmNleftWidget, etDialog.oFileReadOnlyW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, testLbl,
-    	    XmNlabelString, s1=XmStringCreateSimple("File locked"),
-    	    XmNmnemonic, 'l', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_WIDGET,
+        XmNleftWidget, etDialog.oFileReadOnlyW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, testLbl,
+            XmNlabelString, s1=XmStringCreateSimple("File locked"),
+            XmNmnemonic, 'l', NULL);
     XtAddCallback(etDialog.oFileLockedW, XmNvalueChangedCallback, fileLockedCB, NULL);
     XmStringFree(s1);
 
     etDialog.oServerNameW = XtVaCreateManagedWidget("servernameSet", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.oFileChangedW,
-    	    XmNlabelString, s1=XmStringCreateSimple("Server name present"),
-    	    XmNmnemonic, 'v', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.oFileChangedW,
+            XmNlabelString, s1=XmStringCreateSimple("Server name present"),
+            XmNmnemonic, 'v', NULL);
     XtAddCallback(etDialog.oServerNameW, XmNvalueChangedCallback, serverNameCB, NULL);
     XmStringFree(s1);
 
     etDialog.oCcViewTagW = XtVaCreateManagedWidget("ccViewTagSet", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.oServerNameW,
-    	    XmNlabelString, s1=XmStringCreateSimple("CC view tag present"),
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.oServerNameW,
+            XmNlabelString, s1=XmStringCreateSimple("CC view tag present"),
 #ifdef VMS
-   	    XmNset, False,
+           XmNset, False,
 #else
-   	    XmNset, GetClearCaseViewTag() != NULL,
+           XmNset, GetClearCaseViewTag() != NULL,
 #endif /* VMS */
-    	    XmNmnemonic, 'w', NULL);
+            XmNmnemonic, 'w', NULL);
 #ifdef VMS
     XtSetSensitive(etDialog.oCcViewTagW, False);
 #else
@@ -1346,13 +1346,13 @@ static void createEditTitleDialog(Widget parent)
     XmStringFree(s1);
 
     etDialog.oServerEqualViewW = XtVaCreateManagedWidget("serverEqualView", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_WIDGET,
-    	    XmNleftWidget, etDialog.oCcViewTagW,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.oServerNameW,
-    	    XmNlabelString, s1=XmStringCreateSimple("Server name equals CC view tag  "),
-    	    XmNmnemonic, 'q', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_WIDGET,
+            XmNleftWidget, etDialog.oCcViewTagW,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.oServerNameW,
+            XmNlabelString, s1=XmStringCreateSimple("Server name equals CC view tag  "),
+            XmNmnemonic, 'q', NULL);
 #ifdef VMS
     XtSetSensitive(etDialog.oServerEqualViewW, False);
 #else
@@ -1361,40 +1361,40 @@ static void createEditTitleDialog(Widget parent)
     XmStringFree(s1);
 
     etDialog.oDirW = XtVaCreateManagedWidget("pathSet", 
-    	    xmToggleButtonWidgetClass, previewBox,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, RADIO_INDENT,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, etDialog.oCcViewTagW,
-    	    XmNlabelString, s1=XmStringCreateSimple("Directory present"),
-    	    XmNmnemonic, 'i', NULL);
+            xmToggleButtonWidgetClass, previewBox,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, RADIO_INDENT,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, etDialog.oCcViewTagW,
+            XmNlabelString, s1=XmStringCreateSimple("Directory present"),
+            XmNmnemonic, 'i', NULL);
     XtAddCallback(etDialog.oDirW, XmNvalueChangedCallback, formatChangedCB, NULL);
     XmStringFree(s1);
 
     /* Button box */
     buttonForm = XtVaCreateManagedWidget("buttonForm", xmFormWidgetClass,
-	    etDialog.form,
-	    XmNleftAttachment, XmATTACH_POSITION,
-	    XmNleftPosition, LEFT_MARGIN_POS,
-	    XmNtopAttachment, XmATTACH_WIDGET,
-	    XmNtopWidget, previewFrame,
-	    XmNtopOffset, V_MARGIN,
-	    XmNbottomOffset, V_MARGIN,
-	    XmNbottomAttachment, XmATTACH_FORM,
-	    XmNrightAttachment, XmATTACH_POSITION,
-	    XmNrightPosition, RIGHT_MARGIN_POS, NULL);
+        etDialog.form,
+        XmNleftAttachment, XmATTACH_POSITION,
+        XmNleftPosition, LEFT_MARGIN_POS,
+        XmNtopAttachment, XmATTACH_WIDGET,
+        XmNtopWidget, previewFrame,
+        XmNtopOffset, V_MARGIN,
+        XmNbottomOffset, V_MARGIN,
+        XmNbottomAttachment, XmATTACH_FORM,
+        XmNrightAttachment, XmATTACH_POSITION,
+        XmNrightPosition, RIGHT_MARGIN_POS, NULL);
 
     applyBtn = XtVaCreateManagedWidget("apply", xmPushButtonWidgetClass,
             buttonForm,
-    	    XmNhighlightThickness, 2,
+            XmNhighlightThickness, 2,
             XmNlabelString, s1=XmStringCreateSimple("Apply"),
             XmNshowAsDefault, (short)1,
-    	    XmNleftAttachment, XmATTACH_POSITION,
-    	    XmNleftPosition, 6,
-    	    XmNrightAttachment, XmATTACH_POSITION,
-    	    XmNrightPosition, 25,
-    	    XmNbottomAttachment, XmATTACH_FORM,
-	    NULL);
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 6,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 25,
+            XmNbottomAttachment, XmATTACH_FORM,
+        NULL);
     XtAddCallback(applyBtn, XmNactivateCallback, applyCB, NULL);
     XmStringFree(s1);
     XtVaGetValues(applyBtn, XmNshadowThickness, &shadowThickness, NULL);
@@ -1402,43 +1402,43 @@ static void createEditTitleDialog(Widget parent)
 
     closeBtn = XtVaCreateManagedWidget("close", xmPushButtonWidgetClass,
             buttonForm,
-    	    XmNhighlightThickness, 2,
-    	    XmNlabelString, s1=XmStringCreateSimple("Close"),
-    	    XmNleftAttachment, XmATTACH_POSITION,
-    	    XmNleftPosition, 52,
-    	    XmNrightAttachment, XmATTACH_POSITION,
-    	    XmNrightPosition, 71,
-    	    XmNbottomAttachment, XmATTACH_FORM,
+            XmNhighlightThickness, 2,
+            XmNlabelString, s1=XmStringCreateSimple("Close"),
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 52,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 71,
+            XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, defaultBtnOffset,
-	    NULL);
+        NULL);
     XtAddCallback(closeBtn, XmNactivateCallback, closeCB, NULL);
     XmStringFree(s1);
 
     restoreBtn = XtVaCreateManagedWidget("restore", xmPushButtonWidgetClass,
             buttonForm,
-    	    XmNhighlightThickness, 2,
-    	    XmNlabelString, s1=XmStringCreateSimple("Default"),
-    	    XmNleftAttachment, XmATTACH_POSITION,
-    	    XmNleftPosition, 29,
-    	    XmNrightAttachment, XmATTACH_POSITION,
-    	    XmNrightPosition, 48,
-    	    XmNbottomAttachment, XmATTACH_FORM,
+            XmNhighlightThickness, 2,
+            XmNlabelString, s1=XmStringCreateSimple("Default"),
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 29,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 48,
+            XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, defaultBtnOffset,
-	    XmNmnemonic, 'e', NULL);
+        XmNmnemonic, 'e', NULL);
     XtAddCallback(restoreBtn, XmNactivateCallback, restoreCB, NULL);
     XmStringFree(s1);
 
     helpBtn = XtVaCreateManagedWidget("help", xmPushButtonWidgetClass,
             buttonForm,
-    	    XmNhighlightThickness, 2,
-    	    XmNlabelString, s1=XmStringCreateSimple("Help"),
-    	    XmNleftAttachment, XmATTACH_POSITION,
-    	    XmNleftPosition, 75,
-    	    XmNrightAttachment, XmATTACH_POSITION,
-    	    XmNrightPosition, 94,
-    	    XmNbottomAttachment, XmATTACH_FORM,
+            XmNhighlightThickness, 2,
+            XmNlabelString, s1=XmStringCreateSimple("Help"),
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftPosition, 75,
+            XmNrightAttachment, XmATTACH_POSITION,
+            XmNrightPosition, 94,
+            XmNbottomAttachment, XmATTACH_FORM,
             XmNbottomOffset, defaultBtnOffset,
-	    XmNmnemonic, 'p', NULL);
+        XmNmnemonic, 'p', NULL);
     XtAddCallback(helpBtn, XmNactivateCallback, helpCB, NULL);
     XmStringFree(s1);
 
@@ -1495,12 +1495,12 @@ void EditCustomTitleFormat(WindowInfo *window)
         /* If the window is already up, just pop it to the top */
         if (XtIsManaged(etDialog.form)) {
            
-	    RaiseDialogWindow(XtParent(etDialog.form));
+        RaiseDialogWindow(XtParent(etDialog.form));
 
             /* force update of the dialog */
             setToggleButtons();
             formatChangedCB(0, 0, 0);
-	    return;
+        return;
         }
     }
     
