@@ -59,6 +59,10 @@
 #include "../debug.h"
 #endif
 
+#include <stdint.h>       // For uint64_t, UINT16_MAX
+#include "preferences.h"  // For user preference values
+
+
 /* Masks for text drawing methods.  These are or'd together to form an
    integer which describes what drawing calls to use to draw a string */
 #define FILL_SHIFT 8
@@ -2800,6 +2804,167 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 }
 
 /*
+** Datastructure and functions used internally by drawString(...)
+*/
+
+/*
+** Datastructure used to store the working values for the three color values 
+** used in drawString(...), namely¹:
+**     bg → Background color for region being displayed
+**     ul → Foreground color for any underline being displayed
+**     fg → Foreground color for text being displayed
+** 
+** The final color value is the average of the set color and any colors that 
+** were blended with it; the actual values returned by getColor are either the 
+** `setColor` pointer (if no blending was done) or a reference to `color` (if 
+** multiple colors are being blended².  The `widget` and `colorName` values are 
+** used at blend time when constructing the `color` value; they are not needed 
+** in user code.
+** 
+** ¹ The names bg, ul, and fg correspond to bground, fground, and color in the 
+**   previous version of this copde.
+** ² The actual blending is performed when the value is requested by getColor().
+*/
+typedef struct {
+    int      isDefault;               // TRUE if current value is the 
+                                      // originally-set value, 
+                                      // FALSE otherwise
+    XftColor color;                   // Current color value
+    XftColor *setColor;               // Pointer to originally-set color
+    uint32_t red, green, blue, alpha; // Cumulative RGBA values
+    int      count;                   // Number of colors to blend
+    Widget   widget;                  // Used for computing color.pixel
+    char     colorName[8];            // Used for computing color.pixel
+                                      // (8 suffices for #rrggbb\0)
+    Boolean  valid;                   // TRUE for directly set color or one 
+                                      // whose blended color has been computed
+                                      // FALSE otherwhile
+} XnColor;
+
+/*
+** Set the color to specified value.
+*/
+inline static void setColor( XnColor *color, XftColor *newColor ) {
+    color->isDefault         = FALSE;
+    color->color.pixel       = newColor->pixel;
+    color->color.color.red   = newColor->color.red;
+    color->color.color.green = newColor->color.green;
+    color->color.color.blue  = newColor->color.blue;
+    color->color.color.alpha = newColor->color.alpha;
+    color->setColor          = newColor;
+    color->red               = newColor->color.red;
+    color->green             = newColor->color.green;
+    color->blue              = newColor->color.blue;
+    color->alpha             = newColor->color.alpha;
+    color->count             = 1;
+    color->valid             = TRUE;
+}
+
+/*
+** Set the color to specified value and mark it as the default value.
+*/
+inline static void setDefaultColor( XnColor *color, XftColor *newColor, textDisp *textD ) {
+    setColor( color, newColor );
+    color->isDefault = TRUE;
+    color->valid     = TRUE;
+    color->widget    = (Widget)textD->w;
+}
+
+/*
+** Blend specified color value with the current color value.
+*/
+inline static void blendColor( XnColor *color, XftColor *newColor ) {
+    color->red   += newColor->color.red;
+    color->green += newColor->color.green;
+    color->blue  += newColor->color.blue;
+    color->alpha += newColor->color.alpha;
+    color->count++;
+    color->valid = FALSE;
+}
+
+/*
+** If color has its default value then set value to the specified color value,
+** otherwise the specified color is blended with the current color.
+*/
+inline static void blendOrSetColor( XnColor *color, XftColor *newColor ) {
+    if ( color->isDefault ) {
+        setColor(color, newColor);
+    } else {
+        color->red   += newColor->color.red;
+        color->green += newColor->color.green;
+        color->blue  += newColor->color.blue;
+        color->alpha += newColor->color.alpha;
+        color->count++;
+        color->valid = FALSE;
+    }
+}
+
+/*
+** Return the current color, performing blending if neccesary.
+**
+** Blending is done by averaging all of the colors that were specified.
+*/
+inline static XftColor* getColor( XnColor *color ) {
+    int  r, g, b, a;
+    if ( color->count == 1 ) {  // Not a blended color
+        // We return this so that color equality comparisons (which are done by
+        // comparing the colors' memory addresses) function properly.
+        return color->setColor;
+        
+    } else {  // Blended color
+        if ( color->valid == FALSE ) {
+            // Need to compute the blended value
+            r = color->red   / color->count;
+            g = color->green / color->count;
+            b = color->blue  / color->count;
+            //a = color->alpha / color->count;
+            a = UINT16_MAX;
+            // These should never be needed:
+            if ( r > UINT16_MAX ) r = UINT16_MAX;
+            if ( g > UINT16_MAX ) g = UINT16_MAX;
+            if ( b > UINT16_MAX ) b = UINT16_MAX;
+            //if ( a > UINT16_MAX ) a = UINT16_MAX;
+            
+            // Populate the XftColor data structure
+            snprintf( color->colorName,
+                      sizeof(color->colorName), 
+                      "#%02x%02x%02x", 
+                      r>>8, g>>8, b>>8 );
+            color->color.pixel = AllocColor( color->widget, 
+                                             color->colorName, 
+                                             &r, &g, &b );
+            color->color.color.red   = r;
+            color->color.color.green = g;
+            color->color.color.blue  = b;
+            color->color.color.alpha = a;
+            
+            // Note that value was computed
+            color->valid = TRUE;
+        }
+        return &(color->color);
+    }
+}
+
+/*
+** Used when doing comparisons of colors by their actual values, not by their 
+** symbolic names [memory addresses].
+*/
+inline static uint64_t getRGB( XnColor *color ) {
+    (void)getColor(color); // Dummy read to force blending (if needed)
+    return (uint64_t)color->color.color.red   << 48 |
+           (uint64_t)color->color.color.green << 32 |
+           (uint64_t)color->color.color.blue  << 16 |
+           (uint64_t)UINT16_MAX;
+}
+inline static uint64_t getRGBA( XnColor *color ) {
+    (void)getColor(color); // Dummy read to force blending (if needed)
+    return (uint64_t)color->color.color.red   << 48 |
+           (uint64_t)color->color.color.green << 32 |
+           (uint64_t)color->color.color.blue  << 16 |
+           (uint64_t)color->color.color.alpha;
+}
+
+/*
 ** Draw a string or blank area according to parameter "style", using the
 ** appropriate colors and drawing method for that style, with top left
 ** corner at x, y.  If style says to draw text, use "string" as source of
@@ -2807,97 +2972,206 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** rectangle where text would have drawn from x to toX and from y to
 ** the maximum y extent of the current font(s).
 */
-static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, int fromX,
-	int toX, FcChar32 *string, int nChars, Boolean highlightLine, ansiStyle *ansi)
+static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, 
+        int fromX, int toX, FcChar32 *string, int nChars, Boolean highlightLine, 
+        ansiStyle *ansi)
 {
-    if(toX < fromX || nChars == 0) return;
+    /* Background, underline, and text foreground colors, respectively.
+    ** These correspond to bground, fground, and color in the previous code. */
+    XnColor bg, ul, fg;
     
-    XftColor *gc = &textD->colorProfile->textFgColor;
+    if ( toX < fromX || nChars == 0 ) return;
+    
     NFont *fontList = textD->font;
-    XftColor *bground = &textD->colorProfile->textBgColor;
-    XftColor *fground = &textD->colorProfile->textFgColor;
-    int underlineStyle = FALSE;
-    XftColor color = textD->colorProfile->textFgColor;
+    setDefaultColor( &bg, &textD->colorProfile->textBgColor, textD);
+    setDefaultColor( &ul, &textD->colorProfile->textFgColor, textD);
+    Boolean underlineStyle = FALSE;
+    setDefaultColor( &fg, &textD->colorProfile->textFgColor, textD);
     
     /* Don't draw if widget isn't realized */
     if (XtWindow(textD->w) == 0)
-    	return;
+        return;
     
     if(nChars == 0) rbIndex = -1;
     
-    /* select a GC */
-    if (rbIndex >= 0 || style & (STYLE_LOOKUP_MASK | BACKLIGHT_MASK | RANGESET_MASK)) {
-        gc = &textD->styleGC;
-    }
-    else if (style & HIGHLIGHT_MASK) {
-        bground = &textD->colorProfile->hiliteBgColor;
-        color = textD->colorProfile->hiliteFgColor;
-    }
-    else if (style & PRIMARY_MASK) {
-        bground = &textD->colorProfile->selectBgColor;
-        color = textD->colorProfile->selectFgColor;
-    }
-    else if (highlightLine && textD->highlightCursorLine) {
-        bground = &textD->colorProfile->lineHiBgColor;
-    }
-    else {
-        gc = &textD->colorProfile->textFgColor;
-    }
-
-    if (gc == &textD->styleGC) {
+    /* It would be more efficient to move these preference lookups to the 
+    ** calling functions as they're not going to change while a redraw is in 
+    ** progress.  That would mean spreading code relevant only to this function 
+    ** across multiple functions; that would add maintence overhead, reduce 
+    ** clarity, and could introduce bugs.  IMO it's better to leave the calls 
+    ** here and accept the performance hit.
+    ** 
+    ** For reference, the sole caller of drawString is redisplayLine which is
+    ** in turn called by the public TextDRedisplayRect, textDRedisplayRange, 
+    ** TextDSetInsertPosition, TextDAddCursor, and TextDRemoveCursor fucntions.
+    */
+    
+    /* The user can request that certain background colors not be blended with 
+    ** the text selection background color (when a selection is being drawn).
+    */
+    Boolean suppressStyleInSelection        = GetPrefSuppressStyleInSelection();
+    Boolean suppressRainbowInSelection      = GetPrefSuppressRainbowInSelection();
+    Boolean suppressBacklightingInSelection = GetPrefSuppressBacklightingInSelection();
+    
+    /* The user can choose whether or not areas beyond the end of a line's text 
+    ** are highlighted in text selections.
+    */
+    Boolean showNontextSelection = GetPrefShowNontextSelection();
+    
+    
+    /* TRUE when text being drawn is part of a text selection
+    ** FALSE if a text selection is not being drawn
+    */
+    Boolean inSelection = ( style & PRIMARY_MASK ) ? TRUE : FALSE;
+    
+    /* Apply style and any color adjustments */
+    if (
+         ( showNontextSelection || ( ! ( style & FILL_MASK ) ) )
+         &&
+         (
+           ( rbIndex >= 0 ) || 
+           ( style & ( STYLE_LOOKUP_MASK | PRIMARY_MASK | 
+                       RANGESET_MASK     | BACKLIGHT_MASK ) )
+         )
+       ) {
+        
         /* we have work to do */
+        
+        /* Set foreground, background and underline colors depending on style. */
         styleTableEntry *styleRec;
-        /* Set font, color, and gc depending on style.  For normal text, GCs
-           for normal drawing, or drawing within a selection or highlight are
-           pre-allocated and pre-configured.  For syntax highlighting, GCs are
-           configured here, on the fly. */
-        if (style & STYLE_LOOKUP_MASK) {
+        if (
+             ( style & STYLE_LOOKUP_MASK ) &&
+             (
+               ( suppressStyleInSelection == FALSE ) ||
+               ( inSelection == FALSE )
+             )
+           ) {
+            /* Styles are being used and are active */
             styleRec = &textD->styleTable[(style & STYLE_LOOKUP_MASK) - ASCII_A];
+            
             underlineStyle = styleRec->underline;
             fontList = styleRec->font;
-            //fground = styleRec->color;
-            color = styleRec->color;
-            /* here you could pick up specific select and highlight fground */
+            
+            /* Foreground color for currently-applied style
+            ** This color is used for text characters.*/
+            blendOrSetColor( &fg, &styleRec->color );
+            
+            /* Underline color is intentionally not being set to the style's
+            ** foreground color.  If one desires to set it to that though then 
+            ** uncomment the following line: */
+            //blendOrSetColor( &ul, &styleRec->color );
+            
+            /* here you could pick up specific select and highlight fg */
         }
         else {
+            /* Styles are not being used */
             styleRec = NULL;
-            fground = &textD->colorProfile->textFgColor;
         }     
-        /* Background color priority order is:
-           1 Primary(Selection), 2 Highlight(Parens),
-           3 Rangeset, 4 SyntaxHighlightStyle,
-           5 Backlight (if NOT fill), 6 DefaultBackground */
-        bground =
-            style & PRIMARY_MASK   ? &textD->colorProfile->selectBgColor :
-            style & HIGHLIGHT_MASK ? &textD->colorProfile->hiliteBgColor :
-            style & RANGESET_MASK  ?
-                      getRangesetColor(textD,
-                          (style&RANGESET_MASK)>>RANGESET_SHIFT,
-                            bground) :
-            rbIndex >= 0 ? &textD->colorProfile->rainbowColors[rbIndex%textD->colorProfile->numRainbowColors] : 
-            styleRec && styleRec->bgColorName ? &styleRec->bgColor :
-            (style & BACKLIGHT_MASK) && !(style & FILL_MASK) ?
-                      &textD->bgClassPixel[(style>>BACKLIGHT_SHIFT) & 0xff] :
-            &textD->colorProfile->textBgColor;
-        if (fground == bground) /* B&W kludge */
-            fground = &textD->colorProfile->textBgColor;
-        /* set up gc for clearing using the foreground color entry */
         
-        if((bground == &textD->colorProfile->textBgColor || rbIndex >= 0) && highlightLine && textD->highlightCursorLine) {
-            bground = &textD->colorProfile->lineHiBgColor;
+        /* Background color for currently-applied style */
+        if (
+             ( styleRec && styleRec->bgColorName ) &&
+             (
+               ( suppressStyleInSelection == FALSE ) ||
+               ( inSelection == FALSE )
+             )
+           ) {
+            blendOrSetColor( &bg, &styleRec->bgColor );
+        }
+        
+        /* Selection color */
+        if ( style & PRIMARY_MASK ) {
+            blendOrSetColor( &bg, &textD->colorProfile->selectBgColor );
+            //blendColor     ( &bg, &textD->colorProfile->selectBgColor );
+            //blendColor     ( &bg, &textD->colorProfile->selectBgColor );
+            blendOrSetColor( &fg, &textD->colorProfile->selectFgColor );
+            blendOrSetColor( &ul, &textD->colorProfile->selectFgColor );
+        }
+        
+        /* Range sets */
+        /* These are used only by macros.  I have not found any current examples
+        ** so I haven't been able to test them.  The only one that I have found 
+        ** is "Find interesting line" in the NEdit Macro-Kit¹ but it proved 
+        ** troublesome to install; if desired I could likely get it installed.
+        **
+        ** These are treated much as matching parantheses highlighting is in 
+        ** that it's always displayed unblended, even if it's in a selection.
+        **
+        ** ¹ http://www-evasion.imag.fr/Membres/Frank.Perbet/nedit/english_presentation.html
+        **   Consulting the French texts may aid in installation in XNedit.
+        */
+        if ( style & RANGESET_MASK ) {
+            setColor( &bg, 
+                    getRangesetColor(
+                            textD,
+                            ( style & RANGESET_MASK ) >> RANGESET_SHIFT,
+                            getColor( &bg )
+                        )
+                );
+        }
+        
+        /* Backlighting */
+        if (
+             (
+                ( style & BACKLIGHT_MASK ) && 
+                ( ! (style & FILL_MASK) )
+             )
+             &&
+             (
+               ( suppressBacklightingInSelection == FALSE ) ||
+               ( inSelection == FALSE )
+             )
+           ) {
+            blendOrSetColor( &bg, 
+                    &textD->bgClassPixel[(style>>BACKLIGHT_SHIFT) & 0xff] );
+        }
+        
+        /* Indent rainbow */
+        if (
+             ( rbIndex >= 0 ) &&
+             (
+               ( suppressRainbowInSelection == FALSE ) ||
+               ( inSelection == FALSE )
+             )
+           ) {
+            blendOrSetColor( &bg, 
+                    &textD->colorProfile->rainbowColors[rbIndex%textD->colorProfile->numRainbowColors] );
         }
     }
+    
+    /* Highlighting cursor's line  */
+    if ( highlightLine && textD->highlightCursorLine ) {
+        blendOrSetColor( &bg, &textD->colorProfile->lineHiBgColor );
+    }
+    
+    /* Matching parantheses highlighting 
+    **
+    ** This is never blended.
+    */
+    if ( style & HIGHLIGHT_MASK ) {
+        setColor( &bg, &textD->colorProfile->hiliteBgColor );
+        setColor( &fg, &textD->colorProfile->hiliteFgColor );
+    }
+    
+    /* Make sure that the text isn't the same color as the background.
+    **
+    ** This was carried over from Nedit and is meant to invert the color 
+    ** of highlighted text if a black-and-white display is being used. */
+    if ( getRGB(&ul) == getRGB(&bg) )
+        setColor( &ul, &textD->colorProfile->textBgColor );
+    if ( getRGB(&fg) == getRGB(&bg) )
+        setColor( &fg, &textD->colorProfile->textBgColor );
      
     /* Set ANSI color */
     XftColor ansiBGColor;
-    if(ansi->fg > 0) {
-        ansiFgToColorIndex(textD, ansi->fg, &color);
+    if ( ansi->fg > 0 ) {
+        ansiFgToColorIndex( textD, ansi->fg, getColor(&fg) );
     }
-    if(ansi->bg > 0 && bground == &textD->colorProfile->textBgColor) {
-        ansiBgToColorIndex(textD, ansi->bg, &ansiBGColor);
-        bground = &ansiBGColor;
+    if( ansi->bg > 0 && getColor(&bg) == &textD->colorProfile->textBgColor ) {
+        ansiBgToColorIndex( textD, ansi->bg, &ansiBGColor );
+        blendColor( &bg, &ansiBGColor );
     }
-    if(ansi->bold > 0 || ansi->italic > 0) {
+    if( ansi->bold > 0 || ansi->italic > 0 ) {
         if(ansi->bold == ansi->italic) {
             fontList = textD->boldItalicFont;
         } else if(ansi->bold == 1) {
@@ -2907,7 +3181,10 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         }
     }
     
-
+    
+    /* End of color determination, all code below is for output to the display */
+    
+    
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
        
@@ -2915,38 +3192,43 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
     if (toX >= textD->left) {
         clearRect(
                 textD,
-                bground,
+                getColor(&bg),
                 fromX,
                 y,
                 toX - fromX,
-                textD->ascent + textD->descent);
+                textD->ascent + textD->descent );
     }
-    if(style & FILL_MASK) {
+    
+    // FILL_MASK indicates that there is no text available to be 
+    // drawn in the region of the window currently being drawn.
+    if (style & FILL_MASK) {
         return;
     }
-
+    
     
     /* We assume the string should be rendered with just one font, because
      * redisplayLine breaks the strings when a different font is required.
      * The first character in the string determines the charset and FindFont
      * returns a Font for this.
      */
-    XftFont *font = FindFont(fontList, string[0]);
+    XftFont *font = FindFont( fontList, string[0] );
     
     /* If any space around the character remains unfilled (due to use of
        different sized fonts for highlighting), fill in above or below
        to erase previously drawn characters */
     if (font->ascent < textD->ascent)
-    	clearRect(textD, bground, fromX, y, toX - fromX, textD->ascent - font->ascent);
+        clearRect(textD, getColor(&bg), 
+                fromX, y, 
+                toX - fromX, textD->ascent - font->ascent );
     if (font->descent < textD->descent)
-    	clearRect(textD, bground, fromX, y + textD->ascent + font->descent, toX - fromX,
-    		textD->descent - font->descent);
+        clearRect(textD, getColor(&bg), 
+                fromX, y + textD->ascent + font->descent, 
+                toX - fromX, textD->descent - font->descent );
     
     
-    
-
     /* Draw the string using color and font set above */  
-    XftDrawString32(textD->d, &color, font, x, y + textD->ascent, string, nChars);
+    XftDrawString32(textD->d, getColor(&fg), font, 
+            x, y + textD->ascent, string, nChars);
         
     /* Underline if style is secondary selection */
     if (style & SECONDARY_MASK || underlineStyle)
@@ -2956,7 +3238,8 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, in
         // width of the string
         XGlyphInfo extents;
         XftTextExtents32(XtDisplay(textD->w), font, string, nChars, &extents);
-        XftDrawRect(textD->d, fground, x, y + textD->ascent, extents.xOff, 1);
+        XftDrawRect(textD->d, getColor(&ul), 
+                x, y + textD->ascent, extents.xOff, 1);
     }
 }
 
@@ -2968,21 +3251,21 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
 {
     /* A width of zero means "clear to end of window" to XClearArea */
     if (width == 0 || XtWindow(textD->w) == 0)
-    	return;
+        return;
     
     if (color == &textD->colorProfile->textBgColor) {
-        XClearArea(XtDisplay(textD->w), XtWindow(textD->w), x, y,
-                width, height, False);
+        XClearArea(XtDisplay(textD->w), XtWindow(textD->w), 
+                x, y, width, height, False);
     }
     else {
         XftDrawRect(textD->d, color, x, y, width, height);
     }
-
+    
     if(textD->rightMarginPos > 0) {
-        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, y, 1, height);
+        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, 
+                textD->rightMarginPos, y, 1, height);
         
         // draw remaining right area using bg2
-        ///*
         int startPos = textD->rightMarginPos+1 > x ? textD->rightMarginPos+1 : x;
         int bg2width = x + width - startPos;
         // If nothing needs to be cleared in the right margin area then bg2Width 
@@ -2990,9 +3273,18 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
         // its width parameter we shouldn't call the function in that case (as 
         // the value will be interpreted as a large positive value).
         if ( bg2width > 0 ) {
-            XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, y, bg2width, height);
+            XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, 
+                    startPos, y, bg2width, height);
         }
-        //*/
+    }
+    
+    if (color != &textD->colorProfile->textBgColor) {
+        XftDrawRect(textD->d, color, x, y, width, height);
+    }
+    
+    if(textD->rightMarginPos > 0) {
+        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, 
+                textD->rightMarginPos, y, 1, height);
     }
 }
 
@@ -3090,13 +3382,18 @@ static int styleOfPos(textDisp *textD, int lineStartPos,
     textBuffer *styleBuf = textD->styleBuffer;
     int pos, style = 0;
     
+    // FILL_MASK indicates that there is no text available to be 
+    // drawn in the region of the window currently being drawn.
+    
     if (lineStartPos == -1 || buf == NULL)
-    	return FILL_MASK;
+        // No text is available
+        return FILL_MASK;
     
     pos = lineStartPos + min(lineIndex, lineLen);
     
     if (lineIndex >= lineLen)
-   	style = FILL_MASK;
+        // Drawing portion of line beyond its final character
+        style = FILL_MASK;
     else if (styleBuf != NULL) {
     	style = (unsigned char)BufGetCharacter(styleBuf, pos);
     	if (style == textD->unfinishedStyle) {
