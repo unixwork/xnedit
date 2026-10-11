@@ -8117,6 +8117,7 @@ void ChooseColors(WindowInfo *window)
             XmNbottomAttachment, XmATTACH_FORM,
             XmNtopOffset, 10,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
+    XmStringFree(s1);
     
     /*
      * Tab 2: Indent Rainbow Colors
