@@ -880,12 +880,12 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     |     |  998|     #################:#######     |
     |     |  999|     #################:#######     | ····editable text area
     |     | 1000|     #################:#######     |
-    |     | 1001|     #################:#######     | ----hTextAreaea
+    |     | 1001|     #################:#######     | ----hTextArea
     |                                  :            | ————yBottomEdge
     |                                  :            | ····bottom edge area
     |                                  :            | ----hWindow, hBottomEdge
     +-----------------------------------------------+
-                      .                             .
+                      .                       .
                       '--edittable text area--'
     
     Note: The right margin indicator and the pre-margin and pos-margin areas 
