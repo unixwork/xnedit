@@ -2015,8 +2015,8 @@ Pixel AllocColor2(Display *display, Colormap cMap, Pixel foreground, int depth, 
         colorDef.pixel = foreground;
         if (XQueryColor(display, cMap, &colorDef)) {
             *r = colorDef.red;
-        *g = colorDef.green;
-        *b = colorDef.blue;
+            *g = colorDef.green;
+            *b = colorDef.blue;
         }
         return foreground;
     }
@@ -2133,6 +2133,40 @@ XftColor AllocXftColor2(Display *display, Colormap colormap, Pixel foreground, i
     return c;
 }
 
+/*
+** Convenience function to generate an XftColor from an RGB triple.
+** 
+** r, g, and b are each 8-bit values describing the desired color
+** 
+** colorName is the name that X will use internally to refer to it; this value 
+** may be NULL in which case "#RRGGBB" will be used where the letters are set 
+** to the component's hex values.
+** 
+** This function is not (at the time of writing) called by any XNedit code; 
+** rather it is intended to be used to generate distinctive colors strictly for 
+** debugging purposes.
+*/
+XftColor AllocXftColorRGB(Widget w, int r, int g, int b, const char *colorName) {
+    char tmp[8];
+    const char* cn;
+    if ( ( colorName == NULL ) || ( strlen(colorName) == 0 ) ) {
+        snprintf( tmp,
+                  sizeof(tmp),
+                  "#%02x%02x%02x",
+                  r, g, b );
+        cn = tmp;
+    } else {
+        cn = colorName;
+    }
+    
+    XftColor c;
+    c.color.red   = r << 8;
+    c.color.green = g << 8;
+    c.color.blue  = b << 8;
+    c.color.alpha = UINT16_MAX;
+    c.pixel = AllocColor( w, cn, &r, &g, &b );
+    return c;
+}
 /*
 ** Get the character before position "pos" in buffer "buf"
 */

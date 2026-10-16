@@ -287,7 +287,26 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
     textD->redrawCursorLine = False;
     
     textD->rightMargin = rightMargin;
-    textD->rightMarginPos = rightMargin > 0 ? left + rightMargin * font->maxWidth : 0;
+    // Note: rightMarginPos is now relative to the text area, *NOT* the window
+    if ( rightMargin > 0 ) {
+        // Determine the pixel x-position of the margin by using the width of 
+        // the zero character (U+0030) as the «standard» character width.  This 
+        // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
+        FcChar8* text = NEditMalloc(rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
+        if (text) {
+            memset(text, '0', rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
+            text[rightMargin] = 0;           // NULL terminate string
+            XGlyphInfo extents;
+            XftTextExtentsUtf8(XtDisplay(widget), font->fonts->font, (FcChar8*)text, rightMargin, &extents);
+            NEditFree(text);
+            textD->rightMarginPos = extents.xOff - 1;
+        } else {
+            // malloc failed, fall back to old behaviour
+            textD->rightMarginPos = rightMargin * font->maxWidth;
+        }
+    } else {
+        textD->rightMarginPos = 0;
+    }
     
     // Initialize multi cursor array
     textD->mcursorAlloc = MCURSOR_ALLOC;
@@ -476,14 +495,34 @@ void TextDSetColorProfile(textDisp *textD, ColorProfile *profile)
                        textD->height);
     redrawLineNumbers(textD, textD->top, textD->height, True);
     
-    Position width = textD->w->core.width;
-    Position height = textD->w->core.height;
+    Dimension width = textD->w->core.width;
+    Dimension height = textD->w->core.height;
+    
     TextDRedisplayEdges(textD, width, height, textD->marginWidth, textD->marginHeight);
 }
 
 void TextDSetRightMargin(textDisp *textD, int rightMargin) {
     textD->rightMargin = rightMargin;
-    textD->rightMarginPos = rightMargin > 0 ? textD->left + rightMargin * textD->font->maxWidth : 0;
+    // Note: rightMarginPos is now relative to the text area, *NOT* the window
+    if ( rightMargin > 0 ) {
+        // Determine the pixel x-position of the margin by using the width of 
+        // the zero character (U+0030) as the «standard» character width.  This 
+        // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
+        FcChar8* text = NEditMalloc(rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
+        if (text) {
+            memset(text, '0', rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
+            text[rightMargin] = 0;           // NULL terminate string
+            XGlyphInfo extents;
+            XftTextExtentsUtf8(XtDisplay(textD->w), textD->font->fonts->font, (FcChar8*)text, rightMargin, &extents);
+            NEditFree(text);
+            textD->rightMarginPos = extents.xOff - 1;
+        } else {
+            // malloc failed, fall back to old behaviour
+            textD->rightMarginPos = /*textD->left +*/ rightMargin * textD->font->maxWidth;
+        }
+    } else {
+        textD->rightMarginPos = 0;
+    }
 }
 
 /*
@@ -522,14 +561,32 @@ void TextDSetFont(textDisp *textD, NFont *font)
     /* Don't let the height dip below one line, or bad things can happen */
     if (textD->height < maxAscent + maxDescent)
         textD->height = maxAscent + maxDescent;
- 
+    
     if(textD->font != font) {
         FontUnref(textD->font);
         textD->font = FontRef(font);
     }
     
+    // Note: rightMarginPos is now relative to the text area, *NOT* the window
     if(textD->rightMargin > 0) {
-        textD->rightMarginPos = textD->left + textD->rightMargin * font->maxWidth;
+        // Determine the pixel x-position of the margin by using the width of 
+        // the zero character (U+0030) as the «standard» character width.  This 
+        // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
+        FcChar8* text = NEditMalloc(textD->rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
+        if (text) {
+            memset(text, '0', textD->rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
+            text[textD->rightMargin] = 0;           // NULL terminate string
+            XGlyphInfo extents;
+            XftTextExtentsUtf8(XtDisplay(textD->w), font->fonts->font, (FcChar8*)text, textD->rightMargin, &extents);
+            NEditFree(text);
+            textD->rightMarginPos = extents.xOff - 1;
+        } else {
+            // malloc failed, fall back to old behaviour
+            textD->rightMarginPos = textD->rightMargin * font->maxWidth;
+        }
+    } else {
+        // This case wasn't present in original code
+        textD->rightMarginPos = 0;
     }
     
     if(textD->disableRedisplay) {
@@ -548,7 +605,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
     clearRect(textD, &textD->colorProfile->textBgColor, textD->left, 
         textD->top + textD->height - maxAscent - maxDescent, 
         textD->width, maxAscent + maxDescent);
-
+    
     /* Redisplay */
     TextDRedisplayRect(textD, textD->left, textD->top, textD->width,
             textD->height);
@@ -738,24 +795,6 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     firstLine = (top - textD->top - fontHeight + 1) / fontHeight;
     lastLine = (top + height - textD->top) / fontHeight;
     
-    if(textD->d && textD->rightMarginPos > 0) {
-        XRectangle clipRect;
-        clipRect.x = left;
-        clipRect.y = top;
-        clipRect.width = width;
-        clipRect.height = height;
-        XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
-        
-        // draw right border line
-        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, top, 1, height);
-        
-        // draw remaining right area using bg2
-        
-        int bg2width = left + width - textD->rightMarginPos;
-        XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, textD->rightMarginPos + 1, top, bg2width, height);
-        //*/
-    }
-    
     /* If the graphics contexts are shared using XtAllocateGC, their
        clipping rectangles may have changed since the last use */
     resetClipRectangles(textD);
@@ -768,41 +807,268 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth) {
         redrawLineNumbers(textD, top, height, True);
     }
+    
+    TextDRedisplayEdges(textD, width, height, textD->marginWidth, textD->marginHeight);
 }
 
 void TextDRedisplayEdges(textDisp *textD, int width, int height,
                          int marginWidth, int marginHeight)
 {
-    Display *dp = XtDisplay(textD->w);
     Window w = XtWindow(textD->w);
     
     if(w == 0 || !textD->d) {
         return;
     }
-
-    XClearArea(dp, w, 0, height-marginHeight, width, marginHeight, False);
-    XClearArea(dp, w,width-marginWidth, 0, marginWidth, height, False);
     
-    if(textD->rightMargin == 0) {
-        return;
-    }
-    
+    // Clip to entire window
     XRectangle rect;
     rect.x = 0;
     rect.y = 0;
-    rect.width = width;
-    rect.height = height;
+    rect.width  = textD->w->core.width;
+    rect.height = textD->w->core.height;
+    resetClipRectangles(textD);
     XftDrawSetClipRectangles(textD->d, 0, 0, &rect, 1);
     
-    // right margin line
-    XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, textD->rightMarginPos, 0, 1, height);
-    // right margin background bottom
-    int startPos = textD->rightMarginPos+1;
-    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, height-marginHeight, width-startPos, marginHeight);
-    // right margin background top
-    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, startPos, 0, width, marginHeight);
-    // right margin background right
-    XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, width-marginWidth-1, 0, marginWidth+1, height);
+    /*
+    *** Positions, widths, and heights ***
+    The origin is at the top left and all X or Y positions are relative to it.
+    Widths and heights are relative to their corresponding X or Y positions
+    e.g. xWTextArea is absolute whereas wTextArea is relative to xTextArea
+    
+     xAbsoluteLeft
+     xLeftEdge
+     |
+     | left edge area
+     | .
+     | . wLeftEdge
+     | . :xLineNums
+     | . :|
+     | . :|  line number area
+     | . :|  .
+     | . :|  .  wLineNums
+     | . :|  .  :xPadLeft
+     | . :|  .  :|
+     | . :|  .  :| left padding
+     | . :|  .  :| .
+     | . :|  .  :| . wPadLeft
+     | . :|  .  :| . :xTextArea
+     | . :|  .  :| . :xPreMargin *
+     | . :|  .  :| . :|
+     | . :|  .  :| . :|       pre-margin area *
+     | . :|  .  :| . :|       .
+     | . :|  .  :| . :|       .       wPreMargin *
+     | . :|  .  :| . :|       .       :xMarginIndicator *
+     | . :|  .  :| . :|       .       :|wMarginIndicator (alway 1)
+     | . :|  .  :| . :|       .       :|xPostMargin *
+     | . :|  .  :| . :|       .       :||
+     | . :|  .  :| . :|       .       :||  post-margin area *
+     | . :|  .  :| . :|       .       :||  .
+     | . :|  .  :| . :|       .       :||  .  wPostMargin *
+     | . :|  .  :| . :|       .       :||  .  wTextArea
+     | . :|  .  :| . :|       .       :||  .  :xRightEdge
+     | . :|  .  :| . :|       .       :||  .  :|
+     | . :|  .  :| . :|       .       :||  .  :| right edge area
+     | . :|  .  :| . :|       .       :||  .  :| .
+     | . :|  .  :| . :|       .       :||  .  :| . wWindow
+     | . :|  .  :| . :|       .       :||  .  :| . wRightEdge
+     | . :|  .  :| . :|       .       :||  .  :| . :
+    +-----------------------------------------------+
+    |                                  :            | ————yAbsoluteTop, yTopEdge
+    |                                  :            | ····top edge area
+    |                                  :            | ----hTopEdge
+    |     |  997|     #################:#######     | ————yTextArea
+    |     |  998|     #################:#######     |
+    |     |  999|     #################:#######     | ····editable text area
+    |     | 1000|     #################:#######     |
+    |     | 1001|     #################:#######     | ----hTextArea
+    |                                  :            | ————yBottomEdge
+    |                                  :            | ····bottom edge area
+    |                                  :            | ----hWindow, hBottomEdge
+    +-----------------------------------------------+
+                      .                       .
+                      '--edittable text area--'
+    
+    Note: The right margin indicator and the pre-margin and pos-margin areas 
+    might not all be visible.  Positions and widths of those that are not 
+    visible are undefined.  Code should check the flags to see what's valid:
+    
+      marginVisible     → true ⇒ xMarginIndicator and wMarginIndicator are valid
+      preMarginVisible  → true ⇒ xPreMargin and wPreMargin are valid
+      postMarginVisible → true ⇒ xPostMargin and wPostMargin are valid
+    
+    Additionally marginActive is true if the (potential) display of the right 
+    margin position is enabled.
+    
+    Note also that the horizontal (X) positions and widths vary and code must 
+    not rely on their having any particular widths or positions relative to one-
+    another; code must always use the named values rather than compute values 
+    itself.
+    
+    The right edge values may be larger than implied above if the displayed 
+    editable text takes up less space than wTextArea; in that case the right 
+    edge values will be adjusted to cover the invalid/unused portions of the 
+    text area.
+    */
+    
+    // === Font ===
+    int hCharacter           = textD->ascent + textD->descent;  // Height of a single character (or line of text)
+    int wCharacter           = (textD->fixedFontWidth == -1)    // Width of a character
+                             ? textD->font->maxWidth            // (maximum width if some or all of the fonts in use are not monospaced)
+                             : textD->fixedFontWidth;           // ···
+    
+    // === Horizontal (X) positions and widths ===
+    // Note that depending on the horizontal scroll position the PreMargin, 
+    // MarginIndicator, and PostMargin positions and regions may be outside of 
+    // the visible text area, e.g. xMarginIndicator may be smaller value than 
+    // xTextArea.  Always check the validity of values before using them by 
+    // checking marginVisible, preMarginVisible, or postMarginVisible.
+    
+    int xAbsoluteLeft        = 0;                               // Window left edge
+    int xLeftEdge            = 0;                               // Left edge padding
+    int wLeftEdge            = marginWidth;                     // ···
+    int xLineNums            = marginWidth;                     // Line number area
+    int wLineNums            = textD->lineNumWidth;             // ···
+    int xPadLeft             = marginWidth                      // Padding between line numbers and text
+                             + textD->lineNumWidth;             // ···
+    int wPadLeft             = textD->left                      // ···
+                             - textD->lineNumWidth              // ···
+                             - marginWidth;                     // ···
+    int xTextArea            = textD->left;                     // The area containing editable text
+    int wTextArea            = textD->width;                    // (this can vary even for the same window size)
+    
+    int textAreaCompleteCols = ( wCharacter > 0 )               // Number of fully-visible columns in the editable text area
+                             ? wTextArea/wCharacter             // 0 if some or all of the fonts in use are not monospaced.
+                             : 0;
+    int wTextAreaComplete    = textAreaCompleteCols             // Width of editable text area (only counting complete characters)
+                             * wCharacter;                      // 0 if some or all of the fonts in use are not monospaced.
+    
+    int wWindow              = textD->w->core.width;            // Window width
+    
+//    // Don't allow partial characters on right edge of text area (except when horizontally scrolling)
+//    int xRightEdge           = xTextArea                        // Right edge padding
+//                             + (                                // (need to compute this this way as it can sometimes be larger
+//                                 ( textAreaCompleteCols > 0 )   // than the declared margin width even for the same window size)
+//                                 ? wTextAreaComplete            // ···
+//                                 : wTextArea                    // ···
+//                               )                                // ···
+//                             + 1;                               // ···
+    // Always allow partial characters on right edge of text area
+    int xRightEdge           = xTextArea + wTextArea + 1;       // Right edge padding
+    int wRightEdge           = wWindow                          // ···
+                             - xRightEdge;                      // ···
+    
+    // === Related to the right margin indicator ===
+    
+    // The line itself
+    int xMarginIndicator     = textD->rightMarginPos            // Right margin indicator
+                             - textD->horizOffset               // (which may be shifted)
+                             + xTextArea;                       // and is inset from window's edge
+    int wMarginIndicator     = 1;                               // ···
+    
+    int marginActive         = textD->rightMargin;              // If non-zero then the right margin indicator is active (though the actual line might not be visible in the window)
+                                                                // (if active then the value indicates the column number after which the line is displayed)
+    int marginVisible        = ( xMarginIndicator>=xTextArea && // If non-zero then the right margin indicator is visible
+                                 xMarginIndicator<xTextArea +   // ···
+                                 wTextArea ) ? 1 : 0;           // ···
+    
+    // Region to the left of the line
+    int preMarginVisible     = (xMarginIndicator > xTextArea)   // Non-zero if pre-margin region is visible
+                             ? 1 : 0;                           // zero if it is not
+    int xPreMargin           = textD->left;                     // Region to the left of the right margin indicator
+    int wPreMargin           = xMarginIndicator                 // ···
+                             - textD->left;                     // ···
+    
+    // Region to the right of the line
+    int postMarginVisible    = (  xMarginIndicator              // Non-zero if post-margin region is visible,
+                                < xTextArea+wTextArea) ? 1 : 0; // zero if it is not
+    int xPostMargin          = ( xMarginIndicator < xTextArea ) // Region to the right of the right margin indicator
+                               ? xTextArea                      // ···
+                               : xMarginIndicator + 1;          // ···
+    int wPostMargin          = wWindow                          // ···
+                             - xPostMargin                      // ···
+                             - marginWidth;                     // ···
+    
+    // === Vertical (Y) positions and heights ===
+    int textAreaCompleteRows = textD->nVisibleLines;            // Number of fully-visible rows in the editable text area
+    int hTextAreaComplete    = textAreaCompleteRows             // Width of editable text area (only counting complete characters)
+                             * hCharacter;                      // ···
+    
+    int yAbsoluteTop         = 0;                               // Window top edge
+    int yTopEdge             = 0;                               // Top edge padding
+    int hTopEdge             = textD->marginHeight;             // ···
+    int yTextArea            = textD->marginHeight;             // The area containing editable text
+    int hTextArea            = textD->w->core.height;           // (only fully-visible lines)
+    int hBottomEdge          = textD->w->core.height            // Bottom edge padding
+                             - textD->marginHeight              // ···
+                             - hTextAreaComplete;               // ···
+    int yBottomEdge          = textD->w->core.height            // ···
+                             - hBottomEdge;                     // ···
+    
+    int hWindow              = textD->w->core.height;           // Window height
+    
+    
+    
+    /* Draw the top, bottom, and right edges
+       The left edge, left padding, and line number area don't need to be drawn. */
+    
+    // XftColor red   = AllocXftColorRGB( textD->w, 255, 191, 191, NULL );
+    // XftColor green = AllocXftColorRGB( textD->w, 191, 255, 191, NULL );
+    // XftColor blue  = AllocXftColorRGB( textD->w, 191, 191, 255, NULL );
+    
+    // === Top edge ===
+    if ( marginActive ) {
+        if ( preMarginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                         xPreMargin, yTopEdge, 
+                         wPreMargin, hTopEdge );
+        }
+        if ( marginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->rightMarginColor, 
+                         xMarginIndicator, yTopEdge, 
+                         wMarginIndicator, hTopEdge );
+        }
+        if ( postMarginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->textBg2Color, 
+                         xPostMargin, yTopEdge, 
+                         wPostMargin, hTopEdge );
+        }
+    } else {
+        // Margin not active
+        XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                     xTextArea, yTopEdge, 
+                     wTextArea, hTopEdge );
+    }
+    
+    // === Bottom edge ===
+    if ( marginActive ) {
+        if ( preMarginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                         xPreMargin, yBottomEdge, 
+                         wPreMargin, hBottomEdge );
+        }
+        if ( marginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->rightMarginColor, 
+                         xMarginIndicator, yBottomEdge, 
+                         wMarginIndicator, hBottomEdge );
+        }
+        if ( postMarginVisible ) {
+            XftDrawRect( textD->d, &textD->colorProfile->textBg2Color, 
+                         xPostMargin, yBottomEdge, 
+                         wPostMargin, hBottomEdge );
+        }
+    } else {
+        // Margin not active
+        XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                     xTextArea, yBottomEdge, 
+                     wTextArea, hBottomEdge );
+    }
+    
+    // === Right edge ===
+    // This clears not just the right edge proper but also clears the part 
+    // of the text area that's after the visible characters (if applicable).
+    XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                 xRightEdge, yAbsoluteTop, 
+                 wRightEdge, hWindow );
 }
 
 /*
@@ -2822,9 +3088,10 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 ** in user code.
 ** 
 ** ¹ The names bg, ul, and fg correspond to bground, fground, and color in the 
-**   previous version of this copde.
+**   previous version of this code.
 ** ² The actual blending is performed when the value is requested by getColor().
 */
+
 typedef struct {
     int      isDefault;               // TRUE if current value is the 
                                       // originally-set value, 
@@ -2840,6 +3107,7 @@ typedef struct {
                                       // whose blended color has been computed
                                       // FALSE otherwhile
 } XnColor;
+
 
 /*
 ** Set the color to specified value.
@@ -2877,7 +3145,7 @@ inline static void blendColor( XnColor *color, XftColor *newColor ) {
     color->red   += newColor->color.red;
     color->green += newColor->color.green;
     color->blue  += newColor->color.blue;
-    color->alpha += newColor->color.alpha;
+    // color->alpha += newColor->color.alpha;  // We don't use alpha so why compute it?
     color->count++;
     color->valid = FALSE;
 }
@@ -2893,10 +3161,149 @@ inline static void blendOrSetColor( XnColor *color, XftColor *newColor ) {
         color->red   += newColor->color.red;
         color->green += newColor->color.green;
         color->blue  += newColor->color.blue;
-        color->alpha += newColor->color.alpha;
+        // color->alpha += newColor->color.alpha;  // We don't use alpha so why compute it?
         color->count++;
         color->valid = FALSE;
     }
+}
+
+// Uncomment the following to enable the color cache
+#define ENABLE_COLOR_CACHE
+
+#ifdef ENABLE_COLOR_CACHE
+
+// Uncomment the following to display cache activity to the console
+// If enabled then piping the output through uniq is recommended.
+//#define CACHE_TRACE
+
+// Uncomment the following to display cache statistics to the console
+//#define CACHE_STATS
+
+// Uncomment the following to display cache configuration to the console at startup
+//#define CACHE_INFO
+
+// BUCKET_COUNT and ENTRIES_PER_BUCKET should be powers of two
+// The values 1<<8 (256) and 1<<2 (4) look to be abundantly sufficient.
+// Honestly even a BUCKET_COUNT of 1<<6 (64) is fine.
+//#define BUCKET_COUNT       ( 1<<8 )
+#define BUCKET_COUNT       ( 1<<6 )
+#define ENTRIES_PER_BUCKET ( 1<<2 )
+
+/* Color cache (a single cache is used for all windows) */
+
+typedef struct {
+    uint32_t red, green, blue;  // Cumulative RGB values
+    uint32_t count;             // Number of colors to blend
+    XftColor color;             // The corresponding value returned by Xft/Xlib
+} XnColorCacheEntry;
+
+static uint8_t color_cache_bucket_item_cnt[BUCKET_COUNT] = {0};
+static uint8_t color_cache_bucket_head_idx[BUCKET_COUNT] = {0};
+static XnColorCacheEntry color_cache[BUCKET_COUNT][ENTRIES_PER_BUCKET] = {0};
+
+#ifdef CACHE_STATS
+static int cache_total_entries = 0;
+static int cache_full_buckets  = 0;
+#endif
+
+/*
+** Overview of the color cache
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** Having to make a call to Xlib every time a color is blended (up to 3 times in 
+** every drawString call) slows things down considerably¹ and causes noticable 
+** lag in the UI.  To improve performance colors that have been allocated by the 
+** X server are cached by XNedit.
+** 
+** The visible API for working with colors is the same as before with all 
+** changes being internal to the getColor function (plus a one-off call to the 
+** initialization function [XnColorCacheInitialize] at start-up).
+** 
+** The memory overhead of the cache is minimal with between about 8kB and 32kB 
+** (shared amongst all editor windows) being more than sufficient.
+** 
+** ¹ Each server-side color lookup involves three divides, a call to sprintf, 
+**   and then multiple calls to Xlib via the AllocColor wrapper.
+** 
+** Theory of operation
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** When the drawString needs to blend a color it makes a call to getColor which 
+** then returns the blended color as a pointer to an XftColor, suitable for 
+** passing to Xft/Xlib functions.
+** 
+** When the cache is enabled getColor checks it to see whether the color has 
+** previously been allocated by the server; if it has then the cached value is 
+** returned, if not then it is added to the cache before being returned.
+** 
+** As mentioned above, the cache is transparent to the end-user [programmer] and 
+** no special coding is required to use it.
+** 
+** Cache datastructures and design
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** The cache is implemented as a hash (a.k.a. associative array or dictionary).
+** There are a large number of buckets (64 or 256 works well) that each contain 
+** zero or more items/entries stored in a fixed-sized list (4 entries per list 
+** works well).²  Each entry contains the description of a single color along 
+** with the server-provided XftColor that it maps to.  The hash keys are derived 
+** from the unadjusted (pre-divide) RGB color values³:
+** 
+**     key = ( r XOR g XOR b ) % BUCKET_COUNT
+** 
+** The key indicates which of the buckets the color value would be stored in.
+** Each bucket consists of three items:
+** 
+**  • The bucket's cache entries, described below → color_cache[key][...]
+**  • Number of valid entries in the bucket → color_cache_bucket_item_cnt[key]
+**  • Head-of-list entry's array index → color_cache_bucket_head_idx[key]
+** 
+** When retrieving a color from the cache the correct bucket is first determined 
+** as described above.  Next each entry in the bucket's entry list is checked to 
+** see whether the unadjusted RGB values and the blend count match the requested 
+** color.  If all four values match then a reference to the entry's XftColor is 
+** returned.  The entries are examined in ascending order (newest addition to 
+** oldest) with the index being checked wrapping around to 0 when the end of the 
+** list is reached.  The number of list entries is intentionally kept very small 
+** as for every lookup multiple (maybe all) of a bucket's entries may need to be 
+** checked.⁴
+** 
+** When storing a color in the cache the head index is decremented [modulo the 
+** bucket size], the entry count incremented (if the bucket isn't full), and the 
+** color's values are stored to the head entry [details below].  This has the 
+** effect that when a value is added to a full bucket then the least-recently-
+** added color is evicted to make room.
+** 
+** Only the bare minimum amount of data is stored in each cache entry, namely 
+** the unadjusted red, green, and blue color values, the number of colors that 
+** are being blended (i.e. the divisor), and the resulting color value returned 
+** by the X server.
+**
+** ² To keep the math fast both the number of buckets and the number of entries 
+**   in each bucket are powers of two.
+**
+** ³ The general idea is to make the key generation as fast as possible while 
+**   ensuring a decent amount of entropy in the key bits.
+**
+** ⁴ In other words, many [fast-to-access] buckets with small number of [slow-
+**   to-check] entries in each.
+*/
+
+#endif /* ENABLE_COLOR_CACHE */
+
+/* Initialze the color cache (a single cache is used for all windows) */
+void XnColorCacheInitialize(void) {
+#ifdef ENABLE_COLOR_CACHE
+#ifdef CACHE_INFO
+    printf( "Initializing XnColor (XftColor) cache with %i buckets of %i entries each\n", 
+            BUCKET_COUNT, ENTRIES_PER_BUCKET );
+    printf( "(%i bytes cnt + %i bytes idx + %i bytes data = %i bytes total)\n", 
+            sizeof(color_cache_bucket_item_cnt),  sizeof(color_cache_bucket_head_idx),  sizeof(color_cache), 
+            sizeof(color_cache_bucket_item_cnt) + sizeof(color_cache_bucket_head_idx) + sizeof(color_cache) );
+#endif
+    // Technically these aren't needed (the arrays are initialized in their
+    // declarations) but belt and braces...
+    memset(color_cache_bucket_item_cnt, 0, BUCKET_COUNT);
+    memset(color_cache_bucket_head_idx, 0, BUCKET_COUNT);
+    memset(color_cache, 0, sizeof(XnColorCacheEntry) * BUCKET_COUNT * ENTRIES_PER_BUCKET);
+#endif /* ENABLE_COLOR_CACHE */
 }
 
 /*
@@ -2913,11 +3320,44 @@ inline static XftColor* getColor( XnColor *color ) {
         
     } else {  // Blended color
         if ( color->valid == FALSE ) {
+#ifdef ENABLE_COLOR_CACHE
+            /* Lookup current color in cache */
+            uint32_t key = ( color->red ^ color->green ^ color->blue ) % BUCKET_COUNT;
+            int entries  = color_cache_bucket_item_cnt[key];
+            int head_idx = color_cache_bucket_head_idx[key];
+            
+            Boolean found = FALSE;
+            int entry;
+            for (entry=head_idx; entry<entries+head_idx; entry++) {
+                int this_idx = entry % ENTRIES_PER_BUCKET;
+                if (
+                     ( color_cache[key][this_idx].red   == color->red   ) &&
+                     ( color_cache[key][this_idx].green == color->green ) &&
+                     ( color_cache[key][this_idx].blue  == color->blue  ) &&
+                     ( color_cache[key][this_idx].count == color->count )
+                   ) {
+                   found = TRUE;
+                   break;
+                }
+            }
+            if ( found ) {
+                entry %= ENTRIES_PER_BUCKET;
+#ifdef CACHE_TRACE
+                printf("%i\t%i %i %i / %i found in cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, entry);
+#endif
+                return &( color_cache[key][entry].color );
+#ifdef CACHE_TRACE
+            } else {
+                printf("Not found in cache\n");
+#endif
+            }
+#endif /* ENABLE_COLOR_CACHE */
+            
             // Need to compute the blended value
             r = color->red   / color->count;
             g = color->green / color->count;
             b = color->blue  / color->count;
-            //a = color->alpha / color->count;
+            //a = color->alpha / color->count;  // We don't use alpha so why compute it?
             a = UINT16_MAX;
             // These should never be needed:
             if ( r > UINT16_MAX ) r = UINT16_MAX;
@@ -2940,6 +3380,57 @@ inline static XftColor* getColor( XnColor *color ) {
             
             // Note that value was computed
             color->valid = TRUE;
+            
+#ifdef ENABLE_COLOR_CACHE
+            // Add to cache
+            int cnt = color_cache_bucket_item_cnt[key];
+#ifdef CACHE_TRACE
+            printf("%i\t%i\t%i items in bucket\n", key, key, cnt);
+#endif
+            
+            int add_at = 0;
+            if ( cnt == ENTRIES_PER_BUCKET ) {
+                // Bucket full
+#ifdef CACHE_TRACE
+                printf("%i\tbucket full\n", key);
+#endif
+                int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
+                if (head < 0) head += ENTRIES_PER_BUCKET;
+                add_at = head;
+                color_cache_bucket_head_idx[key] = head;
+            } else {
+#ifdef CACHE_TRACE
+                printf("%i\troom in bucket\n", key);
+#endif
+                add_at = cnt;
+                cnt++;
+                color_cache_bucket_item_cnt[key] = cnt;
+                int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
+                if (head < 0) head += ENTRIES_PER_BUCKET;
+                add_at = head;
+                color_cache_bucket_head_idx[key] = head;
+#ifdef CACHE_STATS
+                cache_total_entries++;
+                if ( cnt == ENTRIES_PER_BUCKET ) {
+                    cache_full_buckets++;
+                }
+#endif
+            }
+#ifdef CACHE_STATS
+            printf( "%i colors cached, %i full buckets\n", cache_total_entries, cache_full_buckets );
+#endif
+            
+#ifdef CACHE_TRACE
+            printf( "%i\t%i %i %i / %i adding to cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, add_at );
+#endif
+            color_cache[key][add_at].red   = color->red;
+            color_cache[key][add_at].green = color->green;
+            color_cache[key][add_at].blue  = color->blue;
+            color_cache[key][add_at].count = color->count;
+            color_cache[key][add_at].color = color->color;
+            
+            return &( color_cache[key][add_at].color );
+#endif /* ENABLE_COLOR_CACHE */
         }
         return &(color->color);
     }
@@ -2976,6 +3467,9 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y,
         int fromX, int toX, FcChar32 *string, int nChars, Boolean highlightLine, 
         ansiStyle *ansi)
 {
+#ifdef CACHE_TRACE
+printf("\n");
+#endif
     /* Background, underline, and text foreground colors, respectively.
     ** These correspond to bground, fground, and color in the previous code. */
     XnColor bg, ul, fg;
@@ -3191,12 +3685,11 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y,
     /* wipes out to right hand edge of widget */
     if (toX >= textD->left) {
         clearRect(
-                textD,
-                getColor(&bg),
-                fromX,
-                y,
-                toX - fromX,
-                textD->ascent + textD->descent );
+                   textD,
+                   getColor(&bg),
+                   fromX,        y,
+                   toX - fromX,  textD->ascent + textD->descent
+                 );
     }
     
     // FILL_MASK indicates that there is no text available to be 
@@ -3216,14 +3709,20 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y,
     /* If any space around the character remains unfilled (due to use of
        different sized fonts for highlighting), fill in above or below
        to erase previously drawn characters */
-    if (font->ascent < textD->ascent)
-        clearRect(textD, getColor(&bg), 
-                fromX, y, 
-                toX - fromX, textD->ascent - font->ascent );
-    if (font->descent < textD->descent)
-        clearRect(textD, getColor(&bg), 
-                fromX, y + textD->ascent + font->descent, 
-                toX - fromX, textD->descent - font->descent );
+    if (font->ascent < textD->ascent) {
+        clearRect(
+                   textD, getColor(&bg), 
+                   fromX,        y, 
+                   toX - fromX,  textD->ascent - font->ascent
+                 );
+    }
+    if (font->descent < textD->descent) {
+        clearRect(
+                   textD, getColor(&bg), 
+                   fromX,        y + textD->ascent + font->descent, 
+                   toX - fromX,  textD->descent - font->descent
+                 );
+    }
     
     
     /* Draw the string using color and font set above */  
@@ -3253,38 +3752,87 @@ static void clearRect(textDisp *textD, XftColor *color, int x, int y,
     if (width == 0 || XtWindow(textD->w) == 0)
         return;
     
-    if (color == &textD->colorProfile->textBgColor) {
-        XClearArea(XtDisplay(textD->w), XtWindow(textD->w), 
-                x, y, width, height, False);
-    }
-    else {
-        XftDrawRect(textD->d, color, x, y, width, height);
-    }
+    /* The stored right margin postition is relative to the text area, not the 
+     * window as it was previously.  Additionally, if the view has been scrolled 
+     * horizontally (either explicitly or due to e.g. a search) then the right 
+     * margin indicator's [graphical X] position needs to adjusted. */
+    int rightMarginAdjusted = textD->rightMarginPos  // Relative to text area
+                            - textD->horizOffset     // (which may be shifted)
+                            + textD->left;           // and is inset from window's edge
     
-    if(textD->rightMarginPos > 0) {
-        XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, 
-                textD->rightMarginPos, y, 1, height);
+    // NOTE: Reference is made below to colors having been applied by 
+    // «highlighting styles»; in addition to this the non-background color 
+    // being applied may have resulted from colors being blended, e.g. an 
+    // active text selection, the current line indicator, backlighting, etc.
+    
+    if(textD->rightMargin > 0) {
+        // The right margin indicator is active
         
-        // draw remaining right area using bg2
-        int startPos = textD->rightMarginPos+1 > x ? textD->rightMarginPos+1 : x;
+        // Clear the portion of the rectangle that isn't in the right margin.
+        // The color used is either the associated text's highlighting style
+        // or the default background color if no style is being applied.
+        if ( x<rightMarginAdjusted ) {
+            XftDrawRect(textD->d, 
+                    ( color != &textD->colorProfile->textBgColor )
+                        ? color
+                        : &textD->colorProfile->textBgColor, 
+                    x, y, 
+                    ( x + width >= rightMarginAdjusted ) 
+                        ? rightMarginAdjusted - x 
+                        : width, 
+                    height);
+        }
+        
+        // Draw the right margin indicator line
+        XftDrawRect(textD->d, 
+                ( color != &textD->colorProfile->textBgColor )
+                    ? color
+                    : &textD->colorProfile->rightMarginColor, 
+                rightMarginAdjusted, y, 1, height);
+        
+        // Draw the remainder of the right margin area (i.e. where no text is 
+        // present) using the right margin area's background color or the 
+        // appropriate one from the active highlighting style.
+        
+        // Drawing either starts at an offset within the rectangle (if the 
+        // right margin lies within it) or at the left side of the rectangle 
+        // being drawn; the width of this rectangle is also adjusted as 
+        // appropriate.
+        int startPos = rightMarginAdjusted+1 > x ? rightMarginAdjusted+1 : x;
         int bg2width = x + width - startPos;
+        
         // If nothing needs to be cleared in the right margin area then bg2Width 
         // will be negative (or zero); as XftDrawRect takes an unsigned int for 
         // its width parameter we shouldn't call the function in that case (as 
         // the value will be interpreted as a large positive value).
         if ( bg2width > 0 ) {
-            XftDrawRect(textD->d, &textD->colorProfile->textBg2Color, 
+            XftDrawRect(textD->d, 
+                    ( color != &textD->colorProfile->textBgColor )
+                        ? color
+                        : &textD->colorProfile->textBg2Color, 
                     startPos, y, bg2width, height);
+        }
+        
+    } else {
+        // The right margin indicator is not active
+        
+        // Either clear the rectangle using the default backround color or 
+        // with the one specified by the style
+        if (color == &textD->colorProfile->textBgColor) {
+            // Apply the default background color
+            XClearArea(XtDisplay(textD->w), XtWindow(textD->w),
+                    x, y, width, height, False);
+        }
+        else {
+            // Apply the default styled color
+            XftDrawRect(textD->d, color, x, y, width, height);
         }
     }
     
-    if (color != &textD->colorProfile->textBgColor) {
-        XftDrawRect(textD->d, color, x, y, width, height);
-    }
-    
-    if(textD->rightMarginPos > 0) {
+    /* Overlay the right margin indicator (if active) */
+    if(textD->rightMargin > 0) {
         XftDrawRect(textD->d, &textD->colorProfile->rightMarginColor, 
-                textD->rightMarginPos, y, 1, height);
+                rightMarginAdjusted, y, 1, height);
     }
 }
 
@@ -4110,22 +4658,18 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     clipRect.y = 0; //textD->top;
     clipRect.width = textD->lineNumWidth + textD->lineNumLeft;
     clipRect.height = textD->height + 2*textD->top;
-    //XSetClipRectangles(display, textD->lineNumGC, 0, 0,
-    //        &clipRect, 1, Unsorted);
     if(textD->d) {
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
     }
     
     /* Erase the previous contents of the line number area, if requested */
     if (clearAll) {
-        //XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
-        //        textD->top, textD->lineNumWidth, textD->height, False);
         XftDrawRect(
                 textD->d,
                 &textD->colorProfile->lineNoBgColor,
                 0,
                 0,
-                textD->lineNumLeft + textD->lineNumWidth,
+                textD->lineNumLeft + textD->lineNumWidth + textD->marginWidth,
                 2*top + height);
     }
     
@@ -4148,11 +4692,6 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
                     strlen(lineNumString));           
             line++;
         } else {
-            /*
-            XClearArea(XtDisplay(textD->w), XtWindow(textD->w),
-                    textD->lineNumLeft, y, textD->lineNumWidth,
-                    textD->ascent + textD->descent, False);
-            */
             if (visLine == 0)
                 line++;
         }
@@ -5315,7 +5854,7 @@ void FontInitExcludes(const char *list) {
         }
     }
     
-    font_excludes = calloc(num, sizeof(char*));
+    font_excludes = NEditCalloc(num, sizeof(char*));
     num_font_excludes = num;
     
     char *str = strdup(list);
