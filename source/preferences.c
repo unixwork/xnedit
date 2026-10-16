@@ -8030,9 +8030,81 @@ void ChooseColors(WindowInfo *window)
             XmNrightAttachment, XmATTACH_POSITION,
             XmNrightPosition, 99,
             XmNalignment, XmALIGNMENT_CENTER,
-            XmNlabelString, s1 = XmStringCreateLtoR(
+            XmNlabelString, s1 = XmStringCreateLocalized(
                 "NOTE: Foreground colors only apply when syntax highlighting "
-                "is DISABLED.\n", XmFONTLIST_DEFAULT_TAG),
+                "is DISABLED.\n"),
+            NULL);
+    XmStringFree(s1);
+    
+    tmpW = XtVaCreateManagedWidget("separator", 
+            xmSeparatorWidgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, tmpW,
+            NULL
+            );
+    
+    s1 = XmStringCreateLocalized("Show selection in non-text areas");
+    cd->showNontextSelectionW = 
+        XtVaCreateManagedWidget("showNontextSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, tmpW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 8,
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("Suppress for selected text:");
+    tmpW = XtVaCreateManagedWidget("suppresInSelectionLbl",
+            xmLabelGadgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, cd->showNontextSelectionW,
+            XmNtopOffset, 10,
+            XmNleftAttachment, XmATTACH_POSITION,
+            XmNleftOffset, 8,
+            XmNlabelString, s1, 
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("Highlight syntax");
+    cd->suppressStyleInSelectionW = 
+        XtVaCreateManagedWidget("suppressStyleInSelection", 
+            xmToggleButtonWidgetClass, tabForm,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNlabelString, s1,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, tmpW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("Indent rainbow");
+    cd->suppressRainbowInSelectionW = 
+        XtVaCreateManagedWidget("suppressRainbowInSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, cd->suppressStyleInSelectionW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("Backlighting");
+    cd->suppressBacklightingInSelectionW = 
+        XtVaCreateManagedWidget("suppressBacklightingInSelection", xmToggleButtonWidgetClass, tabForm,
+            XmNlabelString, s1,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            XmNtopWidget, cd->suppressRainbowInSelectionW,
+            XmNtopOffset, 0,
+            XmNleftAttachment, XmATTACH_POSITION, //XmATTACH_FORM,
+            XmNleftOffset, 24,
             NULL);
     
    tmpW = XtVaCreateManagedWidget("separator", 
@@ -8113,6 +8185,7 @@ void ChooseColors(WindowInfo *window)
             XmNbottomAttachment, XmATTACH_FORM,
             XmNtopOffset, 10,
             XmNlabelString, s1 = XmStringCreateSimple(""), NULL);
+    XmStringFree(s1);
     
     /*
      * Tab 2: Indent Rainbow Colors
