@@ -340,4 +340,6 @@ void TextDTranlateGraphicExposeQueue(textDisp *textD, int xOffset, int yOffset, 
 void FontInitExcludes(const char *list);
 #endif
 
+void XnColorCacheInitialize();
+
 #endif /* NEDIT_TEXTDISP_H_INCLUDED */

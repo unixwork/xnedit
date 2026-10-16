@@ -547,6 +547,9 @@ int main(int argc, char **argv)
     XtToolkitInitialize();
     context = XtCreateApplicationContext();
     
+    /* Initialize XftColor cache */
+    XnColorCacheInitialize();
+    
     /* Set up a warning handler to trap obnoxious Xt grab warnings */
     SuppressPassiveGrabWarnings();
 

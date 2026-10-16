@@ -3091,6 +3091,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 **   previous version of this code.
 ** ² The actual blending is performed when the value is requested by getColor().
 */
+
 typedef struct {
     int      isDefault;               // TRUE if current value is the 
                                       // originally-set value, 
@@ -3106,6 +3107,7 @@ typedef struct {
                                       // whose blended color has been computed
                                       // FALSE otherwhile
 } XnColor;
+
 
 /*
 ** Set the color to specified value.
@@ -3143,7 +3145,7 @@ inline static void blendColor( XnColor *color, XftColor *newColor ) {
     color->red   += newColor->color.red;
     color->green += newColor->color.green;
     color->blue  += newColor->color.blue;
-    color->alpha += newColor->color.alpha;
+    // color->alpha += newColor->color.alpha;  // We don't use alpha so why compute it?
     color->count++;
     color->valid = FALSE;
 }
@@ -3159,10 +3161,149 @@ inline static void blendOrSetColor( XnColor *color, XftColor *newColor ) {
         color->red   += newColor->color.red;
         color->green += newColor->color.green;
         color->blue  += newColor->color.blue;
-        color->alpha += newColor->color.alpha;
+        // color->alpha += newColor->color.alpha;  // We don't use alpha so why compute it?
         color->count++;
         color->valid = FALSE;
     }
+}
+
+// Uncomment the following to enable the color cache
+#define ENABLE_COLOR_CACHE
+
+#ifdef ENABLE_COLOR_CACHE
+
+// Uncomment the following to display cache activity to the console
+// If enabled then piping the output through uniq is recommended.
+//#define CACHE_TRACE
+
+// Uncomment the following to display cache statistics to the console
+//#define CACHE_STATS
+
+// Uncomment the following to display cache configuration to the console at startup
+//#define CACHE_INFO
+
+// BUCKET_COUNT and ENTRIES_PER_BUCKET should be powers of two
+// The values 1<<8 (256) and 1<<2 (4) look to be abundantly sufficient.
+// Honestly even a BUCKET_COUNT of 1<<6 (64) is fine.
+//#define BUCKET_COUNT       ( 1<<8 )
+#define BUCKET_COUNT       ( 1<<6 )
+#define ENTRIES_PER_BUCKET ( 1<<2 )
+
+/* Color cache (a single cache is used for all windows) */
+
+typedef struct {
+    uint32_t red, green, blue;  // Cumulative RGB values
+    uint32_t count;             // Number of colors to blend
+    XftColor color;             // The corresponding value returned by Xft/Xlib
+} XnColorCacheEntry;
+
+static uint8_t color_cache_bucket_item_cnt[BUCKET_COUNT] = {0};
+static uint8_t color_cache_bucket_head_idx[BUCKET_COUNT] = {0};
+static XnColorCacheEntry color_cache[BUCKET_COUNT][ENTRIES_PER_BUCKET] = {0};
+
+#ifdef CACHE_STATS
+static int cache_total_entries = 0;
+static int cache_full_buckets  = 0;
+#endif
+
+/*
+** Overview of the color cache
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** Having to make a call to Xlib every time a color is blended (up to 3 times in 
+** every drawString call) slows things down considerably¹ and causes noticable 
+** lag in the UI.  To improve performance colors that have been allocated by the 
+** X server are cached by XNedit.
+** 
+** The visible API for working with colors is the same as before with all 
+** changes being internal to the getColor function (plus a one-off call to the 
+** initialization function [XnColorCacheInitialize] at start-up).
+** 
+** The memory overhead of the cache is minimal with between about 8kB and 32kB 
+** (shared amongst all editor windows) being more than sufficient.
+** 
+** ¹ Each server-side color lookup involves three divides, a call to sprintf, 
+**   and then multiple calls to Xlib via the AllocColor wrapper.
+** 
+** Theory of operation
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** When the drawString needs to blend a color it makes a call to getColor which 
+** then returns the blended color as a pointer to an XftColor, suitable for 
+** passing to Xft/Xlib functions.
+** 
+** When the cache is enabled getColor checks it to see whether the color has 
+** previously been allocated by the server; if it has then the cached value is 
+** returned, if not then it is added to the cache before being returned.
+** 
+** As mentioned above, the cache is transparent to the end-user [programmer] and 
+** no special coding is required to use it.
+** 
+** Cache datastructures and design
+** ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+** The cache is implemented as a hash (a.k.a. associative array or dictionary).
+** There are a large number of buckets (64 or 256 works well) that each contain 
+** zero or more items/entries stored in a fixed-sized list (4 entries per list 
+** works well).²  Each entry contains the description of a single color along 
+** with the server-provided XftColor that it maps to.  The hash keys are derived 
+** from the unadjusted (pre-divide) RGB color values³:
+** 
+**     key = ( r XOR g XOR b ) % BUCKET_COUNT
+** 
+** The key indicates which of the buckets the color value would be stored in.
+** Each bucket consists of three items:
+** 
+**  • The bucket's cache entries, described below → color_cache[key][...]
+**  • Number of valid entries in the bucket → color_cache_bucket_item_cnt[key]
+**  • Head-of-list entry's array index → color_cache_bucket_head_idx[key]
+** 
+** When retrieving a color from the cache the correct bucket is first determined 
+** as described above.  Next each entry in the bucket's entry list is checked to 
+** see whether the unadjusted RGB values and the blend count match the requested 
+** color.  If all four values match then a reference to the entry's XftColor is 
+** returned.  The entries are examined in ascending order (newest addition to 
+** oldest) with the index being checked wrapping around to 0 when the end of the 
+** list is reached.  The number of list entries is intentionally kept very small 
+** as for every lookup multiple (maybe all) of a bucket's entries may need to be 
+** checked.⁴
+** 
+** When storing a color in the cache the head index is decremented [modulo the 
+** bucket size], the entry count incremented (if the bucket isn't full), and the 
+** color's values are stored to the head entry [details below].  This has the 
+** effect that when a value is added to a full bucket then the least-recently-
+** added color is evicted to make room.
+** 
+** Only the bare minimum amount of data is stored in each cache entry, namely 
+** the unadjusted red, green, and blue color values, the number of colors that 
+** are being blended (i.e. the divisor), and the resulting color value returned 
+** by the X server.
+**
+** ² To keep the math fast both the number of buckets and the number of entries 
+**   in each bucket are powers of two.
+**
+** ³ The general idea is to make the key generation as fast as possible while 
+**   ensuring a decent amount of entropy in the key bits.
+**
+** ⁴ In other words, many [fast-to-access] buckets with small number of [slow-
+**   to-check] entries in each.
+*/
+
+#endif /* ENABLE_COLOR_CACHE */
+
+/* Initialze the color cache (a single cache is used for all windows) */
+void XnColorCacheInitialize(void) {
+#ifdef ENABLE_COLOR_CACHE
+#ifdef CACHE_INFO
+    printf( "Initializing XnColor (XftColor) cache with %i buckets of %i entries each\n", 
+            BUCKET_COUNT, ENTRIES_PER_BUCKET );
+    printf( "(%i bytes cnt + %i bytes idx + %i bytes data = %i bytes total)\n", 
+            sizeof(color_cache_bucket_item_cnt),  sizeof(color_cache_bucket_head_idx),  sizeof(color_cache), 
+            sizeof(color_cache_bucket_item_cnt) + sizeof(color_cache_bucket_head_idx) + sizeof(color_cache) );
+#endif
+    // Technically these aren't needed (the arrays are initialized in their
+    // declarations) but belt and braces...
+    memset(color_cache_bucket_item_cnt, 0, BUCKET_COUNT);
+    memset(color_cache_bucket_head_idx, 0, BUCKET_COUNT);
+    memset(color_cache, 0, sizeof(XnColorCacheEntry) * BUCKET_COUNT * ENTRIES_PER_BUCKET);
+#endif /* ENABLE_COLOR_CACHE */
 }
 
 /*
@@ -3179,41 +3320,44 @@ inline static XftColor* getColor( XnColor *color ) {
         
     } else {  // Blended color
         if ( color->valid == FALSE ) {
-            /* FIXME: Further performance improvements could likely be had 
-            ** 
-            ** For example, we might cache the (blended) XftColor values that 
-            ** we have declared so as to avoid the overhead of making a query 
-            ** against the X-server (divisions, sprintf, and the actual call).
-            ** 
-            ** This e.g. could be done using a hash table with 256 buckets 
-            ** where the hash keys are:
-            ** 
-            **    ( r XOR g XOR b ) % 256
-            ** 
-            ** Where r, g, and b are the values prior to division.
-            ** 
-            ** Each bucket could contain, say, the 4 (or more; fixed power-
-            ** of-two size though) most-recently seen colors matching the 
-            ** hash key.  Values would be stored in a ring buffer with the 
-            ** most-recently seen color at the (logical) head of the buffer.
-            ** 
-            ** The general idea is to make the key generation fast and to 
-            ** minimize the number of (numeric) comparisons needed to determine 
-            ** whether a given entry in a bucket matches the color value being 
-            ** searched for (IOW, many buckets with few entries each).
-            **
-            ** (If the XnColor fields are re-arranged then a check for a color 
-            ** match can be done as a pair of 64-bit integer comparisons.  To 
-            ** be specific one would swap to the order of alpha and count and 
-            ** make count a uint32_t; packing the struct would also be needed 
-            ** for portability reasons.)
-            */
+#ifdef ENABLE_COLOR_CACHE
+            /* Lookup current color in cache */
+            uint32_t key = ( color->red ^ color->green ^ color->blue ) % BUCKET_COUNT;
+            int entries  = color_cache_bucket_item_cnt[key];
+            int head_idx = color_cache_bucket_head_idx[key];
+            
+            Boolean found = FALSE;
+            int entry;
+            for (entry=head_idx; entry<entries+head_idx; entry++) {
+                int this_idx = entry % ENTRIES_PER_BUCKET;
+                if (
+                     ( color_cache[key][this_idx].red   == color->red   ) &&
+                     ( color_cache[key][this_idx].green == color->green ) &&
+                     ( color_cache[key][this_idx].blue  == color->blue  ) &&
+                     ( color_cache[key][this_idx].count == color->count )
+                   ) {
+                   found = TRUE;
+                   break;
+                }
+            }
+            if ( found ) {
+                entry %= ENTRIES_PER_BUCKET;
+#ifdef CACHE_TRACE
+                printf("%i\t%i %i %i / %i found in cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, entry);
+#endif
+                return &( color_cache[key][entry].color );
+#ifdef CACHE_TRACE
+            } else {
+                printf("Not found in cache\n");
+#endif
+            }
+#endif /* ENABLE_COLOR_CACHE */
             
             // Need to compute the blended value
             r = color->red   / color->count;
             g = color->green / color->count;
             b = color->blue  / color->count;
-            //a = color->alpha / color->count;
+            //a = color->alpha / color->count;  // We don't use alpha so why compute it?
             a = UINT16_MAX;
             // These should never be needed:
             if ( r > UINT16_MAX ) r = UINT16_MAX;
@@ -3236,6 +3380,57 @@ inline static XftColor* getColor( XnColor *color ) {
             
             // Note that value was computed
             color->valid = TRUE;
+            
+#ifdef ENABLE_COLOR_CACHE
+            // Add to cache
+            int cnt = color_cache_bucket_item_cnt[key];
+#ifdef CACHE_TRACE
+            printf("%i\t%i\t%i items in bucket\n", key, key, cnt);
+#endif
+            
+            int add_at = 0;
+            if ( cnt == ENTRIES_PER_BUCKET ) {
+                // Bucket full
+#ifdef CACHE_TRACE
+                printf("%i\tbucket full\n", key);
+#endif
+                int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
+                if (head < 0) head += ENTRIES_PER_BUCKET;
+                add_at = head;
+                color_cache_bucket_head_idx[key] = head;
+            } else {
+#ifdef CACHE_TRACE
+                printf("%i\troom in bucket\n", key);
+#endif
+                add_at = cnt;
+                cnt++;
+                color_cache_bucket_item_cnt[key] = cnt;
+                int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
+                if (head < 0) head += ENTRIES_PER_BUCKET;
+                add_at = head;
+                color_cache_bucket_head_idx[key] = head;
+#ifdef CACHE_STATS
+                cache_total_entries++;
+                if ( cnt == ENTRIES_PER_BUCKET ) {
+                    cache_full_buckets++;
+                }
+#endif
+            }
+#ifdef CACHE_STATS
+            printf( "%i colors cached, %i full buckets\n", cache_total_entries, cache_full_buckets );
+#endif
+            
+#ifdef CACHE_TRACE
+            printf( "%i\t%i %i %i / %i adding to cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, add_at );
+#endif
+            color_cache[key][add_at].red   = color->red;
+            color_cache[key][add_at].green = color->green;
+            color_cache[key][add_at].blue  = color->blue;
+            color_cache[key][add_at].count = color->count;
+            color_cache[key][add_at].color = color->color;
+            
+            return &( color_cache[key][add_at].color );
+#endif /* ENABLE_COLOR_CACHE */
         }
         return &(color->color);
     }
@@ -3272,6 +3467,9 @@ static void drawString(textDisp *textD, int style, int rbIndex, int x, int y,
         int fromX, int toX, FcChar32 *string, int nChars, Boolean highlightLine, 
         ansiStyle *ansi)
 {
+#ifdef CACHE_TRACE
+printf("\n");
+#endif
     /* Background, underline, and text foreground colors, respectively.
     ** These correspond to bground, fground, and color in the previous code. */
     XnColor bg, ul, fg;
