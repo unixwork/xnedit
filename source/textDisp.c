@@ -100,8 +100,27 @@
 
 /* Maximum displayable line length (how many characters will fit across the
    widest window).  This amount of memory is temporarily allocated from the
-   stack in the redisplayLine routine for drawing strings */
-#define MAX_DISP_LINE_LEN 1000
+   stack in the redisplayLine routine for drawing strings
+    
+   This value was 1000 but was increased since at extremely small font sizes 
+   (e.g. 2 point Droid Sans Mono) the longest displayable line length (744 
+   characters when set to 1000) is narrower than what a 1920-pixel wide window 
+   can display (940 characters at 2 point, 1882 at 1 point); this leads to a 
+   «ragged right» edge on blank lines and text on the right of the window not 
+   being displayed.
+   
+   (It's worth noting that 2 points is the minimum font size selectable when 
+   zooming using the keyboard or mouse.)
+*/
+
+/* Original value */
+//#define MAX_DISP_LINE_LEN 1000
+
+/* Sufficient for 2 point text at 1920 pixel window width: */
+#define MAX_DISP_LINE_LEN 1500
+
+/* Sufficient for 1 point text at 1920 pixel window width: */
+//#define MAX_DISP_LINE_LEN 2500
 
 /* Macro for getting the TextPart from a textD */
 #define TEXT_OF_TEXTD(t)    (((TextWidget)((t)->w))->text)
@@ -292,18 +311,11 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = NEditMalloc(rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
-        if (text) {
-            memset(text, '0', rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
-            text[rightMargin] = 0;           // NULL terminate string
-            XGlyphInfo extents;
-            XftTextExtentsUtf8(XtDisplay(widget), font->fonts->font, (FcChar8*)text, rightMargin, &extents);
-            NEditFree(text);
-            textD->rightMarginPos = extents.xOff - 1;
-        } else {
-            // malloc failed, fall back to old behaviour
-            textD->rightMarginPos = rightMargin * font->maxWidth;
-        }
+        FcChar8* text = "0\n";
+        XGlyphInfo extents;
+        textD->rightMarginPos = ( rightMargin * extents.xOff ) - 1;
+        // Old method:
+        // textD->rightMarginPos = rightMargin * font->maxWidth;
     } else {
         textD->rightMarginPos = 0;
     }
@@ -367,7 +379,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
 
     /* Decide if the horizontal scroll bar needs to be visible */
     hideOrShowHScrollBar(textD);
-
+    
     return textD;
 }
 
@@ -508,18 +520,12 @@ void TextDSetRightMargin(textDisp *textD, int rightMargin) {
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = NEditMalloc(rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
-        if (text) {
-            memset(text, '0', rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
-            text[rightMargin] = 0;           // NULL terminate string
-            XGlyphInfo extents;
-            XftTextExtentsUtf8(XtDisplay(textD->w), textD->font->fonts->font, (FcChar8*)text, rightMargin, &extents);
-            NEditFree(text);
-            textD->rightMarginPos = extents.xOff - 1;
-        } else {
-            // malloc failed, fall back to old behaviour
-            textD->rightMarginPos = /*textD->left +*/ rightMargin * textD->font->maxWidth;
-        }
+        FcChar8* text = "0\n";
+        XGlyphInfo extents;
+        XftTextExtentsUtf8(XtDisplay(textD->w), textD->font->fonts->font, (FcChar8*)text, 1, &extents);
+        textD->rightMarginPos = ( textD->rightMargin * extents.xOff ) - 1;
+        // Old method:
+        // textD->rightMarginPos = rightMargin * font->maxWidth;
     } else {
         textD->rightMarginPos = 0;
     }
@@ -572,18 +578,12 @@ void TextDSetFont(textDisp *textD, NFont *font)
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = NEditMalloc(textD->rightMargin+1);  // Not NEditCalloc since there's no point in initializing the contents twice
-        if (text) {
-            memset(text, '0', textD->rightMargin);  // '0' is intentionally quoted (we want the character zero, not a null byte)
-            text[textD->rightMargin] = 0;           // NULL terminate string
-            XGlyphInfo extents;
-            XftTextExtentsUtf8(XtDisplay(textD->w), font->fonts->font, (FcChar8*)text, textD->rightMargin, &extents);
-            NEditFree(text);
-            textD->rightMarginPos = extents.xOff - 1;
-        } else {
-            // malloc failed, fall back to old behaviour
-            textD->rightMarginPos = textD->rightMargin * font->maxWidth;
-        }
+        FcChar8* text = "0\n";
+        XGlyphInfo extents;
+        XftTextExtentsUtf8(XtDisplay(textD->w), font->fonts->font, (FcChar8*)text, 1, &extents);
+        textD->rightMarginPos = ( textD->rightMargin * extents.xOff ) - 1;
+        // Old method:
+        // textD->rightMarginPos = rightMargin * font->maxWidth;
     } else {
         // This case wasn't present in original code
         textD->rightMarginPos = 0;
@@ -798,11 +798,18 @@ void TextDRedisplayRect(textDisp *textD, int left, int top, int width,
     /* If the graphics contexts are shared using XtAllocateGC, their
        clipping rectangles may have changed since the last use */
     resetClipRectangles(textD);
-      
-    /* draw the lines of text */
-    for (line=firstLine; line<=lastLine; line++)
-        redisplayLine(textD, line, left-textD->marginWidth, left+width, 0, INT_MAX);
     
+    /* draw the lines of text */
+    for (line=firstLine; line<=lastLine; line++) {
+        if (line >= 0) {
+            redisplayLine( /* textDisp*      = */ textD,
+                           /* visLineNum     = */ line, 
+                           /* leftClip       = */ left-textD->marginWidth, 
+                           /* rightClip      = */ left+width, 
+                           /* leftCharIndex  = */ 0, 
+                           /* rightCharIndex = */ INT_MAX );
+        }
+    }
     /* draw the line numbers if exposed area includes them */
     if (textD->lineNumWidth != 0 && left <= textD->lineNumLeft + textD->lineNumWidth) {
         redrawLineNumbers(textD, top, height, True);
@@ -829,6 +836,10 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     resetClipRectangles(textD);
     XftDrawSetClipRectangles(textD->d, 0, 0, &rect, 1);
     
+// Suppress unused variable warnings for this section
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
     /*
     *** Positions, widths, and heights ***
     The origin is at the top left and all X or Y positions are relative to it.
@@ -943,8 +954,9 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
                              * wCharacter;                      // 0 if some or all of the fonts in use are not monospaced.
     
     int wWindow              = textD->w->core.width;            // Window width
-    
-//    // Don't allow partial characters on right edge of text area (except when horizontally scrolling)
+
+    // Choose one:
+    // Don't allow partial characters on right edge of text area (except when horizontally scrolling)
 //    int xRightEdge           = xTextArea                        // Right edge padding
 //                             + (                                // (need to compute this this way as it can sometimes be larger
 //                                 ( textAreaCompleteCols > 0 )   // than the declared margin width even for the same window size)
@@ -953,7 +965,8 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
 //                               )                                // ···
 //                             + 1;                               // ···
     // Always allow partial characters on right edge of text area
-    int xRightEdge           = xTextArea + wTextArea + 1;       // Right edge padding
+    int xRightEdge           = xTextArea + wTextArea;           // Right edge padding
+    
     int wRightEdge           = wWindow                          // ···
                              - xRightEdge;                      // ···
     
@@ -985,8 +998,7 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
                                ? xTextArea                      // ···
                                : xMarginIndicator + 1;          // ···
     int wPostMargin          = wWindow                          // ···
-                             - xPostMargin                      // ···
-                             - marginWidth;                     // ···
+                             - xPostMargin;                     // ···
     
     // === Vertical (Y) positions and heights ===
     int textAreaCompleteRows = textD->nVisibleLines;            // Number of fully-visible rows in the editable text area
@@ -1008,12 +1020,15 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     
     
     
+#pragma GCC diagnostic pop
+
+
     /* Draw the top, bottom, and right edges
        The left edge, left padding, and line number area don't need to be drawn. */
     
-    // XftColor red   = AllocXftColorRGB( textD->w, 255, 191, 191, NULL );
-    // XftColor green = AllocXftColorRGB( textD->w, 191, 255, 191, NULL );
-    // XftColor blue  = AllocXftColorRGB( textD->w, 191, 191, 255, NULL );
+//    XftColor red   = AllocXftColorRGB( textD->w, 255, 191, 191, NULL );
+//    XftColor green = AllocXftColorRGB( textD->w, 191, 255, 191, NULL );
+//    XftColor blue  = AllocXftColorRGB( textD->w, 191, 191, 255, NULL );
     
     // === Top edge ===
     if ( marginActive ) {
@@ -1066,9 +1081,21 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     // === Right edge ===
     // This clears not just the right edge proper but also clears the part 
     // of the text area that's after the visible characters (if applicable).
-    XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
-                 xRightEdge, yAbsoluteTop, 
-                 wRightEdge, hWindow );
+    if ( wRightEdge > 0 ) {
+        XftDrawRect( textD->d, 
+                     ( postMarginVisible )
+                     ? &textD->colorProfile->textBg2Color
+                     : &textD->colorProfile->textBgColor, 
+                     xRightEdge, yAbsoluteTop, 
+                     wRightEdge, hWindow );
+    }
+    
+    // === Padding between line numbers and editable text ===
+    if ( wLineNums ) {
+        XftDrawRect( textD->d, &textD->colorProfile->textBgColor, 
+                     xPadLeft, yAbsoluteTop, 
+                     wPadLeft, hWindow );
+    }
 }
 
 /*
@@ -2492,7 +2519,7 @@ static void bufModifiedCB(int pos, int nInserted, int nDeleted,
             blankCursorProtrusions(textD);
         }
             
-    redrawLineNumbers(textD, textD->top, textD->height, True);
+        redrawLineNumbers(textD, textD->top, textD->height, True);
     }
     
     /* If there is a style buffer, check if the modification caused additional
@@ -2710,6 +2737,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
 
     /* Shrink the clipping range to the active display area */
     leftClip = max(textD->left, leftClip);
+    
     rightClip = min(rightClip, textD->left + textD->width);
     
     if (leftClip > rightClip) {
@@ -2887,6 +2915,8 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     outIndex = outStartIndex;
     x = startX;
     inc = 1;
+    Boolean overflow = FALSE; // Set true if the limit of what can be stored in the text buffer are reached
+    
     for (charIndex = startIndex; charIndex < rightCharIndex; charIndex += inc) {
         if (TextDPosHasCursor(textD, lineStartPos+charIndex, &cursorIndex)) {
             if (charIndex < lineLen
@@ -2964,7 +2994,14 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         charFont = FindFont(charFL, uc);
         
         if (charStyle != style || charFont != styleFont || rbPixelIndex != rbCurrentPixelIndex || ansiS != ansiCharS) {
-            drawString(textD, style, rbPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine, &ansi);
+            drawString( textD, 
+                        style, 
+                        rbPixelIndex, 
+                        startX, y, 
+                        max(startX, leftClip), min(x, rightClip), 
+                        outStr, outPtr - outStr, 
+                        cursorLine, 
+                        &ansi );
             outPtr = outStr;
             startX = x;
             style = charStyle;
@@ -2988,15 +3025,40 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
         x += charWidth;
         outIndex += charLen;
                
-        if (outPtr - outStr + MAX_EXP_CHAR_LEN >= MAX_DISP_LINE_LEN
-                || x >= rightClip) {
+        if ( outPtr - outStr + MAX_EXP_CHAR_LEN >= MAX_DISP_LINE_LEN ) {
+            /* An attempt was made to output a larger number of [displayed] 
+            ** characters on a single line that the code can handle.  
+            ** See comment at top of file for details.  */
+            overflow = TRUE;
             break;
         }
+        if ( x >= rightClip ) {
+            // We're now outside the region being displayed
+            break;
+        }
+    }
+    
+    if (overflow) {
+        /* Uncommenting the following will clear to right edge of window if an 
+        ** overflow condition exists.  It's probably better to not do so since 
+        ** that way hitting the limit isn't concealed (i.e. someone might then 
+        ** file a bug report and either MAX_DISP_LINE_LEN could be raised 
+        ** further or an alternate solution to the issue explored).  */
+        //x = INT_MAX;
+        
+        fprintf(stderr, "Maximum displayable length reached in textDisp.c : redisplayLine  [increase MAX_DISP_LINE_LEN]\n");
     }
     extendAnsiStyle(&ansi, &newAnsiStyle);
     
     /* Draw the remaining style segment */
-    drawString(textD, style, rbCurrentPixelIndex, startX, y, max(startX, leftClip), min(x, rightClip), outStr, outPtr - outStr, cursorLine, &ansi);
+    drawString( textD, 
+                style, 
+                rbCurrentPixelIndex, 
+                startX, y, 
+                max(startX, leftClip), min(x, rightClip), 
+                outStr, outPtr - outStr, 
+                cursorLine, 
+                &ansi );
     
     /* Draw the cursor if part of it appeared on the redisplayed part of
        this line.  Also check for the cases which are not caught as the
@@ -3069,6 +3131,7 @@ static void redisplayLine(textDisp *textD, int visLineNum, int leftClip,
     if(textD->mcursorSizeReal > 1) NEditFree(cursorX);
 }
 
+/*
 /*
 ** Datastructure and functions used internally by drawString(...)
 */
@@ -3172,20 +3235,23 @@ inline static void blendOrSetColor( XnColor *color, XftColor *newColor ) {
 
 #ifdef ENABLE_COLOR_CACHE
 
-// Uncomment the following to display cache activity to the console
-// If enabled then piping the output through uniq is recommended.
-//#define CACHE_TRACE
+// Uncomment the following to display cache configuration at start-up
+#define CACHE_INFO
 
-// Uncomment the following to display cache statistics to the console
-//#define CACHE_STATS
+// Uncomment the following to display running cache statistics
+#define CACHE_STATS
 
-// Uncomment the following to display cache configuration to the console at startup
-//#define CACHE_INFO
+// Uncomment the following to display a running historgram of bucket usage
+#define CACHE_HISTOGRAM
 
-// BUCKET_COUNT and ENTRIES_PER_BUCKET should be powers of two
-// The values 1<<8 (256) and 1<<2 (4) look to be abundantly sufficient.
-// Honestly even a BUCKET_COUNT of 1<<6 (64) is fine.
-//#define BUCKET_COUNT       ( 1<<8 )
+/* Cache size definition
+**
+** (See exposition below for technical details.)
+** 
+** BUCKET_COUNT and ENTRIES_PER_BUCKET must be powers of two.
+** The values 1<<8 (256) and 1<<2 (4) look to be abundantly sufficient.
+** Honestly even a BUCKET_COUNT of 1<<6 (64) is fine.
+*/
 #define BUCKET_COUNT       ( 1<<6 )
 #define ENTRIES_PER_BUCKET ( 1<<2 )
 
@@ -3232,7 +3298,8 @@ static int cache_full_buckets  = 0;
 ** 
 ** When the cache is enabled getColor checks it to see whether the color has 
 ** previously been allocated by the server; if it has then the cached value is 
-** returned, if not then it is added to the cache before being returned.
+** returned, if not then it is computed/queried and is added to the cache before 
+** being returned.
 ** 
 ** As mentioned above, the cache is transparent to the end-user [programmer] and 
 ** no special coding is required to use it.
@@ -3274,35 +3341,142 @@ static int cache_full_buckets  = 0;
 ** Only the bare minimum amount of data is stored in each cache entry, namely 
 ** the unadjusted red, green, and blue color values, the number of colors that 
 ** are being blended (i.e. the divisor), and the resulting color value returned 
-** by the X server.
+** by the Xft library.
 **
 ** ² To keep the math fast both the number of buckets and the number of entries 
 **   in each bucket are powers of two.
 **
 ** ³ The general idea is to make the key generation as fast as possible while 
-**   ensuring a decent amount of entropy in the key bits.
+**   ensuring a decent amount of entropy in the key bits (i.e. fairly even key 
+**   distribution).
 **
-** ⁴ In other words, many [fast-to-access] buckets with small number of [slow-
+** ⁴ In other words, many [fast-to-access] buckets with a small number of [slow-
 **   to-check] entries in each.
 */
 
 #endif /* ENABLE_COLOR_CACHE */
 
+/*
+** Timing measurement for getColor and drawString calls
+** 
+** Measurements can be performed both when caching is enabled and when not.
+** 
+** The overhead of the timing calls isn't nulled so the measured values are 
+** higher than they actually are.  This is especially the case for drawString 
+** as it makes repeated calls to getColor and thus the overmeasurements are 
+** compounded.  An attempt was made to implement nulling but the measurement 
+** overhead (~1µs per measurement) is too close to the timer resolution (1µs) 
+** for the measured overhead value to be useable.
+** 
+** Timing measurements are collected in the background and the current values 
+** can be displayed on the console by sending a USR1 signal to XNEdit process.
+** This can be done, e.g. using:
+
+make linux && \
+( \
+    ./source/xnedit & \
+    child=$! ; \
+    while read ; do kill -USR1 $child ; done \
+)
+
+** To view gathered statistics press Enter, to exit press Ctrl-C.
+*/
+
+/* Uncomment the following line to enable timing measurement: */
+#define CACHE_PROFILE
+
+#ifdef CACHE_PROFILE
+#include <time.h>
+#include <sys/time.h>
+#include <sys/resource.h> 
+
+// Note: getrusage measures actual CPU time used (user and system combined), 
+// not the total time elapsed (which could include time preëmpted).
+struct rusage ruse;
+#define CPU_TIME ( \
+                   getrusage(RUSAGE_SELF,&ruse), \
+                   ruse.ru_utime.tv_sec + \
+                   ruse.ru_stime.tv_sec + \
+                   1e-6 * ( ruse.ru_utime.tv_usec + ruse.ru_stime.tv_usec ) \
+                 )
+
+// Statistics for getColor function (called by drawString)
+static float    getColor_profile_start_f;   // Start time for current block (seconds)
+static float    getColor_profile_end_f;     // End time for current block (seconds)
+static float    getColor_profile_elapsed;   // Total CPU time for all calls (seconds)
+static uint32_t getColor_calls   = 0;       // Total number of call to drawString
+
+// Statistics for drawString function
+static float    drawString_profile_start_f; // Start time for current block (seconds)
+static float    drawString_profile_end_f;   // End time for current block (seconds)
+static float    drawString_profile_elapsed; // Total CPU time for all calls (seconds)
+static uint32_t drawString_calls = 0;       // Total number of call to getColor
+
+// Unix USR1 signal handler
+// This is installed by the XnColorCacheInitialize function
+static void sigusr1(void) {
+    printf("--------------------------------------------------------------------------------\n");
+    printf("getColor:   %f seconds\n", getColor_profile_elapsed);
+    printf("drawString: %f seconds\n", drawString_profile_elapsed);
+    printf("drawString: %i calls\n", drawString_calls);
+    printf("getColor:   %i calls\n", getColor_calls);
+    printf("\n");
+    printf("getColor:   %f calls per drawString call\n", (float)getColor_calls      / (float)drawString_calls);
+    printf("drawString: %f µsec per call\n",             drawString_profile_elapsed / (float)drawString_calls * 1000000.0);
+    printf("drawString: %f µsec in getColor per call\n", getColor_profile_elapsed   / (float)drawString_calls * 1000000.0);
+    printf("getColor:   %f µsec per call\n",             getColor_profile_elapsed   / (float)getColor_calls   * 1000000.0);
+    printf("--------------------------------------------------------------------------------\n");
+}
+
+#endif /* CACHE_PROFILE */
+
 /* Initialze the color cache (a single cache is used for all windows) */
 void XnColorCacheInitialize(void) {
+#ifdef ENABLE_COLOR_CACHE
+    printf("ENABLE_COLOR_CACHE enabled\n");
+#endif
+#ifdef CACHE_INFO
+    printf("CACHE_INFO enabled\n");
+#endif
+#ifdef CACHE_STATS
+    printf("CACHE_STATS enabled\n");
+#endif
+#ifdef CACHE_HISTOGRAM
+    printf("CACHE_HISTOGRAM enabled\n");
+#endif
+#ifdef BUCKET_COUNT
+    printf("BUCKET_COUNT = %i\n", BUCKET_COUNT );
+#endif
+#ifdef ENTRIES_PER_BUCKET
+    printf("ENTRIES_PER_BUCKET = %i\n", ENTRIES_PER_BUCKET );
+#endif
+#ifdef CACHE_PROFILE
+    printf("CACHE_PROFILE enabled\n");
+#endif
+    
+#ifdef CACHE_PROFILE
+    // Initialize recorded totals
+    getColor_profile_elapsed   = 0.0;
+    drawString_profile_elapsed = 0.0;
+    // Install Unix signal handler
+    signal(SIGUSR1, sigusr1);
+#endif
+    
 #ifdef ENABLE_COLOR_CACHE
 #ifdef CACHE_INFO
     printf( "Initializing XnColor (XftColor) cache with %i buckets of %i entries each\n", 
             BUCKET_COUNT, ENTRIES_PER_BUCKET );
-    printf( "(%i bytes cnt + %i bytes idx + %i bytes data = %i bytes total)\n", 
-            sizeof(color_cache_bucket_item_cnt),  sizeof(color_cache_bucket_head_idx),  sizeof(color_cache), 
-            sizeof(color_cache_bucket_item_cnt) + sizeof(color_cache_bucket_head_idx) + sizeof(color_cache) );
-#endif
-    // Technically these aren't needed (the arrays are initialized in their
-    // declarations) but belt and braces...
+#endif /* CACHE_INFO */
+    // Technically the following isn't needed (the arrays are initialized in 
+    // their declarations) but belt and braces...
     memset(color_cache_bucket_item_cnt, 0, BUCKET_COUNT);
     memset(color_cache_bucket_head_idx, 0, BUCKET_COUNT);
     memset(color_cache, 0, sizeof(XnColorCacheEntry) * BUCKET_COUNT * ENTRIES_PER_BUCKET);
+#ifdef CACHE_INFO
+    printf( "(%i bytes cnt + %i bytes idx + %i bytes data = %i bytes total)\n", 
+            sizeof(color_cache_bucket_item_cnt),  sizeof(color_cache_bucket_head_idx),  sizeof(color_cache), 
+            sizeof(color_cache_bucket_item_cnt) + sizeof(color_cache_bucket_head_idx) + sizeof(color_cache) );
+#endif /* CACHE_INFO */
 #endif /* ENABLE_COLOR_CACHE */
 }
 
@@ -3311,21 +3485,38 @@ void XnColorCacheInitialize(void) {
 **
 ** Blending is done by averaging all of the colors that were specified.
 */
-inline static XftColor* getColor( XnColor *color ) {
+static XftColor* getColor( XnColor *color ) {
+                                                                                #ifdef CACHE_PROFILE
+                                                                                    getColor_calls++;
+                                                                                    getColor_profile_start_f = CPU_TIME;
+                                                                                #endif /* CACHE_PROFILE */
     int  r, g, b, a;
     if ( color->count == 1 ) {  // Not a blended color
         // We return this so that color equality comparisons (which are done by
         // comparing the colors' memory addresses) function properly.
+                                                                                #ifdef CACHE_PROFILE
+                                                                                    getColor_profile_end_f = CPU_TIME;
+                                                                                    getColor_profile_elapsed += getColor_profile_end_f - getColor_profile_start_f;
+                                                                                #endif /* CACHE_PROFILE */
         return color->setColor;
         
     } else {  // Blended color
         if ( color->valid == FALSE ) {
 #ifdef ENABLE_COLOR_CACHE
             /* Lookup current color in cache */
-            uint32_t key = ( color->red ^ color->green ^ color->blue ) % BUCKET_COUNT;
-            int entries  = color_cache_bucket_item_cnt[key];
-            int head_idx = color_cache_bucket_head_idx[key];
             
+            // The algorithm used to select a color's key value is arbitrary 
+            // but must have these properties:
+            //    • It must generate key values between 0 and BUCKET_COUNT-1,
+            //      inclusive.
+            //    • The computation must be fast.
+            //    • The distribution of generated keys should be fairly even.
+            uint32_t key = ( color->red ^ color->green ^ color->blue ) % BUCKET_COUNT;
+            
+            int entries  = color_cache_bucket_item_cnt[key]; // Number of entries in selected bucket
+            int head_idx = color_cache_bucket_head_idx[key]; // Index of head entry in selected bucket's list
+            
+            // Search bucket's list for requested color value
             Boolean found = FALSE;
             int entry;
             for (entry=head_idx; entry<entries+head_idx; entry++) {
@@ -3340,16 +3531,24 @@ inline static XftColor* getColor( XnColor *color ) {
                    break;
                 }
             }
+            
             if ( found ) {
                 entry %= ENTRIES_PER_BUCKET;
-#ifdef CACHE_TRACE
-                printf("%i\t%i %i %i / %i found in cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, entry);
-#endif
-                return &( color_cache[key][entry].color );
-#ifdef CACHE_TRACE
-            } else {
-                printf("Not found in cache\n");
-#endif
+                /* Copy cached value to the passed datastructure (and return a 
+                ** pointer to the copy) so that even if the cache entry changes 
+                ** before the returned value is used the value that was returned 
+                ** will still be correct.  (This is not an issue in the current 
+                ** code but could potentially be an issue in future code.)
+                ** Doing this slows this code down only trivially (~0.5%).  */
+                color->color = color_cache[key][entry].color;
+                color->valid = TRUE;
+                                                                                #ifdef CACHE_PROFILE
+                                                                                    getColor_profile_end_f = CPU_TIME;
+                                                                                    getColor_profile_elapsed += getColor_profile_end_f - getColor_profile_start_f;
+                                                                                #endif /* CACHE_PROFILE */
+                return &( color->color );
+                // Previous version was just the following (with no copy done):
+                // return &( color_cache[key][entry].color );
             }
 #endif /* ENABLE_COLOR_CACHE */
             
@@ -3384,55 +3583,63 @@ inline static XftColor* getColor( XnColor *color ) {
 #ifdef ENABLE_COLOR_CACHE
             // Add to cache
             int cnt = color_cache_bucket_item_cnt[key];
-#ifdef CACHE_TRACE
-            printf("%i\t%i\t%i items in bucket\n", key, key, cnt);
-#endif
             
             int add_at = 0;
             if ( cnt == ENTRIES_PER_BUCKET ) {
                 // Bucket full
-#ifdef CACHE_TRACE
-                printf("%i\tbucket full\n", key);
-#endif
                 int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
                 if (head < 0) head += ENTRIES_PER_BUCKET;
                 add_at = head;
                 color_cache_bucket_head_idx[key] = head;
             } else {
-#ifdef CACHE_TRACE
-                printf("%i\troom in bucket\n", key);
-#endif
-                add_at = cnt;
-                cnt++;
-                color_cache_bucket_item_cnt[key] = cnt;
+                // Bucket not full
                 int head = ( color_cache_bucket_head_idx[key] - 1 ) % ENTRIES_PER_BUCKET;
                 if (head < 0) head += ENTRIES_PER_BUCKET;
                 add_at = head;
                 color_cache_bucket_head_idx[key] = head;
-#ifdef CACHE_STATS
-                cache_total_entries++;
-                if ( cnt == ENTRIES_PER_BUCKET ) {
-                    cache_full_buckets++;
-                }
-#endif
+                cnt++;
+                color_cache_bucket_item_cnt[key] = cnt;
+                                                                                #ifdef CACHE_STATS
+                                                                                    cache_total_entries++;
+                                                                                    if ( cnt == ENTRIES_PER_BUCKET ) {
+                                                                                        cache_full_buckets++;
+                                                                                    }
+                                                                                #endif /* CACHE_STATS */
             }
-#ifdef CACHE_STATS
-            printf( "%i colors cached, %i full buckets\n", cache_total_entries, cache_full_buckets );
-#endif
-            
-#ifdef CACHE_TRACE
-            printf( "%i\t%i %i %i / %i adding to cache at [%i][%i]\n", key, color->red, color->green, color->blue, color->count, key, add_at );
-#endif
+                                                                                #ifdef CACHE_HISTOGRAM
+                                                                                    for (int s=ENTRIES_PER_BUCKET; s>0; s--) {
+                                                                                        for (int b=0; b<BUCKET_COUNT; b++) {
+                                                                                            putchar( (color_cache_bucket_item_cnt[b] >= s) ? '|' : ' ' );
+                                                                                        }
+                                                                                        putchar( '\n' );
+                                                                                    }
+                                                                                    for (int b=0; b<BUCKET_COUNT; b++) { putchar( '-' ); }
+                                                                                    putchar( '\n' );
+                                                                                #endif /* CACHE_HISTOGRAM */
+                                                                                #ifdef CACHE_STATS
+                                                                                    printf( "%i colors cached, %i full buckets\n\n", cache_total_entries, cache_full_buckets );
+                                                                                #endif /* CACHE_STATS */
             color_cache[key][add_at].red   = color->red;
             color_cache[key][add_at].green = color->green;
             color_cache[key][add_at].blue  = color->blue;
             color_cache[key][add_at].count = color->count;
             color_cache[key][add_at].color = color->color;
             
-            return &( color_cache[key][add_at].color );
+                                                                                #ifdef CACHE_PROFILE
+                                                                                    getColor_profile_end_f = CPU_TIME;
+                                                                                    getColor_profile_elapsed += getColor_profile_end_f - getColor_profile_start_f;
+                                                                                #endif /* CACHE_PROFILE */
+            /* Return pointer to the non-cached value; see above for rationale. */
+            return &( color->color );
+            // Previous version was returning the cache entry's color:
+            //return &( color_cache[key][add_at].color );
 #endif /* ENABLE_COLOR_CACHE */
         }
-        return &(color->color);
+                                                                                #ifdef CACHE_PROFILE
+                                                                                    getColor_profile_end_f = CPU_TIME;
+                                                                                    getColor_profile_elapsed += getColor_profile_end_f - getColor_profile_start_f;
+                                                                                #endif /* CACHE_PROFILE */
+        return &( color->color );
     }
 }
 
@@ -3463,12 +3670,21 @@ inline static uint64_t getRGBA( XnColor *color ) {
 ** rectangle where text would have drawn from x to toX and from y to
 ** the maximum y extent of the current font(s).
 */
-static void drawString(textDisp *textD, int style, int rbIndex, int x, int y, 
-        int fromX, int toX, FcChar32 *string, int nChars, Boolean highlightLine, 
-        ansiStyle *ansi)
+static void drawString(
+        textDisp *textD,        // Text editor being drawn
+        int style,              // Drawing style for this block of text
+        int rbIndex,            // Indent rainbow level
+        int x, int y,           // Position to perform graphical output at
+        int fromX, int toX,     // Left and right positions of clipping rectangle
+        FcChar32 *string,       // The text to output
+        int nChars,             // Length of text to output
+        Boolean highlightLine,  // Set true if this text is on the «current line»
+        ansiStyle *ansi         // ANSI text styling for this block of text
+    )
 {
-#ifdef CACHE_TRACE
-printf("\n");
+#ifdef CACHE_PROFILE
+    drawString_calls++;
+    drawString_profile_start_f = CPU_TIME;
 #endif
     /* Background, underline, and text foreground colors, respectively.
     ** These correspond to bground, fground, and color in the previous code. */
@@ -3682,19 +3898,27 @@ printf("\n");
     /* Always draw blank area, because Xft AA text rendering needs a clean
      * background */
        
+    // XftColor red   = AllocXftColorRGB( textD->w, 255, 191, 191, NULL );
+    // XftColor green = AllocXftColorRGB( textD->w, 191, 255, 191, NULL );
+    // XftColor blue  = AllocXftColorRGB( textD->w, 191, 191, 255, NULL );
+    
     /* wipes out to right hand edge of widget */
     if (toX >= textD->left) {
         clearRect(
                    textD,
                    getColor(&bg),
-                   fromX,        y,
-                   toX - fromX,  textD->ascent + textD->descent
+                   fromX,       y,
+                   toX - fromX, textD->ascent + textD->descent
                  );
     }
     
     // FILL_MASK indicates that there is no text available to be 
     // drawn in the region of the window currently being drawn.
     if (style & FILL_MASK) {
+#ifdef CACHE_PROFILE
+        drawString_profile_end_f = CPU_TIME;
+        drawString_profile_elapsed += drawString_profile_end_f - drawString_profile_start_f;
+#endif
         return;
     }
     
@@ -3740,6 +3964,10 @@ printf("\n");
         XftDrawRect(textD->d, getColor(&ul), 
                 x, y + textD->ascent, extents.xOff, 1);
     }
+#ifdef CACHE_PROFILE
+        drawString_profile_end_f = CPU_TIME;
+        drawString_profile_elapsed += drawString_profile_end_f - drawString_profile_start_f;
+#endif
 }
 
 /*
