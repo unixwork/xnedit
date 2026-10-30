@@ -311,7 +311,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = "0\n";
+        FcChar8* text = "0";
         XGlyphInfo extents;
         textD->rightMarginPos = ( rightMargin * extents.xOff ) - 1;
         // Old method:
@@ -520,7 +520,7 @@ void TextDSetRightMargin(textDisp *textD, int rightMargin) {
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = "0\n";
+        FcChar8* text = "0";
         XGlyphInfo extents;
         XftTextExtentsUtf8(XtDisplay(textD->w), textD->font->fonts->font, (FcChar8*)text, 1, &extents);
         textD->rightMarginPos = ( textD->rightMargin * extents.xOff ) - 1;
@@ -578,7 +578,7 @@ void TextDSetFont(textDisp *textD, NFont *font)
         // Determine the pixel x-position of the margin by using the width of 
         // the zero character (U+0030) as the «standard» character width.  This 
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
-        FcChar8* text = "0\n";
+        FcChar8* text = "0";
         XGlyphInfo extents;
         XftTextExtentsUtf8(XtDisplay(textD->w), font->fonts->font, (FcChar8*)text, 1, &extents);
         textD->rightMarginPos = ( textD->rightMargin * extents.xOff ) - 1;
