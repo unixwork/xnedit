@@ -3414,7 +3414,7 @@ static uint32_t drawString_calls = 0;       // Total number of call to getColor
 
 // Unix USR1 signal handler
 // This is installed by the XnColorCacheInitialize function
-static void sigusr1(void) {
+static void sigusr1(int signal) {
     printf("--------------------------------------------------------------------------------\n");
     printf("getColor:   %f seconds\n", getColor_profile_elapsed);
     printf("drawString: %f seconds\n", drawString_profile_elapsed);
