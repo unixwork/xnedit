@@ -3433,23 +3433,25 @@ static void sigusr1(int signal) {
 /* Initialze the color cache (a single cache is used for all windows) */
 void XnColorCacheInitialize(void) {
 #ifdef ENABLE_COLOR_CACHE
-    printf("ENABLE_COLOR_CACHE enabled\n");
-#endif
 #ifdef CACHE_INFO
+    printf("ENABLE_COLOR_CACHE enabled\n");
     printf("CACHE_INFO enabled\n");
 #endif
+#endif /* CACHE_INFO */
 #ifdef CACHE_STATS
     printf("CACHE_STATS enabled\n");
 #endif
 #ifdef CACHE_HISTOGRAM
     printf("CACHE_HISTOGRAM enabled\n");
 #endif
+#ifdef CACHE_INFO
 #ifdef BUCKET_COUNT
     printf("BUCKET_COUNT = %i\n", BUCKET_COUNT );
 #endif
 #ifdef ENTRIES_PER_BUCKET
     printf("ENTRIES_PER_BUCKET = %i\n", ENTRIES_PER_BUCKET );
 #endif
+#endif /* CACHE_INFO */
 #ifdef CACHE_PROFILE
     printf("CACHE_PROFILE enabled\n");
 #endif
