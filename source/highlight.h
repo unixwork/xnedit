@@ -76,6 +76,7 @@ Pixel AllocColor(Widget w, const char *colorName, int *r, int *g, int *b);
 Pixel AllocColor2(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName, int *r, int *g, int *b);
 XftColor AllocXftColor(Widget w, const char *colorName);
 XftColor AllocXftColor2(Display *display, Colormap colormap, Pixel foreground, int depth, const char *colorName);
+XftColor AllocXftColorRGB(Widget w, int r, int g, int b, const char *colorName);
 void* GetHighlightInfo(WindowInfo *window, int pos);
 highlightPattern *FindPatternOfWindow(WindowInfo *window, char *name);
 int HighlightCodeOfPos(WindowInfo *window, int pos);
