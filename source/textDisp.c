@@ -1019,7 +1019,7 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     int hWindow              = textD->w->core.height;           // Window height
     
     
-    
+     
 #pragma GCC diagnostic pop
 
 
@@ -1083,7 +1083,7 @@ void TextDRedisplayEdges(textDisp *textD, int width, int height,
     // of the text area that's after the visible characters (if applicable).
     if ( wRightEdge > 0 ) {
         XftDrawRect( textD->d, 
-                     ( postMarginVisible )
+                     ( marginActive && postMarginVisible )
                      ? &textD->colorProfile->textBg2Color
                      : &textD->colorProfile->textBgColor, 
                      xRightEdge, yAbsoluteTop, 
