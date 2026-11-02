@@ -3236,13 +3236,13 @@ inline static void blendOrSetColor( XnColor *color, XftColor *newColor ) {
 #ifdef ENABLE_COLOR_CACHE
 
 // Uncomment the following to display cache configuration at start-up
-#define CACHE_INFO
+//#define CACHE_INFO
 
 // Uncomment the following to display running cache statistics
-#define CACHE_STATS
+//#define CACHE_STATS
 
 // Uncomment the following to display a running historgram of bucket usage
-#define CACHE_HISTOGRAM
+//#define CACHE_HISTOGRAM
 
 /* Cache size definition
 **
@@ -3383,7 +3383,7 @@ make linux && \
 */
 
 /* Uncomment the following line to enable timing measurement: */
-#define CACHE_PROFILE
+//#define CACHE_PROFILE
 
 #ifdef CACHE_PROFILE
 #include <time.h>
