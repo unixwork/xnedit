@@ -92,6 +92,8 @@
 #include "../debug.h"
 #endif
 
+#include "../source/nedit.h"  /* For TheDisplay */
+
 Boolean GetWindowDarkTheme(void);
 
 #ifndef LESSTIF_VERSION
@@ -2573,6 +2575,133 @@ void SetWindowGtkThemeVariant(Display *dp, Window window, int theme)
             4);
     }
 }
+
+
+/* Modifier key state */
+
+/* Last-examined modifier key status */
+char keymap[32] = { };
+
+/* KeyCodes can optionally be cached.  Note that although caching these 
+** improves performance it also means that any changes to their definitions 
+** while XNEdit is running won't be picked up.  To fix this (at a cost of a 
+** pair of X server round-trips per call to ModifierKey*) comment out the 
+** following define: */
+#define CACHE_KEYCODES
+
+#ifdef CACHE_KEYCODES
+KeyCode kcShiftL   = 0,  kcShiftR   = 0; // Shift keys
+KeyCode kcControlL = 0,  kcControlR = 0; // Control keys
+KeyCode kcMetaL    = 0,  kcMetaR    = 0; // [rare; ◆ on Sun, sometimes AltGr or AltR]
+KeyCode kcAltL     = 0,  kcAltR     = 0; // Alt keys
+KeyCode kcSuperL   = 0,  kcSuperR   = 0; // Typically ⊞ or ⌘ key (XK_Super_L)
+KeyCode kcHyperL   = 0,  kcHyperR   = 0; // [not typically mapped]
+#endif
+
+/* Retrieve current modifier key status
+** Specific keys can then be queried using the ModififierKey* functions.
+*/
+void ExamineModifierKeys(void) {
+    XQueryKeymap( TheDisplay, keymap );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Shift_L    XK_Shift_R   → Shift keys
+*/
+Boolean ModifierKeyShift(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcShiftL ) kcShiftL = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+    if ( ! kcShiftR ) kcShiftR = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+#else
+    KeyCode kcShiftL = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+    KeyCode kcShiftR = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+#endif
+    return !! (
+                ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) ) ||
+                ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Control_L  XK_Control_R → Control keys */
+Boolean ModifierKeyControl(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcControlL ) kcControlL = XKeysymToKeycode( TheDisplay, XK_Control_L );
+    if ( ! kcControlR ) kcControlR = XKeysymToKeycode( TheDisplay, XK_Control_R );
+#else
+    KeyCode kcControlL = XKeysymToKeycode( TheDisplay, XK_Control_L );
+    KeyCode kcControlR = XKeysymToKeycode( TheDisplay, XK_Control_R );
+#endif
+    return !! (
+                ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) ) ||
+                ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Meta_L     XK_Meta_R    → [rare; ◆ on Sun, sometimes AltGr or AltR] */
+Boolean ModifierKeyMeta(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcMetaL ) kcMetaL = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+    if ( ! kcMetaR ) kcMetaR = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+#else
+    KeyCode kcMetaL = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+    KeyCode kcMetaR = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+#endif
+    return !! (
+                ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) ) ||
+                ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Alt_L      XK_Alt_R     → Alt keys */
+Boolean ModifierKeyAlt(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcAltL ) kcAltL = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+    if ( ! kcAltR ) kcAltR = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+#else
+    KeyCode kcAltL = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+    KeyCode kcAltR = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+#endif
+    return !! (
+                ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) ) ||
+                ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Super_L    XK_Super_R   → Typically ⊞ or ⌘ key (XK_Super_L) */
+Boolean ModifierKeySuper(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcSuperL ) kcSuperL = XKeysymToKeycode( TheDisplay, XK_Super_L );
+    if ( ! kcSuperR ) kcSuperR = XKeysymToKeycode( TheDisplay, XK_Super_R );
+#else
+    KeyCode kcSuperL = XKeysymToKeycode( TheDisplay, XK_Super_L );
+    KeyCode kcSuperR = XKeysymToKeycode( TheDisplay, XK_Super_R );
+#endif
+    return !! (
+                ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) ) ||
+                ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Hyper_L    XK_Hyper_R   → [not typically mapped] */
+Boolean ModifierKeyHyper(void) {
+#ifdef CACHE_KEYCODES
+    if ( ! kcHyperL ) kcHyperL = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+    if ( ! kcHyperR ) kcHyperR = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+#else
+    KeyCode kcHyperL = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+    KeyCode kcHyperR = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+#endif
+    return !! (
+                ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) ) ||
+                ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) )
+              );
+}
+
 
 #ifdef __APPLE__
 XmString FSNameCreateLocalized(char *s) {

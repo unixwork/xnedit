@@ -74,6 +74,8 @@
 #define XtOffset(p_type,field) ((size_t)__INTADDR__(&(((p_type)0)->field)))
 #endif
 
+#include "../util/misc.h"  /* For MOUSE_BUTTON_SCROLL_LEFT and MOUSE_BUTTON_SCROLL_RIGHT */
+
 /* Number of pixels of motion from the initial (grab-focus) button press
    required to begin recognizing a mouse drag for the purpose of making a
    selection */
@@ -1229,7 +1231,8 @@ static void hscrollEH(TextWidget w, XtPointer client_data,
     int button = event->xbutton.button;
     textDisp *textD = w->text.textD;
     
-    if(button != 6 && button != 7) {
+    if ( button != MOUSE_BUTTON_SCROLL_LEFT && 
+         button != MOUSE_BUTTON_SCROLL_RIGHT) {
         return;
     }
     
@@ -1237,7 +1240,44 @@ static void hscrollEH(TextWidget w, XtPointer client_data,
     if(textD->font) {
         charWidth = textD->font->maxWidth;
     }
-    step = (button == 6 ? -1 : 1) * charWidth;
+    
+    // Check modifier keys
+    ExamineModifierKeys();
+    
+    // Increment depends on any modifier keys held while pressing mouse button:
+    //     Shift   → Single column
+    //     [none]  → Distance specified in preferences [defaults to tab size]
+    //     Control → Window width
+    // This behaviour mirrors that of the scroll wheel for vertical scrolling.
+    // Previous behaviour was to always scroll by a single column.
+    int increment = ModifierKeyShift()
+                  ? 1
+                  : ModifierKeyControl()
+                  ? ((TextWidget)textD->w)->text.columns
+                  : GetPrefHorizontalScrollStep();
+    
+    if ( increment == 0 ) {
+        // Use hardware tab stop value
+        // (this is the default increment)
+        increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+        if ( increment < 1 ) {
+            // Shouldn't happen
+            increment = 8;
+        }
+    } else if ( increment < 0 ) {
+        // Use emulated tab stop value
+        increment = ((TextWidget)w)->text.emulateTabs;
+        if ( increment < 1 ) {
+            // Fall back to using hardware tab stop if emulated tabs aren't active
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+        }
+        if ( increment < 1 ) {
+            // Shouldn't happen
+            increment = 8;
+        }
+    }
+    
+    step = (button == MOUSE_BUTTON_SCROLL_LEFT ? -1 : 1) * increment * charWidth;
     
     
     TextDGetScroll(textD, &topLineNum, &horizOffset);
@@ -3980,6 +4020,27 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
+    /* Super or Meta held down → horizontal scroll [left (by default)] */
+    
+    // Check modifier keys
+    ExamineModifierKeys();
+    if ( ModifierKeySuper() || ModifierKeyMeta() ) {
+        // Super → Typically ⊞ or ⌘ key
+        // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+        int charWidth = 8;
+        if(textD->font) {
+            charWidth = textD->font->maxWidth;
+        }
+        if (GetPrefSwapMouseWheelHorizontalDirection()) {
+            charWidth *= -1;
+        }
+        TextDGetScroll(textD, &topLineNum, &horizOffset);
+        TextDSetScroll(textD, topLineNum, horizOffset - charWidth);
+        return;
+    }
+    
+    /* Normal (vertical) scroll */
+    
     if(*nArgs == 3) {
         if (GetPrefZoomCtrlMouseWheel()) {
             if (!strcmp(args[2], "alt_zoom")) {
@@ -4014,6 +4075,27 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
+
+    /* Super or Meta held down → horizontal scroll [right (by default)] */
+
+    // Check modifier keys
+    ExamineModifierKeys();
+    if ( ModifierKeySuper() || ModifierKeyMeta() ) {
+        // Super → Typically ⊞ or ⌘ key
+        // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+        int charWidth = 8;
+        if(textD->font) {
+            charWidth = textD->font->maxWidth;
+        }
+        if (GetPrefSwapMouseWheelHorizontalDirection()) {
+            charWidth *= -1;
+        }
+        TextDGetScroll(textD, &topLineNum, &horizOffset);
+        TextDSetScroll(textD, topLineNum, horizOffset + charWidth);
+        return;
+    }
+
+    /* Normal (vertical) scroll */
 
     if(*nArgs == 3) {
         if (GetPrefZoomCtrlMouseWheel()) {
