@@ -63,8 +63,8 @@ struct NFont {
     Display *display;
     FcPattern *pattern;
     double size;
-    int minWidth;
-    int maxWidth;
+    int minWidth;  // Minimum width of a character in the printable ASCII range (0x20..0x7e inclusive)
+    int maxWidth;  // Maximum width of a character in the printable ASCII range (0x20..0x7e inclusive)
     unsigned int ref;
 };
 
@@ -339,5 +339,7 @@ void TextDTranlateGraphicExposeQueue(textDisp *textD, int xOffset, int yOffset, 
 #ifdef EXCLUDE_FONTS
 void FontInitExcludes(const char *list);
 #endif
+
+void XnColorCacheInitialize();
 
 #endif /* NEDIT_TEXTDISP_H_INCLUDED */
