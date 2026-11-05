@@ -31,6 +31,16 @@
 #include <Xm/Xm.h>
 #include <Xm/CutPaste.h>
 
+#define MOUSE_BUTTON_LEFT         ( Button1 )
+#define MOUSE_BUTTON_MIDDLE       ( Button2 )
+#define MOUSE_BUTTON_RIGHT        ( Button3 )
+#define MOUSE_BUTTON_SCROLL_UP    ( Button4 )
+#define MOUSE_BUTTON_SCROLL_DOWN  ( Button5 )
+#define MOUSE_BUTTON_SCROLL_LEFT  ( 6 )
+#define MOUSE_BUTTON_SCROLL_RIGHT ( 7 )
+#define MOUSE_BUTTON_BACK         ( 8 )
+#define MOUSE_BUTTON_FORWARD      ( 9 )
+
 #define TEXT_READ_OK 0
 #define TEXT_IS_BLANK 1
 #define TEXT_NOT_NUMBER 2
@@ -148,6 +158,13 @@ char* ConvertEncodingLen(const char *string, size_t len, const char *to, const c
 char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
 void SetWindowGtkThemeVariant(Display *dp, Window window, int theme);
+void ExamineModifierKeys(void);
+Boolean ModifierKeyShift(void);
+Boolean ModifierKeyControl(void);
+Boolean ModifierKeyMeta(void);
+Boolean ModifierKeyAlt(void);
+Boolean ModifierKeySuper(void);
+Boolean ModifierKeyHyper(void);
 
 #ifdef __APPLE__
 /*
