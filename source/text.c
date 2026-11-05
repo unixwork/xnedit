@@ -4027,6 +4027,40 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     if ( ModifierKeySuper() || ModifierKeyMeta() ) {
         // Super → Typically ⊞ or ⌘ key
         // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+        
+        // Increment depends on any extra modifier keys held while scrolling:
+        //     [none]  → Single column
+        //     Shift   → Distance specified in preferences [defaults to tab size]
+        //     Control → Window width
+        // This behaviour is similar to that of the scroll wheel for vertical 
+        // scrolling though the Shift key behaviour is inverted.
+        int increment = ModifierKeyShift()
+                      ? GetPrefHorizontalScrollStep()
+                      : ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns
+                      : 1;
+        
+        if ( increment == 0 ) {
+            // Use hardware tab stop value
+            // (this is the default increment)
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        } else if ( increment < 0 ) {
+            // Use emulated tab stop value
+            increment = ((TextWidget)w)->text.emulateTabs;
+            if ( increment < 1 ) {
+                // Fall back to using hardware tab stop if emulated tabs aren't active
+                increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            }
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        }
+        
         int charWidth = 8;
         if(textD->font) {
             charWidth = textD->font->maxWidth;
@@ -4035,7 +4069,7 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
             charWidth *= -1;
         }
         TextDGetScroll(textD, &topLineNum, &horizOffset);
-        TextDSetScroll(textD, topLineNum, horizOffset - charWidth);
+        TextDSetScroll(textD, topLineNum, horizOffset - increment * charWidth);
         return;
     }
     
@@ -4083,6 +4117,40 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     if ( ModifierKeySuper() || ModifierKeyMeta() ) {
         // Super → Typically ⊞ or ⌘ key
         // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+        
+        // Increment depends on any extra modifier keys held while scrolling:
+        //     [none]  → Single column
+        //     Shift   → Distance specified in preferences [defaults to tab size]
+        //     Control → Window width
+        // This behaviour is similar to that of the scroll wheel for vertical 
+        // scrolling though the Shift key behaviour is inverted.
+        int increment = ModifierKeyShift()
+                      ? GetPrefHorizontalScrollStep()
+                      : ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns
+                      : 1;
+        
+        if ( increment == 0 ) {
+            // Use hardware tab stop value
+            // (this is the default increment)
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        } else if ( increment < 0 ) {
+            // Use emulated tab stop value
+            increment = ((TextWidget)w)->text.emulateTabs;
+            if ( increment < 1 ) {
+                // Fall back to using hardware tab stop if emulated tabs aren't active
+                increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            }
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        }
+        
         int charWidth = 8;
         if(textD->font) {
             charWidth = textD->font->maxWidth;
@@ -4091,7 +4159,7 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
             charWidth *= -1;
         }
         TextDGetScroll(textD, &topLineNum, &horizOffset);
-        TextDSetScroll(textD, topLineNum, horizOffset + charWidth);
+        TextDSetScroll(textD, topLineNum, horizOffset + increment * charWidth);
         return;
     }
 
