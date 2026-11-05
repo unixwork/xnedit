@@ -9212,7 +9212,7 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
     // non-numeric options being listed before all of the numeric ones.
     int horizontalScrollStep = atoi(horizontalScrollStepStr);
     if ( horizontalScrollStep == 0 ) {
-        int idx = 0;
+        int idx;
         XtVaGetValues(md.edHorizontalScrollStep, XmNselectedPosition, &idx, NULL);
         horizontalScrollStep = -1 * idx;
     }
@@ -9711,6 +9711,8 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(s1);
     
     XmString horizontalScrollSize[22];
+// These are intentionally macros as they're also needed later in this function 
+// when initializing the widget with the value saved in the preferences file.
 #define USE_HARDWARE_TAB_STEP "Hardware tab step"
 #define USE_EMULATED_TAB_STEP "Emulated tab step"
     horizontalScrollSize[0] = XmStringCreateLocalized(USE_HARDWARE_TAB_STEP);
@@ -9730,7 +9732,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     md.edHorizontalScrollStep = XmCreateDropDownComboBox(md.form, "miscDropDown", args, ac);
     XtManageChild(md.edHorizontalScrollStep);
-    for(int i=0;i<=20;i++) {
+    for(int i=0;i<22;i++) {
         XmStringFree(horizontalScrollSize[i]);
     } 
     
@@ -9919,7 +9921,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    Widget separator4 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
+    XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.edUndoWorryTrimTo,
             XmNtopOffset, 12,
@@ -10011,10 +10013,8 @@ void MiscSettingsDialog(WindowInfo *window) {
     int horizontalScrollStep = GetPrefHorizontalScrollStep();
     if ( horizontalScrollStep == 0 ) {
         s1 = XmStringCreateLocalized(USE_HARDWARE_TAB_STEP);
-        XmComboBoxSelectItem(md.edHorizontalScrollStep, s1);
     } else if ( horizontalScrollStep < 0 ) {
         s1 = XmStringCreateLocalized(USE_EMULATED_TAB_STEP);
-        XmComboBoxSelectItem(md.edHorizontalScrollStep, s1);
     } else {
         snprintf(buf, 16, "%d", horizontalScrollStep);
         s1 = XmStringCreateSimple(buf);
