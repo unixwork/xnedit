@@ -445,7 +445,7 @@ static struct prefData {
     /* Horizontal scrolling is also mapped to Super+wheel and Meta+wheel.  In 
        this mode the default mapping is scroll-up → scroll-left, scroll-down →
        scroll-right.  Setting this option inverts that behaviour. */
-    Boolean horizontalScrollSwapDirection;
+    int horizontalScrollSwapDirection;
     
     int sortTabs;               /* sort tabs alphabetically */
     int repositionDialogs;      /* w. to reposition dialogs under the pointer */
@@ -9183,7 +9183,7 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         zoomStep = 1;
     }
     SetPrefZoomStep(zoomStep);
-    XtFree(zoomStepStr);
+    XmStringFree(zoomStepStr);
     XtFree(s1);
     
     Boolean edZoomMouseWheel;
@@ -9217,7 +9217,7 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         horizontalScrollStep = -1 * idx;
     }
     SetPrefHorizontalScrollStep(horizontalScrollStep);
-    XtFree(horizontalScrollStepStr);
+    XmStringFree(horizontalScrollStepStr);
     XtFree(s1);
     
     long undoOpLimit;
@@ -9283,9 +9283,10 @@ void MiscSettingsDialog(WindowInfo *window) {
     md.shell = CreateWidget(TheAppShell, "misc",
         topLevelShellWidgetClass, args, ac);
     AddSmallIcon(md.shell);
-    Widget form = XtVaCreateManagedWidget("form", xmFormWidgetClass,
-        md.shell, XmNautoUnmanage, False,
-        XmNresizePolicy, XmRESIZE_NONE, NULL);
+    Widget form = XtVaCreateManagedWidget("form",xmFormWidgetClass,md.shell, 
+            XmNautoUnmanage, False,
+            XmNresizePolicy, XmRESIZE_NONE, 
+            NULL);
     
     
     XmString s1;
@@ -9330,28 +9331,22 @@ void MiscSettingsDialog(WindowInfo *window) {
     XmStringFree(s1);
      
     md.scrolledwindow = XtVaCreateManagedWidget("sw", xmScrolledWindowWidgetClass, form,
-            XmNwidth, 508,
             XmNheight, 500,
             XmNleftAttachment, XmATTACH_FORM,
             XmNrightAttachment, XmATTACH_FORM,
             XmNtopAttachment, XmATTACH_FORM,
+            XmNbottomAttachment, XmATTACH_WIDGET,
             XmNleftOffset, 4,
             XmNrightOffset, 4,
             XmNtopOffset, 4,
-            XmNbottomAttachment, XmATTACH_WIDGET,
             XmNbottomWidget, okBtn,
             XmNbottomOffset, 6,
             XmNscrollingPolicy, XmAUTOMATIC,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNrightAttachment, XmATTACH_FORM,
-            XmNtopAttachment, XmATTACH_FORM,
-            XmNbottomAttachment, XmATTACH_WIDGET,
             XmNbottomWidget, closeBtn,
             XmNbottomOffset, 16,
             NULL);
-      
+    
     ac = 0;
-    XtSetArg(args[ac], XmNwidth, 470); ac++;
     md.form = XmCreateForm(md.scrolledwindow, "form", args, ac);
     XtManageChild(md.form);
     
@@ -9652,8 +9647,14 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("One can also scroll horizontally using "
-                                 "Super+wheel or Meta+wheel");
+    // Pick one (would be nice if xmLabelWidget supported automatic text-wrap):
+    s1 = XmStringCreateLocalized("One can also scroll horizontally using Super+wheel\n"
+                                 "or Meta+wheel (these keys are typically Windows,\n"
+                                 "Command, diamond, AltGr, or right Alt).  Also holding\n"
+                                 "down Shift or Control increases the scroll speed.");
+//    s1 = XmStringCreateLocalized("One can also scroll horizontally using Super+wheel or Meta+wheel\n"
+//                                 "(these keys are typically Windows, Command, diamond, AltGr, or right Alt).\n"
+//                                 "Also holding down Shift or Control increases the scroll speed.");
     Widget header4 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
@@ -9661,17 +9662,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.edZoomMouseWheelInvertedBehavior,
             XmNtopOffset, 8,
-            NULL);
-    XmStringFree(s1);
-    
-    s1 = XmStringCreateLocalized("(these keys are typically ⊞, ⌘, ◆, AltGr, or right Alt).");
-    Widget header5 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
-            XmNlabelString, s1,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNleftOffset, 8,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header4,
-            XmNtopOffset, 0,
+            XmNalignment, XmALIGNMENT_BEGINNING,
             NULL);
     XmStringFree(s1);
     
@@ -9680,33 +9671,22 @@ void MiscSettingsDialog(WindowInfo *window) {
           = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
             XmNlabelString, s1,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header5,
+            XmNtopWidget, header4,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             NULL);
     
-    s1 = XmStringCreateLocalized("For mice with physical scroll-left and "
-                                 "scroll-right buttons");
-    Widget header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+    s1 = XmStringCreateLocalized("For mice with physical scroll-left and scroll-right buttons\n"
+                                "(often actuated by pressing the sides of the mouse wheel):");
+    Widget header5 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.edHorizontalScrollSwapDirection,
             XmNtopOffset, 8,
-            NULL);
-    XmStringFree(s1);
-    
-    s1 = XmStringCreateLocalized("(often actuated by pressing the sides of "
-                                 "the mouse wheel):");
-    Widget header7 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
-            XmNlabelString, s1,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNleftOffset, 8,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header6,
-            XmNtopOffset, 0,
+            XmNalignment, XmALIGNMENT_BEGINNING,
             NULL);
     XmStringFree(s1);
     
@@ -9727,7 +9707,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNitemCount, 22); ac++;
     XtSetArg(args[ac], XmNcolumns, 12); ac++;
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
-    XtSetArg(args[ac], XmNtopWidget, header7); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header5); ac++;
     XtSetArg(args[ac], XmNtopOffset, 8); ac++;
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     md.edHorizontalScrollStep = XmCreateDropDownComboBox(md.form, "miscDropDown", args, ac);
@@ -9736,55 +9716,37 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(horizontalScrollSize[i]);
     } 
     
-    s1 = XmStringCreateLocalized("Default Scroll-Left/Scroll-Right Step");
+    s1 = XmStringCreateLocalized("Default Scroll-Left/Right Step");
     XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header7,
+            XmNtopWidget, header5,
             XmNtopOffset, 8,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, md.edHorizontalScrollStep,
             NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("Shift + button → Scroll 1 character");
-    Widget header8 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+    s1 = XmStringCreateLocalized("Shift + button: Scroll 1 character\n"
+                                 "Button: Scroll amount selected above\n"
+                                 "Control + button: Scroll editor width"
+                                );
+    Widget header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 16,
             XmNtopAttachment, XmATTACH_WIDGET,
             XmNtopWidget, md.edHorizontalScrollStep,
             XmNtopOffset, 0,
-            NULL);
-    XmStringFree(s1);
-    
-    s1 = XmStringCreateLocalized("Button → Scroll amount selected above");
-    Widget header9 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
-            XmNlabelString, s1,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNleftOffset, 16,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header8,
-            XmNtopOffset, 0,
-            NULL);
-    XmStringFree(s1);
-    
-    s1 = XmStringCreateLocalized("Control + button → Scroll editor width");
-    Widget header10 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
-            XmNlabelString, s1,
-            XmNleftAttachment, XmATTACH_FORM,
-            XmNleftOffset, 16,
-            XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header9,
-            XmNtopOffset, 0,
+            XmNalignment, XmALIGNMENT_BEGINNING,
             NULL);
     XmStringFree(s1);
     
     Widget separator3 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header10,
+            XmNtopWidget, header6,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -10042,6 +10004,28 @@ void MiscSettingsDialog(WindowInfo *window) {
     
     XtAddCallback(form, XmNdestroyCallback, mdDestroyCB, NULL);
     AddMotifCloseCallback(md.shell, mdCloseCB, NULL);
+    
+    /* Fit window size to width of contents
+    ** This is a kludge as I couldn't get any of the «proper» methods (i.e. by 
+    ** setting widget properties) to have any effect. */
+    Dimension formWidth,          // Width of form contained in scrollable widget
+              shellWidth,         // Width of window (sans WM decorations)
+              clipWidth,          // Width of scrollable area viewport
+              rightMarginWidth=8; // Extra right-side padding
+    Position x, y;
+    Widget clipWindow;
+    XtRealizeWidget(md.shell); // Basic realization so we can pick up dimensions
+    XtVaGetValues( md.form,           XmNwidth,      &formWidth,  NULL );
+    XtVaGetValues( md.shell,          XmNwidth,      &shellWidth, NULL );
+    XtVaGetValues( md.scrolledwindow, XmNclipWindow, &clipWindow, NULL );
+    XtVaGetValues( clipWindow,        XmNwidth,      &clipWidth,  NULL );
+    XtVaSetValues( md.shell, 
+                   XmNwidth, formWidth + (shellWidth-clipWidth) + rightMarginWidth, 
+                   NULL );
+    
+    /* Normal realization
+    ** We can't do this above since [for reasons unknown] doing so breaks the 
+    ** position hint work-around in this call. */
     RealizeWithoutForcingPosition(md.shell);
 }
 
