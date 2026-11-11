@@ -10012,7 +10012,6 @@ void MiscSettingsDialog(WindowInfo *window) {
               shellWidth,         // Width of window (sans WM decorations)
               clipWidth,          // Width of scrollable area viewport
               rightMarginWidth=8; // Extra right-side padding
-    Position x, y;
     Widget clipWindow;
     XtRealizeWidget(md.shell); // Basic realization so we can pick up dimensions
     XtVaGetValues( md.form,           XmNwidth,      &formWidth,  NULL );
