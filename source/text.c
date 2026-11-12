@@ -2587,7 +2587,7 @@ static void selfInsertAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     TakeMotifDestination(w, e->time);
     chars[nChars] = '\0';
     
-    if (!BufSubstituteNullChars(chars, nChars, window->buffer)) {
+    if (!BufSubstituteNullChars(chars, nChars, window->editorInfo->buffer)) {
         DialogF(DF_ERR, window->shell, 1, "Error", "Too much binary data", "OK");
         return;
     }

@@ -163,9 +163,9 @@ char *GetAnySelection(WindowInfo *window)
     
     /* If the selection is in the window's own buffer get it from there,
        but substitute null characters as if it were an external selection */
-    if (window->buffer->primary.selected) {
-    selText = BufGetSelectionText(window->buffer);
-    BufUnsubstituteNullChars(selText, window->buffer);
+    if (window->editorInfo->buffer->primary.selected) {
+	selText = BufGetSelectionText(window->editorInfo->buffer);
+	BufUnsubstituteNullChars(selText, window->editorInfo->buffer);
     return selText;
     }
     
@@ -247,7 +247,6 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
 {
     WindowInfo *window = wi;
     char *value = v;
-
     char nameText[MAXPATHLEN], includeName[MAXPATHLEN];
     char filename[MAXPATHLEN], pathname[MAXPATHLEN];
     nameText[MAXPATHLEN-1] = 0;
@@ -282,7 +281,6 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
     else if (sscanf(nameText, "#include <%[^<>]>", includeName) == 1)
         snprintf(nameText, MAXPATHLEN-1, "%s%s", includeDir, includeName);
     
-    /* strip whitespace from name */
     /* is there a reason for this?? */
     //for (inPtr=nameText, outPtr=nameText; *inPtr!='\0'; inPtr++)
     //    if (*inPtr != ' ' && *inPtr != '\t' && *inPtr != '\n')
@@ -294,7 +292,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
         
     /* If path name is relative, make it refer to current window's directory */
     if (nameText[0] != '/') {
-    strcpy(filename, window->path);
+	strcpy(filename, window->editorInfo->path);
     strcat(filename, nameText);
     strcpy(nameText, filename);
     }
@@ -388,25 +386,25 @@ void SelectNumberedLine(WindowInfo *window, int lineNum)
     if (lineNum < 1)
         lineNum = 1;
     lineEnd = -1;
-    for (i=1; i<=lineNum && lineEnd<window->buffer->length; i++) {
+    for (i=1; i<=lineNum && lineEnd<window->editorInfo->buffer->length; i++) {
         lineStart = lineEnd + 1;
-        lineEnd = BufEndOfLine(window->buffer, lineStart);
+    	lineEnd = BufEndOfLine(window->editorInfo->buffer, lineStart);
     }
     
     /* highlight the line */
     if (i>lineNum) {
     /* Line was found */
-    if (lineEnd < window->buffer->length) {
-        BufSelect(window->buffer, lineStart, lineEnd+1);
+	if (lineEnd < window->editorInfo->buffer->length) {
+	    BufSelect(window->editorInfo->buffer, lineStart, lineEnd+1);
     } else { 
         /* Don't select past the end of the buffer ! */
-        BufSelect(window->buffer, lineStart, window->buffer->length);
+	    BufSelect(window->editorInfo->buffer, lineStart, window->editorInfo->buffer->length);
     }
     } else {
     /* Line was not found -> position the selection & cursor at the end 
        without making a real selection and beep */
-    lineStart = window->buffer->length;
-    BufSelect(window->buffer, lineStart, lineStart);
+	lineStart = window->editorInfo->buffer->length;
+	BufSelect(window->editorInfo->buffer, lineStart, lineStart);
     XBell(TheDisplay, 0);
     }     
     MakeSelectionVisible(window, window->lastFocus);
@@ -569,7 +567,7 @@ void AddMark(WindowInfo *window, Widget widget, char label)
     
     /* store the cursor location and selection position in the table */
     window->markTable[index].label = label;
-    memcpy(&window->markTable[index].sel, &window->buffer->primary,
+    memcpy(&window->markTable[index].sel, &window->editorInfo->buffer->primary,
             sizeof(selection));
     window->markTable[index].cursorPos = TextGetCursorPos(widget);
 }
@@ -592,24 +590,24 @@ void GotoMark(WindowInfo *window, Widget w, char label, int extendSel)
     
     /* reselect marked the selection, and move the cursor to the marked pos */
     sel = &window->markTable[index].sel;
-    oldSel = &window->buffer->primary;
+    oldSel = &window->editorInfo->buffer->primary;
     cursorPos = window->markTable[index].cursorPos;
     if (extendSel) {
     oldStart = oldSel->selected ? oldSel->start : TextGetCursorPos(w);
     oldEnd = oldSel->selected ? oldSel->end : TextGetCursorPos(w);
     newStart = sel->selected ? sel->start : cursorPos;
     newEnd = sel->selected ? sel->end : cursorPos;
-    BufSelect(window->buffer, oldStart < newStart ? oldStart : newStart,
+	BufSelect(window->editorInfo->buffer, oldStart < newStart ? oldStart : newStart,
         oldEnd > newEnd ? oldEnd : newEnd);
     } else {
     if (sel->selected) {
             if (sel->rectangular)
-            BufRectSelect(window->buffer, sel->start, sel->end,
+    		BufRectSelect(window->editorInfo->buffer, sel->start, sel->end,
             sel->rectStart, sel->rectEnd);
             else
-            BufSelect(window->buffer, sel->start, sel->end);
+    		BufSelect(window->editorInfo->buffer, sel->start, sel->end);
     } else
-            BufUnselect(window->buffer);
+    	    BufUnselect(window->editorInfo->buffer);
     }
     
     /* Move the window into a pleasing position relative to the selection

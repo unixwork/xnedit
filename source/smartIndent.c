@@ -761,13 +761,13 @@ void BeginSmartIndent(WindowInfo *window, int warn)
             return;
         }
     }
-    window->smartIndentData = (void *)winData;
+    window->editorInfo->smartIndentData = (void *)winData;
 }
 
 void EndSmartIndent(WindowInfo *window)
 {
     windowSmartIndentData *winData =
-            (windowSmartIndentData *)window->smartIndentData;
+    	    (windowSmartIndentData *)window->editorInfo->smartIndentData;
     
     if (winData == NULL)
         return;
@@ -777,7 +777,7 @@ void EndSmartIndent(WindowInfo *window)
         FreeProgram(winData->modMacro);
     FreeProgram(winData->newlineMacro);
     NEditFree(winData);
-    window->smartIndentData = NULL;
+    window->editorInfo->smartIndentData = NULL;
 }
 
 /*
@@ -799,7 +799,7 @@ void SmartIndentCB(Widget w, XtPointer clientData, XtPointer callData)
     WindowInfo *window = WidgetToWindow(w);
     smartIndentCBStruct *cbInfo = (smartIndentCBStruct *)callData;
     
-    if (window->smartIndentData == NULL)
+    if (window->editorInfo->smartIndentData == NULL)
         return;
     if (cbInfo->reason == CHAR_TYPED)
     executeModMacro(window, cbInfo);
@@ -814,7 +814,7 @@ void SmartIndentCB(Widget w, XtPointer clientData, XtPointer callData)
 static void executeNewlineMacro(WindowInfo *window, smartIndentCBStruct *cbInfo)
 {
     windowSmartIndentData *winData =
-            (windowSmartIndentData *)window->smartIndentData;
+    	    (windowSmartIndentData *)window->editorInfo->smartIndentData;
     /* posValue probably shouldn't be static due to re-entrance issues <slobasso> */
     static DataValue posValue = {INT_TAG, {0}};
     DataValue result;
@@ -873,7 +873,7 @@ static void executeNewlineMacro(WindowInfo *window, smartIndentCBStruct *cbInfo)
 
 Boolean InSmartIndentMacros(WindowInfo *window) {
     windowSmartIndentData *winData =
-            (windowSmartIndentData *)window->smartIndentData;
+    	    (windowSmartIndentData *)window->editorInfo->smartIndentData;
 
     return((winData && (winData->inModMacro || winData->inNewLineMacro)));
 }
@@ -885,7 +885,7 @@ Boolean InSmartIndentMacros(WindowInfo *window) {
 static void executeModMacro(WindowInfo *window,smartIndentCBStruct *cbInfo)
 {
     windowSmartIndentData *winData =
-            (windowSmartIndentData *)window->smartIndentData;
+    	    (windowSmartIndentData *)window->editorInfo->smartIndentData;
     /* args probably shouldn't be static due to future re-entrance issues <slobasso> */
     static DataValue args[2] = {{INT_TAG, {0}}, {STRING_TAG, {0}}};
     /* after 5.2 release remove inModCB and use new winData->inModMacro value */
@@ -1710,7 +1710,7 @@ static int updateSmartIndentCommonData(void)
        re-initialize the smart indent macros (in case they have initialization
        data which depends on common data) */
     for (window=WindowList; window!=NULL; window=window->next) {
-        if (window->indentStyle == SMART_INDENT &&
+    	if (window->editorInfo->indentStyle == SMART_INDENT &&
             window->languageMode != PLAIN_LANGUAGE_MODE) {
             EndSmartIndent(window);
             BeginSmartIndent(window, False);
@@ -1780,7 +1780,7 @@ static int updateSmartIndentData(void)
         lmName = LanguageModeName(window->languageMode);
     if (lmName != NULL && !strcmp(lmName, newMacros->lmName)) {
         SetSensitive(window, window->smartIndentItem, True);
-            if (window->indentStyle == SMART_INDENT &&
+    	    if (window->editorInfo->indentStyle == SMART_INDENT &&
                 window->languageMode != PLAIN_LANGUAGE_MODE) {
                 EndSmartIndent(window);
                 BeginSmartIndent(window, False);

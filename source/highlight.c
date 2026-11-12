@@ -212,7 +212,7 @@ void SyntaxHighlightModifyCB(int pos, int nInserted, int nDeleted,
             *highlightData = (windowHighlightData *)window->highlightData;
     
     if(window->ansiColors) {
-        BufParseEscSeq(window->buffer, pos, nInserted, nDeleted);
+        BufParseEscSeq(window->editorInfo->buffer, pos, nInserted, nDeleted);
     }
     
     if (highlightData == NULL)
@@ -251,7 +251,7 @@ void SyntaxHighlightModifyCB(int pos, int nInserted, int nDeleted,
     
     /* Re-parse around the changed region */
     if (highlightData->pass1Patterns)
-        incrementalReparse(highlightData, window->buffer, pos, nInserted,
+    	incrementalReparse(highlightData, window->editorInfo->buffer, pos, nInserted,
                 GetWindowDelimiters(window));
 }
 
@@ -285,14 +285,14 @@ void StartHighlighting(WindowInfo *window, int warn)
     
     /* Parse the buffer with pass 1 patterns.  If there are none, initialize
        the style buffer to all UNFINISHED_STYLE to trigger parsing later */
-    stylePtr = styleString = (char*)NEditMalloc(window->buffer->length + 1);
+    stylePtr = styleString = XtMalloc(window->editorInfo->buffer->length + 1);
     if (highlightData->pass1Patterns == NULL) {
-        for (i=0; i<window->buffer->length; i++)
+    	for (i=0; i<window->editorInfo->buffer->length; i++)
             *stylePtr++ = UNFINISHED_STYLE;
     } else {
-    stringPtr = bufString = BufAsString(window->buffer);
+	stringPtr = bufString = BufAsString(window->editorInfo->buffer);
     parseString(highlightData->pass1Patterns, &stringPtr, &stylePtr,
-            window->buffer->length, &prevChar, False,
+    		window->editorInfo->buffer->length, &prevChar, False,
             GetWindowDelimiters(window), bufString, NULL);
     }
     *stylePtr = '\0';
@@ -1272,7 +1272,7 @@ XftColor GetHighlightBGColorOfCode(WindowInfo *window, int hCode,
 static void handleUnparsedRegion(const WindowInfo* window, textBuffer* styleBuf,
         int pos)
 {
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     int beginParse, endParse, beginSafety, endSafety, p;
     windowHighlightData *highlightData =
             (windowHighlightData *)window->highlightData;

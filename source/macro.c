@@ -234,8 +234,12 @@ static int calltipMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int killCalltipMS(WindowInfo *window, DataValue *argList, int nArgs,
        DataValue *result, char **errMsg);
 /* T Balinski */
+static int listDialogBase(WindowInfo *window, DataValue *argList, int nArgs,
+      DataValue *result, char **errMsg, Boolean isMultiLine);
 static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg);
+static int listMultiselDialogMS(WindowInfo *window, DataValue *argList,
+        int nArgs, DataValue *result, char **errMsg);
 static void listDialogBtnCB(Widget w, XtPointer clientData,
     XtPointer callData);
 static void listDialogCloseCB(Widget w, XtPointer clientData,
@@ -337,6 +341,8 @@ static int emTabDistMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg);
 static int useTabsMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg);
+static int cloneIndexMV(WindowInfo *window, DataValue *argList, int nArgs,
+    	DataValue *result, char **errMsg);
 static int modifiedMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg);
 static int languageModeMV(WindowInfo *window, DataValue *argList, int nArgs,
@@ -409,7 +415,7 @@ static BuiltInSubr MacroSubrs[] = {lengthMS, getRangeMS, tPrintMS,
         writeFileMS, appendFileMS, beepMS, getSelectionMS, validNumberMS,
         replaceInStringMS, selectMS, selectRectangleMS, focusWindowMS,
         shellCmdMS, stringToClipboardMS, clipboardToStringMS, toupperMS,
-        tolowerMS, listDialogMS, getenvMS,
+        tolowerMS, listDialogMS, listMultiselDialogMS, getenvMS,
         stringCompareMS, splitMS, calltipMS, killCalltipMS,
 /* DISABLED for 5.4        setBacklightStringMS,*/
         rangesetCreateMS, rangesetDestroyMS,
@@ -428,7 +434,7 @@ static const char *MacroSubrNames[N_MACRO_SUBRS] = {"length", "get_range", "t_pr
         "write_file", "append_file", "beep", "get_selection", "valid_number",
         "replace_in_string", "select", "select_rectangle", "focus_window",
         "shell_command", "string_to_clipboard", "clipboard_to_string",
-        "toupper", "tolower", "list_dialog", "getenv",
+        "toupper", "tolower", "list_dialog", "list_multisel_dialog", "getenv",
         "string_compare", "split", "calltip", "kill_calltip",
 /* DISABLED for 5.4        "set_backlight_string", */
         "rangeset_create", "rangeset_destroy",
@@ -442,7 +448,7 @@ static const char *MacroSubrNames[N_MACRO_SUBRS] = {"length", "get_range", "t_pr
 static BuiltInSubr SpecialVars[] = {cursorMV, lineMV, columnMV,
         fileNameMV, filePathMV, lengthMV, selectionStartMV, selectionEndMV,
         selectionLeftMV, selectionRightMV, wrapMarginMV, tabDistMV,
-        emTabDistMV, useTabsMV, languageModeMV, modifiedMV,
+        emTabDistMV, useTabsMV, languageModeMV, modifiedMV, cloneIndexMV,
         statisticsLineMV, incSearchLineMV, showLineNumbersMV,
         autoIndentMV, wrapTextMV, highlightSyntaxMV,
         makeBackupCopyMV, incBackupMV, showMatchingMV, matchSyntaxBasedMV,
@@ -460,7 +466,7 @@ static const char *SpecialVarNames[N_SPECIAL_VARS] = {"$cursor", "$line", "$colu
         "$file_name", "$file_path", "$text_length", "$selection_start",
         "$selection_end", "$selection_left", "$selection_right",
         "$wrap_margin", "$tab_dist", "$em_tab_dist", "$use_tabs",
-        "$language_mode", "$modified",
+        "$language_mode", "$modified", "$clone_index",
         "$statistics_line", "$incremental_search_line", "$show_line_numbers",
         "$auto_indent", "$wrap_text", "$highlight_syntax",
         "$make_backup_copy", "$incremental_backup", "$show_matching", "$match_syntax_based",
@@ -1148,7 +1154,7 @@ static void finishMacroCmdExecution(WindowInfo *window)
     /* If macro closed its own window, window was made empty and untitled,
        but close was deferred until completion.  This is completion, so if
        the window is still empty, do the close */
-    if (closeOnCompletion && !window->filenameSet && !window->fileChanged) {
+    if (closeOnCompletion && !window->editorInfo->filenameSet && !window->editorInfo->fileChanged) {
         CloseWindow(window);
     window = NULL;
     }
@@ -1378,7 +1384,7 @@ static int doRepeatDialogAction(repeatDialog *rd, XEvent *event)
     /* Find out from the dialog how to repeat the command */
     if (XmToggleButtonGetState(rd->inSelToggle))
     {
-        if (!rd->forWindow->buffer->primary.selected)
+        if (!rd->forWindow->editorInfo->buffer->primary.selected)
         {
             DialogF(DF_WARN, rd->shell, 1, "Repeat Macro",
                     "No selection in window to repeat within", "OK");
@@ -1868,7 +1874,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
     } else {
         /* just use the plain name as supplied */
     for (w=WindowList; w != NULL; w = w->next) {
-        snprintf(fullname, sizeof(fullname), "%s%s", w->path, w->filename);
+	    snprintf(fullname, sizeof(fullname), "%s%s", w->editorInfo->path, w->editorInfo->filename);
         if (!strcmp(string, fullname)) {
         break;
         }
@@ -1884,7 +1890,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
             }
             for (w=WindowList; w != NULL; w = w->next) {
                 snprintf(fullname, sizeof(fullname),
-                        "%s%s", w->path, w->filename);
+                        "%s%s", w->editorInfo->path, w->editorInfo->filename);
                 if (!strcmp(normalizedString, fullname))
                     break;
             }
@@ -1908,9 +1914,9 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
 
     /* Return the name of the window */
     result->tag = STRING_TAG;
-    size_t result_str_len = strlen(w->path)+strlen(w->filename)+1;
+    size_t result_str_len = strlen(w->editorInfo->path)+strlen(w->editorInfo->filename)+1;
     AllocNString(&result->val.str, result_str_len);
-    snprintf(result->val.str.rep, result_str_len, "%s%s", w->path, w->filename);
+    snprintf(result->val.str.rep, result_str_len, "%s%s", w->editorInfo->path, w->editorInfo->filename);
     return True;
 }
 
@@ -1922,7 +1928,7 @@ static int getRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     int from, to;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     char *rangeText;
     
     /* Validate arguments and convert to int */
@@ -1959,7 +1965,7 @@ static int getCharacterMS(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     int pos;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     
     /* Validate argument and convert it to int */
     if (nArgs != 1)
@@ -1988,7 +1994,7 @@ static int replaceRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
 {
     int from, to;
     char stringStorage[TYPE_INT_STR_SIZE(int)], *string;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     
     /* Validate arguments and convert to int */
     if (nArgs != 3)
@@ -2006,7 +2012,7 @@ static int replaceRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
     if (from > to) {int temp = from; from = to; to = temp;}
     
     /* Don't allow modifications if the window is read-only */
-    if (IS_ANY_LOCKED(window->lockReasons)) {
+    if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
     XBell(XtDisplay(window->shell), 0);
     result->tag = NO_TAG;
     return True;
@@ -2018,7 +2024,7 @@ static int replaceRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
        theoretically become a null.  In the highly unlikely event that
        all of the possible substitution characters in the buffer are used
        up, stop the macro and tell the user of the failure */
-    if (!BufSubstituteNullChars(string, strlen(string), window->buffer)) {
+    if (!BufSubstituteNullChars(string, strlen(string), window->editorInfo->buffer)) {
     *errMsg = "Too much binary data in file";
     return False;
     }
@@ -2045,7 +2051,7 @@ static int replaceSelectionMS(WindowInfo *window, DataValue *argList, int nArgs,
         return False;
     
     /* Don't allow modifications if the window is read-only */
-    if (IS_ANY_LOCKED(window->lockReasons)) {
+    if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
     XBell(XtDisplay(window->shell), 0);
     result->tag = NO_TAG;
     return True;
@@ -2057,13 +2063,13 @@ static int replaceSelectionMS(WindowInfo *window, DataValue *argList, int nArgs,
        theoretically become a null.  In the highly unlikely event that
        all of the possible substitution characters in the buffer are used
        up, stop the macro and tell the user of the failure */
-    if (!BufSubstituteNullChars(string, strlen(string), window->buffer)) {
+    if (!BufSubstituteNullChars(string, strlen(string), window->editorInfo->buffer)) {
     *errMsg = "Too much binary data in file";
     return False;
     }
     
     /* Do the replace */
-    BufReplaceSelected(window->buffer, string);
+    BufReplaceSelected(window->editorInfo->buffer, string);
     result->tag = NO_TAG;
     return True;
 }
@@ -2091,8 +2097,8 @@ static int getSelectionMS(WindowInfo *window, DataValue *argList, int nArgs,
     if (selText == NULL)
         selText = NEditStrdup("");
     } else {
-    selText = BufGetSelectionText(window->buffer);
-        BufUnsubstituteNullChars(selText, window->buffer);
+	selText = BufGetSelectionText(window->editorInfo->buffer);
+    	BufUnsubstituteNullChars(selText, window->editorInfo->buffer);
     }
     
     /* Return the text as an allocated string */
@@ -2476,8 +2482,8 @@ static int searchMS(WindowInfo *window, DataValue *argList, int nArgs,
     /* we remove constness from BufAsString() result since we know
        searchStringMS will not modify the result */
     newArgList[0].tag = STRING_TAG;
-    newArgList[0].val.str.rep = (char *)BufAsString(window->buffer);
-    newArgList[0].val.str.len = window->buffer->length;
+    newArgList[0].val.str.rep = (char *)BufAsString(window->editorInfo->buffer);
+    newArgList[0].val.str.len = window->editorInfo->buffer->length;
 
     /* copy other arguments to the new argument list */
     memcpy(&newArgList[1], argList, nArgs * sizeof(DataValue));
@@ -2694,12 +2700,12 @@ static int selectMS(WindowInfo *window, DataValue *argList, int nArgs,
     end = startTmp;
     }
     if (start < 0) start = 0;
-    if (start > window->buffer->length) start = window->buffer->length;
+    if (start > window->editorInfo->buffer->length) start = window->editorInfo->buffer->length;
     if (end < 0) end = 0;
-    if (end > window->buffer->length) end = window->buffer->length;
+    if (end > window->editorInfo->buffer->length) end = window->editorInfo->buffer->length;
     
     /* Make the selection */
-    BufSelect(window->buffer, start, end);
+    BufSelect(window->editorInfo->buffer, start, end);
     result->tag = NO_TAG;
     return True;
 }
@@ -2722,7 +2728,7 @@ static int selectRectangleMS(WindowInfo *window, DataValue *argList, int nArgs,
         return False;
     
     /* Make the selection */
-    BufRectSelect(window->buffer, start, end, left, right);
+    BufRectSelect(window->editorInfo->buffer, start, end, left, right);
     result->tag = NO_TAG;
     return True;
 }
@@ -3440,7 +3446,7 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     if ('\0' != defaultPath[0]) {
         SetFileDialogDefaultDirectory(defaultPath);
     } else {
-        SetFileDialogDefaultDirectory(window->path);
+        SetFileDialogDefaultDirectory(window->editorInfo->path);
     }
 
     /*  Set filter (saving original for later)  */
@@ -3483,8 +3489,8 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
 }
 
 /* T Balinski */
-static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
-      DataValue *result, char **errMsg)
+static int listDialogBase(WindowInfo *window, DataValue *argList, int nArgs,
+      DataValue *result, char **errMsg, Boolean isMultiLine)
 {
     macroCmdInfo *cmdData;
     char stringStorage[TYPE_INT_STR_SIZE(int)];
@@ -3569,7 +3575,7 @@ static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
     text_lines[n] = (char *)0;        /* make sure this is a null-terminated table */
 
     /* pick up the tabDist value */
-    tabDist = window->buffer->tabDist;
+    tabDist = window->editorInfo->buffer->tabDist;
 
     /* load the table */
     n = 0;
@@ -3631,7 +3637,7 @@ static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
     XtSetArg(al[ac], XmNlistLabelString, s1=MKSTRING(message)); ac++;
     XtSetArg(al[ac], XmNlistItems, test_strings); ac++;
     XtSetArg(al[ac], XmNlistItemCount, nlines); ac++;
-    XtSetArg(al[ac], XmNlistVisibleItemCount, (nlines > 10) ? 10 : nlines); ac++;
+    XtSetArg(al[ac], XmNlistVisibleItemCount, (nlines > 25) ? 25 : nlines); ac++;
     XtSetArg(al[ac], XmNokLabelString, s2=XmStringCreateSimple(btnLabel)); ac++;
     dialog = CreateSelectionDialog(window->shell, "macroListDialog", al, ac);
     if (2 == nArgs)
@@ -3657,7 +3663,8 @@ static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
 
     /* modify the list */
     XtVaSetValues(XmSelectionBoxGetChild(dialog, XmDIALOG_LIST),
-                XmNselectionPolicy, XmSINGLE_SELECT,
+                XmNselectionPolicy,
+                            isMultiLine ? XmMULTIPLE_SELECT : XmSINGLE_SELECT,
                 XmNuserData, (XtPointer)text_lines, NULL);
 
     /* Unmanage unneeded widgets */
@@ -3706,6 +3713,17 @@ static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
     return True;
 }
 
+static int listDialogMS(WindowInfo *window, DataValue *argList, int nArgs,
+      DataValue *result, char **errMsg)
+{
+    return listDialogBase(window, argList, nArgs, result, errMsg, False);
+}
+
+static int listMultiselDialogMS(WindowInfo *window, DataValue *argList,
+      int nArgs, DataValue *result, char **errMsg)
+{
+    return listDialogBase(window, argList, nArgs, result, errMsg, True);
+}
 static void listDialogBtnCB(Widget w, XtPointer clientData,
       XtPointer callData)
 {
@@ -3717,6 +3735,8 @@ static void listDialogBtnCB(Widget w, XtPointer clientData,
     char **text_lines;
     int btnNum;
     int n_sel, *seltable, sel_index = 0;
+    int selPolicy;
+    Boolean isMultiLine;
     Widget theList;
     size_t length;
 
@@ -3728,20 +3748,36 @@ static void listDialogBtnCB(Widget w, XtPointer clientData,
     /* Return the string selected in the selection list area */
     XtVaGetValues(theList, XmNuserData, &text_lines, NULL);
     if (!XmListGetSelectedPos(theList, &seltable, &n_sel)) {
-      n_sel = 0;
-    }
-    else {
-      sel_index = seltable[0] - 1;
-      NEditFree(seltable);
+      n_sel = -1;
     }
 
-    if (!n_sel) {
+    if (n_sel < 0) {
       text = NEditStrdup("");
       length = 0;
+      n_sel= 0;
     }
     else {
-      length = strlen((char *)text_lines[sel_index]);
-      text = NEditStrdup(text_lines[sel_index]);
+        /* count up the total size of the result */
+        int i;
+        size_t len;
+        char *cp;
+        length = 0;
+        for (i = 0; i < n_sel; i++) {
+            sel_index = seltable[i] - 1;
+            length += strlen((char *)text_lines[sel_index]) + 1;
+        }
+        /* allocate result */
+        cp = text = AllocString(length);
+        /* and copy strings, separated by '\n' */
+        for (i = 0; i < n_sel; i++) {
+            sel_index = seltable[i] - 1;
+            len = strlen((char *)text_lines[sel_index]);
+            strcpy(cp, text_lines[sel_index]);
+            cp += len;
+            *cp++ = '\n';
+        }
+        text[--length] = '\0';
+        XtFree((XtPointer)seltable);
     }
 
     /* don't need text_lines anymore: free it */
@@ -4076,7 +4112,7 @@ static int lineMV(WindowInfo *window, DataValue *argList, int nArgs,
     result->tag = INT_TAG;
     cursorPos = TextGetCursorPos(window->lastFocus);
     if (!TextPosToLineAndCol(window->lastFocus, cursorPos, &line, &colNum))
-        line = BufCountLines(window->buffer, 0, cursorPos) + 1;
+    	line = BufCountLines(window->editorInfo->buffer, 0, cursorPos) + 1;
     result->val.n = line;
     return True;
 }
@@ -4084,7 +4120,7 @@ static int lineMV(WindowInfo *window, DataValue *argList, int nArgs,
 static int columnMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     int cursorPos;
 
     result->tag = INT_TAG;
@@ -4098,7 +4134,7 @@ static int fileNameMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = STRING_TAG;
-    AllocNStringCpy(&result->val.str, window->filename);
+    AllocNStringCpy(&result->val.str, window->editorInfo->filename);
     return True;
 }
 
@@ -4106,7 +4142,7 @@ static int filePathMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = STRING_TAG;
-    AllocNStringCpy(&result->val.str, window->path);
+    AllocNStringCpy(&result->val.str, window->editorInfo->path);
     return True;
 }
 
@@ -4114,7 +4150,7 @@ static int lengthMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->buffer->length;
+    result->val.n = window->editorInfo->buffer->length;
     return True;
 }
 
@@ -4122,8 +4158,8 @@ static int selectionStartMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->buffer->primary.selected ?
-            window->buffer->primary.start : -1;
+    result->val.n = window->editorInfo->buffer->primary.selected ?
+    	    window->editorInfo->buffer->primary.start : -1;
     return True;
 }
 
@@ -4131,15 +4167,15 @@ static int selectionEndMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->buffer->primary.selected ?
-            window->buffer->primary.end : -1;
+    result->val.n = window->editorInfo->buffer->primary.selected ?
+    	    window->editorInfo->buffer->primary.end : -1;
     return True;
 }
 
 static int selectionLeftMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
-    selection *sel = &window->buffer->primary;
+    selection *sel = &window->editorInfo->buffer->primary;
     
     result->tag = INT_TAG;
     result->val.n = sel->selected && sel->rectangular ? sel->rectStart : -1;
@@ -4149,7 +4185,7 @@ static int selectionLeftMV(WindowInfo *window, DataValue *argList, int nArgs,
 static int selectionRightMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
-    selection *sel = &window->buffer->primary;
+    selection *sel = &window->editorInfo->buffer->primary;
     
     result->tag = INT_TAG;
     result->val.n = sel->selected && sel->rectangular ? sel->rectEnd : -1;
@@ -4197,7 +4233,7 @@ static int autoIndentMV(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char *res = NULL;
 
-    switch (window->indentStyle) {
+    switch (window->editorInfo->indentStyle) {
         case NO_AUTO_INDENT:
             res = PERM_ALLOC_STR("off");
             break;
@@ -4223,7 +4259,7 @@ static int wrapTextMV(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char *res = NULL;
 
-    switch (window->wrapMode) {
+    switch (window->editorInfo->wrapMode) {
         case NO_WRAP:
             res = PERM_ALLOC_STR("none");
             break;
@@ -4256,7 +4292,7 @@ static int makeBackupCopyMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->saveOldVersion ? 1 : 0;
+    result->val.n = window->editorInfo->saveOldVersion ? 1 : 0;
     return True;
 }
 
@@ -4264,7 +4300,7 @@ static int incBackupMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->autoSave ? 1 : 0;
+    result->val.n = window->editorInfo->autoSave ? 1 : 0;
     return True;
 }
 
@@ -4273,7 +4309,7 @@ static int showMatchingMV(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char *res = NULL;
 
-    switch (window->showMatchingStyle) {
+    switch (window->editorInfo->showMatchingStyle) {
         case NO_FLASH:
             res = PERM_ALLOC_STR(NO_FLASH_STRING);
             break;
@@ -4298,7 +4334,7 @@ static int matchSyntaxBasedMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->matchSyntaxBased ? 1 : 0;
+    result->val.n = window->editorInfo->matchSyntaxBased ? 1 : 0;
     return True;
 }
 
@@ -4308,7 +4344,7 @@ static int overTypeModeMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->overstrike ? 1 : 0;
+    result->val.n = window->editorInfo->overstrike ? 1 : 0;
     return True;
 }
 
@@ -4316,7 +4352,7 @@ static int readOnlyMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = (IS_ANY_LOCKED(window->lockReasons)) ? 1 : 0;
+    result->val.n = (IS_ANY_LOCKED(window->editorInfo->lockReasons)) ? 1 : 0;
     return True;
 }
 
@@ -4324,7 +4360,7 @@ static int lockedMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = (IS_USER_LOCKED(window->lockReasons)) ? 1 : 0;
+    result->val.n = (IS_USER_LOCKED(window->editorInfo->lockReasons)) ? 1 : 0;
     return True;
 }
 
@@ -4333,7 +4369,7 @@ static int fileFormatMV(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char *res = NULL;
 
-    switch (window->fileFormat) {
+    switch (window->editorInfo->fileFormat) {
         case UNIX_FILE_FORMAT:
             res = PERM_ALLOC_STR("unix");
             break;
@@ -4470,7 +4506,7 @@ static int tabDistMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->buffer->tabDist;
+    result->val.n = window->editorInfo->buffer->tabDist;
     return True;
 }
 
@@ -4489,7 +4525,15 @@ static int useTabsMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->buffer->useTabs;
+    result->val.n = window->editorInfo->buffer->useTabs;
+    return True;
+}
+
+static int cloneIndexMV(WindowInfo *window, DataValue *argList, int nArgs,
+    	DataValue *result, char **errMsg)
+{
+    result->tag = INT_TAG;
+    result->val.n = GetCloneIndex(window);
     return True;
 }
 
@@ -4497,7 +4541,7 @@ static int modifiedMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->fileChanged;
+    result->val.n = window->editorInfo->fileChanged;
     return True;
 }
 
@@ -4534,7 +4578,7 @@ static int backlightStringMV(WindowInfo *window, DataValue *argList,
 static int rangesetListMV(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
     unsigned char *rangesetList;
     char *allocIndexStr;
     char indexStr[TYPE_INT_STR_SIZE(int)] ;
@@ -4603,14 +4647,14 @@ static int rangesetCreateMS(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue element;
     char indexStr[TYPE_INT_STR_SIZE(int)], *allocIndexStr;
     
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
        
     if (nArgs > 1)
         return wrongNArgsErr(errMsg);
 
     if (rangesetTable == NULL) {
-        window->buffer->rangesetTable = rangesetTable = 
-                RangesetTableAlloc(window->buffer);
+        window->editorInfo->buffer->rangesetTable = rangesetTable = 
+                RangesetTableAlloc(window->editorInfo->buffer);
     }
     
     if (nArgs == 0) {
@@ -4654,7 +4698,7 @@ static int rangesetCreateMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int rangesetDestroyMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
     DataValue *array;
     DataValue element;
     char keyString[TYPE_INT_STR_SIZE(int)];
@@ -4721,7 +4765,7 @@ static int rangesetGetByNameMS(WindowInfo *window, DataValue *argList, int nArgs
     Rangeset *rangeset;
     int label;
     char *name, *rangeset_name;
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
     unsigned char *rangesetList;
     char *allocIndexStr;
     char indexStr[TYPE_INT_STR_SIZE(int)] ;
@@ -4782,7 +4826,7 @@ static int rangesetGetByNameMS(WindowInfo *window, DataValue *argList, int nArgs
 static int rangesetAddMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *targetRangeset, *sourceRangeset;
     int start, end, isRect, rectStart, rectEnd, maxpos, index;
@@ -4881,7 +4925,7 @@ static int rangesetAddMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int rangesetSubtractMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *targetRangeset, *sourceRangeset;
     int start, end, isRect, rectStart, rectEnd, maxpos;
@@ -4961,7 +5005,7 @@ static int rangesetInvertMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
     
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
     Rangeset *rangeset;
     int label = 0;
 
@@ -5000,7 +5044,7 @@ static int rangesetInvertMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int rangesetInfoMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    RangesetTable *rangesetTable = window->buffer->rangesetTable;
+    RangesetTable *rangesetTable = window->editorInfo->buffer->rangesetTable;
     Rangeset *rangeset = NULL;
     int count, defined;
     char *color, *name, *mode;
@@ -5066,7 +5110,7 @@ static int rangesetInfoMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int rangesetRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
       DataValue *result, char **errMsg)
 {
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
     int start, end, dummy, rangeIndex, ok;
@@ -5132,7 +5176,7 @@ static int rangesetRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
 static int rangesetIncludesPosMS(WindowInfo *window, DataValue *argList,
       int nArgs, DataValue *result, char **errMsg)
 {
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
     int pos, rangeIndex, maxpos;
@@ -5187,7 +5231,7 @@ static int rangesetSetColorMS(WindowInfo *window, DataValue *argList,
       int nArgs, DataValue *result, char **errMsg)
 {
     char stringStorage[1][TYPE_INT_STR_SIZE(int)];
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
     char *color_name;
@@ -5233,7 +5277,7 @@ static int rangesetSetNameMS(WindowInfo *window, DataValue *argList,
       int nArgs, DataValue *result, char **errMsg)
 {
     char stringStorage[1][TYPE_INT_STR_SIZE(int)];
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
     char *name;
@@ -5279,7 +5323,7 @@ static int rangesetSetModeMS(WindowInfo *window, DataValue *argList,
       int nArgs, DataValue *result, char **errMsg)
 {
     char stringStorage[1][TYPE_INT_STR_SIZE(int)];
-    textBuffer *buffer = window->buffer;
+    textBuffer *buffer = window->editorInfo->buffer;
     RangesetTable *rangesetTable = buffer->rangesetTable;
     Rangeset *rangeset;
     char *update_fn_name;
@@ -5497,7 +5541,7 @@ static int getStyleAtPosMS(WindowInfo *window, DataValue *argList, int nArgs,
 {
     int patCode;
     int bufferPos;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
 
     /* Validate number of arguments */
     if (nArgs != 1) {
@@ -5639,8 +5683,8 @@ static int getPatternAtPosMS(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     int bufferPos = -1;
-    textBuffer *buffer = window->buffer;
     int patCode = 0;
+    textBuffer *buffer = window->editorInfo->buffer;
     
     /* Begin of building the result. */
     result->tag = ARRAY_TAG;

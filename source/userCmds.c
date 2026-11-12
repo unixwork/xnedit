@@ -68,7 +68,6 @@
 #include <Xm/MenuShell.h>
 
 #include <inttypes.h>
-
 #ifdef HAVE_DEBUG_H
 #include "../debug.h"
 #endif
@@ -1409,7 +1408,7 @@ static void updateMenu(WindowInfo *window, int menuType)
         SetBGMenuRedoSensitivity(window, XtIsSensitive(window->redoItem));
     }
 
-    DimSelectionDepUserMenuItems(window, window->buffer->primary.selected);
+    DimSelectionDepUserMenuItems(window, window->editorInfo->buffer->primary.selected);
     
     
     EnableDefaultColorProfileResourceDB(XtDisplay(window->mainWin));

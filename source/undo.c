@@ -67,7 +67,7 @@ static void freeUndoRecord(UndoInfo *undo);
 
 static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorIndex)
 {
-    UndoInfo *undo = window->undo;
+    UndoInfo *undo = window->editorInfo->undo;
     int restoredTextLength;
      
     /* return if nothing to undo */
@@ -82,7 +82,7 @@ static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
     undo->inUndo = True;
        
     /* use the saved undo information to reverse changes */
-    BufReplace(window->buffer, undo->startPos, undo->endPos,
+    BufReplace(window->editorInfo->buffer, undo->startPos, undo->endPos,
             (undo->oldText != NULL ? undo->oldText : ""));
     
     restoredTextLength = undo->oldText != NULL ? strlen(undo->oldText) : 0;
@@ -90,7 +90,7 @@ static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
     if(diff == 0) {
         diff = undo->startPos - undo->endPos;
     }
-    if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
+    if (!window->editorInfo->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
         size_t newPos = undo->startPos + restoredTextLength;
         if(!isBatch) {
             /* position the cursor in the focus pane after the changed text
@@ -106,11 +106,11 @@ static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
     
     if (GetPrefUndoModifiesSelection() && !isBatch) {
         if (restoredTextLength > 0) {
-            BufSelect(window->buffer, undo->startPos, undo->startPos + 
+    	    BufSelect(window->editorInfo->buffer, undo->startPos, undo->startPos + 
                 restoredTextLength);
         }
         else {
-            BufUnselect(window->buffer);
+    	    BufUnselect(window->editorInfo->buffer);
         }
     }
     MakeSelectionVisible(window, window->lastFocus);
@@ -129,7 +129,7 @@ static void doUndo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
 }
 
 void Undo(WindowInfo *window) {
-    int numOp = window->undo->numOp;
+    int numOp = window->editorInfo->undo->numOp;
     int undoCount = 1;
     int isBatch = 0;
     if(numOp > 0) {
@@ -159,11 +159,11 @@ void Undo(WindowInfo *window) {
 
 static void doRedo(WindowInfo *window, int isBatch, size_t *cursors, int cursorIndex)
 {
-    UndoInfo *redo = window->redo;
+    UndoInfo *redo = window->editorInfo->redo;
     int restoredTextLength;
     
     // not really necessary, but in case of redo-bugs, this prevents a crash
-    if (window->redo == NULL) {
+    if (window->editorInfo->redo == NULL) {
         return;
     }
         
@@ -173,11 +173,11 @@ static void doRedo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
     redo->inUndo = True;
     
     // use the saved redo information to reverse changes
-    BufReplace(window->buffer, redo->startPos, redo->endPos,
+    BufReplace(window->editorInfo->buffer, redo->startPos, redo->endPos,
             (redo->oldText != NULL ? redo->oldText : ""));
        
     restoredTextLength = redo->oldText != NULL ? strlen(redo->oldText) : 0;
-    if (!window->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
+    if (!window->editorInfo->buffer->primary.selected || GetPrefUndoModifiesSelection()) {
     // position the cursor in the focus pane after the changed text
         // to show the user where the undo was done
         int newpos = redo->startPos + restoredTextLength;
@@ -190,11 +190,11 @@ static void doRedo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
     }
     if (!isBatch && GetPrefUndoModifiesSelection()) {
         if (restoredTextLength > 0) {
-            BufSelect(window->buffer, redo->startPos, redo->startPos + 
+    	    BufSelect(window->editorInfo->buffer, redo->startPos, redo->startPos + 
                 restoredTextLength);
         }
         else {
-            BufUnselect(window->buffer);
+    	    BufUnselect(window->editorInfo->buffer);
         }
     }
     MakeSelectionVisible(window, window->lastFocus);
@@ -214,9 +214,9 @@ static void doRedo(WindowInfo *window, int isBatch, size_t *cursors, int cursorI
 
 void Redo(WindowInfo *window)
 {  
-    UndoInfo *redo = window->redo;
+    UndoInfo *redo = window->editorInfo->redo;
     // return if nothing to redo
-    if (window->redo == NULL)
+    if (window->editorInfo->redo == NULL)
         return;
     
     int numOp = redo->numOp;
@@ -255,15 +255,15 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     int nDeleted, const char *deletedText)
 {
     int newType, oldType;
-    UndoInfo *u, *undo = window->undo;
+    UndoInfo *u, *undo = window->editorInfo->undo;
     int isUndo = (undo != NULL && undo->inUndo);
-    int isRedo = (window->redo != NULL && window->redo->inUndo);
+    int isRedo = (window->editorInfo->redo != NULL && window->editorInfo->redo->inUndo);
     int numOp = window->undo_op_batch_size;
     
     /* redo operations become invalid once the user begins typing or does
        other editing.  If this is not a redo or undo operation and a redo
        list still exists, clear it and dim the redo menu item */
-    if (!(isUndo || isRedo) && window->redo != NULL)
+    if (!(isUndo || isRedo) && window->editorInfo->redo != NULL)
         ClearRedoList(window);
 
     /* figure out what kind of editing operation this is, and recall
@@ -283,13 +283,13 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     ** In multi cursor mode, this doesn't work. Multi-cursor modifications
     ** are indicated by the undo-batch  
     */
-    if (window->fileChanged && !window->undo_batch_begin) {
+    if (window->editorInfo->fileChanged && !window->undo_batch_begin) {
     
     /* normal sequential character insertion */
     if (  ((oldType == ONE_CHAR_INSERT || oldType == ONE_CHAR_REPLACE)
                && newType == ONE_CHAR_INSERT) && (pos == undo->endPos)) {
         undo->endPos++;
-        window->autoSaveCharCount++;
+	    window->editorInfo->autoSaveCharCount++;
         return;
     }
 
@@ -298,7 +298,7 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
                (pos == undo->endPos)) {
             appendDeletedText(window, deletedText, nDeleted, FORWARD);
         undo->endPos++;
-        window->autoSaveCharCount++;
+	    window->editorInfo->autoSaveCharCount++;
         return;
     }
 
@@ -341,15 +341,15 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
     }
     
     /* increment the operation count for the autosave feature */
-    window->autoSaveOpCount++;
+    window->editorInfo->autoSaveOpCount++;
 
     /* if the window is currently unmodified, remove the previous
        restoresToSaved marker, and set it on this record */
-    if (!window->fileChanged) {
+    if (!window->editorInfo->fileChanged) {
         undo->restoresToSaved = True;
-    for (u=window->undo; u!=NULL; u=u->next)
+	for (u=window->editorInfo->undo; u!=NULL; u=u->next)
             u->restoresToSaved = False;
-    for (u=window->redo; u!=NULL; u=u->next)
+	for (u=window->editorInfo->redo; u!=NULL; u=u->next)
             u->restoresToSaved = False;
     }
         
@@ -370,12 +370,12 @@ void SaveUndoInformation(WindowInfo *window, int pos, int nInserted,
 */
 void ClearUndoList(WindowInfo *window)
 {
-    while (window->undo != NULL)
+    while (window->editorInfo->undo != NULL)
         removeUndoItem(window);
 }
 void ClearRedoList(WindowInfo *window)
 {
-    while (window->redo != NULL)
+    while (window->editorInfo->redo != NULL)
         removeRedoItem(window);
 }
 
@@ -388,25 +388,27 @@ static void addUndoItem(WindowInfo *window, UndoInfo *undo)
 {
     
     /* Make the undo menu item sensitive now that there's something to undo */
-    if (window->undo == NULL) {
-        SetSensitive(window, window->undoItem, True);
+    if (window->editorInfo->undo == NULL) {
+       WindowInfo *w;
+       for(w = window->editorInfo->master; w; w = w->nextSlave)
+           SetSensitive(w, w->undoItem, True);
     SetBGMenuUndoSensitivity(window, True);
     }
 
     /* Add the item to the beginning of the list */
-    undo->next = window->undo;
-    window->undo = undo;
+    undo->next = window->editorInfo->undo;
+    window->editorInfo->undo = undo;
     
     /* Increment the operation and memory counts */
-    window->undoOpCount++;
-    window->undoMemUsed += undo->oldLen;
+    window->editorInfo->undoOpCount++;
+    window->editorInfo->undoMemUsed += undo->oldLen;
     
     /* Trim the list if it exceeds any of the limits */
-    if (window->undoOpCount > GetPrefUndoOpLimit())
+    if (window->editorInfo->undoOpCount > GetPrefUndoOpLimit())
         trimUndoList(window, GetPrefUndoOpTrimTo());
-    if (window->undoMemUsed > GetPrefUndoWorryLimit())
+    if (window->editorInfo->undoMemUsed > GetPrefUndoWorryLimit())
         trimUndoList(window, GetPrefUndoWorryTrimTo());
-    if (window->undoMemUsed > GetPrefUndoPurgeLimit())
+    if (window->editorInfo->undoMemUsed > GetPrefUndoPurgeLimit())
         trimUndoList(window, GetPrefUndoPurgeTrimTo());
 }
 
@@ -416,14 +418,16 @@ static void addUndoItem(WindowInfo *window, UndoInfo *undo)
 static void addRedoItem(WindowInfo *window, UndoInfo *redo)
 {
     /* Make the redo menu item sensitive now that there's something to redo */
-    if (window->redo == NULL) {
-        SetSensitive(window, window->redoItem, True);
+    if (window->editorInfo->redo == NULL) {
+    	WindowInfo *w;
+    	for(w = window->editorInfo->master; w; w = w->nextSlave)
+    	    SetSensitive(w, w->redoItem, True);
     SetBGMenuRedoSensitivity(window, True);
     }
     
     /* Add the item to the beginning of the list */
-    redo->next = window->redo;
-    window->redo = redo;
+    redo->next = window->editorInfo->redo;
+    window->editorInfo->redo = redo;
 }
 
 /*
@@ -431,22 +435,24 @@ static void addRedoItem(WindowInfo *window, UndoInfo *redo)
 */
 static void removeUndoItem(WindowInfo *window)
 {
-    UndoInfo *undo = window->undo;
+    UndoInfo *undo = window->editorInfo->undo;
     
     if (undo == NULL)
         return;
     
     /* Decrement the operation and memory counts */
-    window->undoOpCount--;
-    window->undoMemUsed -= undo->oldLen;
+    window->editorInfo->undoOpCount--;
+    window->editorInfo->undoMemUsed -= undo->oldLen;
     
     /* Remove and free the item */
-    window->undo = undo->next;
+    window->editorInfo->undo = undo->next;
     freeUndoRecord(undo);
     
     /* if there are no more undo records left, dim the Undo menu item */
-    if (window->undo == NULL) {
-        SetSensitive(window, window->undoItem, False);
+    if (window->editorInfo->undo == NULL) {
+    	WindowInfo *w;
+    	for(w = window->editorInfo->master; w; w = w->nextSlave)
+    	    SetSensitive(w, w->undoItem, False);
     SetBGMenuUndoSensitivity(window, False);
     }
 }
@@ -456,15 +462,17 @@ static void removeUndoItem(WindowInfo *window)
 */
 static void removeRedoItem(WindowInfo *window)
 {
-    UndoInfo *redo = window->redo;
+    UndoInfo *redo = window->editorInfo->redo;
     
     /* Remove and free the item */
-    window->redo = redo->next;
+    window->editorInfo->redo = redo->next;
     freeUndoRecord(redo);
     
     /* if there are no more redo records left, dim the Redo menu item */
-    if (window->redo == NULL) {
-        SetSensitive(window, window->redoItem, False);
+    if (window->editorInfo->redo == NULL) {
+    	WindowInfo *w;
+    	for(w = window->editorInfo->master; w; w = w->nextSlave)
+    	    SetSensitive(w, w->redoItem, False);
     SetBGMenuRedoSensitivity(window, False);
     }
 }
@@ -478,11 +486,11 @@ static void removeRedoItem(WindowInfo *window)
 static void appendDeletedText(WindowInfo *window, const char *deletedText,
     int deletedLen, int direction)
 {
-    UndoInfo *undo = window->undo;
+    UndoInfo *undo = window->editorInfo->undo;
     char *comboText;
 
     /* re-allocate, adding space for the new character(s) */
-    comboText = (char*)NEditMalloc(undo->oldLen + deletedLen);
+    comboText = NEditMalloc(undo->oldLen + deletedLen);
 
     /* copy the new character and the already deleted text to the new memory */
     if (direction == FORWARD) {
@@ -494,7 +502,7 @@ static void appendDeletedText(WindowInfo *window, const char *deletedText,
     }
 
     /* keep track of the additional memory now used by the undo list */
-    window->undoMemUsed++;
+    window->editorInfo->undoMemUsed++;
 
     /* free the old saved text and attach the new */
     NEditFree(undo->oldText);
@@ -511,11 +519,11 @@ static void trimUndoList(WindowInfo *window, int maxLength)
     int i;
     UndoInfo *u, *lastRec;
     
-    if (window->undo == NULL)
+    if (window->editorInfo->undo == NULL)
         return;
 
     /* Find last item on the list to leave intact */
-    for (i=1, u=window->undo; i<maxLength && u!=NULL; i++, u=u->next);
+    for (i=1, u=window->editorInfo->undo; i<maxLength && u!=NULL; i++, u=u->next);
     if (u == NULL)
         return;
     
@@ -524,8 +532,8 @@ static void trimUndoList(WindowInfo *window, int maxLength)
     while (lastRec->next != NULL) {
     u = lastRec->next;
     lastRec->next = u->next;
-        window->undoOpCount--;
-        window->undoMemUsed -= u->oldLen;
+    	window->editorInfo->undoOpCount--;
+    	window->editorInfo->undoMemUsed -= u->oldLen;
         freeUndoRecord(u);
     }
 }

@@ -35,6 +35,7 @@
 #include "../util/utils.h"
 #include "../util/prefFile.h"
 #include "../util/system.h"
+#include "../util/nedit_malloc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -297,8 +298,8 @@ int main(int argc, char **argv)
     waitUntilFilesOpenedOrClosed(context, rootWindow);
 
     XtCloseDisplay(TheDisplay);
-    XtFree(commandLine.shell);
-    XtFree(commandLine.serverRequest);
+    NEditFree(commandLine.shell);
+    NEditFree(commandLine.serverRequest);
     return 0;
 }
 
@@ -484,12 +485,12 @@ static int startServer(const char *message, const char *commandLineArgs)
     }
     
     /* start the server */
-    commandLine = XtMalloc(strlen(Preferences.serverCmd) +
+    commandLine = NEditMalloc(strlen(Preferences.serverCmd) +
             strlen(commandLineArgs) + 3);
     sprintf(commandLine, "%s %s", Preferences.serverCmd, commandLineArgs);
 
     sysrc=system(commandLine);
-    XtFree(commandLine);
+    NEditFree(commandLine);
     
     if (sysrc==0)
        return 0;
@@ -511,7 +512,7 @@ static CommandLine processCommandLine(int argc, char** argv)
     for (i=1; i<argc; i++) {
         length += 1 + strlen(argv[i])*4 + 2;
     }
-    commandLine.shell = XtMalloc(length+1 + 9 + MAXPATHLEN);
+    commandLine.shell = NEditMalloc(length+1 + 9 + MAXPATHLEN);
     *commandLine.shell = '\0';
 
     /* Convert command line arguments into a command string for the server */
@@ -550,7 +551,7 @@ static void parseCommandLine(int argc, char **argv, CommandLine *commandLine)
     {
        length = MAX_RECORD_HEADER_LENGTH;
     }
-    commandString = XtMalloc(length+1);
+    commandString = NEditMalloc(length+1);
     
     /* Parse the arguments and write the output string */
     outPtr = commandString;
