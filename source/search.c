@@ -418,7 +418,7 @@ static int selectionSpansMultipleLines(WindowInfo *window)
     int lineWidth;
     textDisp *textD;
     
-    if (!BufGetSelectionPos(window->buffer, &selStart, &selEnd, &isRect,
+    if (!BufGetSelectionPos(window->editorInfo->buffer, &selStart, &selEnd, &isRect,
             &rectStart, &rectEnd))
         return FALSE;
 
@@ -436,13 +436,13 @@ static int selectionSpansMultipleLines(WindowInfo *window)
       we also assume a multi-line selection.
     */
      
-    lineStartStart = BufStartOfLine(window->buffer, selStart);
-    lineStartEnd = BufStartOfLine(window->buffer, selEnd);
+    lineStartStart = BufStartOfLine(window->editorInfo->buffer, selStart);
+    lineStartEnd = BufStartOfLine(window->editorInfo->buffer, selEnd);
     /* If the line starts differ, we have a "\n" in between. */
     if (lineStartStart != lineStartEnd ) 
     return TRUE;     
     
-    if (window->wrapMode != CONTINUOUS_WRAP)
+    if (window->editorInfo->wrapMode != CONTINUOUS_WRAP)
     return FALSE; /* Same line */
         
     /* Estimate the number of characters on a line */
@@ -753,7 +753,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
         snprintf(title, sizeof(title),
-                "Replace/Find (in %s)", window->filename);
+                "Replace/Find (in %s)", window->editorInfo->filename);
         XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(form), XmNtitle, "Replace/Find", NULL);
@@ -1243,7 +1243,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     form = CreateFormDialog(parent, "findDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-        snprintf(title, sizeof(title), "Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->editorInfo->filename);
         XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(form), XmNtitle, "Find", NULL);
@@ -1740,7 +1740,7 @@ static void rKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
 
     if (XmToggleButtonGetState(w)) {
         snprintf(title, sizeof(title),
-                "Replace/Find (in %s)", window->filename);
+                "Replace/Find (in %s)", window->editorInfo->filename);
         XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, "Replace/Find", NULL);
@@ -1752,7 +1752,7 @@ static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-        snprintf(title, sizeof(title), "Find (in %s)", window->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->editorInfo->filename);
         XtVaSetValues(XtParent(window->findDlog), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(window->findDlog), XmNtitle, "Find", NULL);
@@ -1846,8 +1846,8 @@ static void freeWritableWindowsCB(Widget w, WindowInfo* window,
 */
 static int compareWindowNames(const void *windowA, const void *windowB)
 {
-      return strcmp((*((WindowInfo**)windowA))->filename,
-              (*((WindowInfo**)windowB))->filename);
+      return strcmp((*((WindowInfo**)windowA))->editorInfo->filename,
+      	    (*((WindowInfo**)windowB))->editorInfo->filename);
 }
  
 /*
@@ -1885,7 +1885,7 @@ static int countWritableWindows(void)
         nWritable = 0;
         continue;
     }
-    if (!IS_ANY_LOCKED(w->lockReasons)) ++nWritable;
+	if (!IS_ANY_LOCKED(w->editorInfo->lockReasons)) ++nWritable;
     }
     return nWritable;
 }
@@ -1906,7 +1906,7 @@ static void collectWritableWindows(WindowInfo* window)
     /* Make a sorted list of writable windows */
     windows = (WindowInfo **)NEditMalloc(sizeof(WindowInfo *) * nWritable);
     for (w=WindowList, i=0; w!=NULL; w=w->next)
-       if (!IS_ANY_LOCKED(w->lockReasons)) windows[i++] = w;
+       if (!IS_ANY_LOCKED(w->editorInfo->lockReasons)) windows[i++] = w;
     qsort(windows, nWritable, sizeof(WindowInfo *), compareWindowNames);
     
     window->writableWindows = windows;
@@ -1977,7 +1977,7 @@ static void rMultiFileReplaceCB(Widget w, WindowInfo *window,
        file status has changed or the file was locked in the mean time
        (possible due to Lesstif modal dialog bug), we just skip the 
        window. */
-        if (!IS_ANY_LOCKED(writableWin->lockReasons)) {
+	    if (!IS_ANY_LOCKED(writableWin->editorInfo->lockReasons)) {
         noWritableLeft = False;
         writableWin->multiFileReplSelected = True;
         writableWin->multiFileBusy = True; /* Avoid multi-beep/dialog */
@@ -2105,10 +2105,10 @@ static void uploadFileListItems(WindowInfo* window, Bool replace)
     
     for (i = 0; i < nWritable; ++i) {
        w = window->writableWindows[i];
-       if (usePathNames && window->filenameSet) {
-          snprintf(buf, sizeof(buf), "%s%s", w->path, w->filename);
+       if (usePathNames && window->editorInfo->filenameSet) {
+          snprintf(buf, sizeof(buf), "%s%s", w->editorInfo->path, w->editorInfo->filename);
        } else {
-          snprintf(buf, sizeof(buf), "%s", w->filename);
+          snprintf(buf, sizeof(buf), "%s", w->editorInfo->filename);
        }
        names[i] = XmStringCreateSimple(buf);
     }
@@ -2857,7 +2857,7 @@ int SearchAndSelect(WindowInfo *window, int direction, const char *searchString,
     }
 
     /* select the text found string */
-    BufSelect(window->buffer, startPos, endPos);
+    BufSelect(window->editorInfo->buffer, startPos, endPos);
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, endPos);
     
@@ -3062,7 +3062,7 @@ int SearchAndSelectIncremental(WindowInfo *window, int direction,
          int beepBeginPos = (direction == SEARCH_BACKWARD) ? beginPos-1:beginPos;
           iSearchTryBeepOnWrap(window, direction, beepBeginPos, beepBeginPos);
     iSearchRecordLastBeginPos(window, direction, window->iSearchStartPos);
-    BufUnselect(window->buffer);
+	BufUnselect(window->editorInfo->buffer);
     TextSetCursorPos(window->lastFocus, beginPos);
     return TRUE;
     }
@@ -3099,7 +3099,7 @@ int SearchAndSelectIncremental(WindowInfo *window, int direction,
     window->iSearchLastBeginPos = startPos;
 
     /* select the text found string */
-    BufSelect(window->buffer, startPos, endPos);
+    BufSelect(window->editorInfo->buffer, startPos, endPos);
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, endPos);
 
@@ -3412,26 +3412,26 @@ void FlashMatching(WindowInfo *window, Widget textW)
     int constrain;
     
     /* if a marker is already drawn, erase it and cancel the timeout */
-    if (window->flashTimeoutID != 0) {
+    if (window->editorInfo->flashTimeoutID != 0) {
         eraseFlash(window);
-        XtRemoveTimeOut(window->flashTimeoutID);
-        window->flashTimeoutID = 0;
+    	XtRemoveTimeOut(window->editorInfo->flashTimeoutID);
+    	window->editorInfo->flashTimeoutID = 0;
     }
     
     /* no flashing required */
-    if (window->showMatchingStyle == NO_FLASH) {
+    if (window->editorInfo->showMatchingStyle == NO_FLASH) {
     return;
     }
 
     /* don't flash matching characters if there's a selection */
-    if (window->buffer->primary.selected)
+    if (window->editorInfo->buffer->primary.selected)
        return;
 
     /* get the character to match and the position to start from */
     pos = TextGetCursorPos(textW) - 1;
     if (pos < 0)
         return;
-    c = BufGetCharacter(window->buffer, pos);
+    c = BufGetCharacter(window->editorInfo->buffer, pos);
     style = GetHighlightInfo(window, pos);
     
     /* is the character one we want to flash? */
@@ -3445,7 +3445,7 @@ void FlashMatching(WindowInfo *window, Widget textW)
     /* constrain the search to visible text only when in single-pane mode
        AND using delimiter flashing (otherwise search the whole buffer) */
     constrain = ((window->nPanes == 0) && 
-        (window->showMatchingStyle == FLASH_DELIMIT));
+        (window->editorInfo->showMatchingStyle == FLASH_DELIMIT));
           
     if (MatchingChars[matchIndex].direction == SEARCH_BACKWARD) {
         startPos = constrain ? TextFirstVisiblePos(textW) : 0;
@@ -3454,7 +3454,7 @@ void FlashMatching(WindowInfo *window, Widget textW)
     } else {
         startPos = pos;
         endPos = constrain ? TextLastVisiblePos(textW) :
-                window->buffer->length;
+    	    	window->editorInfo->buffer->length;
         searchPos = startPos;
     }
     
@@ -3463,37 +3463,37 @@ void FlashMatching(WindowInfo *window, Widget textW)
         &matchPos))
         return;
 
-    if (window->showMatchingStyle == FLASH_DELIMIT) {
+    if (window->editorInfo->showMatchingStyle == FLASH_DELIMIT) {
     /* Highlight either the matching character ... */
-    BufHighlight(window->buffer, matchPos, matchPos+1);
+	BufHighlight(window->editorInfo->buffer, matchPos, matchPos+1);
     } else {
     /* ... or the whole range. */
       if (MatchingChars[matchIndex].direction == SEARCH_BACKWARD) {
-        BufHighlight(window->buffer, matchPos, pos+1);
+	    BufHighlight(window->editorInfo->buffer, matchPos, pos+1);
     } else {
-        BufHighlight(window->buffer, matchPos+1, pos);
+	    BufHighlight(window->editorInfo->buffer, matchPos+1, pos);
     }
     }
       
     /* Set up a timer to erase the box after 1.5 seconds */
-    window->flashTimeoutID = XtAppAddTimeOut(
+    window->editorInfo->flashTimeoutID = XtAppAddTimeOut(
             XtWidgetToApplicationContext(window->shell), 1500,
             flashTimeoutProc, window);
-    window->flashPos = matchPos;
+    window->editorInfo->flashPos = matchPos;
 }
 
 void SelectToMatchingCharacter(WindowInfo *window)
 {
     int selStart, selEnd;
     int startPos, endPos, matchPos;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
 
     /* get the character to match and its position from the selection, or
        the character before the insert point if nothing is selected.
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
     selEnd = TextGetCursorPos(window->lastFocus);
-        if (window->overstrike)
+        if (window->editorInfo->overstrike)
         selEnd += 1;
     selStart = selEnd - 1;
     if (selStart < 0) {
@@ -3531,14 +3531,14 @@ void GotoMatchingCharacter(WindowInfo *window)
 {
     int selStart, selEnd;
     int matchPos;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
 
     /* get the character to match and its position from the selection, or
        the character before the insert point if nothing is selected.
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
     selEnd = TextGetCursorPos(window->lastFocus);
-        if (window->overstrike)
+        if (window->editorInfo->overstrike)
         selEnd += 1;
     selStart = selEnd - 1;
     if (selStart < 0) {
@@ -3577,8 +3577,8 @@ static int findMatchingChar(WindowInfo *window, char toMatch,
     int nestDepth, matchIndex, direction, beginPos, pos;
     char matchChar, c;
     void *style = NULL;
-    textBuffer *buf = window->buffer;
-    int matchSyntaxBased = window->matchSyntaxBased;
+    textBuffer *buf = window->editorInfo->buffer;
+    int matchSyntaxBased = window->editorInfo->matchSyntaxBased;
 
     /* If we don't match syntax based, fake a matching style. */
     if (!matchSyntaxBased) style = styleToMatch;
@@ -3642,7 +3642,7 @@ static int findMatchingChar(WindowInfo *window, char toMatch,
 static void flashTimeoutProc(XtPointer clientData, XtIntervalId *id)
 {
     eraseFlash((WindowInfo *)clientData);
-    ((WindowInfo *)clientData)->flashTimeoutID = 0;
+    ((WindowInfo *)clientData)->editorInfo->flashTimeoutID = 0;
 }
 
 /*
@@ -3651,7 +3651,7 @@ static void flashTimeoutProc(XtPointer clientData, XtIntervalId *id)
 */
 static void eraseFlash(WindowInfo *window)
 {
-    BufUnhighlight(window->buffer);
+    BufUnhighlight(window->editorInfo->buffer);
 }
 
 /*
@@ -3709,18 +3709,18 @@ int ReplaceAndSearch(WindowInfo *window, int direction, const char *searchString
     /* replace the text */
     if (isRegexType(searchType)) {
             char replaceResult[SEARCHMAX+1], *foundString;
-        foundString = BufGetRange(window->buffer, searchExtentBW,
+	    foundString = BufGetRange(window->editorInfo->buffer, searchExtentBW,
                       searchExtentFW+1);
             replaceUsingRE(searchString, replaceString, foundString,
             startPos-searchExtentBW,
             replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-            BufGetCharacter(window->buffer, startPos-1),
+		    BufGetCharacter(window->editorInfo->buffer, startPos-1),
             GetWindowDelimiters(window), defaultRegexFlags(searchType));
         NEditFree(foundString);
-            BufReplace(window->buffer, startPos, endPos, replaceResult);
+    	    BufReplace(window->editorInfo->buffer, startPos, endPos, replaceResult);
             replaceLen = strlen(replaceResult);
     } else {
-            BufReplace(window->buffer, startPos, endPos, replaceString);
+            BufReplace(window->editorInfo->buffer, startPos, endPos, replaceString);
             replaceLen = strlen(replaceString);
     }
 
@@ -3777,24 +3777,24 @@ int SearchAndReplace(WindowInfo *window, int direction, const char *searchString
     /* replace the text */
     if (isRegexType(searchType)) {
         char replaceResult[SEARCHMAX], *foundString;
-    foundString = BufGetRange(window->buffer, searchExtentBW, searchExtentFW+1);
+	foundString = BufGetRange(window->editorInfo->buffer, searchExtentBW, searchExtentFW+1);
         replaceUsingRE(searchString, replaceString, foundString,
         startPos - searchExtentBW,
         replaceResult, SEARCHMAX, startPos == 0 ? '\0' :
-        BufGetCharacter(window->buffer, startPos-1),
+		BufGetCharacter(window->editorInfo->buffer, startPos-1),
         GetWindowDelimiters(window), defaultRegexFlags(searchType));
     NEditFree(foundString);
-        BufReplace(window->buffer, startPos, endPos, replaceResult);
+    	BufReplace(window->editorInfo->buffer, startPos, endPos, replaceResult);
         replaceLen = strlen(replaceResult);
     } else {
-        BufReplace(window->buffer, startPos, endPos, replaceString);
+    	BufReplace(window->editorInfo->buffer, startPos, endPos, replaceString);
         replaceLen = strlen(replaceString);
     }
     
     /* after successfully completing a replace, selected text attracts
        attention away from the area of the replacement, particularly
        when the selection represents a previous search. so deselect */
-    BufUnselect(window->buffer);
+    BufUnselect(window->editorInfo->buffer);
     
     /* temporarily shut off autoShowInsertPos before setting the cursor
        position so MakeSelectionVisible gets a chance to place the replaced
@@ -3888,17 +3888,17 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
     saveSearchHistory(searchString, replaceString, searchType, FALSE);
     
     /* find out where the selection is */
-    if (!BufGetSelectionPos(window->buffer, &selStart, &selEnd, &isRect,
+    if (!BufGetSelectionPos(window->editorInfo->buffer, &selStart, &selEnd, &isRect,
             &rectStart, &rectEnd))
         return;
     
     /* get the selected text */
     if (isRect) {
-        selStart = BufStartOfLine(window->buffer, selStart);
-        selEnd = BufEndOfLine(window->buffer, selEnd);
-        fileString = BufGetRange(window->buffer, selStart, selEnd);
+    	selStart = BufStartOfLine(window->editorInfo->buffer, selStart);
+    	selEnd = BufEndOfLine(window->editorInfo->buffer, selEnd);
+    	fileString = BufGetRange(window->editorInfo->buffer, selStart, selEnd);
     } else
-        fileString = BufGetSelectionText(window->buffer);
+    	fileString = BufGetSelectionText(window->editorInfo->buffer);
     
     /* create a temporary buffer in which to do the replacements to hide the
        intermediate steps from the display routines, and so everything can
@@ -3923,9 +3923,9 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
     /* if the selection is rectangular, verify that the found
        string is in the rectangle */
     if (isRect) {
-        lineStart = BufStartOfLine(window->buffer, selStart+startPos);
-        if (BufCountDispChars(window->buffer, lineStart, selStart+startPos) <
-            rectStart || BufCountDispChars(window->buffer, lineStart,
+	    lineStart = BufStartOfLine(window->editorInfo->buffer, selStart+startPos);
+	    if (BufCountDispChars(window->editorInfo->buffer, lineStart, selStart+startPos) <
+		    rectStart || BufCountDispChars(window->editorInfo->buffer, lineStart,
             selStart+endPos) > rectEnd) {
         if (fileString[endPos] == '\0')
             break;
@@ -3934,9 +3934,9 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
            search after the end of the (false) match, because we 
            could miss a valid match starting between the left boundary
            and the end of the false match. */
-        if (BufCountDispChars(window->buffer, lineStart, 
+		if (BufCountDispChars(window->editorInfo->buffer, lineStart, 
                       selStart+startPos) < rectStart && 
-            BufCountDispChars(window->buffer, lineStart,
+		    BufCountDispChars(window->editorInfo->buffer, lineStart,
                       selStart+endPos) > rectStart) 
             beginPos += 1;
         else
@@ -4003,7 +4003,7 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
                 user does not care and wants to have a faulty replacement.  */
 
             /* replace the selected range in the real buffer */
-            BufReplace(window->buffer, selStart, selEnd, BufAsString(tempBuf));
+            BufReplace(window->editorInfo->buffer, selStart, selEnd, BufAsString(tempBuf));
 
             /* set the insert point at the end of the last replacement */
             TextSetCursorPos(window->lastFocus, selStart + cursorPos + realOffset);
@@ -4011,7 +4011,7 @@ void ReplaceInSelection(const WindowInfo* window, const char* searchString,
             /* leave non-rectangular selections selected (rect. ones after replacement
                are less useful since left/right positions are randomly adjusted) */
             if (!isRect) {
-                BufSelect(window->buffer, selStart, selEnd + realOffset);
+                BufSelect(window->editorInfo->buffer, selStart, selEnd + realOffset);
             }
         }
     } else {
@@ -4054,7 +4054,7 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
     saveSearchHistory(searchString, replaceString, searchType, FALSE);
 
     /* view the entire text buffer from the text area widget as a string */
-    fileString = BufAsString(window->buffer);
+    fileString = BufAsString(window->editorInfo->buffer);
 
     newFileString = ReplaceAllInString(fileString, searchString, replaceString,
         searchType, &copyStart, &copyEnd, &replacementLen,
@@ -4079,7 +4079,7 @@ int ReplaceAll(WindowInfo *window, const char *searchString,
     }
     
     /* replace the contents of the text widget with the substituted text */
-    BufReplace(window->buffer, copyStart, copyEnd, newFileString);
+    BufReplace(window->editorInfo->buffer, copyStart, copyEnd, newFileString);
     
     /* Move the cursor to the end of the last replacement */
     TextSetCursorPos(window->lastFocus, copyStart + replacementLen);
@@ -4225,7 +4225,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
         int *endPos, int *extentBW, int *extentFW)
 {
     const char *fileString;
-    int found, resp, fileEnd = window->buffer->length - 1, outsideBounds;
+    int found, resp, fileEnd = window->editorInfo->buffer->length - 1, outsideBounds;
     
     /* reject empty string */
     if (*searchString == '\0')
@@ -4233,7 +4233,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
 
     /* get the entire text buffer from the text area widget */
     EscSeqArray *esc;
-    fileString = BufAsStringCleaned(window->buffer, &esc);
+    fileString = BufAsStringCleaned(window->editorInfo->buffer, &esc);
 
     /* If we're already outside the boundaries, we must consider wrapping
        immediately (Note: fileEnd+1 is a valid starting position. Consider
@@ -4272,7 +4272,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
                 "Continue search from\nbeginning of file?", 
                                 "Continue", "Cancel");
             if (resp == 2) {
-                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+                            translatePosAndRestoreBuf(window->editorInfo->buffer, esc, found, startPos, endPos, extentBW, extentFW);
                 return False;
             }
             }
@@ -4287,7 +4287,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
                 "Continue search\nfrom end of file?", "Continue",
                 "Cancel");
             if (resp == 2) {
-                            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+                            translatePosAndRestoreBuf(window->editorInfo->buffer, esc, found, startPos, endPos, extentBW, extentFW);
                 return False;
             }
             }
@@ -4296,7 +4296,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
             extentFW, GetWindowDelimiters(window));
         }
         }
-            translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+            translatePosAndRestoreBuf(window->editorInfo->buffer, esc, found, startPos, endPos, extentBW, extentFW);
             esc = NULL;
             if (!found) {
         if (GetPrefSearchDlogs()) {
@@ -4323,7 +4323,7 @@ int SearchWindow(WindowInfo *window, int direction, const char *searchString,
         XBell(TheDisplay, 0);
     }
     
-    translatePosAndRestoreBuf(window->buffer, esc, found, startPos, endPos, extentBW, extentFW);
+    translatePosAndRestoreBuf(window->editorInfo->buffer, esc, found, startPos, endPos, extentBW, extentFW);
     return found;
 }
 
@@ -4910,7 +4910,7 @@ static int searchMatchesSelection(WindowInfo *window, const char *searchString,
     int found, isRect, rectStart, rectEnd, lineStart = 0;
     
     /* find length of selection, give up on no selection or too long */
-    if (!BufGetEmptySelectionPos(window->buffer, &selStart, &selEnd, &isRect,
+    if (!BufGetEmptySelectionPos(window->editorInfo->buffer, &selStart, &selEnd, &isRect,
             &rectStart, &rectEnd))
     return FALSE;
     if (selEnd - selStart > SEARCHMAX)
@@ -4918,8 +4918,8 @@ static int searchMatchesSelection(WindowInfo *window, const char *searchString,
     
     /* if the selection is rectangular, don't match if it spans lines */
     if (isRect) {
-        lineStart = BufStartOfLine(window->buffer, selStart);
-        if (lineStart != BufStartOfLine(window->buffer, selEnd))
+    	lineStart = BufStartOfLine(window->editorInfo->buffer, selStart);
+    	if (lineStart != BufStartOfLine(window->editorInfo->buffer, selEnd))
             return FALSE;
     }
     
@@ -4928,14 +4928,14 @@ static int searchMatchesSelection(WindowInfo *window, const char *searchString,
     if (isRect) {
     int stringStart = lineStart + rectStart - regexLookContext;
     if (stringStart < 0) stringStart = 0;
-        string = BufGetRange(window->buffer, stringStart,
+    	string = BufGetRange(window->editorInfo->buffer, stringStart,
         lineStart + rectEnd + regexLookContext);
         selLen = rectEnd - rectStart;
     beginPos = lineStart + rectStart - stringStart;
     } else {
     int stringStart = selStart - regexLookContext;
     if (stringStart < 0) stringStart = 0;
-    string = BufGetRange(window->buffer, stringStart,
+	string = BufGetRange(window->editorInfo->buffer, stringStart,
         selEnd + regexLookContext);
         selLen = selEnd - selStart;
     beginPos = selStart - stringStart;
@@ -4961,7 +4961,7 @@ static int searchMatchesSelection(WindowInfo *window, const char *searchString,
     
     /* return the start and end of the selection */
     if (isRect)
-        GetSimpleSelection(window->buffer, left, right);
+    	GetSimpleSelection(window->editorInfo->buffer, left, right);
     else {
         *left = selStart;
         *right = selEnd;

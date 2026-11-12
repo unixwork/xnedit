@@ -1081,17 +1081,17 @@ static PrefDescripRec PrefDescrip[] = {
     {"insertTabs", "InsertTabs", PREF_BOOLEAN, "True",
         &PrefData.insertTabs, NULL, True},
     {"textFont", "TextFont", PREF_STRING,
-        "Monospace:size=11",
+    	"Monospace:size=26",
         PrefData.fontString, (void *)sizeof(PrefData.fontString), True},
     {"boldHighlightFont", "BoldHighlightFont", PREF_STRING,
-        "Monospace:size=11:weight=bold",
+    	"Monospace:size=26:weight=bold",
         PrefData.boldFontString, (void *)sizeof(PrefData.boldFontString), True},
     {"italicHighlightFont", "ItalicHighlightFont", PREF_STRING,
-        "Monospace:size=11:slant=italic",
+    	"Monospace:size=26:slant=italic",
         PrefData.italicFontString,
         (void *)sizeof(PrefData.italicFontString), True},
     {"boldItalicHighlightFont", "BoldItalicHighlightFont", PREF_STRING,
-        "Monospace:size=11:weight=bold:slant=italic",
+    	"Monospace:size=26:weight=bold:slant=italic",
         PrefData.boldItalicFontString,
         (void *)sizeof(PrefData.boldItalicFontString), True},
     {"helpFont", "HelpFont", PREF_STRING,
@@ -3218,8 +3218,8 @@ void TabsPrefDialog(Widget parent, WindowInfo *forWindow)
         tabDist = GetPrefTabDist(PLAIN_LANGUAGE_MODE);
     } else {
         XtVaGetValues(forWindow->textArea, textNemulateTabs, &emTabDist, NULL);
-        useTabs = forWindow->buffer->useTabs;
-        tabDist = BufGetTabDistance(forWindow->buffer);
+    	useTabs = forWindow->editorInfo->buffer->useTabs;
+    	tabDist = BufGetTabDistance(forWindow->editorInfo->buffer);
     }
     emulate = emTabDist != 0;
     SetIntText(TabDistText, tabDist);
@@ -3323,7 +3323,7 @@ static void tabsOKCB(Widget w, XtPointer clientData, XtPointer callData)
 /*
         setTabDist(window, tabDist);
         setEmTabDist(window, emTabDist);
-           window->buffer->useTabs = useTabs;
+       	window->editorInfo->buffer->useTabs = useTabs;
 */
     }
     DoneWithTabsDialog = True;
@@ -5180,25 +5180,25 @@ static void reapplyLanguageMode(WindowInfo *window, int mode, int forceDefaults)
     /* Decide on desired values for language-specific parameters.  If a
        parameter was set to its default value, set it to the new default,
        otherwise, leave it alone */
-    wrapModeIsDef = window->wrapMode == GetPrefWrap(oldMode);
-    tabDistIsDef = BufGetTabDistance(window->buffer) == GetPrefTabDist(oldMode);
+    wrapModeIsDef = window->editorInfo->wrapMode == GetPrefWrap(oldMode);
+    tabDistIsDef = BufGetTabDistance(window->editorInfo->buffer) == GetPrefTabDist(oldMode);
     XtVaGetValues(window->textArea, textNemulateTabs, &oldEmTabDist, NULL);
     emTabDistIsDef = oldEmTabDist == GetPrefEmTabDist(oldMode);
-    indentStyleIsDef = window->indentStyle == GetPrefAutoIndent(oldMode) ||
+    indentStyleIsDef = window->editorInfo->indentStyle == GetPrefAutoIndent(oldMode) ||
         (GetPrefAutoIndent(oldMode) == SMART_INDENT &&
-         window->indentStyle == AUTO_INDENT &&
+	     window->editorInfo->indentStyle == AUTO_INDENT &&
          !SmartIndentMacrosAvailable(LanguageModeName(oldMode)));
     highlightIsDef = window->highlightSyntax == GetPrefHighlightSyntax()
         || (GetPrefHighlightSyntax() &&
          FindPatternSet(LanguageModeName(oldMode)) == NULL);
     wrapMode = wrapModeIsDef || forceDefaults ?
-            GetPrefWrap(mode) : window->wrapMode;
+    	    GetPrefWrap(mode) : window->editorInfo->wrapMode;
     tabDist = tabDistIsDef || forceDefaults ?
-        GetPrefTabDist(mode) : BufGetTabDistance(window->buffer);
+	    GetPrefTabDist(mode) : BufGetTabDistance(window->editorInfo->buffer);
     emTabDist = emTabDistIsDef || forceDefaults ?
         GetPrefEmTabDist(mode) : oldEmTabDist;
     indentStyle = indentStyleIsDef || forceDefaults ?
-            GetPrefAutoIndent(mode) : window->indentStyle;
+    	    GetPrefAutoIndent(mode) : window->editorInfo->indentStyle;
     highlight = highlightIsDef || forceDefaults ? 
         GetPrefHighlightSyntax() : window->highlightSyntax;
          
@@ -5226,9 +5226,9 @@ static void reapplyLanguageMode(WindowInfo *window, int mode, int forceDefaults)
         StartHighlighting(window, False);
 
     /* Force a change of smart indent macros (SetAutoIndent will re-start) */
-    if (window->indentStyle == SMART_INDENT) {
+    if (window->editorInfo->indentStyle == SMART_INDENT) {
     EndSmartIndent(window);
-    window->indentStyle = AUTO_INDENT;
+	window->editorInfo->indentStyle = AUTO_INDENT;
     }
     
     /* set requested wrap, indent, and tabs */
@@ -5260,7 +5260,7 @@ static int matchLanguageMode(WindowInfo *window)
     /*... look for an explicit mode statement first */
     
     /* Do a regular expression search on for recognition pattern */
-    first200 = BufGetRange(window->buffer, 0, 200);
+    first200 = BufGetRange(window->editorInfo->buffer, 0, 200);
     for (i=0; i<NLanguageModes; i++) {
         if (LanguageModes[i]->recognitionExpr != NULL) {
             if (SearchString(first200, LanguageModes[i]->recognitionExpr,
@@ -5277,15 +5277,15 @@ static int matchLanguageMode(WindowInfo *window)
     /* Look at file extension ("@@/" starts a ClearCase version extended path,
        which gets appended after the file extension, and therefore must be
        stripped off to recognize the extension to make ClearCase users happy) */
-    fileNameLen = strlen(window->filename);
-    if ((versionExtendedPath = GetClearCaseVersionExtendedPath(window->filename)) != NULL)
-        fileNameLen = versionExtendedPath - window->filename;
+    fileNameLen = strlen(window->editorInfo->filename);
+    if ((versionExtendedPath = GetClearCaseVersionExtendedPath(window->editorInfo->filename)) != NULL)
+        fileNameLen = versionExtendedPath - window->editorInfo->filename;
     for (i=0; i<NLanguageModes; i++) {
         for (j=0; j<LanguageModes[i]->nExtensions; j++) {
             ext = LanguageModes[i]->extensions[j];
             extLen = strlen(ext);
             start = fileNameLen - extLen;
-            if (start >= 0 && !strncmp(&window->filename[start], ext, extLen))  
+            if (start >= 0 && !strncmp(&window->editorInfo->filename[start], ext, extLen))  
                 return i;
         }
     }

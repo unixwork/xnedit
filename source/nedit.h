@@ -274,6 +274,59 @@ typedef struct _EncError {
 
 
 
+/* The EditorInfo structure hold the information related to 
+   a document/file. It is used to support document/window cloning, 
+   so that multiple documents/windows may be created at the same
+   session, all access the same underlying buffer content.
+*/
+typedef struct _EditorInfo {
+    char	filename[MAXPATHLEN];	/* name component of file being edited*/
+    char	path[MAXPATHLEN];	/* path component of file being edited*/
+    unsigned	fileMode;		/* permissions of file being edited */
+    uid_t	fileUid; 		/* last recorded user id of the file */
+    gid_t	fileGid;		/* last recorded group id of the file */
+    int     	fileFormat; 	    	/* whether to save the file straight
+    	    	    	    	    	   (Unix format), or convert it to
+					   MS DOS style with \r\n line breaks */
+    time_t    	lastModTime; 	    	/* time of last modification to file */
+    dev_t       device;                 /*  device where the file resides */
+    ino_t       inode;                  /*  file's inode  */
+    UndoInfo	*undo;			/* info for undoing last operation */
+    UndoInfo	*redo;			/* info for redoing last undone op */
+    textBuffer	*buffer;		/* holds the text being edited */
+    int		autoSaveCharCount;	/* count of single characters typed
+    					   since last backup file generated */
+    int		autoSaveOpCount;	/* count of editing operations "" */
+    int		undoOpCount;		/* count of stored undo operations */
+    int		undoMemUsed;		/* amount of memory (in bytes)
+    					   dedicated to the undo list */
+    XtIntervalId flashTimeoutID;	/* timer procedure id for getting rid
+    					   of highlighted matching paren.  Non-
+    					   zero val. means highlight is drawn */
+    int		flashPos;		/* position saved for erasing matching
+    					   paren highlight (if one is drawn) */
+    Boolean	filenameSet;		/* is the window still "Untitled"? */ 
+    Boolean	fileChanged;		/* has window been modified? */
+    Boolean	readOnly;		/* is current file read only? */
+    int         lockReasons;            /* all ways a file can be locked */
+    Boolean	autoSave;		/* is autosave turned on? */
+    Boolean	saveOldVersion;		/* keep old version in filename.bck */
+    Boolean	overstrike;		/* is overstrike mode turned on ? */
+    Boolean     fileMissing;            /* is the window's file gone? */
+    char 	showMatchingStyle; 	/* How to show matching parens:
+					   NO_FLASH, FLASH_DELIMIT, or
+					   FLASH_RANGE */
+    char	matchSyntaxBased;	/* Use syntax info to show matching */
+    Boolean	ignoreModify;		/* ignore modifications to text area */
+    char	indentStyle;		/* whether/how to auto indent */
+    char	wrapMode;		/* line wrap style: NO_WRAP,
+    	    	    	    	    	   NEWLINE_WRAP or CONTINUOUS_WRAP */
+    void        *smartIndentData;   	/* compiled macros for smart indent */
+    Atom	fileClosedAtom;         /* Atom used to tell nc that the file is closed */
+    struct _WindowInfo *master;     	/* used to identify a master document
+                                           where the clones share the data */
+} EditorInfo;
+
 /* The WindowInfo structure holds the information on a Document. A number
    of 'tabbed' documents may reside within a shell window, hence some of 
    its members are of 'shell-level'; namely the find/replace dialogs, the
@@ -293,6 +346,9 @@ typedef struct _EncError {
 */
 typedef struct _WindowInfo {
     struct _WindowInfo *next;
+    struct _WindowInfo *nextSlave;  	/* next clone */
+    EditorInfo *editorInfo; 	    	/* one copy of buffer for all clones */
+
     Widget    shell;            /* application shell of window */
     Widget    mainWin;        /* main window of shell */
     Widget    splitPane;        /* paned win. for splitting text area */
@@ -488,34 +544,15 @@ typedef struct _WindowInfo {
                                            short menus on and off */
     int         nToggleShortItems;
 #endif
-    char    filename[MAXPATHLEN];    /* name component of file being edited*/
-    char    path[MAXPATHLEN];    /* path component of file being edited*/
+
     char        encoding[MAX_ENCODING_LENGTH];
     char        *filter;                /* io filter name */
     Boolean     bom;                    /* content starts with BOM */
-    unsigned    fileMode;        /* permissions of file being edited */
-    uid_t    fileUid;         /* last recorded user id of the file */
-    gid_t    fileGid;        /* last recorded group id of the file */
-    int         fileFormat;             /* whether to save the file straight
-                                           (Unix format), or convert it to
-                       MS DOS style with \r\n line breaks */
-    time_t        lastModTime;             /* time of last modification to file */
-    dev_t       device;                 /*  device where the file resides */
-    ino_t       inode;                  /*  file's inode  */
-    UndoInfo    *undo;            /* info for undoing last operation */
-    UndoInfo    *redo;            /* info for redoing last undone op */
     UndoInfo    *undo_batch_begin;      /* last undo item at batch-begin */
     int         undo_batch_count;       /* undo items per batch */
     int         undo_op_batch_size;     /* batch size of undo operation */
-    textBuffer    *buffer;        /* holds the text being edited */
     int        nPanes;            /* number of additional text editing
                            areas, created by splitWindow */
-    int        autoSaveCharCount;    /* count of single characters typed
-                           since last backup file generated */
-    int        autoSaveOpCount;    /* count of editing operations "" */
-    int        undoOpCount;        /* count of stored undo operations */
-    int        undoMemUsed;        /* amount of memory (in bytes)
-                           dedicated to the undo list */
     char    fontName[MAX_FONT_LEN];    /* names of the text fonts in use */
     char    italicFontName[MAX_FONT_LEN];
     char    boldFontName[MAX_FONT_LEN];
@@ -537,27 +574,8 @@ typedef struct _WindowInfo {
     size_t      posEncErrors;
     Boolean     encErrorsOnSave;
        
-    XtIntervalId flashTimeoutID;    /* timer procedure id for getting rid
-                           of highlighted matching paren.  Non-
-                           zero val. means highlight is drawn */
-    int        flashPos;        /* position saved for erasing matching
-                           paren highlight (if one is drawn) */
     int     wasSelected;        /* last selection state (for dim/undim
                            of selection related menu items */
-    Boolean    filenameSet;        /* is the window still "Untitled"? */ 
-    Boolean    fileChanged;        /* has window been modified? */
-    Boolean     fileMissing;            /* is the window's file gone? */
-    int         lockReasons;            /* all ways a file can be locked */
-    Boolean    autoSave;        /* is autosave turned on? */
-    Boolean    saveOldVersion;        /* keep old version in filename.bck */
-    IndentStyle    indentStyle;        /* whether/how to auto indent */
-    WrapStyle    wrapMode;        /* line wrap style: NO_WRAP,
-                                           NEWLINE_WRAP or CONTINUOUS_WRAP */
-    Boolean    overstrike;        /* is overstrike mode turned on ? */
-    ShowMatchingStyle showMatchingStyle;/* How to show matching parens:
-                       NO_FLASH, FLASH_DELIMIT, or
-                       FLASH_RANGE */
-    char    matchSyntaxBased;    /* Use syntax info to show matching */
     Boolean    showStats;        /* is stats line supposed to be shown */
     Boolean     showISearchLine;        /* is incr. search line to be shown */
     Boolean     showLineNumbers;        /* is the line number display shown */
@@ -576,7 +594,6 @@ typedef struct _WindowInfo {
                            and shell command executing modes */
     char    *modeMessage;        /* stats line banner content for learn
                            and shell command executing modes */
-    Boolean    ignoreModify;        /* ignore modifications to text area */
     Boolean    windowMenuValid;    /* is window menu up to date? */
     int         rightMargin;            /* number of columns for right margin */
     int        rHistIndex, fHistIndex;    /* history placeholders for */
@@ -591,8 +608,6 @@ typedef struct _WindowInfo {
                                            info. about it, otherwise, NULL */
     void        *macroCmdData;      /* same for macro commands */
     Boolean     macroBlocking;          /* blocking macro command running */
-    void        *smartIndentData;       /* compiled macros for smart indent */
-    Atom    fileClosedAtom;         /* Atom used to tell nc that the file is closed */
     int        languageMode;            /* identifies language mode currently
                                            selected in the window */
     Boolean    multiFileReplSelected;    /* selected during last multi-window 

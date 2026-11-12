@@ -35,7 +35,6 @@
 #include <dmalloc.h>
 #endif
 
-#include <inttypes.h>
 
 /*
    Widget methods, forward declarations
@@ -117,14 +116,14 @@ XltSlideContextClassRec xltSlideContextClassRec = {
 /* notify that initialize called    XtArgsProc        */ NULL,
 /* NULL                             XtProc            */ NULL,
 /* NULL                             XtPointer         */ NULL,
-/* NULL                             Cardinal          */ (Cardinal)(intptr_t)NULL,
+/* NULL                             Cardinal          */ (Cardinal)NULL,
 /* resources for subclass fields    XtResourceList    */ resources,
 /* number of entries in resources   Cardinal          */ XtNumber(resources),
 /* resource class quarkified        XrmClass          */ NULLQUARK,
-/* NULL                             Boolean           */ (Boolean)(intptr_t)NULL,
-/* NULL                             XtEnum            */ (XtEnum)(intptr_t)NULL,
-/* NULL				    Boolean           */ (Boolean)(intptr_t)NULL,
-/* NULL                             Boolean           */ (Boolean)(intptr_t)NULL,
+/* NULL                             Boolean           */ (Boolean)NULL,
+/* NULL                             XtEnum            */ (XtEnum)NULL,
+/* NULL				    Boolean           */ (Boolean)NULL,
+/* NULL                             Boolean           */ (Boolean)NULL,
 /* free data for subclass pointers  XtWidgetProc      */ destroy,
 /* NULL                             XtProc            */ NULL,
 /* NULL			            XtProc            */ NULL,

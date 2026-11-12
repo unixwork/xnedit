@@ -81,7 +81,7 @@ void ShiftSelection(WindowInfo *window, int direction, int byTab)
     int selStart, selEnd, isRect, rectStart, rectEnd;
     int shiftedLen, newEndPos, cursorPos, origLength, emTabDist, shiftDist;
     char *text, *shiftedText;
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
 
     /* get selection, if no text selected, use current insert position */
     if (!BufGetSelectionPos(buf, &selStart, &selEnd, &isRect,
@@ -133,7 +133,7 @@ static void shiftRect(WindowInfo *window, int direction, int byTab,
     int selStart, int selEnd, int rectStart, int rectEnd)
 {
     int offset, emTabDist;
-    textBuffer *tempBuf, *buf = window->buffer;
+    textBuffer *tempBuf, *buf = window->editorInfo->buffer;
     char *text;
     
     /* Make sure selStart and SelEnd refer to whole lines */
@@ -189,7 +189,7 @@ void DowncaseSelection(WindowInfo *window)
 */
 static void changeCase(WindowInfo *window, int makeUpper)
 {
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     char *text, *c;
     int cursorPos, start, end, isRect, rectStart, rectEnd;
     
@@ -290,12 +290,12 @@ static void changeCase(WindowInfo *window, int makeUpper)
 
 void FillSelection(WindowInfo *window)
 {
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     char *text, *filledText;
     int left, right, nCols, len, isRect, rectStart, rectEnd;
     int rightMargin, wrapMargin;
     int insertPos = TextGetCursorPos(window->lastFocus);
-    int hasSelection = window->buffer->primary.selected;
+    int hasSelection = window->editorInfo->buffer->primary.selected;
     
     /* Find the range of characters and get the text to fill.  If there is a
        selection, use it but extend non-rectangular selections to encompass

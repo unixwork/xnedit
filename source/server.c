@@ -222,8 +222,8 @@ static Atom findFileOpenProperty(const char* filename,
 */
 static void deleteFileOpenProperty(WindowInfo *window)
 {
-    if (window->filenameSet) {
-        Atom atom = findFileOpenProperty(window->filename, window->path);
+    if (window->editorInfo->filenameSet) {
+        Atom atom = findFileOpenProperty(window->editorInfo->filename, window->editorInfo->path);
         deleteProperty(&atom);
     }
 }
@@ -257,9 +257,9 @@ static Atom findFileClosedProperty(const char* filename,
 /* Get hold of the property to use when closing the file. */
 static void getFileClosedProperty(WindowInfo *window)
 {
-    if (window->filenameSet) {
-        window->fileClosedAtom = findFileClosedProperty(window->filename,
-                                                        window->path);
+    if (window->editorInfo->filenameSet) {
+        window->editorInfo->fileClosedAtom = findFileClosedProperty(window->editorInfo->filename,
+                                                        window->editorInfo->path);
     }
 }
 
@@ -268,8 +268,8 @@ static void getFileClosedProperty(WindowInfo *window)
 */
 void DeleteFileClosedProperty(WindowInfo *window)
 {
-    if (window->filenameSet) {
-        deleteProperty(&window->fileClosedAtom);
+    if (window->editorInfo->filenameSet) {
+        deleteProperty(&window->editorInfo->fileClosedAtom);
     }
 }
 
@@ -304,7 +304,7 @@ static WindowInfo *findWindowOnDesktop(int tabbed, long currentDesktop)
         /* A new window is requested, unless we find an untitled unmodified
             document on the current desktop */
         for (window=WindowList; window!=NULL; window=window->next) {
-            if (window->filenameSet || window->fileChanged ||
+            if (window->editorInfo->filenameSet || window->editorInfo->fileChanged ||
                     window->macroCmdData != NULL) {
                 continue;
             }
@@ -344,7 +344,7 @@ static void processServerCommandString(char *string)
        (or just pop one up if it already exists) */
     if (string[0] == '\0') {
         for (window=WindowList; window!=NULL; window=window->next)
-            if (!window->filenameSet && !window->fileChanged &&
+    	    if (!window->editorInfo->filenameSet && !window->editorInfo->fileChanged &&
                 isLocatedOnDesktop(window, currentDesktop))
                 break;
         if (window == NULL) {
@@ -408,7 +408,7 @@ static void processServerCommandString(char *string)
      */
     if (fileLen <= 0) {
             for (window=WindowList; window!=NULL; window=window->next) {
-                if(!window->filenameSet && !window->fileChanged &&
+                if(!window->editorInfo->filenameSet && !window->editorInfo->fileChanged &&
                   (isLocatedOnDesktop(window, currentDesktop))) {
                     break;
                 }

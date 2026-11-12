@@ -319,6 +319,8 @@ static void findDefAP(Widget w, XEvent *event, String *args, Cardinal *nArgs);
 static void showTipAP(Widget w, XEvent *event, String *args, Cardinal *nArgs); 
 static void splitPaneAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs);
+static void cloneDocumentAP(Widget w, XEvent *event, String *args,
+      Cardinal *nArgs);
 static void detachDocumentDialogAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs);
 static void detachDocumentAP(Widget w, XEvent *event, String *args,
@@ -540,6 +542,7 @@ static XtActionsRec Actions[] = {
     {"split_pane", splitPaneAP},
     {"close-pane", closePaneAP},
     {"close_pane", closePaneAP},
+    {"clone_document", cloneDocumentAP},
     {"detach_document", detachDocumentAP},
     {"detach_document_dialog", detachDocumentDialogAP},
     {"move_document_dialog", moveDocumentDialogAP},
@@ -790,7 +793,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     window->overtypeModeItem = createMenuToggle(menuPane, "overtype", "Overtype", 'O',
             doActionCB, "set_overtype_mode", False, SHORT);
     window->readOnlyItem = createMenuToggle(menuPane, "readOnly", "Read Only",
-            'y', doActionCB, "set_locked", IS_USER_LOCKED(window->lockReasons), FULL);
+    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->editorInfo->lockReasons), FULL);
 #endif
 
     /* 
@@ -1142,24 +1145,24 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     subPane = createMenu(menuPane, "autoIndent", "Auto Indent",
         'A', NULL, FULL);
     window->autoIndentOffItem = createMenuRadioToggle(subPane, "off", "Off",
-            'O', (menuCallbackProc)autoIndentOffCB, window, window->indentStyle == NO_AUTO_INDENT,
+    	    'O', (menuCallbackProc)autoIndentOffCB, window, window->editorInfo->indentStyle == NO_AUTO_INDENT,
         SHORT);
     window->autoIndentItem = createMenuRadioToggle(subPane, "on", "On", 'n',
-            (menuCallbackProc)autoIndentCB, window, window->indentStyle == AUTO_INDENT, SHORT);
+    	    (menuCallbackProc)autoIndentCB, window, window->editorInfo->indentStyle == AUTO_INDENT, SHORT);
     window->smartIndentItem = createMenuRadioToggle(subPane, "smart", "Smart",
-            'S', (menuCallbackProc)smartIndentCB, window, window->indentStyle == SMART_INDENT,
+    	    'S', (menuCallbackProc)smartIndentCB, window, window->editorInfo->indentStyle == SMART_INDENT,
         SHORT);
     subPane = createMenu(menuPane, "wrap", "Wrap",
         'W', NULL, FULL);
     window->noWrapItem = createMenuRadioToggle(subPane, "none",
             "None", 'N', (menuCallbackProc)noWrapCB, window,
-            window->wrapMode==NO_WRAP, SHORT);
+    	    window->editorInfo->wrapMode==NO_WRAP, SHORT);
     window->newlineWrapItem = createMenuRadioToggle(subPane, "autoNewlineWrap",
             "Auto Newline", 'A', (menuCallbackProc)newlineWrapCB, window,
-            window->wrapMode==NEWLINE_WRAP, SHORT);
+    	    window->editorInfo->wrapMode==NEWLINE_WRAP, SHORT);
     window->continuousWrapItem = createMenuRadioToggle(subPane,
             "continuousWrap", "Continuous", 'C', (menuCallbackProc)continuousWrapCB, window,
-            window->wrapMode==CONTINUOUS_WRAP, SHORT);
+    	    window->editorInfo->wrapMode==CONTINUOUS_WRAP, SHORT);
     createMenuSeparator(subPane, "sep1", SHORT);
     createMenuItem(subPane, "wrapMargin", "Wrap Margin...", 'W',
             (menuCallbackProc)wrapMarginCB, window, SHORT);
@@ -1196,34 +1199,34 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
             "Make Backup Copy (*.bck)", 'e', (menuCallbackProc)preserveCB, window,
-            window->saveOldVersion, SHORT);
+    	    window->editorInfo->saveOldVersion, SHORT);
     
     window->autoSaveItem = createMenuToggle(menuPane, "incrementalBackup",
-            "Incremental Backup", 'B', (menuCallbackProc)autoSaveCB, window, window->autoSave,
+    	    "Incremental Backup", 'B', (menuCallbackProc)autoSaveCB, window, window->editorInfo->autoSave,
             SHORT);
 
     subPane = createMenu(menuPane, "showMatching", "Show Matching (..)",
         'M', NULL, FULL);
     window->showMatchingOffItem = createMenuRadioToggle(subPane, "off", "Off",
-        'O', (menuCallbackProc)showMatchingOffCB, window, window->showMatchingStyle == NO_FLASH, 
+        'O', (menuCallbackProc)showMatchingOffCB, window, window->editorInfo->showMatchingStyle == NO_FLASH, 
         SHORT);
     window->showMatchingDelimitItem = createMenuRadioToggle(subPane,
     "delimiter", "Delimiter", 'D', (menuCallbackProc)showMatchingDelimitCB, window,
-        window->showMatchingStyle == FLASH_DELIMIT, SHORT);
+        window->editorInfo->showMatchingStyle == FLASH_DELIMIT, SHORT);
     window->showMatchingRangeItem = createMenuRadioToggle(subPane, "range", 
     "Range", 'R', (menuCallbackProc)showMatchingRangeCB, window, 
-    window->showMatchingStyle == FLASH_RANGE, SHORT);
+	window->editorInfo->showMatchingStyle == FLASH_RANGE, SHORT);
     createMenuSeparator(subPane, "sep", SHORT);
     window->matchSyntaxBasedItem = createMenuToggle(subPane, "matchSyntax",
         "Syntax Based", 'S', (menuCallbackProc)matchSyntaxBasedCB, window,
-        window->matchSyntaxBased, SHORT);
+	    window->editorInfo->matchSyntaxBased, SHORT);
 
 #ifndef SGI_CUSTOM
     createMenuSeparator(menuPane, "sep2", SHORT);
     window->overtypeModeItem = createMenuToggle(menuPane, "overtype", "Overtype", 'O',
             doActionCB, "set_overtype_mode", False, SHORT);
     window->readOnlyItem = createMenuToggle(menuPane, "readOnly", "Read Only",
-            'y', doActionCB, "set_locked", IS_USER_LOCKED(window->lockReasons), FULL);
+    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->editorInfo->lockReasons), FULL);
 #endif
 
     /*
@@ -1290,8 +1293,11 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
             "Close Pane", 'C', doActionCB, "close_pane", SHORT);
     XtVaSetValues(window->closePaneItem, XmNuserData, PERMANENT_MENU_ITEM,NULL);
     XtSetSensitive(window->closePaneItem, False);
+    XtVaSetValues(btn, XmNuserData, PERMANENT_MENU_ITEM, NULL);
 
     btn = createMenuSeparator(menuPane, "sep01", SHORT);
+    btn = createMenuItem(menuPane, "cloneTab",
+    	    "Clone Tab", 'o', doActionCB, "clone_document", SHORT);
     XtVaSetValues(btn, XmNuserData, PERMANENT_MENU_ITEM, NULL);
     window->detachDocumentItem = createMenuItem(menuPane, "detachBuffer",
             "Detach Tab", 'D', doActionCB, "detach_document", SHORT);
@@ -2948,7 +2954,7 @@ static void newAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         }
     }
     
-    EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->path);
+    EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->editorInfo->path);
     CheckCloseDim();
 }
 
@@ -2962,14 +2968,14 @@ static void newOppositeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs
     WindowInfo *window = WidgetToWindow(w);
 
     EditNewFile(GetPrefOpenInTab()? NULL : window, NULL, False, NULL,
-            window->path);
+            window->editorInfo->path);
     CheckCloseDim();
 }
 static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
 
-    EditNewFile(window, NULL, False, NULL, window->path);
+    EditNewFile(window, NULL, False, NULL, window->editorInfo->path);
     CheckCloseDim();
 }
 
@@ -3072,7 +3078,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     memset(&file, 0, sizeof(FileSelection));
     file.extraoptions = True;
     file.writebom = window->bom;
-    file.format = window->fileFormat;
+    file.format = window->editorInfo->fileFormat;
     if(strlen(window->encoding) > 0) {
         file.encoding = window->encoding;
     }
@@ -3081,7 +3087,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
         &fileFormat);
     if (response != GFN_OK)
         return;
-    window->fileFormat = fileFormat;
+    window->editorInfo->fileFormat = fileFormat;
     
     char *formatStr;
     switch(file.format) {
@@ -3139,16 +3145,16 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
     int b;
     
     /* re-reading file is irreversible, prompt the user first */
-    if (window->fileChanged)
+    if (window->editorInfo->fileChanged)
     {
         b = DialogF(DF_QUES, window->shell, 3, "Reload File",
-                "Re-load file and discard changes to\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
-                window->filename);
+                "Re-load file and discard changes to\n%s%s?", "Re-read", "Change encoding", "Cancel", window->editorInfo->path,
+                window->editorInfo->filename);
     } else
     {
         b = DialogF(DF_QUES, window->shell, 3, "Reload File",
-                "Re-load file\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
-                window->filename);
+                "Re-load file\n%s%s?", "Re-read", "Change encoding", "Cancel", window->editorInfo->path,
+                window->editorInfo->filename);
     }
 
     if(b == 1) {
@@ -3375,8 +3381,10 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     lineLen = 0;
         strcpy(ptr, "Editing: "); ptr += 9; lineLen += 9;
         for (win=WindowList; win!=NULL; win=win->next) {
-            snprintf(filename, sizeof(filename),
-                    "%s%s", win->filename, win->fileChanged? "*": "");
+            if (win->editorInfo->master != win)
+                continue;           /* skip clones */
+                
+           sprintf(filename, "%s%s", win->editorInfo->filename, win->editorInfo->fileChanged? "*": "");
         title = filename;
             titleLen = strlen(title);
             if (ptr - exitMsg + titleLen + 30 >= DF_MAX_MSG_LENGTH) {
@@ -3434,14 +3442,14 @@ static void clearAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     
     if (CheckReadOnly(window))
         return;
-    BufRemoveSelected(window->buffer);
+    BufRemoveSelected(window->editorInfo->buffer);
 }
 
 static void selAllAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 {
     WindowInfo *window = WidgetToWindow(w);
     
-    BufSelect(window->buffer, 0, window->buffer->length);
+    BufSelect(window->editorInfo->buffer, 0, window->editorInfo->buffer->length);
 }
 
 static void shiftLeftAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
@@ -3790,6 +3798,14 @@ static void closePaneAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     }
 }
 
+static void cloneDocumentAP(Widget w, XEvent *event, String *args,
+      Cardinal *nArgs)
+{
+    WindowInfo *window = WidgetToWindow(w);
+    
+    CreateCloneWindow(window);
+}
+
 static void detachDocumentDialogAP(Widget w, XEvent *event, String *args,
     Cardinal *nArgs)
 {
@@ -3800,7 +3816,7 @@ static void detachDocumentDialogAP(Widget w, XEvent *event, String *args,
         return;
     
     resp = DialogF(DF_QUES, window->shell, 2, "Detach %s?", 
-        "Detach", "Cancel", window->filename);
+	    "Detach", "Cancel", window->editorInfo->filename);
 
     if (resp == 1)
         DetachDocument(window);
@@ -3930,7 +3946,7 @@ static void filterDialogAP(Widget w, XEvent *event, String *args,
     
     if (CheckReadOnly(window))
         return;
-    if (!window->buffer->primary.selected) {
+    if (!window->editorInfo->buffer->primary.selected) {
         XBell(TheDisplay, 0);
     return;
     }
@@ -4416,11 +4432,11 @@ static void setMakeBackupCopyAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->saveOldVersion, "set_make_backup_copy");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->saveOldVersion, "set_make_backup_copy");
 
     if (IsTopDocument(window))
         XmToggleButtonSetState(window->saveLastItem, newState, False);
-    window->saveOldVersion = newState;
+    window->editorInfo->saveOldVersion = newState;
 }
 
 static void setIncrementalBackupAP(Widget w, XEvent *event, String *args,
@@ -4429,11 +4445,11 @@ static void setIncrementalBackupAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->autoSave, "set_incremental_backup");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->autoSave, "set_incremental_backup");
 
     if (IsTopDocument(window))
         XmToggleButtonSetState(window->autoSaveItem, newState, False);
-    window->autoSave = newState;
+    window->editorInfo->autoSave = newState;
 }
 
 static void setShowMatchingAP(Widget w, XEvent *event, String *args,
@@ -4476,11 +4492,11 @@ static void setMatchSyntaxBasedAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->matchSyntaxBased, "set_match_syntax_based");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->matchSyntaxBased, "set_match_syntax_based");
 
     if (IsTopDocument(window))
         XmToggleButtonSetState(window->matchSyntaxBasedItem, newState, False);
-    window->matchSyntaxBased = newState;
+    window->editorInfo->matchSyntaxBased = newState;
 }
 
 static void setOvertypeModeAP(Widget w, XEvent *event, String *args,
@@ -4488,15 +4504,18 @@ static void setOvertypeModeAP(Widget w, XEvent *event, String *args,
 {
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
+    WindowInfo *win;
     
     if (window == NULL)
         return;
  
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->overstrike, "set_overtype_mode");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->overstrike, "set_overtype_mode");
 
-    if (IsTopDocument(window))
-        XmToggleButtonSetState(window->overtypeModeItem, newState, False);
-    SetOverstrike(window, newState);
+    for(win = window->editorInfo->master; win; win = win->nextSlave) {
+	if (IsTopDocument(win))
+    	    XmToggleButtonSetState(win->overtypeModeItem, newState, False);
+	SetOverstrike(win, newState);
+    }
 }
 
 static void setLockedAP(Widget w, XEvent *event, String *args,
@@ -4505,15 +4524,15 @@ static void setLockedAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, IS_USER_LOCKED(window->lockReasons), "set_locked");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, IS_USER_LOCKED(window->editorInfo->lockReasons), "set_locked");
     
-    SET_USER_LOCKED(window->lockReasons, newState);
+    SET_USER_LOCKED(window->editorInfo->lockReasons, newState);
     if(!newState) {
-        SET_ENCODING_LOCKED(window->lockReasons, 0);
+        SET_ENCODING_LOCKED(window->editorInfo->lockReasons, 0);
     }
     
     if (IsTopDocument(window))
-        XmToggleButtonSetState(window->readOnlyItem, IS_ANY_LOCKED(window->lockReasons), False);
+    	XmToggleButtonSetState(window->readOnlyItem, IS_ANY_LOCKED(window->editorInfo->lockReasons), False);
     UpdateWindowTitle(window);
     UpdateWindowReadOnly(window);
 }
@@ -4571,9 +4590,9 @@ static void setUseTabsAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->buffer->useTabs, "set_use_tabs");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->buffer->useTabs, "set_use_tabs");
 
-    window->buffer->useTabs = newState;
+    window->editorInfo->buffer->useTabs = newState;
 }
 
 static void setFontsAP(Widget w, XEvent *event, String *args,
@@ -4762,7 +4781,7 @@ void CheckCloseDim(void)
     if (WindowList == NULL)
         return;
     if (WindowList->next==NULL &&
-            !WindowList->filenameSet && !WindowList->fileChanged) {
+    	    !WindowList->editorInfo->filenameSet && !WindowList->editorInfo->fileChanged) {
         XtSetSensitive(WindowList->closeItem, FALSE);
         return;
     }
@@ -4877,24 +4896,31 @@ void AddToPrevOpenMenu(const char *filename)
     WriteNEditDB();
 }
 
-#define MAX_WINDOW_TITLE_LEN MAXPATHLEN * 2 + 3 + 2 + 1
+#define MAX_WINDOW_TITLE_LEN MAXPATHLEN * 2 + 3 + 2 + 1 + 4
 static char* getWindowsMenuEntry(const WindowInfo* window)
 {
     static char fullTitle[MAX_WINDOW_TITLE_LEN];
 
     char *parenthese_open = "";
     char *parenthese_close = "";
+    char cloneIndex[10];
+    
+    if (GetCloneIndex(window) > 0) {
+       sprintf(cloneIndex, "<%d>", GetCloneIndex(window));
+    } else {
+       cloneIndex[0] = '\0';
+    }
     if(!window->mapped) {
         parenthese_open = "(";
         parenthese_close = ")";
     }
-    if (GetPrefShowPathInWindowsMenu() && window->filenameSet) {
+    if (GetPrefShowPathInWindowsMenu() && window->editorInfo->filenameSet) {
         snprintf(
                 fullTitle,
                 MAX_WINDOW_TITLE_LEN,
                 "%s%s%s - %s%s",
                 parenthese_open,
-                window->filename, window->fileChanged? "*" : "", window->path,
+                window->editorInfo->filename, window->editorInfo->fileChanged? "*" : "", window->editorInfo->path,
                 parenthese_close);
     } else {
         snprintf(
@@ -4902,7 +4928,7 @@ static char* getWindowsMenuEntry(const WindowInfo* window)
                 MAX_WINDOW_TITLE_LEN,
                 "%s%s%s%s",
                 parenthese_open,
-                window->filename, window->fileChanged? "*" : "",
+                window->editorInfo->filename, window->editorInfo->fileChanged? "*" : "",
                 parenthese_close);
     }
     
@@ -5542,14 +5568,14 @@ static int compareWindowNames(const void *windowA, const void *windowB)
     const WindowInfo *a = *((WindowInfo**)windowA);
     const WindowInfo *b = *((WindowInfo**)windowB);
     /* Untitled first */
-    rc = a->filenameSet ==  b->filenameSet ? 0 : 
-     a->filenameSet && !b->filenameSet ? 1 : -1;
+    rc = a->editorInfo->filenameSet ==  b->editorInfo->filenameSet ? 0 : 
+	 a->editorInfo->filenameSet && !b->editorInfo->filenameSet ? 1 : -1;
     if (rc != 0)
      return rc;
-    rc = strcmp(a->filename, b->filename);
+    rc = strcmp(a->editorInfo->filename, b->editorInfo->filename);
     if (rc != 0)
      return rc;
-    rc = strcmp(a->path, b->path);
+    rc = strcmp(a->editorInfo->path, b->editorInfo->path);
     return rc;
 }
 
@@ -5591,6 +5617,8 @@ Widget CreateTabContextMenu(Widget parent, WindowInfo *window)
     createMenuItem(menu, "new", "New Tab", 0, doTabActionCB, "new_tab", SHORT);
     createMenuItem(menu, "close", "Close Tab", 0, doTabActionCB, "close", SHORT);
     createMenuSeparator(menu, "sep1", SHORT);
+    createMenuItem(menu, "cloneTab", "Clone Tab", 0, doTabActionCB, 
+    	    "clone_document", SHORT);
     window->contextDetachDocumentItem = createMenuItem(menu, "detach",
             "Detach Tab", 0, doTabActionCB, "detach_document", SHORT);
     XtSetSensitive(window->contextDetachDocumentItem, False);

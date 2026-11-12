@@ -63,11 +63,11 @@ static void newdatafile(Widget widget, char *buffer) {
     WindowInfo *window = WidgetToWindow(widget);
     int openInTab = GetPrefOpenInTab();
     
-    if (window->filenameSet || window->fileChanged) {
-        window = EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->path);
+    if (window->editorInfo->filenameSet || window->editorInfo->fileChanged) {
+        window = EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->editorInfo->path);
     }
     
-    BufInsert(window->buffer, 0, buffer);
+    BufInsert(window->editorInfo->buffer, 0, buffer);
 }
 
 #ifdef CDE

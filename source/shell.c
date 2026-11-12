@@ -164,16 +164,16 @@ void FilterSelection(WindowInfo *window, const char *command, int fromMacro)
 
     /* Get the selection and the range in character positions that it
        occupies.  Beep and return if no selection */
-    text = BufGetSelectionText(window->buffer);
+    text = BufGetSelectionText(window->editorInfo->buffer);
     if (*text == '\0') {
     NEditFree(text);
     XBell(TheDisplay, 0);
     return;
     }
     textLen = strlen(text);
-    BufUnsubstituteNullChars(text, window->buffer);
-    left = window->buffer->primary.start;
-    right = window->buffer->primary.end;
+    BufUnsubstituteNullChars(text, window->editorInfo->buffer);
+    left = window->editorInfo->buffer->primary.start;
+    right = window->editorInfo->buffer->primary.end;
     
     /* Issue the command and collect its output */
     issueCommand(window, command, text, textLen, ACCUMULATE | ERROR_DIALOGS |
@@ -200,17 +200,17 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
     
     /* get the selection or the insert position */
     pos = TextGetCursorPos(window->lastFocus);
-    if (GetSimpleSelection(window->buffer, &left, &right))
+    if (GetSimpleSelection(window->editorInfo->buffer, &left, &right))
         flags = ACCUMULATE | REPLACE_SELECTION;
     else
         left = right = pos;
     
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->path);
-    strcat(fullName, window->filename);
+    strcpy(fullName, window->editorInfo->path);
+    strcat(fullName, window->editorInfo->filename);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
-        line = BufCountLines(window->buffer, 0, pos) + 1;
+        line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
     }
     snprintf(lineNumber, 16, "%d", line);
     subsCommand = shellCommandSubstitutes(command, fullName, lineNumber);
@@ -267,25 +267,25 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
 
     /* get all of the text on the line with the insert position */
     pos = TextGetCursorPos(window->lastFocus);
-    if (!GetSimpleSelection(window->buffer, &left, &right)) {
+    if (!GetSimpleSelection(window->editorInfo->buffer, &left, &right)) {
     left = right = pos;
-    left = BufStartOfLine(window->buffer, left);
-    right = BufEndOfLine(window->buffer, right);
+	left = BufStartOfLine(window->editorInfo->buffer, left);
+	right = BufEndOfLine(window->editorInfo->buffer, right);
     insertPos = right;
     } else
-        insertPos = BufEndOfLine(window->buffer, right);
-    cmdText = BufGetRange(window->buffer, left, right);
-    BufUnsubstituteNullChars(cmdText, window->buffer);
+    	insertPos = BufEndOfLine(window->editorInfo->buffer, right);
+    cmdText = BufGetRange(window->editorInfo->buffer, left, right);
+    BufUnsubstituteNullChars(cmdText, window->editorInfo->buffer);
     
     /* insert a newline after the entire line */
-    BufInsert(window->buffer, insertPos, "\n");
+    BufInsert(window->editorInfo->buffer, insertPos, "\n");
 
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->path);
-    strcat(fullName, window->filename);
+    strcpy(fullName, window->editorInfo->path);
+    strcat(fullName, window->editorInfo->filename);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
-        line = BufCountLines(window->buffer, 0, pos) + 1;
+        line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
     }
     snprintf(lineNumber, 16, "%d", line);
     
@@ -332,11 +332,11 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
 
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->path);
-    strcat(fullName, window->filename);
+    strcpy(fullName, window->editorInfo->path);
+    strcat(fullName, window->editorInfo->filename);
     pos = TextGetCursorPos(window->lastFocus);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
-        line = BufCountLines(window->buffer, 0, pos) + 1;
+        line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
     }
     snprintf(lineNumber, 16, "%d", line);
     
@@ -353,7 +353,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     /* Get the command input as a text string.  If there is input, errors
       shouldn't be mixed in with output, so set flags to ERROR_DIALOGS */
     if (input == FROM_SELECTION) {
-    text = BufGetSelectionText(window->buffer);
+	text = BufGetSelectionText(window->editorInfo->buffer);
     if (*text == '\0') {
             NEditFree(text);
             NEditFree(subsCommand);
@@ -362,13 +362,13 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
         }
         flags |= ACCUMULATE | ERROR_DIALOGS;
     } else if (input == FROM_WINDOW) {
-    text = BufGetAll(window->buffer);
+	text = BufGetAll(window->editorInfo->buffer);
         flags |= ACCUMULATE | ERROR_DIALOGS;
     } else if (input == FROM_EITHER) {
-    text = BufGetSelectionText(window->buffer);
+	text = BufGetSelectionText(window->editorInfo->buffer);
     if (*text == '\0') {
         NEditFree(text);
-        text = BufGetAll(window->buffer);
+	    text = BufGetAll(window->editorInfo->buffer);
         }
         flags |= ACCUMULATE | ERROR_DIALOGS;
     } else /* FROM_NONE */
@@ -378,7 +378,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
        put the nuls back in before exporting the text */
     if (text != NULL) {
     textLen = strlen(text);
-    BufUnsubstituteNullChars(text, window->buffer);
+	BufUnsubstituteNullChars(text, window->editorInfo->buffer);
     } else
     textLen = 0;
     
@@ -390,7 +390,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     flags |= OUTPUT_TO_DIALOG;
         left = right = 0;
     } else if (output == TO_NEW_WINDOW) {
-        EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->path);
+    	EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->editorInfo->path);
         outWidget = WindowList->textArea;
     inWindow = WindowList;
         left = right = 0;
@@ -400,20 +400,20 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
         if (outputReplacesInput && input != FROM_NONE) {
             if (input == FROM_WINDOW) {
             left = 0;
-            right = window->buffer->length;
+    		right = window->editorInfo->buffer->length;
             } else if (input == FROM_SELECTION) {
-                GetSimpleSelection(window->buffer, &left, &right);
+    	    	GetSimpleSelection(window->editorInfo->buffer, &left, &right);
             flags |= ACCUMULATE | REPLACE_SELECTION;
             } else if (input == FROM_EITHER) {
-                if (GetSimpleSelection(window->buffer, &left, &right))
+    	    	if (GetSimpleSelection(window->editorInfo->buffer, &left, &right))
                 flags |= ACCUMULATE | REPLACE_SELECTION;
             else {
                 left = 0;
-                right = window->buffer->length;
+	            right = window->editorInfo->buffer->length;
             }
         }
         } else {
-        if (GetSimpleSelection(window->buffer, &left, &right))
+	    if (GetSimpleSelection(window->editorInfo->buffer, &left, &right))
             flags |= ACCUMULATE | REPLACE_SELECTION;
         else
             left = right = TextGetCursorPos(window->lastFocus);
@@ -506,7 +506,7 @@ static void issueCommand(WindowInfo *window, const char *command, char *input,
         SetSensitive(window, window->cancelShellItem, True);
 
     /* fork the subprocess and issue the command */
-    childPid = forkCommand(window->shell, command, window->path, &stdinFD,
+    childPid = forkCommand(window->shell, command, window->editorInfo->path, &stdinFD,
         &stdoutFD, (flags & ERROR_DIALOGS) ? &stderrFD : NULL);
     
     /* set the pipes connected to the process for non-blocking i/o */
