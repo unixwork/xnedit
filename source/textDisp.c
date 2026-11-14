@@ -313,6 +313,7 @@ textDisp *TextDCreate(Widget widget, Widget hScrollBar, Widget vScrollBar,
         // mirrors the behavior of CSS, cf. https://drafts.csswg.org/css-values-3/#ch
         FcChar8* text = "0";
         XGlyphInfo extents;
+        XftTextExtentsUtf8(XtDisplay(textD->w), textD->font->fonts->font, (FcChar8*)text, 1, &extents);
         textD->rightMarginPos = ( rightMargin * extents.xOff ) - 1;
         // Old method:
         // textD->rightMarginPos = rightMargin * font->maxWidth;

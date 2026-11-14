@@ -92,6 +92,9 @@
 #include "../debug.h"
 #endif
 
+#include "../source/nedit.h"       /* For TheDisplay */
+#include "../source/preferences.h" /* For GetPrefHorizontalScrollModifiers */
+
 Boolean GetWindowDarkTheme(void);
 
 #ifndef LESSTIF_VERSION
@@ -2574,6 +2577,7 @@ void SetWindowGtkThemeVariant(Display *dp, Window window, int theme)
     }
 }
 
+
 #ifdef __APPLE__
 XmString FSNameCreateLocalized(char *s) {
     char *str = StringNFD2NFC(s);
@@ -2582,3 +2586,369 @@ XmString FSNameCreateLocalized(char *s) {
     return xmstr;
 }
 #endif
+
+
+/* Modifier key state */
+
+/* Last-examined modifier key status */
+char keymap[32] = { };
+
+/* KeyCodes can optionally be cached.  Note that although caching these 
+** improves performance it also means that any changes to their definitions 
+** while XNEdit is running won't be picked up.  To fix this (at a cost of a 
+** pair of X server round-trips per call to ModifierKey*) comment out the 
+** following define: */
+#define CACHE_KEYCODES
+
+#ifdef CACHE_KEYCODES
+KeyCode kcShiftL   = 0,  kcShiftR   = 0; // Shift keys
+KeyCode kcControlL = 0,  kcControlR = 0; // Control keys
+KeyCode kcMetaL    = 0,  kcMetaR    = 0; // ◆ on Sun, ⌘ on Mac¹;
+                                         // sometimes AltGr or AltR
+KeyCode kcAltL     = 0,  kcAltR     = 0; // Alt keys;
+                                         // Option for Xorg with Mac keyboard,
+                                         // ◆ for Xorg with Sun keyboard
+KeyCode kcSuperL   = 0,  kcSuperR   = 0; // Typically ⊞ or ⌘ key on Xorg
+KeyCode kcHyperL   = 0,  kcHyperR   = 0; // [not typically mapped]
+KeyCode kcModeSwitch = 0;                // Typically AltGr or Alt Graph, 
+                                         // Option for Mac X11.app¹
+                                         // 
+                                         // ¹ At least for X11.app v1.0.
+
+#define KEYCODE_VAR(keycode) if ( ! keycode ) keycode
+
+#else /* ndef CACHE_KEYCODES */
+#define KEYCODE_VAR(keycode) KeyCode keycode
+#endif
+
+/* Retrieve current modifier key status
+** Specific keys can then be queried using the ModififierKey* functions.
+*/
+void ExamineModifierKeys(void) {
+    XQueryKeymap( TheDisplay, keymap );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Shift_L    XK_Shift_R   → Shift keys
+*/
+Boolean ModifierKeyShift(void) {
+    KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+    KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+    return !! (
+                ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) ) ||
+                ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Control_L  XK_Control_R → Control keys */
+Boolean ModifierKeyControl(void) {
+    KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
+    KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
+    return !! (
+                ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) ) ||
+                ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Meta_L     XK_Meta_R    → ◆ on Sun, ⌘ on Mac¹; sometimes AltGr or AltR */
+Boolean ModifierKeyMeta(void) {
+    KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+    KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+    return !! (
+                ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) ) ||
+                ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Alt_L      XK_Alt_R     → Alt keys, 
+                                Option for Xorg with Mac keyboard, 
+                                ◆ for Xorg with Sun keyboard */
+Boolean ModifierKeyAlt(void) {
+    KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+    KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+    return !! (
+                ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) ) ||
+                ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Super_L    XK_Super_R   → Typically ⊞ or ⌘ key on Xorg */
+Boolean ModifierKeySuper(void) {
+    KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
+    KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
+    return !! (
+                ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) ) ||
+                ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) )
+              );
+}
+
+/* Returns TRUE if either of the following was pressed when keymap was examined:
+   XK_Hyper_L    XK_Hyper_R   → [not typically mapped] */
+Boolean ModifierKeyHyper(void) {
+    KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+    KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+    return !! (
+                ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) ) ||
+                ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) )
+              );
+}
+
+/* Returns TRUE if the following was pressed when keymap was examined:
+   XK_Mode_switch → Typically AltGr or Alt Graph, Option for Mac X11.app */
+Boolean ModifierKeyModeSwitch(void) {
+    KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
+    return !! ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) );
+}
+
+/* Returns TRUE if any of the keys specified in the passed bitmap were pressed 
+   when keymap was examined.
+   The bits are FLAG_MODIFIER_* values, defined in util/misc.h. */
+Boolean ModifierBitmapMatchAny(int bitmap) {
+    if ( bitmap == FLAG_MODIFIER_VALUE_INVALID ) { return FALSE; }
+    
+    // Short-circuit evaluation, in order of probable use by user code
+    
+    if ( bitmap & FLAG_MODIFIER_SUPER_L ) {
+        KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
+        if ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SUPER_R ) {
+        KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
+        if ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_META_L ) {
+        KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+        if ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_META_R ) {
+        KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+        if ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_MODE_SWITCH ) {
+        KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
+        if ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_ALT_L ) {
+        KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+        if ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_ALT_R ) {
+        KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+        if ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SHIFT_L ) {
+        KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+        if ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SHIFT_R ) {
+        KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+        if ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_CONTROL_L ) {
+        KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
+        if ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_CONTROL_R ) {
+        KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
+        if ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_HYPER_L ) {
+        KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+        if ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) ) { return TRUE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_HYPER_R ) {
+        KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+        if ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) ) { return TRUE; }
+    }
+    
+    return FALSE;
+}
+
+/* Returns TRUE if all of the keys specified in the passed bitmap were pressed 
+   when keymap was examined.
+   (The state of modifiers not set in the bitmap is ignored.)
+   The bits are FLAG_MODIFIER_* values, defined in util/misc.h. */
+Boolean ModifierBitmapMatchAll(int bitmap) {
+    /* NOTE: This function is not currently used.
+       Remove this comment if adding code that uses it. */
+    
+    if ( bitmap == FLAG_MODIFIER_VALUE_INVALID ) { return FALSE; }
+    
+    /* NOTE: This code is untested
+       Remove this comment once it has been verified. */
+    
+    // Short-circuit evaluation, in order of probable use by user code
+    
+    if ( bitmap & FLAG_MODIFIER_SUPER_L ) {
+        KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
+        if ( ! ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SUPER_R ) {
+        KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
+        if ( ! ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_META_L ) {
+        KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+        if ( ! ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_META_R ) {
+        KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+        if ( ! ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_MODE_SWITCH ) {
+        KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
+        if ( ! ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_ALT_L ) {
+        KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+        if ( ! ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_ALT_R ) {
+        KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+        if ( ! ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SHIFT_L ) {
+        KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+        if ( ! ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_SHIFT_R ) {
+        KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+        if ( ! ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_CONTROL_L ) {
+        KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
+        if ( ! ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_CONTROL_R ) {
+        KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
+        if ( ! ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_HYPER_L ) {
+        KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+        if ( ! ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) ) ) { return FALSE; }
+    }
+    
+    if ( bitmap & FLAG_MODIFIER_HYPER_R ) {
+        KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+        if ( ! ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) ) ) { return FALSE; }
+    }
+    
+    return TRUE;
+}
+
+/* Returns TRUE the keys specified in the passed bitmap exactly match those that 
+   were pressed when keymap was examined.
+   The bits are FLAG_MODIFIER_* values, defined in util/misc.h. */
+Boolean ModifierBitmapMatchEqual(int bitmap) {
+    /* NOTE: This function is not currently used.
+       Remove this comment if adding code that uses it. */
+    
+    if ( bitmap == FLAG_MODIFIER_VALUE_INVALID ) { return FALSE; }
+    
+    /* NOTE: This code is untested
+       Remove this comment once it has been verified. */
+    
+    int state = 0;
+    
+    KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+    state |= ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) )
+             ? FLAG_MODIFIER_SHIFT_L
+             : 0;
+    
+    KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+    state |= ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) )
+             ? FLAG_MODIFIER_SHIFT_R
+             : 0;
+    
+    KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
+    state |= ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) )
+             ? FLAG_MODIFIER_CONTROL_L
+             : 0;
+    
+    KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
+    state |= ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) )
+             ? FLAG_MODIFIER_CONTROL_R
+             : 0;
+    
+    KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+    state |= ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) )
+             ? FLAG_MODIFIER_META_L
+             : 0;
+    
+    KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+    state |= ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) )
+             ? FLAG_MODIFIER_META_R
+             : 0;
+    
+    KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+    state |= ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) )
+             ? FLAG_MODIFIER_ALT_L
+             : 0;
+    
+    KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+    state |= ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) )
+             ? FLAG_MODIFIER_ALT_R
+             : 0;
+    
+    KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
+    state |= ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) )
+             ? FLAG_MODIFIER_SUPER_L
+             : 0;
+    
+    KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
+    state |= ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) )
+             ? FLAG_MODIFIER_SUPER_R
+             : 0;
+    
+    KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+    state |= ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) )
+             ? FLAG_MODIFIER_HYPER_L
+             : 0;
+    
+    KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+    state |= ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) )
+             ? FLAG_MODIFIER_HYPER_R
+             : 0;
+    
+    KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
+    state |= ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) )
+             ? FLAG_MODIFIER_MODE_SWITCH
+             : 0;
+    
+    return ( state == bitmap );
+}
+
+/* Modifier query functions for specific contexts */
+
+/* Returns TRUE if at least one of the modifiers requesting mouse wheel 
+   horizontal scroll was pressed when keymap was examined. */
+Boolean ModifierActive_HorizontalScroll(void) {
+    return ModifierBitmapMatchAny( GetPrefHorizontalScrollModifiers() );
+}
