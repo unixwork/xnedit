@@ -67,6 +67,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <langinfo.h>
+#include <assert.h>
 #ifndef __MVS__
 #include <sys/param.h>
 #endif
@@ -442,10 +443,18 @@ static struct prefData {
     */
     int horizontalScrollStep;
     
-    /* Horizontal scrolling is also mapped to Super+wheel and Meta+wheel.  In 
+    /* Horizontal scrolling is also optionally mapped to Modifier+wheel.  In 
        this mode the default mapping is scroll-up → scroll-left, scroll-down →
-       scroll-right.  Setting this option inverts that behaviour. */
+       scroll-right.  Setting this option inverts that behaviour.  */
     int horizontalScrollSwapDirection;
+    
+    /* Comma-delimited list of key names, any of which can be used to switch 
+       mouse wheel scrolling from vertical to horizontal.  Note that this value/
+       variable is only used when loading or saving preferences; the canonical 
+       value used internally by XNEdit is activeHorizontalScrollModifiers which  
+       can be read using GetPrefHorizontalScrollModifiers and can be set using 
+       SetPrefHorizontalScrollModifiers (the latter also updates this field). */
+    char *horizontalScrollModifiersString;
     
     int sortTabs;               /* sort tabs alphabetically */
     int repositionDialogs;      /* w. to reposition dialogs under the pointer */
@@ -498,6 +507,36 @@ static struct prefData {
     int suppressBacklightingInSelection;
     int showNontextSelection;
 } PrefData;
+
+/* Structure decribing a single set of modifier keys.
+   All fields describe the exact same modifier keys, just in different ways. */
+typedef struct horizontalScrollModifierMap_t {
+    XmString  label;   // Value displayed in drop-down.
+    char     *value;   // Value as stored in the preferences file
+    int       bitmap;  // Value as stored in activeHorizontalScrollModifiers
+} horizontalScrollModifierMap;
+
+/* Mappings for the various ways to decribe modifiers to trigger horizontal 
+   scrolling using the mouse wheel. */
+#define HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT (19)
+struct horizontalScrollModifierMap_t horizontalScrollModifierMaps[HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT] = { };
+
+/* Bitmap describing the currently-active set of modifier keys that trigger 
+   horizontal scrolling using the mouse wheel.  This value is guaranteed to 
+   match the bitmap field of one of the entries in horizontalScrollModifierMaps.
+   
+   The bits are FLAG_MODIFIER_* values, defined in util/misc.h.
+   The special value FLAG_MODIFIER_VALUE_INVALID indicates that the value has 
+   not been initialized; user code making decisions based on this variable's 
+   value should treat this special value as equivalent to FLAG_MODIFIER_NONE 
+   (i.e. such code should not switch out of its default mode).  User code should 
+   never encounter this situation though.
+   
+   Note that this variable is only XNEdit's [canonical] internal representation 
+   of the setting.  The actual value used in the preferences file is stored in 
+   PrefData.horizontalScrollModifiersString. */
+static int activeHorizontalScrollModifiers = FLAG_MODIFIER_VALUE_INVALID;
+    
 
 /* Temporary storage for preferences strings which are discarded after being
    read */
@@ -1048,6 +1087,9 @@ static PrefDescripRec PrefDescrip[] = {
         &PrefData.horizontalScrollStep, NULL, True},
     {"horizontalScrollSwapDirection", "HorizontalScrollSwapDirection", PREF_BOOLEAN, "False",
         &PrefData.horizontalScrollSwapDirection, NULL, True},
+    {"horizontalScrollModifiers", "HorizontalScrollModifiers", PREF_ALLOC_STRING,
+        "Meta_L,Meta_R,Super_L,Super_R",
+        &PrefData.horizontalScrollModifiersString, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
         &PrefData.undoPurgeLimit, NULL, True},
     {"undoPurgeTrimTo", "UndoPurgeTrimTo", PREF_INT, "1",
@@ -1944,6 +1986,30 @@ int GetPrefHorizontalScrollStep(void)
 void SetPrefHorizontalScrollStep(int step)
 {
     setIntPref(&PrefData.horizontalScrollStep, step);
+}
+
+int GetPrefHorizontalScrollModifiers(void)
+{
+    if ( activeHorizontalScrollModifiers == FLAG_MODIFIER_VALUE_INVALID ) {
+        // On the first call the [bitmap] variable will be invalid so it needs 
+        // to be populated from the [string] value stored in the preferences 
+        // file (or the default value if not stored).
+        activeHorizontalScrollModifiers = ModifierPreferenceToBitmap( PrefData.horizontalScrollModifiersString );
+    }
+    return activeHorizontalScrollModifiers;
+}
+
+void SetPrefHorizontalScrollModifiers(int modifiers)
+{
+    activeHorizontalScrollModifiers = modifiers;
+    // For the string value stored in the preferences file we look up the value 
+    // that was mapped to the modifiers at initialization-time and use it:
+    for(int i=0; i<HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT; i++) {
+        if ( horizontalScrollModifierMaps[i].bitmap == modifiers ) {
+            setStringPref(PrefData.horizontalScrollModifiersString, horizontalScrollModifierMaps[i].value);
+            break;
+        }
+    }
 }
 
 int GetPrefSwapMouseWheelHorizontalDirection(void)
@@ -5826,7 +5892,7 @@ Widget CreateLanguageModeMenu(Widget parent, XtCallbackProc cbProc, void *cbArg)
     // and when the list is changed by the user.  We can thus compute the 
     // menuCols value inside the function.
     // 
-    // See source/highlightData.c : highlightPopupColumns(...), /passim/ 
+    // See source/highlightData.c : highlightPopupColumns(...), passim
     // for where the highlighting style menu is populated/updated.
     // 
     // The value of 15 for the maximum size of a column «feels right» to me 
@@ -9107,6 +9173,7 @@ typedef struct {
     Widget edZoom;
     Widget edZoomMouseWheelDefaultBehavior;
     Widget edZoomMouseWheelInvertedBehavior;
+    Widget edHorizontalScrollModifier;
     Widget edHorizontalScrollSwapDirection;
     Widget edHorizontalScrollStep;
     Widget edUndoPurgeLimit;
@@ -9183,8 +9250,8 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         zoomStep = 1;
     }
     SetPrefZoomStep(zoomStep);
-    XmStringFree(zoomStepStr);
-    XtFree(s1);
+    XtFree(zoomStepStr);
+    XmStringFree(s1);
     
     Boolean edZoomMouseWheel;
     XtVaGetValues(md.edZoomMouseWheelInvertedBehavior, XmNset, &edZoomMouseWheel, NULL);
@@ -9193,6 +9260,12 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         RadioButtonChangeState(md.edZoomMouseWheelInvertedBehavior, True, True);
     } else {
         RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
+    }
+    
+    {
+        int selectedPosition;
+        XtVaGetValues(md.edHorizontalScrollModifier, XmNselectedPosition, &selectedPosition, NULL);
+        SetPrefHorizontalScrollModifiers( horizontalScrollModifierMaps[selectedPosition].bitmap );
     }
     
     Boolean horizontalScrollSwapDirection;
@@ -9217,8 +9290,8 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         horizontalScrollStep = -1 * idx;
     }
     SetPrefHorizontalScrollStep(horizontalScrollStep);
-    XmStringFree(horizontalScrollStepStr);
-    XtFree(s1);
+    XtFree(horizontalScrollStepStr);
+    XmStringFree(s1);
     
     long undoOpLimit;
     long undoOpTrimTo;
@@ -9266,6 +9339,216 @@ static void mdIconSizeCB(
         XmComboBoxSelectItem(md.icClear, cb->item_or_text);
         XmComboBoxSelectItem(md.icClose, cb->item_or_text);
         XmComboBoxSelectItem(md.icFind, cb->item_or_text);
+    }
+}
+
+/* Convert comma-delimited list of modifier key names to a bitmap 
+** (Key names are as used in the preferences file.) */
+int ModifierPreferenceToBitmap(const char *pref) {
+    char *key;
+    char *input_ptr = strdup(pref);
+    char *save_ptr = NULL;
+    int   map = FLAG_MODIFIER_NONE;
+    while ( key = strtok_r(input_ptr, ",", &save_ptr) ) {
+        input_ptr = NULL;
+        // The first four aren't valid/used for horizontalScrollModifierMaps or 
+        // activeHorizontalScrollModifiers but could be used by other code:
+        if      ( strcmp(key, "Shift_L")     == 0 ) { map |= FLAG_MODIFIER_SHIFT_L; }
+        else if ( strcmp(key, "Shift_R")     == 0 ) { map |= FLAG_MODIFIER_SHIFT_R; }
+        else if ( strcmp(key, "Control_L")   == 0 ) { map |= FLAG_MODIFIER_CONTROL_L; }
+        else if ( strcmp(key, "Control_R")   == 0 ) { map |= FLAG_MODIFIER_CONTROL_R; }
+        else if ( strcmp(key, "Meta_L")      == 0 ) { map |= FLAG_MODIFIER_META_L; }
+        else if ( strcmp(key, "Meta_R")      == 0 ) { map |= FLAG_MODIFIER_META_R; }
+        else if ( strcmp(key, "Super_L")     == 0 ) { map |= FLAG_MODIFIER_SUPER_L; }
+        else if ( strcmp(key, "Super_R")     == 0 ) { map |= FLAG_MODIFIER_SUPER_R; }
+        else if ( strcmp(key, "Alt_L")       == 0 ) { map |= FLAG_MODIFIER_ALT_L; }
+        else if ( strcmp(key, "Alt_R")       == 0 ) { map |= FLAG_MODIFIER_ALT_R; }
+        else if ( strcmp(key, "Hyper_L")     == 0 ) { map |= FLAG_MODIFIER_HYPER_L; }
+        else if ( strcmp(key, "Hyper_R")     == 0 ) { map |= FLAG_MODIFIER_HYPER_R; }
+        else if ( strcmp(key, "Mode_switch") == 0 ) { map |= FLAG_MODIFIER_MODE_SWITCH; }
+    }
+    if (input_ptr) { free(input_ptr); }
+    return map;
+}
+
+/* Convert modifier key bitmap to comma-delimited list of key names 
+** (Key names are as used in the preferences file.)
+** 
+** The calling function should call free(...) on the returned values when 
+** it is no longer needed.
+*/
+char* ModifierBitmapToPreference(const int map) {
+    /* NOTE: This function is not currently used.
+       Remove this comment if adding code that uses it. */
+    
+    // This code has been manually verified as not overflowing the buffer.
+    // (Actual maximum space needed is 106 bytes [including commas and NULL].)
+    
+    // Output buffer
+    assert( MAX_MODIFIERS_STRING >= 106 );
+    char out[MAX_MODIFIERS_STRING];
+    out[0] = '\0';
+    
+    int cnt = 0; // Number of keys set in bitmap
+    
+    if ( map & FLAG_MODIFIER_SHIFT_L )     { if (cnt) { strcat(out, ","); } strcat(out, "Shift_L"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_SHIFT_R )     { if (cnt) { strcat(out, ","); } strcat(out, "Shift_R"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_CONTROL_L )   { if (cnt) { strcat(out, ","); } strcat(out, "Control_L"  ); cnt++; }
+    if ( map & FLAG_MODIFIER_CONTROL_R )   { if (cnt) { strcat(out, ","); } strcat(out, "Control_R"  ); cnt++; }
+    if ( map & FLAG_MODIFIER_META_L )      { if (cnt) { strcat(out, ","); } strcat(out, "Meta_L"     ); cnt++; }
+    if ( map & FLAG_MODIFIER_META_R )      { if (cnt) { strcat(out, ","); } strcat(out, "Meta_R"     ); cnt++; }
+    if ( map & FLAG_MODIFIER_ALT_L )       { if (cnt) { strcat(out, ","); } strcat(out, "Alt_L"      ); cnt++; }
+    if ( map & FLAG_MODIFIER_ALT_R )       { if (cnt) { strcat(out, ","); } strcat(out, "Alt_R"      ); cnt++; }
+    if ( map & FLAG_MODIFIER_SUPER_L )     { if (cnt) { strcat(out, ","); } strcat(out, "Super_L"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_SUPER_R )     { if (cnt) { strcat(out, ","); } strcat(out, "Super_R"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_HYPER_L )     { if (cnt) { strcat(out, ","); } strcat(out, "Hyper_L"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_HYPER_R )     { if (cnt) { strcat(out, ","); } strcat(out, "Hyper_R"    ); cnt++; }
+    if ( map & FLAG_MODIFIER_MODE_SWITCH ) { if (cnt) { strcat(out, ","); } strcat(out, "Mode_switch"); cnt++; }
+    
+    if (cnt == 0) {
+        return strdup("None");
+    }
+    return strndup(out,MAX_MODIFIERS_STRING-1);
+}
+
+/* Populates the values in the horizontalScrollModifierMaps structure that 
+** decribes the various options for modifier keys that will switch mouse wheel 
+** scrolling from vertical to horizontal.  The pre-defined values are populated 
+** first with the final entry used to hold any custom set of keys defined by the 
+** user in the preferences; if no user-defined set is defined then the label and 
+** value fields of the final entry are both NULL.
+** 
+** Note that the labels used for the drop-down preferences menu are instantiated 
+** here; these should not be freed as they are re-used whenever the preferences 
+** dialog is shown. 
+*/
+void PopulateHorizontalScrollModifierMap(void) {
+    if ( horizontalScrollModifierMaps[0].value ) {
+        // Already populated
+        return;
+    }
+    
+    if ( activeHorizontalScrollModifiers == FLAG_MODIFIER_VALUE_INVALID ) {
+        activeHorizontalScrollModifiers = ModifierPreferenceToBitmap( PrefData.horizontalScrollModifiersString );
+    }
+    
+    int i=0;
+    Boolean preferences_value_seen = FALSE;
+    
+    assert( i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("(none/disabled)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "None");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta or Super (any)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_L,Meta_R,Super_L,Super_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta or Super (left)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_L,Super_L");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta or Super (right)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_R,Super_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta (any)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_L,Meta_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta (left)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_L");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Meta (right)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Meta_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Super (any)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Super_L,Super_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Super (left)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Super_L");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Super (right)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Super_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Alt (any)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Alt_L,Alt_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Alt (left)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Alt_L");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Alt (right)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Alt_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Hyper (any)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Hyper_L,Hyper_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Hyper (left)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Hyper_L");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("Hyper (right)");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Hyper_R");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized("AltGr/Alt Graph/Mode_switch");
+    horizontalScrollModifierMaps[i].value  = strdup(                 "Mode_switch");
+    horizontalScrollModifierMaps[i].bitmap = ModifierPreferenceToBitmap(horizontalScrollModifierMaps[i].value);
+    if ( activeHorizontalScrollModifiers == horizontalScrollModifierMaps[i].bitmap ) { preferences_value_seen = TRUE; }
+    
+    // Final field is populated if a user-specified value is in preferences file:
+    assert( ++i < HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT );
+    if (preferences_value_seen) {
+        // Not a user-defined value
+        horizontalScrollModifierMaps[i].label  = NULL;
+        horizontalScrollModifierMaps[i].value  = NULL;
+        horizontalScrollModifierMaps[i].bitmap = FLAG_MODIFIER_NONE;
+    } else {
+        // User-defined value found in preference file
+        horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized(&PrefData.horizontalScrollModifiersString);
+        horizontalScrollModifierMaps[i].value  = strdup(PrefData.horizontalScrollModifiersString);
+        horizontalScrollModifierMaps[i].bitmap = activeHorizontalScrollModifiers;
     }
 }
 
@@ -9647,14 +9930,9 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    // Pick one (would be nice if xmLabelWidget supported automatic text-wrap):
-    s1 = XmStringCreateLocalized("One can also scroll horizontally using Super+wheel\n"
-                                 "or Meta+wheel (these keys are typically Windows,\n"
-                                 "Command, diamond, AltGr, or right Alt).  Also holding\n"
-                                 "down Shift or Control increases the scroll speed.");
-//    s1 = XmStringCreateLocalized("One can also scroll horizontally using Super+wheel or Meta+wheel\n"
-//                                 "(these keys are typically Windows, Command, diamond, AltGr, or right Alt).\n"
-//                                 "Also holding down Shift or Control increases the scroll speed.");
+    s1 = XmStringCreateLocalized("Optionally one can also scroll horizontally using Modifier-key\n"
+                                 "+ Mousewheel.  Additionally holding down Shift or Control\n"
+                                 "increases the scroll speed.");
     Widget header4 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
@@ -9666,12 +9944,67 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    s1 = XmStringCreateLocalized("Swap Super+wheel or Meta+wheel scroll direction");
+    // The following call should effectively be a NOOP as the structure should 
+    // already have been populated when the preferences file was read:
+    PopulateHorizontalScrollModifierMap();
+    XmString horizontalScrollModifier[HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT];
+    int itemCount = 0;
+    for(int i=0; i<HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT; i++) {
+        if ( horizontalScrollModifierMaps[i].value ) {
+            horizontalScrollModifier[itemCount++] = horizontalScrollModifierMaps[i].label;
+        }
+    }
+    ac = 0;
+    XtSetArg(args[ac], XmNitems, horizontalScrollModifier); ac++;
+    XtSetArg(args[ac], XmNitemCount, itemCount); ac++;
+    XtSetArg(args[ac], XmNvisibleItemCount, itemCount); ac++;
+//    XtSetArg(args[ac], XmNcolumns, 21); ac++;
+    XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header4); ac++;
+    XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+    XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+    XtSetArg(args[ac], XmNcomboBoxType, XmDROP_DOWN_LIST); ac++;
+    md.edHorizontalScrollModifier = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+    XtManageChild(md.edHorizontalScrollModifier);
+    /* NOTE: The entries in horizontalScrollModifier[...] must NOT be freed  
+    ** as those values are copies of the persistent XmString pointers stored 
+    ** in horizontalScrollModifierMaps. */ 
+    
+    s1 = XmStringCreateLocalized("Modifier key");
+    XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNrightAttachment, md.edHorizontalScrollModifier,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, header4,
+            XmNtopOffset, 8,
+            XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+            XmNbottomWidget, md.edHorizontalScrollModifier,
+            NULL);
+    XmStringFree(s1);
+    
+    s1 = XmStringCreateLocalized("The physical modifier keys vary from server to server (and\n"
+                                 "may not always be present).  Often the Windows, Command, \n"
+                                 "Option, or diamond keys are mapped to one of them.");
+    Widget header5 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+            XmNlabelString, s1,
+            XmNleftAttachment, XmATTACH_FORM,
+            XmNleftOffset, 8,
+            XmNtopAttachment, XmATTACH_WIDGET,
+            XmNtopWidget, md.edHorizontalScrollModifier,
+            XmNtopOffset, 8,
+            XmNalignment, XmALIGNMENT_BEGINNING,
+            NULL);
+    XmStringFree(s1);
+    
+//    s1 = XmStringCreateLocalized("Swap Super+wheel or Meta+wheel scroll direction");
+    s1 = XmStringCreateLocalized("Swap Modifier-key+Mousewheel scroll direction");
     md.edHorizontalScrollSwapDirection 
           = XtVaCreateManagedWidget("miscCheckbox", xmToggleButtonWidgetClass, md.form,
             XmNlabelString, s1,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header4,
+            XmNtopWidget, header5,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9679,7 +10012,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     
     s1 = XmStringCreateLocalized("For mice with physical scroll-left and scroll-right buttons\n"
                                 "(often actuated by pressing the sides of the mouse wheel):");
-    Widget header5 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+    Widget header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9707,7 +10040,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtSetArg(args[ac], XmNitemCount, 22); ac++;
     XtSetArg(args[ac], XmNcolumns, 12); ac++;
     XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
-    XtSetArg(args[ac], XmNtopWidget, header5); ac++;
+    XtSetArg(args[ac], XmNtopWidget, header6); ac++;
     XtSetArg(args[ac], XmNtopOffset, 8); ac++;
     XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
     md.edHorizontalScrollStep = XmCreateDropDownComboBox(md.form, "miscDropDown", args, ac);
@@ -9722,7 +10055,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header5,
+            XmNtopWidget, header6,
             XmNtopOffset, 8,
             XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
             XmNbottomWidget, md.edHorizontalScrollStep,
@@ -9733,7 +10066,7 @@ void MiscSettingsDialog(WindowInfo *window) {
                                  "Button: Scroll amount selected above\n"
                                  "Control + button: Scroll editor width"
                                 );
-    Widget header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+    Widget header7 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
             XmNlabelString, s1,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 16,
@@ -9746,7 +10079,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     
     Widget separator3 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header6,
+            XmNtopWidget, header7,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -9971,6 +10304,14 @@ void MiscSettingsDialog(WindowInfo *window) {
     XtVaSetValues( md.edHorizontalScrollSwapDirection, 
                    XmNset, GetPrefSwapMouseWheelHorizontalDirection(), 
                    NULL );
+    
+    int horizontalScrollModifiers = GetPrefHorizontalScrollModifiers();
+    for(int i=0; i<HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT; i++) {
+        if ( horizontalScrollModifierMaps[i].bitmap == horizontalScrollModifiers ) {
+            XmComboBoxSelectItem(md.edHorizontalScrollModifier, horizontalScrollModifierMaps[i].label);
+            break;
+        }
+    }
     
     int horizontalScrollStep = GetPrefHorizontalScrollStep();
     if ( horizontalScrollStep == 0 ) {

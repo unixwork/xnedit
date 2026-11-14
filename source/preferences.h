@@ -84,6 +84,8 @@ int GetPrefZoomCtrlMouseWheel(void);
 void SetPrefZoomCtrlMouseWheel(Boolean s);
 int GetPrefHorizontalScrollStep(void);
 void SetPrefHorizontalScrollStep(int step);
+int GetPrefHorizontalScrollModifiers(void);
+void SetPrefHorizontalScrollModifiers(int modifiers);
 int GetPrefSwapMouseWheelHorizontalDirection(void);
 void SetPrefSwapMouseWheelHorizontalDirection(Boolean s);
 void SetPrefSortTabs(int state);
@@ -312,6 +314,10 @@ void ColorProfileFreeContent(ColorProfile *profile);
 char* ParseAnsiColorList(char **array, const char *str);
 
 void ParseColorProfiles(const char *str);
+
+int ModifierPreferenceToBitmap(const char *pref);
+char* ModifierBitmapToPreference(const int map);
+void PopulateHorizontalScrollModifierMap(void);
 
 void MiscSettingsDialog(WindowInfo *window);
 

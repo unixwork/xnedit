@@ -37,9 +37,11 @@ typedef struct _PrefDescripRec {
     char *class;
     int dataType;
     char *defaultString;
-    void *valueAddr;
-    void *arg;
-    int save;
+    void *valueAddr;     /* Pointer to the variable holding preference's value.
+                            For PREF_BOOLEAN that must be an int. */
+    void *arg;           /* String representations for PREF_ENUM values. */
+    int save;            /* TRUE if value should be saved to preferences file,
+                            FALSE otherwise. */
 } PrefDescripRec;
 
 XrmDatabase CreatePreferencesDatabase(const char *fileName,

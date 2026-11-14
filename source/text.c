@@ -4024,9 +4024,8 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     
     // Check modifier keys
     ExamineModifierKeys();
-    if ( ModifierKeySuper() || ModifierKeyMeta() ) {
-        // Super → Typically ⊞ or ⌘ key
-        // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+    if ( ModifierActive_HorizontalScroll() ) {
+        // User is requesting horizontal (instead of vertical) scrolling.
         
         // Increment depends on any extra modifier keys held while scrolling:
         //     [none]  → Single column
@@ -4114,9 +4113,8 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
 
     // Check modifier keys
     ExamineModifierKeys();
-    if ( ModifierKeySuper() || ModifierKeyMeta() ) {
-        // Super → Typically ⊞ or ⌘ key
-        // Meta  → Rare; ◆ on Sun, sometimes AltGr or AltR
+    if ( ModifierActive_HorizontalScroll() ) {
+        // User is requesting horizontal (instead of vertical) scrolling.
         
         // Increment depends on any extra modifier keys held while scrolling:
         //     [none]  → Single column

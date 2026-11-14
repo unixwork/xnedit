@@ -30,16 +30,40 @@
 #include <X11/Intrinsic.h>
 #include <Xm/Xm.h>
 #include <Xm/CutPaste.h>
+#include <limits.h>  /* For INT_MAX */
 
 #define MOUSE_BUTTON_LEFT         ( Button1 )
 #define MOUSE_BUTTON_MIDDLE       ( Button2 )
 #define MOUSE_BUTTON_RIGHT        ( Button3 )
-#define MOUSE_BUTTON_SCROLL_UP    ( Button4 )
-#define MOUSE_BUTTON_SCROLL_DOWN  ( Button5 )
+#define MOUSE_BUTTON_SCROLL_UP    ( Button4 ) /* Not a «real» button */
+#define MOUSE_BUTTON_SCROLL_DOWN  ( Button5 ) /* Not a «real» button */
 #define MOUSE_BUTTON_SCROLL_LEFT  ( 6 )
 #define MOUSE_BUTTON_SCROLL_RIGHT ( 7 )
 #define MOUSE_BUTTON_BACK         ( 8 )
 #define MOUSE_BUTTON_FORWARD      ( 9 )
+
+#define FLAG_MODIFIER_NONE        ( 0 )      /* None/Disabled      */
+#define FLAG_MODIFIER_SHIFT_L     ( 1<<0 )   /* For XK_Shift_L     */
+#define FLAG_MODIFIER_SHIFT_R     ( 1<<1 )   /* For XK_Shift_R     */
+#define FLAG_MODIFIER_CONTROL_L   ( 1<<2 )   /* For XK_Control_L   */
+#define FLAG_MODIFIER_CONTROL_R   ( 1<<3 )   /* For XK_Control_R   */
+#define FLAG_MODIFIER_META_L      ( 1<<4 )   /* For XK_Meta_L      */
+#define FLAG_MODIFIER_META_R      ( 1<<5 )   /* For XK_Meta_R      */
+#define FLAG_MODIFIER_ALT_L       ( 1<<6 )   /* For XK_Alt_L       */
+#define FLAG_MODIFIER_ALT_R       ( 1<<7 )   /* For XK_Alt_R       */
+#define FLAG_MODIFIER_SUPER_L     ( 1<<8 )   /* For XK_Super_L     */
+#define FLAG_MODIFIER_SUPER_R     ( 1<<9 )   /* For XK_Super_R     */
+#define FLAG_MODIFIER_HYPER_L     ( 1<<10 )  /* For XK_Hyper_L     */
+#define FLAG_MODIFIER_HYPER_R     ( 1<<11 )  /* For XK_Hyper_R     */
+#define FLAG_MODIFIER_MODE_SWITCH ( 1<<12 )  /* For XK_Mode_switch */
+
+// Used internally to signify that the bitfield has not yet been populated:
+#define FLAG_MODIFIER_VALUE_INVALID ( INT_MAX )
+
+/* Maximum length of comma-delimited preferences string listing all modifiers
+  Note that there's a bit of headroom here; the actual requirement is 106 bytes.
+*/
+#define MAX_MODIFIERS_STRING (128)
 
 #define TEXT_READ_OK 0
 #define TEXT_IS_BLANK 1
@@ -158,13 +182,6 @@ char* ConvertEncodingLen(const char *string, size_t len, const char *to, const c
 char* GetLocaleEncoding(void);
 int IsUtf8Locale(void);
 void SetWindowGtkThemeVariant(Display *dp, Window window, int theme);
-void ExamineModifierKeys(void);
-Boolean ModifierKeyShift(void);
-Boolean ModifierKeyControl(void);
-Boolean ModifierKeyMeta(void);
-Boolean ModifierKeyAlt(void);
-Boolean ModifierKeySuper(void);
-Boolean ModifierKeyHyper(void);
 
 #ifdef __APPLE__
 /*
@@ -174,5 +191,24 @@ XmString FSNameCreateLocalized(char *s);
 #else
 #define FSNameCreateLocalized(s) XmStringCreateLocalized(s)
 #endif
+
+
+// Modifier key functions:
+
+void ExamineModifierKeys(void);
+Boolean ModifierKeyShift(void);
+Boolean ModifierKeyControl(void);
+Boolean ModifierKeyMeta(void);
+Boolean ModifierKeyAlt(void);
+Boolean ModifierKeySuper(void);
+Boolean ModifierKeyHyper(void);
+Boolean ModifierKeyModeSwitch(void);
+
+Boolean ModifierBitmapMatchAny(int bitmap);
+Boolean ModifierBitmapMatchAll(int bitmap);
+Boolean ModifierBitmapMatchEqual(int bitmap);
+
+Boolean ModifierActive_HorizontalScroll(void);
+
 
 #endif /* NEDIT_MISC_H_INCLUDED */
