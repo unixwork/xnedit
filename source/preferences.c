@@ -9349,8 +9349,9 @@ int ModifierPreferenceToBitmap(const char *pref) {
     char *input_ptr = strdup(pref);
     char *save_ptr = NULL;
     int   map = FLAG_MODIFIER_NONE;
-    while ( key = strtok_r(input_ptr, ",", &save_ptr) ) {
-        input_ptr = NULL;
+    Boolean first = TRUE;
+    while ( key = strtok_r( first ? input_ptr : NULL, ",", &save_ptr) ) {
+        first = FALSE;
         // The first four aren't valid/used for horizontalScrollModifierMaps or 
         // activeHorizontalScrollModifiers but could be used by other code:
         if      ( strcmp(key, "Shift_L")     == 0 ) { map |= FLAG_MODIFIER_SHIFT_L; }
@@ -9374,7 +9375,7 @@ int ModifierPreferenceToBitmap(const char *pref) {
 /* Convert modifier key bitmap to comma-delimited list of key names 
 ** (Key names are as used in the preferences file.)
 ** 
-** The calling function should call free(...) on the returned values when 
+** The calling function should call free(...) on the returned value when 
 ** it is no longer needed.
 */
 char* ModifierBitmapToPreference(const int map) {
@@ -9546,7 +9547,7 @@ void PopulateHorizontalScrollModifierMap(void) {
         horizontalScrollModifierMaps[i].bitmap = FLAG_MODIFIER_NONE;
     } else {
         // User-defined value found in preference file
-        horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized(&PrefData.horizontalScrollModifiersString);
+        horizontalScrollModifierMaps[i].label  = XmStringCreateLocalized(PrefData.horizontalScrollModifiersString);
         horizontalScrollModifierMaps[i].value  = strdup(PrefData.horizontalScrollModifiersString);
         horizontalScrollModifierMaps[i].bitmap = activeHorizontalScrollModifiers;
     }
