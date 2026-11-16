@@ -4926,11 +4926,6 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
                     strlen(lineNumString));           
             line++;
         } else {
-            /*
-            XClearArea(XtDisplay(textD->w), XtWindow(textD->w),
-                    textD->lineNumLeft, y, textD->lineNumWidth,
-                    textD->ascent + textD->descent, False);
-            */
             if (visLine == 0)
                 line++;
         }

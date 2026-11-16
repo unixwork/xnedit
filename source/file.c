@@ -2206,7 +2206,7 @@ void PrintWindow(WindowInfo *window, int selectedOnly)
 */
 void PrintString(const char *string, int length, Widget parent, const char *jobName)
 {
-    char *tmpFileName=strdup("/tmp/neditXXXXXX");
+    char *tmpFileName=strdup("/tmp/xneditXXXXXX");
     FILE *fp;
     int fd;
 
