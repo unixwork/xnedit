@@ -1154,7 +1154,7 @@ static void finishMacroCmdExecution(WindowInfo *window)
     /* If macro closed its own window, window was made empty and untitled,
        but close was deferred until completion.  This is completion, so if
        the window is still empty, do the close */
-    if (closeOnCompletion && !window->editorInfo->filenameSet && !window->editorInfo->fileChanged) {
+    if (closeOnCompletion && !window->filenameSet && !window->fileChanged) {
         CloseWindow(window);
     window = NULL;
     }
@@ -1874,7 +1874,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
     } else {
         /* just use the plain name as supplied */
     for (w=WindowList; w != NULL; w = w->next) {
-	    snprintf(fullname, sizeof(fullname), "%s%s", w->editorInfo->path, w->editorInfo->filename);
+	    snprintf(fullname, sizeof(fullname), "%s%s", w->path, w->filename);
         if (!strcmp(string, fullname)) {
         break;
         }
@@ -1890,7 +1890,7 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
             }
             for (w=WindowList; w != NULL; w = w->next) {
                 snprintf(fullname, sizeof(fullname),
-                        "%s%s", w->editorInfo->path, w->editorInfo->filename);
+                        "%s%s", w->path, w->filename);
                 if (!strcmp(normalizedString, fullname))
                     break;
             }
@@ -1914,9 +1914,9 @@ static int focusWindowMS(WindowInfo *window, DataValue *argList, int nArgs,
 
     /* Return the name of the window */
     result->tag = STRING_TAG;
-    size_t result_str_len = strlen(w->editorInfo->path)+strlen(w->editorInfo->filename)+1;
+    size_t result_str_len = strlen(w->path)+strlen(w->filename)+1;
     AllocNString(&result->val.str, result_str_len);
-    snprintf(result->val.str.rep, result_str_len, "%s%s", w->editorInfo->path, w->editorInfo->filename);
+    snprintf(result->val.str.rep, result_str_len, "%s%s", w->path, w->filename);
     return True;
 }
 
@@ -2012,7 +2012,7 @@ static int replaceRangeMS(WindowInfo *window, DataValue *argList, int nArgs,
     if (from > to) {int temp = from; from = to; to = temp;}
     
     /* Don't allow modifications if the window is read-only */
-    if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
+    if (IS_ANY_LOCKED(window->lockReasons)) {
     XBell(XtDisplay(window->shell), 0);
     result->tag = NO_TAG;
     return True;
@@ -2051,7 +2051,7 @@ static int replaceSelectionMS(WindowInfo *window, DataValue *argList, int nArgs,
         return False;
     
     /* Don't allow modifications if the window is read-only */
-    if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
+    if (IS_ANY_LOCKED(window->lockReasons)) {
     XBell(XtDisplay(window->shell), 0);
     result->tag = NO_TAG;
     return True;
@@ -3446,7 +3446,7 @@ static int filenameDialogMS(WindowInfo* window, DataValue* argList, int nArgs,
     if ('\0' != defaultPath[0]) {
         SetFileDialogDefaultDirectory(defaultPath);
     } else {
-        SetFileDialogDefaultDirectory(window->editorInfo->path);
+        SetFileDialogDefaultDirectory(window->path);
     }
 
     /*  Set filter (saving original for later)  */
@@ -4134,7 +4134,7 @@ static int fileNameMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = STRING_TAG;
-    AllocNStringCpy(&result->val.str, window->editorInfo->filename);
+    AllocNStringCpy(&result->val.str, window->filename);
     return True;
 }
 
@@ -4142,7 +4142,7 @@ static int filePathMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = STRING_TAG;
-    AllocNStringCpy(&result->val.str, window->editorInfo->path);
+    AllocNStringCpy(&result->val.str, window->path);
     return True;
 }
 
@@ -4292,7 +4292,7 @@ static int makeBackupCopyMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->editorInfo->saveOldVersion ? 1 : 0;
+    result->val.n = window->saveOldVersion ? 1 : 0;
     return True;
 }
 
@@ -4300,7 +4300,7 @@ static int incBackupMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->editorInfo->autoSave ? 1 : 0;
+    result->val.n = window->autoSave ? 1 : 0;
     return True;
 }
 
@@ -4344,7 +4344,7 @@ static int overTypeModeMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->editorInfo->overstrike ? 1 : 0;
+    result->val.n = window->overstrike ? 1 : 0;
     return True;
 }
 
@@ -4352,7 +4352,7 @@ static int readOnlyMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = (IS_ANY_LOCKED(window->editorInfo->lockReasons)) ? 1 : 0;
+    result->val.n = (IS_ANY_LOCKED(window->lockReasons)) ? 1 : 0;
     return True;
 }
 
@@ -4360,7 +4360,7 @@ static int lockedMV(WindowInfo *window, DataValue *argList, int nArgs,
     DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = (IS_USER_LOCKED(window->editorInfo->lockReasons)) ? 1 : 0;
+    result->val.n = (IS_USER_LOCKED(window->lockReasons)) ? 1 : 0;
     return True;
 }
 
@@ -4369,7 +4369,7 @@ static int fileFormatMV(WindowInfo *window, DataValue *argList, int nArgs,
 {
     char *res = NULL;
 
-    switch (window->editorInfo->fileFormat) {
+    switch (window->fileFormat) {
         case UNIX_FILE_FORMAT:
             res = PERM_ALLOC_STR("unix");
             break;
@@ -4541,7 +4541,7 @@ static int modifiedMV(WindowInfo *window, DataValue *argList, int nArgs,
         DataValue *result, char **errMsg)
 {
     result->tag = INT_TAG;
-    result->val.n = window->editorInfo->fileChanged;
+    result->val.n = window->fileChanged;
     return True;
 }
 

@@ -207,8 +207,8 @@ void ExecShellCommand(WindowInfo *window, const char *command, int fromMacro)
     
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->editorInfo->path);
-    strcat(fullName, window->editorInfo->filename);
+    strcpy(fullName, window->path);
+    strcat(fullName, window->filename);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
     }
@@ -282,8 +282,8 @@ void ExecCursorLine(WindowInfo *window, int fromMacro)
 
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->editorInfo->path);
-    strcat(fullName, window->editorInfo->filename);
+    strcpy(fullName, window->path);
+    strcat(fullName, window->filename);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
     }
@@ -332,8 +332,8 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
 
     /* Substitute the current file name for % and the current line number
        for # in the shell command */
-    strcpy(fullName, window->editorInfo->path);
-    strcat(fullName, window->editorInfo->filename);
+    strcpy(fullName, window->path);
+    strcat(fullName, window->filename);
     pos = TextGetCursorPos(window->lastFocus);
     if(!TextPosToLineAndCol(window->lastFocus, pos, &line, &column)) {
         line = BufCountLines(window->editorInfo->buffer, 0, pos) + 1;
@@ -390,7 +390,7 @@ void DoShellMenuCmd(WindowInfo *window, const char *command,
     flags |= OUTPUT_TO_DIALOG;
         left = right = 0;
     } else if (output == TO_NEW_WINDOW) {
-    	EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->editorInfo->path);
+    	EditNewFile(GetPrefOpenInTab()?inWindow:NULL, NULL, False, NULL, window->path);
         outWidget = WindowList->textArea;
     inWindow = WindowList;
         left = right = 0;
@@ -506,7 +506,7 @@ static void issueCommand(WindowInfo *window, const char *command, char *input,
         SetSensitive(window, window->cancelShellItem, True);
 
     /* fork the subprocess and issue the command */
-    childPid = forkCommand(window->shell, command, window->editorInfo->path, &stdinFD,
+    childPid = forkCommand(window->shell, command, window->path, &stdinFD,
         &stdoutFD, (flags & ERROR_DIALOGS) ? &stderrFD : NULL);
     
     /* set the pipes connected to the process for non-blocking i/o */

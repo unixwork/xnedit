@@ -5277,15 +5277,15 @@ static int matchLanguageMode(WindowInfo *window)
     /* Look at file extension ("@@/" starts a ClearCase version extended path,
        which gets appended after the file extension, and therefore must be
        stripped off to recognize the extension to make ClearCase users happy) */
-    fileNameLen = strlen(window->editorInfo->filename);
-    if ((versionExtendedPath = GetClearCaseVersionExtendedPath(window->editorInfo->filename)) != NULL)
-        fileNameLen = versionExtendedPath - window->editorInfo->filename;
+    fileNameLen = strlen(window->filename);
+    if ((versionExtendedPath = GetClearCaseVersionExtendedPath(window->filename)) != NULL)
+        fileNameLen = versionExtendedPath - window->filename;
     for (i=0; i<NLanguageModes; i++) {
         for (j=0; j<LanguageModes[i]->nExtensions; j++) {
             ext = LanguageModes[i]->extensions[j];
             extLen = strlen(ext);
             start = fileNameLen - extLen;
-            if (start >= 0 && !strncmp(&window->editorInfo->filename[start], ext, extLen))  
+            if (start >= 0 && !strncmp(&window->filename[start], ext, extLen))  
                 return i;
         }
     }

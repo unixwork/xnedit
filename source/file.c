@@ -309,10 +309,10 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
     else 
 	window = CreateWindow(name, geometry, iconic, NULL);
 
-    path = window->editorInfo->path;
-    strcpy(window->editorInfo->filename, name);
+    path = window->path;
+    strcpy(window->filename, name);
     strcpy(path, (defaultPath && *defaultPath) ? defaultPath : GetCurrentDir());
-    pathlen = strlen(window->editorInfo->path);
+    pathlen = strlen(window->path);
     
     /* do we have a "/" at the end? if not, add one */
     if (0 < pathlen && path[pathlen - 1] != '/' && pathlen < MAXPATHLEN - 1) {
@@ -320,7 +320,7 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
     }
     
     SetWindowModified(window, FALSE);
-    CLEAR_ALL_LOCKS(window->editorInfo->lockReasons);
+    CLEAR_ALL_LOCKS(window->lockReasons);
     UpdateWindowReadOnly(window);
     UpdateStatsLine(window);
     UpdateWindowTitle(window);
@@ -392,15 +392,15 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
     switch(ec.end_of_line) {
         default: break;
         case EC_LF: {
-            window->editorInfo->fileFormat = UNIX_FILE_FORMAT;
+            window->fileFormat = UNIX_FILE_FORMAT;
             break;
         }
         case EC_CR: {
-            window->editorInfo->fileFormat = MAC_FILE_FORMAT;
+            window->fileFormat = MAC_FILE_FORMAT;
             break;
         }
         case EC_CRLF: {
-            window->editorInfo->fileFormat = DOS_FILE_FORMAT;
+            window->fileFormat = DOS_FILE_FORMAT;
             break;
         }
     }
@@ -451,7 +451,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     if (inWindow == NULL) {
 	window = CreateWindow(name, geometry, iconic, NULL);
     }
-    else if (inWindow->editorInfo->filenameSet || inWindow->editorInfo->fileChanged ||
+    else if (inWindow->filenameSet || inWindow->fileChanged ||
         inWindow->macroCmdData != NULL) {
     if (tabbed) {
 	    window = CreateDocument(inWindow, name, NULL);
@@ -463,8 +463,8 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     else {
         /* open file in untitled document */
         window = inWindow;
-    	strcpy(window->editorInfo->path, path);
-    	strcpy(window->editorInfo->filename, name); 
+    	strcpy(window->path, path);
+    	strcpy(window->filename, name); 
         if(encoding) {
             SetEncoding(window, encoding);
         } else {
@@ -558,11 +558,11 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     Widget text;
     
     /* Can't revert untitled windows */
-    if (!window->editorInfo->filenameSet)
+    if (!window->filenameSet)
     {
         DialogF(DF_WARN, window->shell, 1, "Error",
                 "Window '%s' was never saved, can't re-read", "OK",
-                window->editorInfo->filename);
+                window->filename);
         return;
     }
     
@@ -574,8 +574,8 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     }
 
     /* re-read the file, update the window title if new file is different */
-    strcpy(name, window->editorInfo->filename);
-    strcpy(path, window->editorInfo->path);
+    strcpy(name, window->filename);
+    strcpy(path, window->path);
     
     if(newEncoding) {
         encoding = newEncoding;
@@ -588,18 +588,18 @@ void RevertToSaved(WindowInfo *window, char *newEncoding)
     
     RemoveBackupFile(window);
     ClearUndoList(window);
-    openFlags |= IS_USER_LOCKED(window->editorInfo->lockReasons) && !IS_ENCODING_LOCKED(window->editorInfo->lockReasons) ? PREF_READ_ONLY : 0;
+    openFlags |= IS_USER_LOCKED(window->lockReasons) && !IS_ENCODING_LOCKED(window->lockReasons) ? PREF_READ_ONLY : 0;
     if (!doOpen(window, name, path, encoding, window->filter, openFlags)) {
     /* This is a bit sketchy.  The only error in doOpen that irreperably
             damages the window is "too much binary data".  It should be
             pretty rare to be reverting something that was fine only to find
             that now it has too much binary data. */
-        if (!window->editorInfo->fileMissing)
+        if (!window->fileMissing)
         safeClose(window);
         else {
             /* Treat it like an externally modified file */
-            window->editorInfo->lastModTime=0;
-            window->editorInfo->fileMissing=FALSE;
+            window->lastModTime=0;
+            window->fileMissing=FALSE;
         }
         return;
     }
@@ -690,24 +690,24 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     /* initialize lock reasons */
-    CLEAR_ALL_LOCKS(window->editorInfo->lockReasons);
+    CLEAR_ALL_LOCKS(window->lockReasons);
     
     /* Update the window data structure */
     size_t name_len = strlen(name);
     size_t path_len = strlen(path);
     if(name_len + path_len >= MAXPATHLEN-1) {
-        window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+        window->filenameSet = FALSE; /* Temp. prevent check for changes. */
         DialogF(DF_ERR, window->shell, 1, "Error opening File",
                 "Path too long", "OK");
-        window->editorInfo->filenameSet = TRUE;
+        window->filenameSet = TRUE;
         return False;
     } 
     
-    memcpy(window->editorInfo->filename, name, name_len+1);
-    memcpy(window->editorInfo->path, path, path_len+1);
+    memcpy(window->filename, name, name_len+1);
+    memcpy(window->path, path, path_len+1);
     window->encoding[0] = '\0';
-    window->editorInfo->filenameSet = TRUE;
-    window->editorInfo->fileMissing = TRUE;
+    window->filenameSet = TRUE;
+    window->fileMissing = TRUE;
 
     /* Get the full name of the file */
     memcpy(fullname, path, path_len);
@@ -753,27 +753,27 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             
             SetWindowModified(window, FALSE);
             if ((flags & PREF_READ_ONLY) != 0) {
-                SET_USER_LOCKED(window->editorInfo->lockReasons, TRUE);
+                SET_USER_LOCKED(window->lockReasons, TRUE);
             }
         UpdateWindowReadOnly(window);
         return TRUE;
         } else if(content.isdir) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
                     "Can't open directory %s", "OK", name);
-            window->editorInfo->filenameSet = TRUE;
+            window->filenameSet = TRUE;
         } else if(content.isblk) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
                     "Can't open block device %s", "OK", name);
-            window->editorInfo->filenameSet = TRUE;
+            window->filenameSet = TRUE;
         } else if(content.allocerror) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                     "File is too large to edit", "OK");
-            window->editorInfo->filenameSet = TRUE;
+            window->filenameSet = TRUE;
         } else if(content.iconverror) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             char *format = "File cannot be converted from %s to UTF8";
             size_t msglen = strlen(format) + strlen(encoding) + 4;
             char *msgbuf = NEditMalloc(msglen);
@@ -781,7 +781,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                     msgbuf, "OK");
             NEditFree(msgbuf);
-            window->editorInfo->filenameSet = TRUE;
+            window->filenameSet = TRUE;
         } else {
             /* A true error */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
@@ -793,9 +793,9 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     SetEncoding(window, content.encoding);
     
-    SET_ENCODING_LOCKED(window->editorInfo->lockReasons, FALSE);
+    SET_ENCODING_LOCKED(window->lockReasons, FALSE);
     if(content.readonly) {
-        SET_PERM_LOCKED(window->editorInfo->lockReasons, TRUE);
+        SET_PERM_LOCKED(window->lockReasons, TRUE);
     }
     
     int show_infobar = FALSE;
@@ -823,18 +823,18 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     SetFilter(window, filter_name);
     
     window->bom = content.hasBOM;
-    window->editorInfo->fileFormat = content.fileFormat;
+    window->fileFormat = content.fileFormat;
 
     /* Any errors that happen after this point leave the window in a 
         "broken" state, and thus RevertToSaved will abandon the window if
-        window->editorInfo->fileMissing is FALSE and doOpen fails. */    
-    window->editorInfo->fileMode = content.statbuf.st_mode;
-    window->editorInfo->fileUid = content.statbuf.st_uid;
-    window->editorInfo->fileGid = content.statbuf.st_gid;
-    window->editorInfo->lastModTime = content.statbuf.st_mtime;
-    window->editorInfo->device = content.statbuf.st_dev;
-    window->editorInfo->inode = content.statbuf.st_ino;
-    window->editorInfo->fileMissing = FALSE;
+        window->fileMissing is FALSE and doOpen fails. */    
+    window->fileMode = content.statbuf.st_mode;
+    window->fileUid = content.statbuf.st_uid;
+    window->fileGid = content.statbuf.st_gid;
+    window->lastModTime = content.statbuf.st_mtime;
+    window->device = content.statbuf.st_dev;
+    window->inode = content.statbuf.st_ino;
+    window->fileMissing = FALSE;
     
     /* Disable continuous wrapping if the file is too big */
     if(content.length > DISABLE_WRAPPING_THRESHOLD) {
@@ -861,7 +861,7 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                 return FALSE;
             }
 
-            SET_TMBD_LOCKED(window->editorInfo->lockReasons, TRUE);
+            SET_TMBD_LOCKED(window->lockReasons, TRUE);
             for (char *c = content.content; c < &content.content[content.length]; c++) {
                 if (*c == '\0') {
                     *c = (char) 0xfe;
@@ -879,15 +879,15 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
 
     /* Set window title and file changed flag */
     if ((flags & PREF_READ_ONLY) != 0) {
-        SET_USER_LOCKED(window->editorInfo->lockReasons, TRUE);
-        SET_ENCODING_LOCKED(window->editorInfo->lockReasons, lock_enc_error);
+        SET_USER_LOCKED(window->lockReasons, TRUE);
+        SET_ENCODING_LOCKED(window->lockReasons, lock_enc_error);
     }
-    if (IS_PERM_LOCKED(window->editorInfo->lockReasons)) {
-	window->editorInfo->fileChanged = FALSE;
+    if (IS_PERM_LOCKED(window->lockReasons)) {
+	window->fileChanged = FALSE;
     UpdateWindowTitle(window);
     } else {
     SetWindowModified(window, FALSE);
-	if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
+	if (IS_ANY_LOCKED(window->lockReasons)) {
         UpdateWindowTitle(window);
         }
     }
@@ -1264,24 +1264,24 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
     /* Open the file */
     FileContent content;
     if(GetFileContent(window->shell, name, encoding, filter_name, &content)) {
-        int filenameSet = window->editorInfo->filenameSet;
+        int filenameSet = window->filenameSet;
         if(content.isdir) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
                     "Can't open directory %s", "OK", name);
-            window->editorInfo->filenameSet = filenameSet;
+            window->filenameSet = filenameSet;
         } else if(content.isblk) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
                     "Can't open block device %s", "OK", name);
-            window->editorInfo->filenameSet = filenameSet;
+            window->filenameSet = filenameSet;
         } else if(content.allocerror) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                     "File is too large to include", "OK");
-            window->editorInfo->filenameSet = filenameSet;
+            window->filenameSet = filenameSet;
         } else if(content.iconverror) {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             char *format = "File cannot be converted from %s to UTF8";
             size_t msglen = strlen(format) + strlen(encoding) + 4;
             char *msgbuf = NEditMalloc(msglen);
@@ -1289,12 +1289,12 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                     msgbuf, "OK");
             NEditFree(msgbuf);
-            window->editorInfo->filenameSet = filenameSet;
+            window->filenameSet = filenameSet;
         } else {
-            window->editorInfo->filenameSet = FALSE; /* Temp. prevent check for changes. */
+            window->filenameSet = FALSE; /* Temp. prevent check for changes. */
             DialogF(DF_ERR, window->shell, 1, "Error while opening File",
                     "Unknown error", "OK");
-            window->editorInfo->filenameSet = filenameSet;
+            window->filenameSet = filenameSet;
         }
         return 0;
     }
@@ -1338,7 +1338,7 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
 int CloseAllFilesAndWindows(void)
 {
     while (WindowList->next != NULL || 
-    		WindowList->editorInfo->filenameSet || WindowList->editorInfo->fileChanged) {
+    		WindowList->filenameSet || WindowList->fileChanged) {
         /*
          * When we're exiting through a macro, the document running the 
          * macro does not disappear from the list, so we could get stuck
@@ -1368,7 +1368,7 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
     int response, stat;
     
     /* Make sure that the window is not in iconified state */
-    if (window->editorInfo->fileChanged)
+    if (window->fileChanged)
         RaiseDocumentWindow(window);
 
     /* If the window is a normal & unmodified file or an empty new file, 
@@ -1377,11 +1377,11 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
     if (window->editorInfo->master->nextSlave) {
     	CloseWindow(window);
     }
-    else if (!window->editorInfo->fileChanged && 
+    else if (!window->fileChanged && 
             /* Normal File */
-            ((!window->editorInfo->fileMissing && window->editorInfo->lastModTime > 0) || 
+            ((!window->fileMissing && window->lastModTime > 0) || 
             /* New File*/
-             (window->editorInfo->fileMissing && window->editorInfo->lastModTime == 0) ||
+             (window->fileMissing && window->lastModTime == 0) ||
             /* File deleted/modified externally, ignored by user. */
             !GetPrefWarnFileMods()))
     {
@@ -1392,7 +1392,7 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
         if (preResponse == PROMPT_SBC_DIALOG_RESPONSE)
         {
             response = DialogF(DF_WARN, window->shell, 3, "Save File",
-            "Save %s before closing?", "Yes", "No", "Cancel", window->editorInfo->filename);
+            "Save %s before closing?", "Yes", "No", "Cancel", window->filename);
         } else
         {
             response = preResponse;
@@ -1431,12 +1431,12 @@ int SaveWindow(WindowInfo *window)
     
     /* Return success if the file is normal & unchanged or is a
         read-only file. */
-    if ( (!window->editorInfo->fileChanged && !window->editorInfo->fileMissing && 
-            window->editorInfo->lastModTime > 0) || 
-            IS_ANY_LOCKED_IGNORING_PERM(window->editorInfo->lockReasons))
+    if ( (!window->fileChanged && !window->fileMissing && 
+            window->lastModTime > 0) || 
+            IS_ANY_LOCKED_IGNORING_PERM(window->lockReasons))
         return TRUE;
     /* Prompt for a filename if this is an Untitled window */
-    if (!window->editorInfo->filenameSet)
+    if (!window->filenameSet)
         return SaveWindowAs(window, NULL);
 
     /* Check for external modifications and warn the user */
@@ -1450,12 +1450,12 @@ int SaveWindow(WindowInfo *window)
         "To preserve the modified file, cancel this operation and\n"
         "use Save As... to save this file under a different name,\n"
         "or Revert to Saved to revert to the modified version.",
-        "Continue", "Cancel", window->editorInfo->filename);
+        "Continue", "Cancel", window->filename);
         if (stat == 2)
         {
             /* Cancel and mark file as externally modified */
-            window->editorInfo->lastModTime = 0;
-            window->editorInfo->fileMissing = FALSE;
+            window->lastModTime = 0;
+            window->fileMissing = FALSE;
             return FALSE;
         }
     }
@@ -1482,14 +1482,14 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
         memset(&newFile, 0, sizeof(FileSelection));
         newFile.extraoptions = True;
         newFile.encoding = strlen(window->encoding) > 0 ? window->encoding : NULL;
-        newFile.format = window->editorInfo->fileFormat;
+        newFile.format = window->fileFormat;
         newFile.writebom = window->bom;
         
     response = PromptForNewFile(window, "Save File As", &newFile, &fileFormat);
     if (response != GFN_OK)
             return FALSE;
         window->bom = newFile.writebom;
-	window->editorInfo->fileFormat = newFile.format;
+	window->fileFormat = newFile.format;
         SetFilter(window, newFile.filter);
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
@@ -1519,7 +1519,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
             SetEncoding(window, file->encoding);
         }
         window->bom = file->writebom;
-        window->editorInfo->fileFormat = file->format;
+        window->fileFormat = file->format;
         SetFilter(window, file->filter);
     }
 
@@ -1537,8 +1537,8 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     }
 
     /* If the requested file is this file, just save it and return */
-    if (!strcmp(window->editorInfo->filename, filename) &&
-    	    !strcmp(window->editorInfo->path, pathname)) {
+    if (!strcmp(window->filename, filename) &&
+    	    !strcmp(window->path, pathname)) {
     if (writeBckVersion(window))
             return FALSE;
     return doSave(window, file->setxattr);
@@ -1573,12 +1573,12 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
 
     /* Change the name of the file and save it under the new name */
     RemoveBackupFile(window);
-    strcpy(window->editorInfo->filename, filename);
-    strcpy(window->editorInfo->path, pathname);
-    window->editorInfo->fileMode = 0;
-    window->editorInfo->fileUid = 0;
-    window->editorInfo->fileGid = 0;
-    CLEAR_ALL_LOCKS(window->editorInfo->lockReasons);
+    strcpy(window->filename, filename);
+    strcpy(window->path, pathname);
+    window->fileMode = 0;
+    window->fileUid = 0;
+    window->fileGid = 0;
+    CLEAR_ALL_LOCKS(window->lockReasons);
     retVal = doSave(window, file->setxattr);
     UpdateWindowReadOnly(window);
     RefreshTabState(window);
@@ -1589,10 +1589,10 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     /*  If name has changed, language mode may have changed as well, unless
         it's an Untitled window for which the user already set a language
         mode; it's probably the right one.  */
-    if (PLAIN_LANGUAGE_MODE == window->languageMode || window->editorInfo->filenameSet) {
+    if (PLAIN_LANGUAGE_MODE == window->languageMode || window->filenameSet) {
         DetermineLanguageMode(window, False);
     }
-    window->editorInfo->filenameSet = True;
+    window->filenameSet = True;
     
     /* Update the stats line and window title with the new filename */
     UpdateWindowTitle(window);
@@ -1652,8 +1652,8 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
 
     /* Get the full name of the file */
-    strcpy(fullname, window->editorInfo->path);
-    strcat(fullname, window->editorInfo->filename);
+    strcpy(fullname, window->path);
+    strcat(fullname, window->filename);
 
     /*  Check for root and warn him if he wants to write to a file with
         none of the write bits set.  */
@@ -1664,7 +1664,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         result = DialogF(DF_WARN, window->shell, 2, "Writing Read-only File",
                 "File '%s' is marked as read-only.\n"
                 "Do you want to save anyway?",
-                "Save", "Cancel", window->editorInfo->filename);
+                "Save", "Cancel", window->filename);
         if (1 != result)
         {
             return True;
@@ -1683,10 +1683,10 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             && window->editorInfo->buffer->length != 0
             && GetPrefAppendLF())
     {
-        Boolean filenameSet = window->editorInfo->filenameSet;
-        window->editorInfo->filenameSet = False; /* Temp. prevent check for changes. */
+        Boolean filenameSet = window->filenameSet;
+        window->filenameSet = False; /* Temp. prevent check for changes. */
         BufInsert(window->editorInfo->buffer, window->editorInfo->buffer->length, "\n");
-        window->editorInfo->filenameSet = filenameSet;
+        window->filenameSet = filenameSet;
     }
     
     /* open the file */
@@ -1696,7 +1696,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
         result = DialogF(DF_WARN, window->shell, 2, "Error saving File",
                 "Unable to save %s:\n%s\n\nSave as a new file?",
                 "Save As...", "Cancel",
-        window->editorInfo->filename, errorString());
+        window->filename, errorString());
 
         if (result == 1)
         {
@@ -1713,7 +1713,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     BufUnsubstituteNullChars(fileString, window->editorInfo->buffer);
     
     /* If the file is to be saved in DOS or Macintosh format, reconvert */
-    if (window->editorInfo->fileFormat == DOS_FILE_FORMAT)
+    if (window->fileFormat == DOS_FILE_FORMAT)
     {
         if (!ConvertToDosFileString(&fileString, &fileLen))
         {
@@ -1722,7 +1722,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
             fclose(fp);
             return FALSE;
         }
-    } else if (window->editorInfo->fileFormat == MAC_FILE_FORMAT)
+    } else if (window->fileFormat == MAC_FILE_FORMAT)
     { 
         ConvertToMacFileString(fileString, fileLen);
     }
@@ -1843,7 +1843,7 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     if (ferror(fp))
     {
         DialogF(DF_ERR, window->shell, 1, "Error saving File",
-                "%s not saved:\n%s", "OK", window->editorInfo->filename, errorString());
+                "%s not saved:\n%s", "OK", window->filename, errorString());
     }
 
     if (ferror(fp) || eresp == 2) {
@@ -1908,17 +1908,17 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     
     /* update the modification time */
     if (stat(fullname, &statbuf) == 0) {
-        window->editorInfo->lastModTime = statbuf.st_mtime;
-        window->editorInfo->fileMissing = FALSE;
-        window->editorInfo->device = statbuf.st_dev;
-        window->editorInfo->inode = statbuf.st_ino;
+        window->lastModTime = statbuf.st_mtime;
+        window->fileMissing = FALSE;
+        window->device = statbuf.st_dev;
+        window->inode = statbuf.st_ino;
     } else {
         /* This needs to produce an error message -- the file can't be 
             accessed! */
-        window->editorInfo->lastModTime = 0;
-        window->editorInfo->fileMissing = TRUE;
-        window->editorInfo->device = 0;
-        window->editorInfo->inode = 0;
+        window->lastModTime = 0;
+        window->fileMissing = TRUE;
+        window->device = 0;
+        window->inode = 0;
     }
     
     // show infobar, if needed
@@ -1954,9 +1954,9 @@ int WriteBackupFile(WindowInfo *window)
     {
         DialogF(DF_WARN, window->shell, 1, "Error writing Backup",
                 "Unable to save backup for %s:\n%s\n"
-                "Automatic backup is now off", "OK", window->editorInfo->filename,
+                "Automatic backup is now off", "OK", window->filename,
                 errorString());
-        window->editorInfo->autoSave = FALSE;
+        window->autoSave = FALSE;
         SetToggleButtonState(window, window->autoSaveItem, FALSE, FALSE);
         return FALSE;
     }
@@ -1978,12 +1978,12 @@ int WriteBackupFile(WindowInfo *window)
     {
         DialogF(DF_ERR, window->shell, 1, "Error saving Backup",
                 "Error while saving backup for %s:\n%s\n"
-                "Automatic backup is now off", "OK", window->editorInfo->filename,
+                "Automatic backup is now off", "OK", window->filename,
                 errorString());
         fclose(fp);
         remove(name);
         NEditFree(fileString);
-        window->editorInfo->autoSave = FALSE;
+        window->autoSave = FALSE;
         return FALSE;
     }
     
@@ -2007,7 +2007,7 @@ void RemoveBackupFile(WindowInfo *window)
     char name[MAXPATHLEN];
     
     /* Don't delete backup files when backups aren't activated. */
-    if (window->editorInfo->autoSave == FALSE)
+    if (window->autoSave == FALSE)
         return;
       
     backupFileName(window, name, sizeof(name));
@@ -2021,13 +2021,13 @@ void RemoveBackupFile(WindowInfo *window)
 static void backupFileName(WindowInfo *window, char *name, size_t len)
 {
     char bckname[MAXPATHLEN];
-    if (window->editorInfo->filenameSet)
+    if (window->filenameSet)
     {
-        sprintf(name, "%s~%s", window->editorInfo->path, window->editorInfo->filename);
+        sprintf(name, "%s~%s", window->path, window->filename);
     } else
     {
         strcpy(bckname, "~");
-        strncat(bckname, window->editorInfo->filename, MAXPATHLEN - 1);
+        strncat(bckname, window->filename, MAXPATHLEN - 1);
         PrependHome(bckname, name, len);
     }
 }
@@ -2046,17 +2046,17 @@ static int writeBckVersion(WindowInfo *window)
 #define IO_BUFFER_SIZE ((size_t)(1024*1024))
 
     /* Do only if version backups are turned on */
-    if (!window->editorInfo->saveOldVersion) {
+    if (!window->saveOldVersion) {
         return False;
     }
     
     /* Get the full name of the file */
-    strcpy(fullname, window->editorInfo->path);
-    strcat(fullname, window->editorInfo->filename);
+    strcpy(fullname, window->path);
+    strcat(fullname, window->filename);
     
     /* Generate name for old version */
     if ((strlen(fullname) + 5) > (size_t) MAXPATHLEN) {
-        return bckError(window, "file name too long", window->editorInfo->filename);
+        return bckError(window, "file name too long", window->filename);
     }
     if(snprintf(bckname, MAXPATHLEN, "%s.bck", fullname) >= MAXPATHLEN) {
         return FALSE;
@@ -2116,7 +2116,7 @@ static int writeBckVersion(WindowInfo *window)
             close(out_fd);
             remove(bckname);
             free(io_buffer);
-            return bckError(window, "read() error", window->editorInfo->filename);
+            return bckError(window, "read() error", window->filename);
         }
 
         if (0 == bytes_read) {
@@ -2157,7 +2157,7 @@ static int bckError(WindowInfo *window, const char *errString, const char *file)
     if (resp == 1)
         return TRUE;
     if (resp == 2) {
-    	window->editorInfo->saveOldVersion = FALSE;
+    	window->saveOldVersion = FALSE;
         SetToggleButtonState(window, window->saveLastItem, FALSE, FALSE);
     }
     return FALSE;
@@ -2194,7 +2194,7 @@ void PrintWindow(WindowInfo *window, int selectedOnly)
         fileString[fileLen++] = '\n';      /* null terminator no longer needed */
     
     /* Print the string */
-    PrintString(fileString, fileLen, window->shell, window->editorInfo->filename);
+    PrintString(fileString, fileLen, window->shell, window->filename);
 
     /* Free the text buffer copy returned from XmTextGetString */
     NEditFree(fileString);
@@ -2269,12 +2269,12 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
     char *savedDefaultDir;
     int retVal;
     
-    /* Temporarily set default directory to window->editorInfo->path, prompt for file,
+    /* Temporarily set default directory to window->path, prompt for file,
        then, if the call was unsuccessful, restore the original default
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
-    if (*window->editorInfo->path != '\0')
-    	SetFileDialogDefaultDirectory(window->editorInfo->path);
+    if (*window->path != '\0')
+    	SetFileDialogDefaultDirectory(window->path);
     retVal = GetExistingFilename(window->shell, prompt, file);
     if (retVal != GFN_OK)
         SetFileDialogDefaultDirectory(savedDefaultDir);
@@ -2295,26 +2295,26 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
     int retVal;
     char *savedDefaultDir;
     
-    *fileFormat = window->editorInfo->fileFormat;
+    *fileFormat = window->fileFormat;
     
-    /* Temporarily set default directory to window->editorInfo->path, prompt for file,
+    /* Temporarily set default directory to window->path, prompt for file,
        then, if the call was unsuccessful, restore the original default
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
-    if (*window->editorInfo->path != '\0')
-    	SetFileDialogDefaultDirectory(window->editorInfo->path);
+    if (*window->path != '\0')
+    	SetFileDialogDefaultDirectory(window->path);
     
     char *prevPath = NULL;
-    if(window->editorInfo->path[0] != '\0' && window->editorInfo->filename[0] != '\0' && window->editorInfo->filenameSet) {
-        size_t plen = strlen(window->editorInfo->path);
-        size_t nlen = strlen(window->editorInfo->filename);
+    if(window->path[0] != '\0' && window->filename[0] != '\0' && window->filenameSet) {
+        size_t plen = strlen(window->path);
+        size_t nlen = strlen(window->filename);
         prevPath = NEditMalloc(plen + nlen + 2);
-        memcpy(prevPath, window->editorInfo->path, plen);
-        if(window->editorInfo->path[plen-1] != '/') {
+        memcpy(prevPath, window->path, plen);
+        if(window->path[plen-1] != '/') {
             prevPath[plen] = '/';
             plen++;
         }
-        memcpy(prevPath+plen, window->editorInfo->filename, nlen);
+        memcpy(prevPath+plen, window->filename, nlen);
         prevPath[plen+nlen] = '\0';
     }
     
@@ -2348,7 +2348,7 @@ void UniqueUntitledName(char *name)
         else
             sprintf(name, "Untitled_%d", i);
     for (w=WindowList; w!=NULL; w=w->next)
-     	    if (!strcmp(w->editorInfo->filename, name))
+     	    if (!strcmp(w->filename, name))
                 break;
         if (w == NULL)
             break;
@@ -2381,7 +2381,7 @@ void CheckForChangesToFile(WindowInfo *window)
     XWindowAttributes winAttr;
     Boolean windowIsDestroyed = False;
     
-    if(!window->editorInfo->filenameSet)
+    if(!window->filenameSet)
         return;
 
     /* If last check was very recent, don't impact performance */
@@ -2415,20 +2415,20 @@ void CheckForChangesToFile(WindowInfo *window)
     }
 
     /* Get the file mode and modification time */
-    strcpy(fullname, window->editorInfo->path);
-    strcat(fullname, window->editorInfo->filename);
+    strcpy(fullname, window->path);
+    strcat(fullname, window->filename);
     if (stat(fullname, &statbuf) != 0) {
         /* Return if we've already warned the user or we can't warn him now */
-        if (window->editorInfo->fileMissing || silent) {
+        if (window->fileMissing || silent) {
             return;
         }
 
         /* Can't stat the file -- maybe it's been deleted.
            The filename is now invalid */
-        window->editorInfo->fileMissing = TRUE;
-        window->editorInfo->lastModTime = 1;
-        window->editorInfo->device = 0;
-        window->editorInfo->inode = 0;
+        window->fileMissing = TRUE;
+        window->lastModTime = 1;
+        window->device = 0;
+        window->inode = 0;
 
         /* Warn the user, if they like to be warned (Maybe this should be its
             own preference setting: GetPrefWarnFileDeleted()) */
@@ -2454,7 +2454,7 @@ void CheckForChangesToFile(WindowInfo *window)
                             "no longer exists.\n"
                             "Another program may have deleted or moved it.";
                     resp = DialogF(DF_ERR, window->shell, 2, title, body,
-                            "Save", "Cancel", window->editorInfo->filename);
+                            "Save", "Cancel", window->filename);
                     break;
                 case EACCES:
                     /*  Search permission denied for a path component. We add
@@ -2465,7 +2465,7 @@ void CheckForChangesToFile(WindowInfo *window)
                             "Another program may have changed the permissions of\n"
                             "one of its parent directories.";
                     resp = 1 + DialogF(DF_ERR, window->shell, 1, title, body,
-                            "Cancel", window->editorInfo->filename);
+                            "Cancel", window->filename);
                     break;
                 default:
                     /*  Everything else. This hints at an internal error (eg.
@@ -2476,7 +2476,7 @@ void CheckForChangesToFile(WindowInfo *window)
                             "Please make sure that no data is lost before closing\n"
                             "this window.";
                     resp = DialogF(DF_ERR, window->shell, 2, title, body,
-                            "Save", "Cancel", window->editorInfo->filename,
+                            "Save", "Cancel", window->filename,
                             errorString());
                     break;
             }
@@ -2505,7 +2505,7 @@ void CheckForChangesToFile(WindowInfo *window)
         /*  TODO: A document without a file can be locked though.  */
         /* Make sure that the window was not destroyed behind our back! */
         if (!windowIsDestroyed) {
-            SET_PERM_LOCKED(window->editorInfo->lockReasons, False);
+            SET_PERM_LOCKED(window->lockReasons, False);
             UpdateWindowTitle(window);
             UpdateWindowReadOnly(window);
         }
@@ -2514,12 +2514,12 @@ void CheckForChangesToFile(WindowInfo *window)
     
     /* Check that the file's read-only status is still correct (but
        only if the file can still be opened successfully in read mode) */
-    if (window->editorInfo->fileMode != statbuf.st_mode ||
-        window->editorInfo->fileUid != statbuf.st_uid ||
-        window->editorInfo->fileGid != statbuf.st_gid) {
-        window->editorInfo->fileMode = statbuf.st_mode;
-        window->editorInfo->fileUid = statbuf.st_uid;
-        window->editorInfo->fileGid = statbuf.st_gid;
+    if (window->fileMode != statbuf.st_mode ||
+        window->fileUid != statbuf.st_uid ||
+        window->fileGid != statbuf.st_gid) {
+        window->fileMode = statbuf.st_mode;
+        window->fileUid = statbuf.st_uid;
+        window->fileGid = statbuf.st_gid;
         if ((fp = fopen(fullname, "r")) != NULL) {
             int readOnly;
             fclose(fp);
@@ -2532,8 +2532,8 @@ void CheckForChangesToFile(WindowInfo *window)
             } else
                 readOnly = TRUE;
 #endif
-            if (IS_PERM_LOCKED(window->editorInfo->lockReasons) != readOnly) {
-                SET_PERM_LOCKED(window->editorInfo->lockReasons, readOnly);
+            if (IS_PERM_LOCKED(window->lockReasons) != readOnly) {
+                SET_PERM_LOCKED(window->lockReasons, readOnly);
                 UpdateWindowTitle(window);
                 UpdateWindowReadOnly(window);
             }
@@ -2548,31 +2548,31 @@ void CheckForChangesToFile(WindowInfo *window)
        which is still in the process of popping down.  The workaround, below,
        of calling XUngrabPointer is inelegant but seems to fix the problem. */
     if (!silent && 
-            ((window->editorInfo->lastModTime != 0 && 
-              window->editorInfo->lastModTime != statbuf.st_mtime) ||
-             window->editorInfo->fileMissing)  ){
-        window->editorInfo->lastModTime = 0;        /* Inhibit further warnings */
-        window->editorInfo->fileMissing = FALSE;
+            ((window->lastModTime != 0 && 
+              window->lastModTime != statbuf.st_mtime) ||
+             window->fileMissing)  ){
+        window->lastModTime = 0;        /* Inhibit further warnings */
+        window->fileMissing = FALSE;
         if (!GetPrefWarnFileMods())
             return;
         if (GetPrefWarnRealFileMods() &&
         !cmpWinAgainstFile(window, fullname)) {
         /* Contents hasn't changed. Update the modification time. */
-	    window->editorInfo->lastModTime = statbuf.st_mtime;
+	    window->lastModTime = statbuf.st_mtime;
         return;
     }
         XUngrabPointer(XtDisplay(window->shell), timestamp);
-        if (window->editorInfo->fileChanged)
+        if (window->fileChanged)
             resp = DialogF(DF_WARN, window->shell, 2,
                     "File modified externally",
                     "%s has been modified by another program.  Reload?\n\n"
                     "WARNING: Reloading will discard changes made in this\n"
-                    "editing session!", "Reload", "Cancel", window->editorInfo->filename);
+                    "editing session!", "Reload", "Cancel", window->filename);
         else
             resp = DialogF(DF_WARN, window->shell, 2,
                     "File modified externally",
                     "%s has been modified by another\nprogram.  Reload?",
-                    "Reload", "Cancel", window->editorInfo->filename);
+                    "Reload", "Cancel", window->filename);
         if (resp == 1)
             RevertToSaved(window, NULL);
     }
@@ -2588,15 +2588,15 @@ static int fileWasModifiedExternally(WindowInfo *window)
     char fullname[MAXPATHLEN];
     struct stat statbuf;
     
-    if(!window->editorInfo->filenameSet)
+    if(!window->filenameSet)
         return FALSE;
-    /* if (window->editorInfo->lastModTime == 0)
+    /* if (window->lastModTime == 0)
     return FALSE; */
-    strcpy(fullname, window->editorInfo->path);
-    strcat(fullname, window->editorInfo->filename);
+    strcpy(fullname, window->path);
+    strcat(fullname, window->filename);
     if (stat(fullname, &statbuf) != 0)
         return FALSE;
-    if (window->editorInfo->lastModTime == statbuf.st_mtime)
+    if (window->lastModTime == statbuf.st_mtime)
     return FALSE;
     if (GetPrefWarnRealFileMods() &&
     !cmpWinAgainstFile(window, fullname)) {
@@ -2611,7 +2611,7 @@ static int fileWasModifiedExternally(WindowInfo *window)
 */
 int CheckReadOnly(WindowInfo *window)
 {
-    if (IS_ANY_LOCKED(window->editorInfo->lockReasons)) {
+    if (IS_ANY_LOCKED(window->lockReasons)) {
         XBell(TheDisplay, 0);
     return True;
     }
@@ -2720,7 +2720,7 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     struct  stat statbuf;
     int     fileLen, restLen, nRead, bufPos, rv, offset, filePos;
     char    pendingCR = 0;
-    int	    fileFormat = window->editorInfo->fileFormat;
+    int	    fileFormat = window->fileFormat;
     char    message[MAXPATHLEN+50];
     textBuffer *buf = window->editorInfo->buffer;
     FILE   *fp;
@@ -2750,7 +2750,7 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     
     /* For large files, the comparison can take a while. If it takes too long,
        the user should be given a clue about what is happening. */
-    sprintf(message, "Comparing externally modified %s ...", window->editorInfo->filename);
+    sprintf(message, "Comparing externally modified %s ...", window->filename);
     restLen = min(PREFERRED_CMPBUF_LEN, fileLen);
     bufPos = 0;
     filePos = 0;

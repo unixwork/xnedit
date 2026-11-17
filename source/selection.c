@@ -292,7 +292,7 @@ static void fileCB(Widget widget, XtPointer wi, Atom *sel,
         
     /* If path name is relative, make it refer to current window's directory */
     if (nameText[0] != '/') {
-	strcpy(filename, window->editorInfo->path);
+	strcpy(filename, window->path);
     strcat(filename, nameText);
     strcpy(nameText, filename);
     }

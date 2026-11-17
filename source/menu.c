@@ -793,7 +793,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     window->overtypeModeItem = createMenuToggle(menuPane, "overtype", "Overtype", 'O',
             doActionCB, "set_overtype_mode", False, SHORT);
     window->readOnlyItem = createMenuToggle(menuPane, "readOnly", "Read Only",
-    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->editorInfo->lockReasons), FULL);
+    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->lockReasons), FULL);
 #endif
 
     /* 
@@ -1199,10 +1199,10 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     
     window->saveLastItem = createMenuToggle(menuPane, "makeBackupCopy",
             "Make Backup Copy (*.bck)", 'e', (menuCallbackProc)preserveCB, window,
-    	    window->editorInfo->saveOldVersion, SHORT);
+    	    window->saveOldVersion, SHORT);
     
     window->autoSaveItem = createMenuToggle(menuPane, "incrementalBackup",
-    	    "Incremental Backup", 'B', (menuCallbackProc)autoSaveCB, window, window->editorInfo->autoSave,
+    	    "Incremental Backup", 'B', (menuCallbackProc)autoSaveCB, window, window->autoSave,
             SHORT);
 
     subPane = createMenu(menuPane, "showMatching", "Show Matching (..)",
@@ -1226,7 +1226,7 @@ Widget RecreateMenuBar(Widget parent, Widget menuBar, WindowInfo *window, Boolea
     window->overtypeModeItem = createMenuToggle(menuPane, "overtype", "Overtype", 'O',
             doActionCB, "set_overtype_mode", False, SHORT);
     window->readOnlyItem = createMenuToggle(menuPane, "readOnly", "Read Only",
-    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->editorInfo->lockReasons), FULL);
+    	    'y', doActionCB, "set_locked", IS_USER_LOCKED(window->lockReasons), FULL);
 #endif
 
     /*
@@ -2954,7 +2954,7 @@ static void newAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
         }
     }
     
-    EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->editorInfo->path);
+    EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->path);
     CheckCloseDim();
 }
 
@@ -2968,14 +2968,14 @@ static void newOppositeAP(Widget w, XEvent *event, String *args, Cardinal *nArgs
     WindowInfo *window = WidgetToWindow(w);
 
     EditNewFile(GetPrefOpenInTab()? NULL : window, NULL, False, NULL,
-            window->editorInfo->path);
+            window->path);
     CheckCloseDim();
 }
 static void newTabAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
 
-    EditNewFile(window, NULL, False, NULL, window->editorInfo->path);
+    EditNewFile(window, NULL, False, NULL, window->path);
     CheckCloseDim();
 }
 
@@ -3078,7 +3078,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
     memset(&file, 0, sizeof(FileSelection));
     file.extraoptions = True;
     file.writebom = window->bom;
-    file.format = window->editorInfo->fileFormat;
+    file.format = window->fileFormat;
     if(strlen(window->encoding) > 0) {
         file.encoding = window->encoding;
     }
@@ -3087,7 +3087,7 @@ static void saveAsDialogAP(Widget w, XEvent *event, String *args,
         &fileFormat);
     if (response != GFN_OK)
         return;
-    window->editorInfo->fileFormat = fileFormat;
+    window->fileFormat = fileFormat;
     
     char *formatStr;
     switch(file.format) {
@@ -3145,16 +3145,16 @@ static void revertDialogAP(Widget w, XEvent *event, String *args,
     int b;
     
     /* re-reading file is irreversible, prompt the user first */
-    if (window->editorInfo->fileChanged)
+    if (window->fileChanged)
     {
         b = DialogF(DF_QUES, window->shell, 3, "Reload File",
-                "Re-load file and discard changes to\n%s%s?", "Re-read", "Change encoding", "Cancel", window->editorInfo->path,
-                window->editorInfo->filename);
+                "Re-load file and discard changes to\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
+                window->filename);
     } else
     {
         b = DialogF(DF_QUES, window->shell, 3, "Reload File",
-                "Re-load file\n%s%s?", "Re-read", "Change encoding", "Cancel", window->editorInfo->path,
-                window->editorInfo->filename);
+                "Re-load file\n%s%s?", "Re-read", "Change encoding", "Cancel", window->path,
+                window->filename);
     }
 
     if(b == 1) {
@@ -3384,7 +3384,7 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
             if (win->editorInfo->master != win)
                 continue;           /* skip clones */
                 
-           sprintf(filename, "%s%s", win->editorInfo->filename, win->editorInfo->fileChanged? "*": "");
+           sprintf(filename, "%s%s", win->filename, win->fileChanged? "*": "");
         title = filename;
             titleLen = strlen(title);
             if (ptr - exitMsg + titleLen + 30 >= DF_MAX_MSG_LENGTH) {
@@ -3816,7 +3816,7 @@ static void detachDocumentDialogAP(Widget w, XEvent *event, String *args,
         return;
     
     resp = DialogF(DF_QUES, window->shell, 2, "Detach %s?", 
-	    "Detach", "Cancel", window->editorInfo->filename);
+	    "Detach", "Cancel", window->filename);
 
     if (resp == 1)
         DetachDocument(window);
@@ -4432,11 +4432,11 @@ static void setMakeBackupCopyAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->saveOldVersion, "set_make_backup_copy");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->saveOldVersion, "set_make_backup_copy");
 
     if (IsTopDocument(window))
         XmToggleButtonSetState(window->saveLastItem, newState, False);
-    window->editorInfo->saveOldVersion = newState;
+    window->saveOldVersion = newState;
 }
 
 static void setIncrementalBackupAP(Widget w, XEvent *event, String *args,
@@ -4445,11 +4445,11 @@ static void setIncrementalBackupAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->autoSave, "set_incremental_backup");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->autoSave, "set_incremental_backup");
 
     if (IsTopDocument(window))
         XmToggleButtonSetState(window->autoSaveItem, newState, False);
-    window->editorInfo->autoSave = newState;
+    window->autoSave = newState;
 }
 
 static void setShowMatchingAP(Widget w, XEvent *event, String *args,
@@ -4509,7 +4509,7 @@ static void setOvertypeModeAP(Widget w, XEvent *event, String *args,
     if (window == NULL)
         return;
  
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->editorInfo->overstrike, "set_overtype_mode");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, window->overstrike, "set_overtype_mode");
 
     for(win = window->editorInfo->master; win; win = win->nextSlave) {
 	if (IsTopDocument(win))
@@ -4524,15 +4524,15 @@ static void setLockedAP(Widget w, XEvent *event, String *args,
     WindowInfo *window = WidgetToWindow(w);
     Boolean newState;
     
-    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, IS_USER_LOCKED(window->editorInfo->lockReasons), "set_locked");
+    ACTION_BOOL_PARAM_OR_TOGGLE(newState, *nArgs, args, IS_USER_LOCKED(window->lockReasons), "set_locked");
     
-    SET_USER_LOCKED(window->editorInfo->lockReasons, newState);
+    SET_USER_LOCKED(window->lockReasons, newState);
     if(!newState) {
-        SET_ENCODING_LOCKED(window->editorInfo->lockReasons, 0);
+        SET_ENCODING_LOCKED(window->lockReasons, 0);
     }
     
     if (IsTopDocument(window))
-    	XmToggleButtonSetState(window->readOnlyItem, IS_ANY_LOCKED(window->editorInfo->lockReasons), False);
+    	XmToggleButtonSetState(window->readOnlyItem, IS_ANY_LOCKED(window->lockReasons), False);
     UpdateWindowTitle(window);
     UpdateWindowReadOnly(window);
 }
@@ -4781,7 +4781,7 @@ void CheckCloseDim(void)
     if (WindowList == NULL)
         return;
     if (WindowList->next==NULL &&
-    	    !WindowList->editorInfo->filenameSet && !WindowList->editorInfo->fileChanged) {
+    	    !WindowList->filenameSet && !WindowList->fileChanged) {
         XtSetSensitive(WindowList->closeItem, FALSE);
         return;
     }
@@ -4914,13 +4914,13 @@ static char* getWindowsMenuEntry(const WindowInfo* window)
         parenthese_open = "(";
         parenthese_close = ")";
     }
-    if (GetPrefShowPathInWindowsMenu() && window->editorInfo->filenameSet) {
+    if (GetPrefShowPathInWindowsMenu() && window->filenameSet) {
         snprintf(
                 fullTitle,
                 MAX_WINDOW_TITLE_LEN,
                 "%s%s%s - %s%s",
                 parenthese_open,
-                window->editorInfo->filename, window->editorInfo->fileChanged? "*" : "", window->editorInfo->path,
+                window->filename, window->fileChanged? "*" : "", window->path,
                 parenthese_close);
     } else {
         snprintf(
@@ -4928,7 +4928,7 @@ static char* getWindowsMenuEntry(const WindowInfo* window)
                 MAX_WINDOW_TITLE_LEN,
                 "%s%s%s%s",
                 parenthese_open,
-                window->editorInfo->filename, window->editorInfo->fileChanged? "*" : "",
+                window->filename, window->fileChanged? "*" : "",
                 parenthese_close);
     }
     
@@ -5568,14 +5568,14 @@ static int compareWindowNames(const void *windowA, const void *windowB)
     const WindowInfo *a = *((WindowInfo**)windowA);
     const WindowInfo *b = *((WindowInfo**)windowB);
     /* Untitled first */
-    rc = a->editorInfo->filenameSet ==  b->editorInfo->filenameSet ? 0 : 
-	 a->editorInfo->filenameSet && !b->editorInfo->filenameSet ? 1 : -1;
+    rc = a->filenameSet ==  b->filenameSet ? 0 : 
+	 a->filenameSet && !b->filenameSet ? 1 : -1;
     if (rc != 0)
      return rc;
-    rc = strcmp(a->editorInfo->filename, b->editorInfo->filename);
+    rc = strcmp(a->filename, b->filename);
     if (rc != 0)
      return rc;
-    rc = strcmp(a->editorInfo->path, b->editorInfo->path);
+    rc = strcmp(a->path, b->path);
     return rc;
 }
 

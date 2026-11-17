@@ -753,7 +753,7 @@ void CreateReplaceDlog(Widget parent, WindowInfo *window)
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
         snprintf(title, sizeof(title),
-                "Replace/Find (in %s)", window->editorInfo->filename);
+                "Replace/Find (in %s)", window->filename);
         XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(form), XmNtitle, "Replace/Find", NULL);
@@ -1243,7 +1243,7 @@ void CreateFindDlog(Widget parent, WindowInfo *window)
     form = CreateFormDialog(parent, "findDialog", args, argcnt);
     XtVaSetValues(form, XmNshadowThickness, 0, NULL);
     if (GetPrefKeepSearchDlogs()) {
-    	snprintf(title, sizeof(title), "Find (in %s)", window->editorInfo->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
         XtVaSetValues(XtParent(form), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(form), XmNtitle, "Find", NULL);
@@ -1740,7 +1740,7 @@ static void rKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
 
     if (XmToggleButtonGetState(w)) {
         snprintf(title, sizeof(title),
-                "Replace/Find (in %s)", window->editorInfo->filename);
+                "Replace/Find (in %s)", window->filename);
         XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, "Replace/Find", NULL);
@@ -1752,7 +1752,7 @@ static void fKeepCB(Widget w, WindowInfo *window, caddr_t *callData)
     window = WidgetToWindow(w);
 
     if (XmToggleButtonGetState(w)) {
-    	snprintf(title, sizeof(title), "Find (in %s)", window->editorInfo->filename);
+    	snprintf(title, sizeof(title), "Find (in %s)", window->filename);
         XtVaSetValues(XtParent(window->findDlog), XmNtitle, title, NULL);
     } else
         XtVaSetValues(XtParent(window->findDlog), XmNtitle, "Find", NULL);
@@ -1846,8 +1846,8 @@ static void freeWritableWindowsCB(Widget w, WindowInfo* window,
 */
 static int compareWindowNames(const void *windowA, const void *windowB)
 {
-      return strcmp((*((WindowInfo**)windowA))->editorInfo->filename,
-      	    (*((WindowInfo**)windowB))->editorInfo->filename);
+      return strcmp((*((WindowInfo**)windowA))->filename,
+      	    (*((WindowInfo**)windowB))->filename);
 }
  
 /*
@@ -1885,7 +1885,7 @@ static int countWritableWindows(void)
         nWritable = 0;
         continue;
     }
-	if (!IS_ANY_LOCKED(w->editorInfo->lockReasons)) ++nWritable;
+	if (!IS_ANY_LOCKED(w->lockReasons)) ++nWritable;
     }
     return nWritable;
 }
@@ -1906,7 +1906,7 @@ static void collectWritableWindows(WindowInfo* window)
     /* Make a sorted list of writable windows */
     windows = (WindowInfo **)NEditMalloc(sizeof(WindowInfo *) * nWritable);
     for (w=WindowList, i=0; w!=NULL; w=w->next)
-       if (!IS_ANY_LOCKED(w->editorInfo->lockReasons)) windows[i++] = w;
+       if (!IS_ANY_LOCKED(w->lockReasons)) windows[i++] = w;
     qsort(windows, nWritable, sizeof(WindowInfo *), compareWindowNames);
     
     window->writableWindows = windows;
@@ -1977,7 +1977,7 @@ static void rMultiFileReplaceCB(Widget w, WindowInfo *window,
        file status has changed or the file was locked in the mean time
        (possible due to Lesstif modal dialog bug), we just skip the 
        window. */
-	    if (!IS_ANY_LOCKED(writableWin->editorInfo->lockReasons)) {
+	    if (!IS_ANY_LOCKED(writableWin->lockReasons)) {
         noWritableLeft = False;
         writableWin->multiFileReplSelected = True;
         writableWin->multiFileBusy = True; /* Avoid multi-beep/dialog */
@@ -2105,10 +2105,10 @@ static void uploadFileListItems(WindowInfo* window, Bool replace)
     
     for (i = 0; i < nWritable; ++i) {
        w = window->writableWindows[i];
-       if (usePathNames && window->editorInfo->filenameSet) {
-          snprintf(buf, sizeof(buf), "%s%s", w->editorInfo->path, w->editorInfo->filename);
+       if (usePathNames && window->filenameSet) {
+          snprintf(buf, sizeof(buf), "%s%s", w->path, w->filename);
        } else {
-          snprintf(buf, sizeof(buf), "%s", w->editorInfo->filename);
+          snprintf(buf, sizeof(buf), "%s", w->filename);
        }
        names[i] = XmStringCreateSimple(buf);
     }
@@ -3493,7 +3493,7 @@ void SelectToMatchingCharacter(WindowInfo *window)
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
     selEnd = TextGetCursorPos(window->lastFocus);
-        if (window->editorInfo->overstrike)
+        if (window->overstrike)
         selEnd += 1;
     selStart = selEnd - 1;
     if (selStart < 0) {
@@ -3538,7 +3538,7 @@ void GotoMatchingCharacter(WindowInfo *window)
        Give up if too many characters are selected */
     if (!GetSimpleSelection(buf, &selStart, &selEnd)) {
     selEnd = TextGetCursorPos(window->lastFocus);
-        if (window->editorInfo->overstrike)
+        if (window->overstrike)
         selEnd += 1;
     selStart = selEnd - 1;
     if (selStart < 0) {

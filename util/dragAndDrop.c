@@ -63,8 +63,8 @@ static void newdatafile(Widget widget, char *buffer) {
     WindowInfo *window = WidgetToWindow(widget);
     int openInTab = GetPrefOpenInTab();
     
-    if (window->editorInfo->filenameSet || window->editorInfo->fileChanged) {
-        window = EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->editorInfo->path);
+    if (window->filenameSet || window->fileChanged) {
+        window = EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->path);
     }
     
     BufInsert(window->editorInfo->buffer, 0, buffer);

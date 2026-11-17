@@ -1457,8 +1457,8 @@ void EditCustomTitleFormat(WindowInfo *window)
      * 'real world' defaults as possible when testing the effect
      * of different formatting strings.
      */
-    strcpy(etDialog.path, window->editorInfo->path);
-    strcpy(etDialog.filename, window->editorInfo->filename);
+    strcpy(etDialog.path, window->path);
+    strcpy(etDialog.filename, window->filename);
 #ifndef VMS
     strcpy(etDialog.viewTag, GetClearCaseViewTag() != NULL ?
                              GetClearCaseViewTag() :
@@ -1468,9 +1468,9 @@ void EditCustomTitleFormat(WindowInfo *window)
                              GetPrefServerName() :
                              "servername");
     etDialog.isServer    = IsServer;
-    etDialog.filenameSet = window->editorInfo->filenameSet;
-    etDialog.lockReasons = window->editorInfo->lockReasons;
-    etDialog.fileChanged = window->editorInfo->fileChanged;
+    etDialog.filenameSet = window->filenameSet;
+    etDialog.lockReasons = window->lockReasons;
+    etDialog.fileChanged = window->fileChanged;
     
     if (etDialog.window != window && etDialog.form)
     {
