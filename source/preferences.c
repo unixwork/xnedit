@@ -10042,8 +10042,8 @@ void MiscSettingsDialog(WindowInfo *window) {
         s1 = XmStringCreateLocalized("Optionally one can also scroll horizontally using Modifier-key +\n"
                                      "Mousewheel.  Some mice also have hardware scroll-left/right\n"
                                      "buttons which can be used without holding the modifier key.\n"
-                                     "For both methods also pressing Shift or Control changes the\n"
-                                     "default behaviour.");
+                                     "For both methods also pressing Shift or Control changes their\n"
+                                     "behaviour.");
         header4 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
