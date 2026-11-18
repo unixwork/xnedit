@@ -2590,6 +2590,10 @@ XmString FSNameCreateLocalized(char *s) {
 
 /* Modifier key state */
 
+/* These functions are designed to provide fast querying of the current modifier 
+   key state.  Only transient modifiers are included; persistent ones (namely 
+   the various lock keys such Caps_Lock or Num_Lock) are not included. */
+
 /* Last-examined modifier key status */
 char keymap[32] = { };
 
@@ -2626,6 +2630,120 @@ KeyCode kcModeSwitch = 0;                // Typically AltGr or Alt Graph,
 */
 void ExamineModifierKeys(void) {
     XQueryKeymap( TheDisplay, keymap );
+}
+
+/* Returns current pressed-key keymap in raw form (as returned by the X server)
+** This is a 32 char read-only buffer as populated by XQueryKeymap.
+** 
+** A call to ExamineModifierKeys must be made before calling this function; if
+** this has not been done then the contents of the keymap are undefined.
+** 
+** Note that the returned value is a pointer to the internal keymap buffer so 
+** the pointed-to data will likely change when ExamineModifierKeys is next 
+** called.  Additionally, the address of the buffer is guaranteed not to change 
+** while XNEdit is running.
+*/
+const char* GetCurrentKeymap(void) {
+    /* NOTE: This function is not currently used.
+       Remove this comment if adding code that uses it. */
+    
+    /* NOTE: This code is untested
+       Remove this comment once it has been verified. */
+    
+    return keymap;
+}
+
+/* Returns current pressed-modifier-key bitmap
+** 
+** This is an XNEdit-specific bitmap indicating the current state of the 
+** transient modifier keys.
+** 
+** This value can be tested in user code against the FLAG_MODIFIER_* constants.
+** 
+** A call to ExamineModifierKeys must be made before calling this function; if 
+** this has not been done then the return value is undefined.
+** 
+** Since this function computes the bitmap every time it is called (which is 
+** relatively expensive) user code that uses its return value multiple times per 
+** ExamineModifierKeys call should make a single call to this function, cache 
+** the value returned (i.e. simply store it in a local variable), and work off 
+** of the cached value.
+*/
+int GetModifierKeyBitmap(void) {
+    /* NOTE: This function is not currently used.
+       Remove this comment if adding code that uses it. */
+    
+    /* NOTE: This code is untested
+       Remove this comment once it has been verified. */
+    
+    int state = 0;
+    
+    KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
+    state |= ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) )
+             ? FLAG_MODIFIER_SHIFT_L
+             : 0;
+    
+    KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
+    state |= ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) )
+             ? FLAG_MODIFIER_SHIFT_R
+             : 0;
+    
+    KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
+    state |= ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) )
+             ? FLAG_MODIFIER_CONTROL_L
+             : 0;
+    
+    KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
+    state |= ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) )
+             ? FLAG_MODIFIER_CONTROL_R
+             : 0;
+    
+    KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
+    state |= ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) )
+             ? FLAG_MODIFIER_META_L
+             : 0;
+    
+    KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
+    state |= ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) )
+             ? FLAG_MODIFIER_META_R
+             : 0;
+    
+    KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
+    state |= ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) )
+             ? FLAG_MODIFIER_ALT_L
+             : 0;
+    
+    KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
+    state |= ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) )
+             ? FLAG_MODIFIER_ALT_R
+             : 0;
+    
+    KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
+    state |= ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) )
+             ? FLAG_MODIFIER_SUPER_L
+             : 0;
+    
+    KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
+    state |= ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) )
+             ? FLAG_MODIFIER_SUPER_R
+             : 0;
+    
+    KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
+    state |= ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) )
+             ? FLAG_MODIFIER_HYPER_L
+             : 0;
+    
+    KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
+    state |= ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) )
+             ? FLAG_MODIFIER_HYPER_R
+             : 0;
+    
+    KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
+    state |= ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) )
+             ? FLAG_MODIFIER_MODE_SWITCH
+             : 0;
+    
+    return state;
 }
 
 /* Returns TRUE if either of the following was pressed when keymap was examined:
@@ -2873,75 +2991,9 @@ Boolean ModifierBitmapMatchEqual(int bitmap) {
     if ( bitmap == FLAG_MODIFIER_VALUE_INVALID ) { return FALSE; }
     
     /* NOTE: This code is untested
-       Remove this comment once it has been verified. */
+       Remove this comment once it and GetModifierKeyBitmap have been verified. */
     
-    int state = 0;
-    
-    KEYCODE_VAR(kcShiftL) = XKeysymToKeycode( TheDisplay, XK_Shift_L );
-    state |= ( keymap[ kcShiftL>>3 ] & ( 1<<(kcShiftL&7) ) )
-             ? FLAG_MODIFIER_SHIFT_L
-             : 0;
-    
-    KEYCODE_VAR(kcShiftR) = XKeysymToKeycode( TheDisplay, XK_Shift_R );
-    state |= ( keymap[ kcShiftR>>3 ] & ( 1<<(kcShiftR&7) ) )
-             ? FLAG_MODIFIER_SHIFT_R
-             : 0;
-    
-    KEYCODE_VAR(kcControlL) = XKeysymToKeycode( TheDisplay, XK_Control_L );
-    state |= ( keymap[ kcControlL>>3 ] & ( 1<<(kcControlL&7) ) )
-             ? FLAG_MODIFIER_CONTROL_L
-             : 0;
-    
-    KEYCODE_VAR(kcControlR) = XKeysymToKeycode( TheDisplay, XK_Control_R );
-    state |= ( keymap[ kcControlR>>3 ] & ( 1<<(kcControlR&7) ) )
-             ? FLAG_MODIFIER_CONTROL_R
-             : 0;
-    
-    KEYCODE_VAR(kcMetaL) = XKeysymToKeycode( TheDisplay, XK_Meta_L );
-    state |= ( keymap[ kcMetaL>>3 ] & ( 1<<(kcMetaL&7) ) )
-             ? FLAG_MODIFIER_META_L
-             : 0;
-    
-    KEYCODE_VAR(kcMetaR) = XKeysymToKeycode( TheDisplay, XK_Meta_R );
-    state |= ( keymap[ kcMetaR>>3 ] & ( 1<<(kcMetaR&7) ) )
-             ? FLAG_MODIFIER_META_R
-             : 0;
-    
-    KEYCODE_VAR(kcAltL) = XKeysymToKeycode( TheDisplay, XK_Alt_L );
-    state |= ( keymap[ kcAltL>>3 ] & ( 1<<(kcAltL&7) ) )
-             ? FLAG_MODIFIER_ALT_L
-             : 0;
-    
-    KEYCODE_VAR(kcAltR) = XKeysymToKeycode( TheDisplay, XK_Alt_R );
-    state |= ( keymap[ kcAltR>>3 ] & ( 1<<(kcAltR&7) ) )
-             ? FLAG_MODIFIER_ALT_R
-             : 0;
-    
-    KEYCODE_VAR(kcSuperL) = XKeysymToKeycode( TheDisplay, XK_Super_L );
-    state |= ( keymap[ kcSuperL>>3 ] & ( 1<<(kcSuperL&7) ) )
-             ? FLAG_MODIFIER_SUPER_L
-             : 0;
-    
-    KEYCODE_VAR(kcSuperR) = XKeysymToKeycode( TheDisplay, XK_Super_R );
-    state |= ( keymap[ kcSuperR>>3 ] & ( 1<<(kcSuperR&7) ) )
-             ? FLAG_MODIFIER_SUPER_R
-             : 0;
-    
-    KEYCODE_VAR(kcHyperL) = XKeysymToKeycode( TheDisplay, XK_Hyper_L );
-    state |= ( keymap[ kcHyperL>>3 ] & ( 1<<(kcHyperL&7) ) )
-             ? FLAG_MODIFIER_HYPER_L
-             : 0;
-    
-    KEYCODE_VAR(kcHyperR) = XKeysymToKeycode( TheDisplay, XK_Hyper_R );
-    state |= ( keymap[ kcHyperR>>3 ] & ( 1<<(kcHyperR&7) ) )
-             ? FLAG_MODIFIER_HYPER_R
-             : 0;
-    
-    KEYCODE_VAR(kcModeSwitch) = XKeysymToKeycode( TheDisplay, XK_Mode_switch );
-    state |= ( keymap[ kcModeSwitch>>3 ] & ( 1<<(kcModeSwitch&7) ) )
-             ? FLAG_MODIFIER_MODE_SWITCH
-             : 0;
-    
+    int state = GetModifierKeyBitmap();
     return ( state == bitmap );
 }
 

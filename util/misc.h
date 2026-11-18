@@ -196,6 +196,10 @@ XmString FSNameCreateLocalized(char *s);
 // Modifier key functions:
 
 void ExamineModifierKeys(void);
+
+const char* GetCurrentKeymap(void);
+int GetModifierKeyBitmap(void);
+
 Boolean ModifierKeyShift(void);
 Boolean ModifierKeyControl(void);
 Boolean ModifierKeyMeta(void);
