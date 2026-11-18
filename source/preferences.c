@@ -473,6 +473,33 @@ static struct prefData {
     */
     int horizontalScrollStep;
     
+    /* Step size used by default when scrolling using modifier+wheel.
+       
+       This value applies when neither Shift nor Control is being pressed.  If 
+       Shift is pressed then the other possibility is used.  Regardlesss of what 
+       this is set to pressing Control changes the step size to the width of the 
+       window.
+       
+       This is an enumeration and valid values are 0 (Character) and 1 (Large) 
+       which correspond to a single character and to the large horizontal step 
+       size selected by the user.
+    */
+    int horizontalScrollDefaultStepWheel;
+    
+    /* Step size used by default when scrolling using the physical scroll-left 
+       and scroll-right mouse buttons (if present).
+       
+       This value applies when neither Shift nor Control is being pressed.  If 
+       Shift is pressed then the other possibility is used.  Regardlesss of what 
+       this is set to pressing Control changes the step size to the width of the 
+       window.
+       
+       This is an enumeration and valid values are 0 (Character) and 1 (Large) 
+       which correspond to a single character and to the large horizontal step 
+       size selected by the user.
+    */
+    int horizontalScrollDefaultStepButton;
+    
     int sortTabs;               /* sort tabs alphabetically */
     int repositionDialogs;      /* w. to reposition dialogs under the pointer */
     int autoScroll;             /* w. to autoscroll near top/bottom of screen */
@@ -554,6 +581,12 @@ struct horizontalScrollModifierMap_t horizontalScrollModifierMaps[HORIZONTAL_SCR
    PrefData.horizontalScrollModifiersString. */
 static int activeHorizontalScrollModifiers = FLAG_MODIFIER_VALUE_INVALID;
     
+
+/* Valid X resource values for the horizontalScrollDefaultStepWheel and 
+   horizontalScrollDefaultStepButton preferences.  The values used internally 
+   by XNEdit are int; these are the values stored in the preferences file and 
+   used for the X resources. */
+static char* HorizontalScrollDefaultStepStrings[] = {"Character", "Large", NULL};
 
 /* Temporary storage for preferences strings which are discarded after being
    read */
@@ -1105,6 +1138,14 @@ static PrefDescripRec PrefDescrip[] = {
         &PrefData.horizontalScrollModifiersString, NULL, True},
     {"horizontalScrollSwapDirection", "HorizontalScrollSwapDirection", PREF_BOOLEAN, "False",
         &PrefData.horizontalScrollSwapDirection, NULL, True},
+    {"horizontalScrollDefaultStepWheel", "HorizontalScrollDefaultStepWheel", 
+        PREF_ENUM, "Character",
+        &PrefData.horizontalScrollDefaultStepWheel, 
+        HorizontalScrollDefaultStepStrings, True},
+    {"horizontalScrollDefaultStepButton", "HorizontalScrollDefaultStepButton", 
+        PREF_ENUM, "Large",
+        &PrefData.horizontalScrollDefaultStepButton, 
+        HorizontalScrollDefaultStepStrings, True},
     {"horizontalScrollStep", "HorizontalScrollStep", PREF_INT, "0",
         &PrefData.horizontalScrollStep, NULL, True},
     {"undoPurgeLimit", "UndoPurgeLimit", PREF_INT, "50000000",
@@ -2027,6 +2068,26 @@ int GetPrefSwapMouseWheelHorizontalDirection(void)
 void SetPrefSwapMouseWheelHorizontalDirection(Boolean s)
 {
     setIntPref(&PrefData.horizontalScrollSwapDirection, s);
+}
+
+int GetPrefHorizontalScrollDefaultStepWheel(void)
+{
+    return PrefData.horizontalScrollDefaultStepWheel;
+}
+
+void SetPrefHorizontalScrollDefaultStepWheel(int step)
+{
+    setIntPref(&PrefData.horizontalScrollDefaultStepWheel, step);
+}
+
+int GetPrefHorizontalScrollDefaultStepButton(void)
+{
+    return PrefData.horizontalScrollDefaultStepButton;
+}
+
+void SetPrefHorizontalScrollDefaultStepButton(int step)
+{
+    setIntPref(&PrefData.horizontalScrollDefaultStepButton, step);
 }
 
 int GetPrefHorizontalScrollStep(void)
@@ -9192,6 +9253,8 @@ typedef struct {
     Widget edZoomMouseWheelInvertedBehavior;
     Widget edHorizontalScrollModifier;
     Widget edHorizontalScrollSwapDirection;
+    Widget edHorizontalScrollDefaultStepWheel;
+    Widget edHorizontalScrollDefaultStepButton;
     Widget edHorizontalScrollStep;
     Widget edUndoPurgeLimit;
     Widget edUndoPurgeTrimTo;
@@ -9279,14 +9342,14 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
     }
     
-    /* *** Horizontal scroll modifier key *** */
+    /* Horizontal scroll modifier key */
     {
         int selectedPosition;
         XtVaGetValues(md.edHorizontalScrollModifier, XmNselectedPosition, &selectedPosition, NULL);
         SetPrefHorizontalScrollModifiers( horizontalScrollModifierMaps[selectedPosition].bitmap );
     }
     
-    /* *** Horizontal scroll swap wheel direction *** */
+    /* Horizontal scroll swap wheel direction */
     {
         Boolean horizontalScrollSwapDirection;
         XtVaGetValues( md.edHorizontalScrollSwapDirection, 
@@ -9295,7 +9358,25 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         SetPrefSwapMouseWheelHorizontalDirection(horizontalScrollSwapDirection);
     }
     
-    /* *** Horizontal scroll large step size *** */
+    /* Horizontal scroll modifier key + wheel behaviour */
+    {
+        int idx;
+        XtVaGetValues( md.edHorizontalScrollDefaultStepWheel, 
+                       XmNselectedPosition, &idx, 
+                       NULL );
+        SetPrefHorizontalScrollDefaultStepWheel(idx);
+    }
+    
+    /* Horizontal scroll button behaviour */
+    {
+        int idx;
+        XtVaGetValues( md.edHorizontalScrollDefaultStepButton, 
+                       XmNselectedPosition, &idx, 
+                       NULL );
+        SetPrefHorizontalScrollDefaultStepButton(idx);
+    }
+    
+    /* Horizontal scroll large step size */
     {
         XtVaGetValues(md.edHorizontalScrollStep, XmNselectedItem, &s1, NULL);
         char *horizontalScrollStepStr = NULL;
@@ -9955,12 +10036,14 @@ void MiscSettingsDialog(WindowInfo *window) {
             NULL);
     XmStringFree(s1);
     
-    /* *** Horizontal scroll top comment (label) *** */
+    /* Horizontal scroll top comment (label) */
     Widget header4;
     {
-        s1 = XmStringCreateLocalized("Optionally one can also scroll horizontally using Modifier-key\n"
-                                     "+ Mousewheel.  Additionally holding down Shift or Control\n"
-                                     "increases the scroll speed.");
+        s1 = XmStringCreateLocalized("Optionally one can also scroll horizontally using Modifier-key +\n"
+                                     "Mousewheel.  Some mice also have hardware scroll-left/right\n"
+                                     "buttons which can be used without holding the modifier key.\n"
+                                     "For both methods also pressing Shift or Control changes the\n"
+                                     "default behaviour.");
         header4 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -9973,7 +10056,7 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* *** Horizontal scroll modifier key (widget) *** */
+    /* Horizontal scroll modifier key (widget) */
     /* md.edHorizontalScrollModifier */
     {
         // The following call should effectively be a NOOP as the structure should 
@@ -10003,10 +10086,10 @@ void MiscSettingsDialog(WindowInfo *window) {
         ** in horizontalScrollModifierMaps. */ 
     }
     
-    /* *** Horizontal scroll modifier key (label) *** */
+    /* Horizontal scroll modifier key (label) */
     /* (anonymous) */
     {
-        s1 = XmStringCreateLocalized("Modifier key");
+        s1 = XmStringCreateLocalized("Modifier Key");
         XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -10021,12 +10104,12 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* *** Horizontal scroll modifier key comment (label) *** */
+    /* Horizontal scroll modifier key comment (label) */
     Widget header5;
     {
-        s1 = XmStringCreateLocalized("The physical modifier keys vary from server to server (and\n"
-                                     "may not always be present).  Often the Windows, Command, \n"
-                                     "Option, or diamond keys are mapped to one of them.");
+        s1 = XmStringCreateLocalized("The physical modifier keys vary from server to server (and may\n"
+                                     "not always be present).  Often the Windows, Command, Option,\n"
+                                     "or diamond keys are mapped to one of them.");
         header5 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -10039,7 +10122,7 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* *** Horizontal scroll swap wheel direction (widget) *** */
+    /* Horizontal scroll swap wheel direction (widget) */
     /* md.edHorizontalScrollSwapDirection */
     {
         s1 = XmStringCreateLocalized("Swap Modifier-key+Mousewheel scroll direction");
@@ -10054,11 +10137,10 @@ void MiscSettingsDialog(WindowInfo *window) {
                 NULL);
     }
     
-    /* *** Horizontal scroll behaviour comment (label) *** */
+    /* Horizontal scroll behaviour (label) */
     Widget header6;
     {
-        s1 = XmStringCreateLocalized("For mice with physical scroll-left and scroll-right buttons\n"
-                                    "(often actuated by pressing the sides of the mouse wheel):");
+        s1 = XmStringCreateLocalized("Horizontal scroll behaviour:");
         header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -10071,7 +10153,107 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* *** Horizontal scroll large step size (widget) *** */
+    
+    /* Horizontal scroll behaviour */
+    /* md.edHorizontalScrollDefaultStepWheel  */
+    /* md.edHorizontalScrollDefaultStepButton */
+    {
+        XmString defaultStepAmounts[2];
+        defaultStepAmounts[0] = XmStringCreateLocalized("Default=Character, Shift=Large step");
+        defaultStepAmounts[1] = XmStringCreateLocalized("Default=Large step, Shift=Character");
+        
+        /* Horizontal scroll modifier key + wheel behaviour (widget) */
+        /* md.edHorizontalScrollDefaultStepWheel */
+        {
+            ac = 0;
+            XtSetArg(args[ac], XmNitems, defaultStepAmounts); ac++;
+            XtSetArg(args[ac], XmNitemCount, 2); ac++;
+            XtSetArg(args[ac], XmNvisibleItemCount, 2); ac++;
+            XtSetArg(args[ac], XmNcolumns, 35); ac++;
+            XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+            XtSetArg(args[ac], XmNtopWidget, header6); ac++;
+            XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+            XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+            XtSetArg(args[ac], XmNcomboBoxType, XmDROP_DOWN_LIST); ac++;
+            md.edHorizontalScrollDefaultStepWheel = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+            XtManageChild(md.edHorizontalScrollDefaultStepWheel);
+        }
+        
+        /* Horizontal scroll modifier key + wheel behaviour (label) */
+        /* (anonymous) */
+        {
+            s1 = XmStringCreateLocalized("Modifier+Wheel");
+            XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+                    XmNlabelString, s1,
+                    XmNleftAttachment, XmATTACH_FORM,
+                    XmNrightAttachment, md.edHorizontalScrollDefaultStepWheel,
+                    XmNleftOffset, 8,
+                    XmNtopAttachment, XmATTACH_WIDGET,
+                    XmNtopWidget, header6,
+                    XmNtopOffset, 8,
+                    XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+                    XmNbottomWidget, md.edHorizontalScrollDefaultStepWheel,
+                    NULL);
+            XmStringFree(s1);
+        }
+        
+        /* Horizontal scroll button behaviour (widget) */
+        /* md.edHorizontalScrollDefaultStepButton */
+        {
+            ac = 0;
+            XtSetArg(args[ac], XmNitems, defaultStepAmounts); ac++;
+            XtSetArg(args[ac], XmNitemCount, 2); ac++;
+            XtSetArg(args[ac], XmNvisibleItemCount, 2); ac++;
+            XtSetArg(args[ac], XmNcolumns, 35); ac++;
+            XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
+            XtSetArg(args[ac], XmNtopWidget, md.edHorizontalScrollDefaultStepWheel); ac++;
+            XtSetArg(args[ac], XmNtopOffset, 8); ac++;
+            XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
+            XtSetArg(args[ac], XmNcomboBoxType, XmDROP_DOWN_LIST); ac++;
+            md.edHorizontalScrollDefaultStepButton = XmCreateDropDownList(md.form, "miscDropDown", args, ac);
+            XtManageChild(md.edHorizontalScrollDefaultStepButton);
+        }
+        
+        /* Horizontal scroll button behaviour (label) */
+        /* (anonymous) */
+        {
+            s1 = XmStringCreateLocalized("Scroll Buttons");
+            XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
+                    XmNlabelString, s1,
+                    XmNleftAttachment, XmATTACH_FORM,
+                    XmNrightAttachment, md.edHorizontalScrollDefaultStepButton,
+                    XmNleftOffset, 8,
+                    XmNtopAttachment, XmATTACH_WIDGET,
+                    XmNtopWidget, md.edHorizontalScrollDefaultStepWheel,
+                    XmNtopOffset, 8,
+                    XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
+                    XmNbottomWidget, md.edHorizontalScrollDefaultStepButton,
+                    NULL);
+            XmStringFree(s1);
+        }
+        
+        XmStringFree(defaultStepAmounts[0]);
+        XmStringFree(defaultStepAmounts[1]);
+    }
+    
+    /* Control key comment (label) */
+    Widget header7;
+    {
+        s1 = XmStringCreateLocalized("In either case holding Control changes the step size to the width\n"
+                                     "of the window.");
+        header7 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
+                XmNlabelString, s1,
+                XmNleftAttachment, XmATTACH_FORM,
+                XmNleftOffset, 8,
+                XmNtopAttachment, XmATTACH_WIDGET,
+                XmNtopWidget, md.edHorizontalScrollDefaultStepButton,
+                XmNtopOffset, 8,
+                XmNalignment, XmALIGNMENT_BEGINNING,
+                NULL);
+        XmStringFree(s1);
+    }
+    
+    /* Horizontal scroll large step size (widget) */
     /* md.edHorizontalScrollStep */
     {
         XmString horizontalScrollSize[22];
@@ -10091,7 +10273,7 @@ void MiscSettingsDialog(WindowInfo *window) {
         XtSetArg(args[ac], XmNitemCount, 22); ac++;
         XtSetArg(args[ac], XmNcolumns, 12); ac++;
         XtSetArg(args[ac], XmNtopAttachment, XmATTACH_WIDGET); ac++;
-        XtSetArg(args[ac], XmNtopWidget, header6); ac++;
+        XtSetArg(args[ac], XmNtopWidget, header7); ac++;
         XtSetArg(args[ac], XmNtopOffset, 8); ac++;
         XtSetArg(args[ac], XmNrightAttachment, XmATTACH_FORM); ac++;
         md.edHorizontalScrollStep = XmCreateDropDownComboBox(md.form, "miscDropDown", args, ac);
@@ -10101,16 +10283,16 @@ void MiscSettingsDialog(WindowInfo *window) {
         } 
     }
     
-    /* *** Horizontal scroll large step size (label) *** */
+    /* Horizontal scroll large step size (label) */
     /* (anonymous) */
     {
-        s1 = XmStringCreateLocalized("Default Scroll-Left/Right Step");
+        s1 = XmStringCreateLocalized("Large Scroll-Left/Right Step");
         XtVaCreateManagedWidget("miscLabel", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
                 XmNleftOffset, 8,
                 XmNtopAttachment, XmATTACH_WIDGET,
-                XmNtopWidget, header6,
+                XmNtopWidget, header7,
                 XmNtopOffset, 8,
                 XmNbottomAttachment, XmATTACH_OPPOSITE_WIDGET,
                 XmNbottomWidget, md.edHorizontalScrollStep,
@@ -10118,28 +10300,9 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* *** Horizontal scroll bottom comment (label) *** */
-    Widget header7;
-    {
-        s1 = XmStringCreateLocalized("Shift + button: Scroll 1 character\n"
-                                     "Button: Scroll amount selected above\n"
-                                     "Control + button: Scroll editor width"
-                                    );
-        header7 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
-                XmNlabelString, s1,
-                XmNleftAttachment, XmATTACH_FORM,
-                XmNleftOffset, 16,
-                XmNtopAttachment, XmATTACH_WIDGET,
-                XmNtopWidget, md.edHorizontalScrollStep,
-                XmNtopOffset, 0,
-                XmNalignment, XmALIGNMENT_BEGINNING,
-                NULL);
-        XmStringFree(s1);
-    }
-    
     Widget separator3 = XtVaCreateManagedWidget("separator", xmSeparatorWidgetClass, md.form,
             XmNtopAttachment, XmATTACH_WIDGET,
-            XmNtopWidget, header7,
+            XmNtopWidget, md.edHorizontalScrollStep,
             XmNtopOffset, 10,
             XmNleftAttachment, XmATTACH_FORM,
             XmNleftOffset, 8,
@@ -10361,7 +10524,7 @@ void MiscSettingsDialog(WindowInfo *window) {
         RadioButtonChangeState(md.edZoomMouseWheelDefaultBehavior, True, True);
     }
     
-    /* *** Horizontal scroll modifier key *** */
+    /* Horizontal scroll modifier key */
     {
         int horizontalScrollModifiers = GetPrefHorizontalScrollModifiers();
         for(int i=0; i<HORIZONTAL_SCROLL_MODIFIER_MAP_COUNT; i++) {
@@ -10372,14 +10535,14 @@ void MiscSettingsDialog(WindowInfo *window) {
         }
     }
     
-    /* *** Horizontal scroll swap wheel direction (widget) *** */
+    /* Horizontal scroll swap wheel direction */
     {
         XtVaSetValues( md.edHorizontalScrollSwapDirection, 
                        XmNset, GetPrefSwapMouseWheelHorizontalDirection(), 
                        NULL );
     }
     
-    /* *** Horizontal scroll large step size (widget) *** */
+    /* Horizontal scroll large step size */
     {
         int horizontalScrollStep = GetPrefHorizontalScrollStep();
         if ( horizontalScrollStep == 0 ) {
@@ -10395,6 +10558,20 @@ void MiscSettingsDialog(WindowInfo *window) {
         }
         XmComboBoxSelectItem(md.edHorizontalScrollStep, s1);
         XmStringFree(s1);
+    }
+    
+    /* Horizontal scroll modifier key + wheel behaviour */
+    {
+        XtVaSetValues( md.edHorizontalScrollDefaultStepWheel, 
+                       XmNselectedPosition, GetPrefHorizontalScrollDefaultStepWheel(), 
+                       NULL );
+    }
+    
+    /* Horizontal scroll button behaviour */
+    {
+        XtVaSetValues( md.edHorizontalScrollDefaultStepButton, 
+                       XmNselectedPosition, GetPrefHorizontalScrollDefaultStepButton(), 
+                       NULL );
     }
     
     XmStringFree(icSize[0]);

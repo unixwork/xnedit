@@ -42,6 +42,7 @@
 #include "preferences.h"
 #include "../util/nedit_malloc.h"
 #include "help.h"
+#include "preferences.h"          /* For HORIZONTAL_SCROLL_DEFAULT_STEP_* */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1227,6 +1228,16 @@ static void redisplayGE(TextWidget w, XtPointer client_data,
 static void hscrollEH(TextWidget w, XtPointer client_data,
                     XEvent *event, Boolean *continue_to_dispatch_return)
 {
+    /* This callback applies to the physical scroll-left and scroll-right 
+       buttons that are present on some mice.
+       
+       These are somewhat rare and should not be confused with the left and 
+       right mouse buttons.  They should also not be confused with the back 
+       and forward buttons that some mice have.
+       
+       One example of a mouse that includes them is the Logitech Anywhere MX 
+       where they are actuated by pressing the sides of the mouse wheel.
+    */
     int topLineNum, horizOffset, step;
     int button = event->xbutton.button;
     textDisp *textD = w->text.textD;
@@ -1245,16 +1256,33 @@ static void hscrollEH(TextWidget w, XtPointer client_data,
     ExamineModifierKeys();
     
     // Increment depends on any modifier keys held while pressing mouse button:
-    //     Shift   → Single column
-    //     [none]  → Distance specified in preferences [defaults to tab size]
+    // 
+    //     [none]  → Single column or «large» distance (as selected by user)
+    //     Shift   → Single column or «large» distance (as selected by user)
     //     Control → Window width
+    // 
+    // In the preferences the user can choose whether the default (neither Shift
+    // nor Control pressed) step is Character (single-column) or Large.
+    // 
+    // The Large step size is also configurable by the user and is typically set
+    // to the tab step size.  The same Large size is used both for modifier + 
+    // wheel scolling and for button scrolling.
+    // 
     // This behaviour mirrors that of the scroll wheel for vertical scrolling.
     // Previous behaviour was to always scroll by a single column.
-    int increment = ModifierKeyShift()
-                  ? 1
-                  : ModifierKeyControl()
-                  ? ((TextWidget)textD->w)->text.columns
-                  : GetPrefHorizontalScrollStep();
+    int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepButton()
+                             == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                           ? 1                              // Character
+                           : GetPrefHorizontalScrollStep(); // Large
+    int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepButton()
+                             == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                           ? GetPrefHorizontalScrollStep()  // Large
+                           : 1;                             // Character
+    int increment = ModifierKeyControl()
+                  ? ((TextWidget)textD->w)->text.columns    // Window width
+                  : ModifierKeyShift()
+                  ? shiftedIncrement
+                  : defaultIncrement;
     
     if ( increment == 0 ) {
         // Use hardware tab stop value
@@ -4027,17 +4055,34 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     if ( ModifierActive_HorizontalScroll() ) {
         // User is requesting horizontal (instead of vertical) scrolling.
         
-        // Increment depends on any extra modifier keys held while scrolling:
-        //     [none]  → Single column
-        //     Shift   → Distance specified in preferences [defaults to tab size]
+        // Increment depends on any modifier keys held while scrolling:
+        // 
+        //     [none]  → Single column or «large» distance (as selected by user)
+        //     Shift   → Single column or «large» distance (as selected by user)
         //     Control → Window width
+        // 
+        // In the preferences the user can choose whether the default (neither Shift
+        // nor Control pressed) step is Character (single-column) or Large.
+        // 
+        // The Large step size is also configurable by the user and is typically set
+        // to the tab step size.  The same Large size is used both for modifier + 
+        // wheel scolling and for button scrolling.
+        // 
         // This behaviour is similar to that of the scroll wheel for vertical 
         // scrolling though the Shift key behaviour is inverted.
-        int increment = ModifierKeyShift()
-                      ? GetPrefHorizontalScrollStep()
-                      : ModifierKeyControl()
-                      ? ((TextWidget)textD->w)->text.columns
-                      : 1;
+        int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? 1                              // Character
+                               : GetPrefHorizontalScrollStep(); // Large
+        int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? GetPrefHorizontalScrollStep()  // Large
+                               : 1;                             // Character
+        int increment = ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns    // Window width
+                      : ModifierKeyShift()
+                      ? shiftedIncrement
+                      : defaultIncrement;
         
         if ( increment == 0 ) {
             // Use hardware tab stop value
@@ -4116,17 +4161,34 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     if ( ModifierActive_HorizontalScroll() ) {
         // User is requesting horizontal (instead of vertical) scrolling.
         
-        // Increment depends on any extra modifier keys held while scrolling:
-        //     [none]  → Single column
-        //     Shift   → Distance specified in preferences [defaults to tab size]
+        // Increment depends on any modifier keys held while scrolling:
+        // 
+        //     [none]  → Single column or «large» distance (as selected by user)
+        //     Shift   → Single column or «large» distance (as selected by user)
         //     Control → Window width
+        // 
+        // In the preferences the user can choose whether the default (neither Shift
+        // nor Control pressed) step is Character (single-column) or Large.
+        // 
+        // The Large step size is also configurable by the user and is typically set
+        // to the tab step size.  The same Large size is used both for modifier + 
+        // wheel scolling and for button scrolling.
+        // 
         // This behaviour is similar to that of the scroll wheel for vertical 
         // scrolling though the Shift key behaviour is inverted.
-        int increment = ModifierKeyShift()
-                      ? GetPrefHorizontalScrollStep()
-                      : ModifierKeyControl()
-                      ? ((TextWidget)textD->w)->text.columns
-                      : 1;
+        int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? 1                              // Character
+                               : GetPrefHorizontalScrollStep(); // Large
+        int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? GetPrefHorizontalScrollStep()  // Large
+                               : 1;                             // Character
+        int increment = ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns    // Window width
+                      : ModifierKeyShift()
+                      ? shiftedIncrement
+                      : defaultIncrement;
         
         if ( increment == 0 ) {
             // Use hardware tab stop value

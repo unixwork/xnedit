@@ -54,6 +54,11 @@ typedef struct ColorList {
     size_t ncolors;
 } ColorList;
 
+// Ideally this would be an enum but I really don't want to mess with the types 
+// used by Xt/Motif (even if in the end they still end up being int variables).
+#define HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER ( 0 )
+#define HORIZONTAL_SCROLL_DEFAULT_STEP_LARGE     ( 1 )
+
 XrmDatabase CreateNEditPrefDB(int *argcInOut, char **argvInOut);
 void RestoreNEditPrefs(XrmDatabase prefDB, XrmDatabase appDB);
 void SaveNEditPrefs(Widget parent, int quietly);
