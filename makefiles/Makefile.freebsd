@@ -18,4 +18,3 @@ LIBS= $(LD_OPT_FLAGS) -liconv -lm -lXm -lXt -lSM -lICE -lX11 -lXrender -lXext -l
 
 include Makefile.common
 
-verify_config: check_tif_rule

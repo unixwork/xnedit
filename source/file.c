@@ -312,7 +312,7 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
     path = window->path;
     strcpy(window->filename, name);
     strcpy(path, (defaultPath && *defaultPath) ? defaultPath : GetCurrentDir());
-    pathlen = strlen(window->path);
+    pathlen = strlen(path);
     
     /* do we have a "/" at the end? if not, add one */
     if (0 < pathlen && path[pathlen - 1] != '/' && pathlen < MAXPATHLEN - 1) {
