@@ -451,7 +451,7 @@ static struct prefData {
     
     /* When scrolling horizontally using Modifier+wheel the default mapping is 
        scroll-up → scroll-left, scroll-down → scroll-right.  Setting this 
-       option to TRUE inverts that behaviour.
+       option to TRUE inverts that behavior.
     */
     int horizontalScrollSwapDirection;
     
@@ -9358,7 +9358,7 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         SetPrefSwapMouseWheelHorizontalDirection(horizontalScrollSwapDirection);
     }
     
-    /* Horizontal scroll modifier key + wheel behaviour */
+    /* Horizontal scroll modifier key + wheel behavior */
     {
         int idx;
         XtVaGetValues( md.edHorizontalScrollDefaultStepWheel, 
@@ -9367,7 +9367,7 @@ static void mdApplyCB(Widget w, XtPointer clientData, XtPointer callData) {
         SetPrefHorizontalScrollDefaultStepWheel(idx);
     }
     
-    /* Horizontal scroll button behaviour */
+    /* Horizontal scroll button behavior */
     {
         int idx;
         XtVaGetValues( md.edHorizontalScrollDefaultStepButton, 
@@ -10043,7 +10043,7 @@ void MiscSettingsDialog(WindowInfo *window) {
                                      "Mousewheel.  Some mice also have hardware scroll-left/right\n"
                                      "buttons which can be used without holding the modifier key.\n"
                                      "For both methods also pressing Shift or Control changes their\n"
-                                     "behaviour.");
+                                     "behavior.");
         header4 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -10137,10 +10137,10 @@ void MiscSettingsDialog(WindowInfo *window) {
                 NULL);
     }
     
-    /* Horizontal scroll behaviour (label) */
+    /* Horizontal scroll behavior (label) */
     Widget header6;
     {
-        s1 = XmStringCreateLocalized("Horizontal scroll behaviour:");
+        s1 = XmStringCreateLocalized("Horizontal scroll behavior:");
         header6 = XtVaCreateManagedWidget("miscHeader", xmLabelWidgetClass, md.form,
                 XmNlabelString, s1,
                 XmNleftAttachment, XmATTACH_FORM,
@@ -10154,7 +10154,7 @@ void MiscSettingsDialog(WindowInfo *window) {
     }
     
     
-    /* Horizontal scroll behaviour */
+    /* Horizontal scroll behavior */
     /* md.edHorizontalScrollDefaultStepWheel  */
     /* md.edHorizontalScrollDefaultStepButton */
     {
@@ -10162,7 +10162,7 @@ void MiscSettingsDialog(WindowInfo *window) {
         defaultStepAmounts[0] = XmStringCreateLocalized("Default=Character, Shift=Large step");
         defaultStepAmounts[1] = XmStringCreateLocalized("Default=Large step, Shift=Character");
         
-        /* Horizontal scroll modifier key + wheel behaviour (widget) */
+        /* Horizontal scroll modifier key + wheel behavior (widget) */
         /* md.edHorizontalScrollDefaultStepWheel */
         {
             ac = 0;
@@ -10179,7 +10179,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XtManageChild(md.edHorizontalScrollDefaultStepWheel);
         }
         
-        /* Horizontal scroll modifier key + wheel behaviour (label) */
+        /* Horizontal scroll modifier key + wheel behavior (label) */
         /* (anonymous) */
         {
             s1 = XmStringCreateLocalized("Modifier+Wheel");
@@ -10197,7 +10197,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XmStringFree(s1);
         }
         
-        /* Horizontal scroll button behaviour (widget) */
+        /* Horizontal scroll button behavior (widget) */
         /* md.edHorizontalScrollDefaultStepButton */
         {
             ac = 0;
@@ -10214,7 +10214,7 @@ void MiscSettingsDialog(WindowInfo *window) {
             XtManageChild(md.edHorizontalScrollDefaultStepButton);
         }
         
-        /* Horizontal scroll button behaviour (label) */
+        /* Horizontal scroll button behavior (label) */
         /* (anonymous) */
         {
             s1 = XmStringCreateLocalized("Scroll Buttons");
@@ -10560,14 +10560,14 @@ void MiscSettingsDialog(WindowInfo *window) {
         XmStringFree(s1);
     }
     
-    /* Horizontal scroll modifier key + wheel behaviour */
+    /* Horizontal scroll modifier key + wheel behavior */
     {
         XtVaSetValues( md.edHorizontalScrollDefaultStepWheel, 
                        XmNselectedPosition, GetPrefHorizontalScrollDefaultStepWheel(), 
                        NULL );
     }
     
-    /* Horizontal scroll button behaviour */
+    /* Horizontal scroll button behavior */
     {
         XtVaSetValues( md.edHorizontalScrollDefaultStepButton, 
                        XmNselectedPosition, GetPrefHorizontalScrollDefaultStepButton(), 
