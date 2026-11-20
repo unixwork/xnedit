@@ -42,6 +42,7 @@
 #include "preferences.h"
 #include "../util/nedit_malloc.h"
 #include "help.h"
+#include "preferences.h"          /* For HORIZONTAL_SCROLL_DEFAULT_STEP_* */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,8 @@
 #ifdef UNICOS
 #define XtOffset(p_type,field) ((size_t)__INTADDR__(&(((p_type)0)->field)))
 #endif
+
+#include "../util/misc.h"  /* For MOUSE_BUTTON_SCROLL_LEFT and MOUSE_BUTTON_SCROLL_RIGHT */
 
 /* Number of pixels of motion from the initial (grab-focus) button press
    required to begin recognizing a mouse drag for the purpose of making a
@@ -1225,11 +1228,22 @@ static void redisplayGE(TextWidget w, XtPointer client_data,
 static void hscrollEH(TextWidget w, XtPointer client_data,
                     XEvent *event, Boolean *continue_to_dispatch_return)
 {
+    /* This callback applies to the physical scroll-left and scroll-right 
+       buttons that are present on some mice.
+       
+       These are somewhat rare and should not be confused with the left and 
+       right mouse buttons.  They should also not be confused with the back 
+       and forward buttons that some mice have.
+       
+       One example of a mouse that includes them is the Logitech Anywhere MX 
+       where they are actuated by pressing the sides of the mouse wheel.
+    */
     int topLineNum, horizOffset, step;
     int button = event->xbutton.button;
     textDisp *textD = w->text.textD;
     
-    if(button != 6 && button != 7) {
+    if ( button != MOUSE_BUTTON_SCROLL_LEFT && 
+         button != MOUSE_BUTTON_SCROLL_RIGHT) {
         return;
     }
     
@@ -1237,7 +1251,61 @@ static void hscrollEH(TextWidget w, XtPointer client_data,
     if(textD->font) {
         charWidth = textD->font->maxWidth;
     }
-    step = (button == 6 ? -1 : 1) * charWidth;
+    
+    // Check modifier keys
+    ExamineModifierKeys();
+    
+    // Increment depends on any modifier keys held while pressing mouse button:
+    // 
+    //     [none]  → Single column or «large» distance (as selected by user)
+    //     Shift   → Single column or «large» distance (as selected by user)
+    //     Control → Window width
+    // 
+    // In the preferences the user can choose whether the default (neither Shift
+    // nor Control pressed) step is Character (single-column) or Large.
+    // 
+    // The Large step size is also configurable by the user and is typically set
+    // to the tab step size.  The same Large size is used both for modifier + 
+    // wheel scolling and for button scrolling.
+    // 
+    // This behaviour mirrors that of the scroll wheel for vertical scrolling.
+    // Previous behaviour was to always scroll by a single column.
+    int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepButton()
+                             == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                           ? 1                              // Character
+                           : GetPrefHorizontalScrollStep(); // Large
+    int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepButton()
+                             == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                           ? GetPrefHorizontalScrollStep()  // Large
+                           : 1;                             // Character
+    int increment = ModifierKeyControl()
+                  ? ((TextWidget)textD->w)->text.columns    // Window width
+                  : ModifierKeyShift()
+                  ? shiftedIncrement
+                  : defaultIncrement;
+    
+    if ( increment == 0 ) {
+        // Use hardware tab stop value
+        // (this is the default increment)
+        increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+        if ( increment < 1 ) {
+            // Shouldn't happen
+            increment = 8;
+        }
+    } else if ( increment < 0 ) {
+        // Use emulated tab stop value
+        increment = ((TextWidget)w)->text.emulateTabs;
+        if ( increment < 1 ) {
+            // Fall back to using hardware tab stop if emulated tabs aren't active
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+        }
+        if ( increment < 1 ) {
+            // Shouldn't happen
+            increment = 8;
+        }
+    }
+    
+    step = (button == MOUSE_BUTTON_SCROLL_LEFT ? -1 : 1) * increment * charWidth;
     
     
     TextDGetScroll(textD, &topLineNum, &horizOffset);
@@ -3980,6 +4048,77 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
+    /* User-specified modifier held down → horizontal scroll [left (by default)] */
+    
+    // Check modifier keys
+    ExamineModifierKeys();
+    if ( ModifierActive_HorizontalScroll() ) {
+        // User is requesting horizontal (instead of vertical) scrolling.
+        
+        // Increment depends on any modifier keys held while scrolling:
+        // 
+        //     [none]  → Single column or «large» distance (as selected by user)
+        //     Shift   → Single column or «large» distance (as selected by user)
+        //     Control → Window width
+        // 
+        // In the preferences the user can choose whether the default (neither Shift
+        // nor Control pressed) step is Character (single-column) or Large.
+        // 
+        // The Large step size is also configurable by the user and is typically set
+        // to the tab step size.  The same Large size is used both for modifier + 
+        // wheel scolling and for button scrolling.
+        // 
+        // This behaviour is similar to that of the scroll wheel for vertical 
+        // scrolling though the Shift key behaviour is inverted.
+        int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? 1                              // Character
+                               : GetPrefHorizontalScrollStep(); // Large
+        int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? GetPrefHorizontalScrollStep()  // Large
+                               : 1;                             // Character
+        int increment = ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns    // Window width
+                      : ModifierKeyShift()
+                      ? shiftedIncrement
+                      : defaultIncrement;
+        
+        if ( increment == 0 ) {
+            // Use hardware tab stop value
+            // (this is the default increment)
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        } else if ( increment < 0 ) {
+            // Use emulated tab stop value
+            increment = ((TextWidget)w)->text.emulateTabs;
+            if ( increment < 1 ) {
+                // Fall back to using hardware tab stop if emulated tabs aren't active
+                increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            }
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        }
+        
+        int charWidth = 8;
+        if(textD->font) {
+            charWidth = textD->font->maxWidth;
+        }
+        if (GetPrefSwapMouseWheelHorizontalDirection()) {
+            charWidth *= -1;
+        }
+        TextDGetScroll(textD, &topLineNum, &horizOffset);
+        TextDSetScroll(textD, topLineNum, horizOffset - increment * charWidth);
+        return;
+    }
+    
+    /* Normal (vertical) scroll */
+    
     if(*nArgs == 3) {
         if (GetPrefZoomCtrlMouseWheel()) {
             if (!strcmp(args[2], "alt_zoom")) {
@@ -4014,6 +4153,77 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
 {
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
+
+    /* User-specified modifier held down → horizontal scroll [right (by default)] */
+
+    // Check modifier keys
+    ExamineModifierKeys();
+    if ( ModifierActive_HorizontalScroll() ) {
+        // User is requesting horizontal (instead of vertical) scrolling.
+        
+        // Increment depends on any modifier keys held while scrolling:
+        // 
+        //     [none]  → Single column or «large» distance (as selected by user)
+        //     Shift   → Single column or «large» distance (as selected by user)
+        //     Control → Window width
+        // 
+        // In the preferences the user can choose whether the default (neither Shift
+        // nor Control pressed) step is Character (single-column) or Large.
+        // 
+        // The Large step size is also configurable by the user and is typically set
+        // to the tab step size.  The same Large size is used both for modifier + 
+        // wheel scolling and for button scrolling.
+        // 
+        // This behaviour is similar to that of the scroll wheel for vertical 
+        // scrolling though the Shift key behaviour is inverted.
+        int defaultIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? 1                              // Character
+                               : GetPrefHorizontalScrollStep(); // Large
+        int shiftedIncrement = ( GetPrefHorizontalScrollDefaultStepWheel()
+                                 == HORIZONTAL_SCROLL_DEFAULT_STEP_CHARACTER )
+                               ? GetPrefHorizontalScrollStep()  // Large
+                               : 1;                             // Character
+        int increment = ModifierKeyControl()
+                      ? ((TextWidget)textD->w)->text.columns    // Window width
+                      : ModifierKeyShift()
+                      ? shiftedIncrement
+                      : defaultIncrement;
+        
+        if ( increment == 0 ) {
+            // Use hardware tab stop value
+            // (this is the default increment)
+            increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        } else if ( increment < 0 ) {
+            // Use emulated tab stop value
+            increment = ((TextWidget)w)->text.emulateTabs;
+            if ( increment < 1 ) {
+                // Fall back to using hardware tab stop if emulated tabs aren't active
+                increment = ((TextWidget)w)->text.textD->buffer->tabDist;
+            }
+            if ( increment < 1 ) {
+                // Shouldn't happen
+                increment = 8;
+            }
+        }
+        
+        int charWidth = 8;
+        if(textD->font) {
+            charWidth = textD->font->maxWidth;
+        }
+        if (GetPrefSwapMouseWheelHorizontalDirection()) {
+            charWidth *= -1;
+        }
+        TextDGetScroll(textD, &topLineNum, &horizOffset);
+        TextDSetScroll(textD, topLineNum, horizOffset + increment * charWidth);
+        return;
+    }
+
+    /* Normal (vertical) scroll */
 
     if(*nArgs == 3) {
         if (GetPrefZoomCtrlMouseWheel()) {
