@@ -3363,6 +3363,7 @@ static void printSelAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
 static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs) 
 {
     WindowInfo *window = WidgetToWindow(w);
+    Boolean First;
 
     if (!CheckPrefsChangesSaved(window->shell))
         return;
@@ -3372,38 +3373,40 @@ static void exitAP(Widget w, XEvent *event, String *args, Cardinal *nArgs)
     if (GetPrefWarnExit() && !(window == WindowList && window->next == NULL)) {
         int resp, titleLen, lineLen;
         char exitMsg[DF_MAX_MSG_LENGTH], *ptr, *title;
-    char filename[MAXPATHLEN + 1];
+        char filename[MAXPATHLEN + 1];
         WindowInfo *win;
 
         /* List the windows being edited and make sure the
            user really wants to exit */
         ptr = exitMsg;
-    lineLen = 0;
+        lineLen = 0;
+        First = True;
         strcpy(ptr, "Editing: "); ptr += 9; lineLen += 9;
         for (win=WindowList; win!=NULL; win=win->next) {
             if (win->editorInfo->master != win)
                 continue;           /* skip clones */
-                
-           sprintf(filename, "%s%s", win->filename, win->fileChanged? "*": "");
-        title = filename;
+            sprintf(filename, "%s%s", win->filename, win->fileChanged? "*": "");
+            title = filename;
             titleLen = strlen(title);
             if (ptr - exitMsg + titleLen + 30 >= DF_MAX_MSG_LENGTH) {
-            strcpy(ptr, "..."); ptr += 3;
-            break;
+                strcpy(ptr, "..."); ptr += 3;
+                break;
             }
-        if (lineLen + titleLen + (win->next==NULL?5:2) > 50) {
-        *ptr++ = '\n';
-        lineLen = 0;
-        }
-        if (win->next == NULL) {
-        sprintf(ptr, "and %s.", title);
-        ptr += 5 + titleLen;
-        lineLen += 5 + titleLen;
-        } else {
-        sprintf(ptr, "%s, ", title);
-        ptr += 2 + titleLen;
-        lineLen += 2 + titleLen;
-        }
+            if (lineLen + titleLen + (win->next==NULL?5:2) > 50) {
+                *ptr++ = '\n';
+                lineLen = 0;
+            }
+            if (!First & win->next == NULL) {
+                sprintf(ptr, "and %s.", title);
+                ptr += 5 + titleLen;
+                lineLen += 5 + titleLen;
+            } else {
+                First= False;
+                if (win->next == NULL) sprintf(ptr, "%s. ", title);
+                else                   sprintf(ptr, "%s, ", title);
+                ptr += 2 + titleLen;
+                lineLen += 2 + titleLen;
+            }
         }
         sprintf(ptr, "\n\nExit NEdit?");
         resp = DialogF(DF_QUES, window->shell, 2, "Exit", "%s", "Exit",
