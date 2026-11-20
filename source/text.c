@@ -4048,7 +4048,7 @@ static void scrollUpAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
     
-    /* Super or Meta held down → horizontal scroll [left (by default)] */
+    /* User-specified modifier held down → horizontal scroll [left (by default)] */
     
     // Check modifier keys
     ExamineModifierKeys();
@@ -4154,7 +4154,7 @@ static void scrollDownAP(Widget w, XEvent *event, String *args,
     textDisp *textD = ((TextWidget)w)->text.textD;
     int topLineNum, horizOffset, nLines;
 
-    /* Super or Meta held down → horizontal scroll [right (by default)] */
+    /* User-specified modifier held down → horizontal scroll [right (by default)] */
 
     // Check modifier keys
     ExamineModifierKeys();
