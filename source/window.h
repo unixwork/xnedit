@@ -33,8 +33,11 @@
 #include <X11/Intrinsic.h>
 
 void LoadColorProfileResources(Display *display, ColorProfile *profile);
+int GetCloneIndex(const WindowInfo *window);
+WindowInfo *CreateCloneWindow(WindowInfo *window);
 void AttachSessionMgrHandler(Widget appShell);
-WindowInfo *CreateWindow(const char *title, char *geometry, int iconic);
+WindowInfo *CreateWindow(const char *title, char *geometry, int iconic,
+    	EditorInfo *editorInfo);
 void CloseWindow(WindowInfo *window);
 int NWindows(void);
 void UpdateWindowTitle(const WindowInfo *window);
@@ -76,7 +79,8 @@ void AddSmallIcon(Widget shell);
 void SetTabDist(WindowInfo *window, int tabDist);
 void SetEmTabDist(WindowInfo *window, int emTabDist);
 int CloseAllDocumentInWindow(WindowInfo *window);
-WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name);
+WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name,
+        EditorInfo *editorInfo);
 WindowInfo *TabToWindow(Widget tab);
 void RaiseDocument(WindowInfo *window);
 void RaiseDocumentWindow(WindowInfo *window);

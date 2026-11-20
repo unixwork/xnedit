@@ -67,7 +67,7 @@ static void newdatafile(Widget widget, char *buffer) {
         window = EditNewFile(openInTab? window : NULL, NULL, False, NULL, window->path);
     }
     
-    BufInsert(window->buffer, 0, buffer);
+    BufInsert(window->editorInfo->buffer, 0, buffer);
 }
 
 #ifdef CDE

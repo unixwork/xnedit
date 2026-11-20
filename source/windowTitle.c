@@ -229,7 +229,6 @@ static void compressWindowTitle(char *title)
     } while (modified == True);
 }
 
-
 /*
 ** Format the windows title using a printf like formatting string.
 ** The following flags are recognised:
