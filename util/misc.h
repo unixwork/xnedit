@@ -62,6 +62,9 @@
 
 /* Maximum length of comma-delimited preferences string listing all modifiers
   Note that there's a bit of headroom here; the actual requirement is 106 bytes.
+  
+  Do not reduce this constant below 106 bytes; doing so will trigger an assert 
+  in preferences.c : ModifierBitmapToPreference.
 */
 #define MAX_MODIFIERS_STRING (128)
 
