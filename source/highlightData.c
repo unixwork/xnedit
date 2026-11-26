@@ -1008,68 +1008,68 @@ static char *DefaultPatternSets[] = {
     declaration attributes:\"((?iversion|encoding|standalone))=\":::Keyword:declaration:\n\
     declaration attribute names:\"\\1\":::Preprocessor:declaration attributes:C\n\
     declaration sq string:\"'\":\"'\":\"\\n\\n\":String1:declaration:\n\
-    declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:declaration sq string:\n\
+    declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:declaration sq string:\n\
     declaration dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:declaration:\n\
-    declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:declaration dq string:\n\
-    doctype:\"(\\<!(?idoctype))\\s+(\\<?(?!(?ixml))[\\l_][\\w:-]*\\>?)\":\"\\>\":\"\\[\":Warning::\n\
+    declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:declaration dq string:\n\
+    doctype:\"(\\<!(?idoctype))\\s+(\\<?(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*\\>?)\":\"\\>\":\"\\[\":Warning::\n\
     doctype delims:\"\\1\":\"&\"::Keyword:doctype:C\n\
     doctype root element:\"\\2\":::Identifier:doctype:C\n\
     doctype keyword:\"(SYSTEM|PUBLIC)\":::Keyword:doctype:\n\
     doctype sq string:\"'\":\"'\":\"\\n\\n\":String1:doctype:\n\
     doctype dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:doctype:\n\
     processing instruction:\"\\<\\?\\S+\":\"\\?\\>\"::Preprocessor::\n\
-    processing instruction attribute:\"[\\l_][\\w:-]*=((\"\"[^\"\"]*\"\")|('[^']*'))\":::Preprocessor:processing instruction:\n\
+    processing instruction attribute:\"[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*=((\"\"[^\"\"]*\"\")|('[^']*'))\":::Preprocessor:processing instruction:\n\
     processing instruction value:\"\\1\":::String:processing instruction attribute:C\n\
     cdata:\"\\<!\\[(?icdata)\\[\":\"\\]\\]\\>\"::Text Comment::\n\
     cdata delims:\"&\":\"&\"::Preprocessor:cdata:C\n\
     element declaration:\"\\<!ELEMENT\":\"\\>\"::Warning::\n\
     element declaration delims:\"&\":\"&\"::Keyword:element declaration:C\n\
-    element declaration entity ref:\"%(?!(?ixml))[\\l_][\\w:-]*;\":::Identifier1:element declaration:\n\
+    element declaration entity ref:\"%(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*;\":::Identifier1:element declaration:\n\
     element declaration keyword:\"(?<!\\Y)(ANY|#PCDATA|EMPTY)>\":::Storage Type:element declaration:\n\
-    element declaration name:\"<(?!(?ixml))[\\l_][\\w:-]*\":::Identifier:element declaration:\n\
+    element declaration name:\"<(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*\":::Identifier:element declaration:\n\
     element declaration operator:\"[(),?*+|]\":::Keyword:element declaration:\n\
     entity declaration:\"\\<!ENTITY\":\"\\>\"::Warning::\n\
     entity declaration delims:\"&\":\"&\"::Keyword:entity declaration:C\n\
     entity declaration sq string:\"'\":\"'\":\"\\n\\n\":String1:entity declaration:\n\
-    entity declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:entity declaration sq string:\n\
+    entity declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:entity declaration sq string:\n\
     entity declaration dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:entity declaration:\n\
-    entity declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:entity declaration dq string:\n\
+    entity declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:entity declaration dq string:\n\
     entity declaration keyword:\"SYSTEM|NDATA\":::Keyword:entity declaration:\n\
-    entity declaration name:\"<(?!(?ixml))[\\l_][\\w:-]*\":::Identifier:entity declaration:\n\
-    parameter entity declaration:\"%\\s+((?!(?ixml))[\\l_][\\w:-]*)>\":::Keyword:entity declaration:\n\
+    entity declaration name:\"<(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*\":::Identifier:entity declaration:\n\
+    parameter entity declaration:\"%\\s+((?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*)>\":::Keyword:entity declaration:\n\
     parameter entity name:\"\\1\":::Identifier:parameter entity declaration:C\n\
     notation:\"\\<!NOTATION\":\"\\>\"::Warning::\n\
     notation delims:\"&\":\"&\"::Keyword:notation:C\n\
     notation sq string:\"'\":\"'\":\"\\n\\n\":String1:notation:\n\
-    notation sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:notation sq string:\n\
+    notation sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:notation sq string:\n\
     notation dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:notation:\n\
-    notation dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:notation dq string:\n\
+    notation dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:notation dq string:\n\
     notation keyword:\"SYSTEM\":::Keyword:notation:\n\
-    notation name:\"<(?!(?ixml))[\\l_][\\w:-]*\":::Identifier:notation:\n\
+    notation name:\"<(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*\":::Identifier:notation:\n\
     attribute declaration:\"\\<!ATTLIST\":\"\\>\"::Warning::\n\
     attribute declaration delims:\"&\":\"&\"::Keyword:attribute declaration:C\n\
     attribute declaration sq string:\"'\":\"'\":\"\\n\\n\":String1:attribute declaration:\n\
-    attribute declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:attribute declaration sq string:\n\
+    attribute declaration sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:attribute declaration sq string:\n\
     attribute declaration dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:attribute declaration:\n\
-    attribute declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:attribute declaration dq string:\n\
-    attribute declaration namespace:\"(?ixmlns)(:[\\l_][\\w:]*)?\":::Preprocessor:attribute declaration:\n\
+    attribute declaration dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:attribute declaration dq string:\n\
+    attribute declaration namespace:\"(?ixmlns)(:[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*)?\":::Preprocessor:attribute declaration:\n\
     attribute declaration default modifier:\"#(REQUIRED|IMPLIED|FIXED)>\":::Keyword:attribute declaration:\n\
     attribute declaration data type:\"<(CDATA|ENTIT(Y|IES)|ID(REFS?)?|NMTOKENS?|NOTATION)>\":::Storage Type:attribute declaration:\n\
-    attribute declaration name:\"<(?!(?ixml))[\\l_][\\w:-]*\":::Identifier:attribute declaration:\n\
+    attribute declaration name:\"<(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*\":::Identifier:attribute declaration:\n\
     attribute declaration operator:\"[(),?*+|]\":::Keyword:attribute declaration:\n\
-    element:\"(\\</?)((?!(?ixml))[\\l_][\\w:-]*)\":\"/?\\>\"::Warning::\n\
+    element:\"(\\</?)((?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*)\":\"/?\\>\"::Warning::\n\
     element delims:\"\\1\":\"&\"::Keyword:element:C\n\
     element name:\"\\2\":::Identifier:element:C\n\
     element assign:\"=\":::Keyword:element:\n\
     element reserved attribute:\"(?ixml:(lang|space|link|attribute))(?==)\":::Text Key:element:\n\
-    element namespace:\"(?ixmlns:[\\l_]\\w*)(?==)\":::Preprocessor:element:\n\
-    element attribute:\"[\\l_][\\w:-]*(?==)\":::Text Key1:element:\n\
+    element namespace:\"(?ixmlns:[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*)(?==)\":::Preprocessor:element:\n\
+    element attribute:\"[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*(?==)\":::Text Key1:element:\n\
     element sq string:\"'\":\"'\":\"\\n\\n\":String1:element:\n\
-    element sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:element sq string:\n\
+    element sq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:element sq string:\n\
     element dq string:\"\"\"\":\"\"\"\":\"\\n\\n\":String:element:\n\
-    element dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape:element dq string:\n\
-    entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[\\l_]\\w*);\":::Text Escape::\n\
-    marked section:\"\\<!\\[\\s*(?:INCLUDE|(%(?!(?ixml))[\\l_][\\w:-]*;))\\s*\\[|\\]\\]\\>\":::Label::\n\
+    element dq string entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape:element dq string:\n\
+    entity:\"&((amp|lt|gt|quot|apos)|#x[\\da-fA-F]*|[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*);\":::Text Escape::\n\
+    marked section:\"\\<!\\[\\s*(?:INCLUDE|(%(?!(?ixml))[^\\001-\\0100\\0133-\\0136\\0140\\0173-\\0177][^\\001-\\054\\057\\073-\\0100\\0133-\\0136\\0140\\0173-\\0177]*;))\\s*\\[|\\]\\]\\>\":::Label::\n\
     marked section entity ref:\"\\1\":::Identifier:marked section:C\n\
     internal subset delims:\"[\\[\\]>]\":::Keyword::D\n\
     info:\"(?# version 0.1; author/maintainer: Joor Loohuis, joor@loohuis-consulting.nl)\":::Comment::D}",
