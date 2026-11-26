@@ -4889,12 +4889,16 @@ static void redrawLineNumbers(textDisp *textD, int top, int height, int clearAll
     clipRect.y = 0; //textD->top;
     clipRect.width = textD->lineNumWidth + textD->lineNumLeft;
     clipRect.height = textD->height + 2*textD->top;
+    //XSetClipRectangles(display, textD->lineNumGC, 0, 0,
+    //	    &clipRect, 1, Unsorted);
     if(textD->d) {
         XftDrawSetClipRectangles(textD->d, 0, 0, &clipRect, 1);
     }
     
     /* Erase the previous contents of the line number area, if requested */
     if (clearAll) {
+        //XClearArea(XtDisplay(textD->w), XtWindow(textD->w), textD->lineNumLeft,
+        //        textD->top, textD->lineNumWidth, textD->height, False);
         XftDrawRect(
                 textD->d,
                 &textD->colorProfile->lineNoBgColor,

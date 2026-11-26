@@ -305,14 +305,14 @@ WindowInfo *EditNewFile(WindowInfo *inWindow, char *geometry, int iconic,
 
     /* create new window/document */
     if (inWindow)
-    window = CreateDocument(inWindow, name);
+	window = CreateDocument(inWindow, name, NULL);
     else 
-    window = CreateWindow(name, geometry, iconic);
+	window = CreateWindow(name, geometry, iconic, NULL);
 
     path = window->path;
     strcpy(window->filename, name);
     strcpy(path, (defaultPath && *defaultPath) ? defaultPath : GetCurrentDir());
-    pathlen = strlen(window->path);
+    pathlen = strlen(path);
     
     /* do we have a "/" at the end? if not, add one */
     if (0 < pathlen && path[pathlen - 1] != '/' && pathlen < MAXPATHLEN - 1) {
@@ -362,7 +362,7 @@ static void ApplyEditorConfig(WindowInfo *window, EditorConfig ec) {
         if(emTabDist == 0) {
             XtVaGetValues(window->textArea, textNemulateTabs, &emTabDist, NULL);
             if(emTabDist == 0) {
-                emTabDist = BufGetTabDistance(window->buffer);
+                emTabDist = BufGetTabDistance(window->editorInfo->buffer);
             }
         }
 
@@ -449,22 +449,22 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
        in use (not Untitled or Untitled and modified), or is currently
        busy running a macro; create the window */
     if (inWindow == NULL) {
-    window = CreateWindow(name, geometry, iconic);
+	window = CreateWindow(name, geometry, iconic, NULL);
     }
     else if (inWindow->filenameSet || inWindow->fileChanged ||
         inWindow->macroCmdData != NULL) {
     if (tabbed) {
-        window = CreateDocument(inWindow, name);
+	    window = CreateDocument(inWindow, name, NULL);
         }
     else {
-        window = CreateWindow(name, geometry, iconic);
+	    window = CreateWindow(name, geometry, iconic, NULL);
     }
     }
     else {
         /* open file in untitled document */
         window = inWindow;
-        strcpy(window->path, path);
-        strcpy(window->filename, name); 
+    	strcpy(window->path, path);
+    	strcpy(window->filename, name); 
         if(encoding) {
             SetEncoding(window, encoding);
         } else {
@@ -502,7 +502,7 @@ WindowInfo *EditExistingFile(WindowInfo *inWindow, const char *name,
     forceShowLineNumbers(window);
     
     /* Decide what language mode to use, trigger language specific actions */
-    if(window->buffer->length < DISABLE_LANG_THRESHOLD) {
+    if(window->editorInfo->buffer->length < DISABLE_LANG_THRESHOLD) {
         if (languageMode == NULL) {
             DetermineLanguageMode(window, True);
         } else {
@@ -843,16 +843,16 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
     }
     
     /* Display the file contents in the text widget */
-    window->ignoreModify = True;
-    BufSetAll(window->buffer, content.content);
-    window->ignoreModify = False;
+    window->editorInfo->ignoreModify = True;
+    BufSetAll(window->editorInfo->buffer, content.content);
+    window->editorInfo->ignoreModify = False;
     
     /* Check that the length that the buffer thinks it has is the same
        as what we gave it.  If not, there were probably nuls in the file.
        Substitute them with another character.  If that is impossible, warn
        the user, make the file read-only, and force a substitution */
-    if (window->buffer->length != content.length) {
-        if (!BufSubstituteNullChars(content.content, content.length, window->buffer)) {
+    if (window->editorInfo->buffer->length != content.length) {
+        if (!BufSubstituteNullChars(content.content, content.length, window->editorInfo->buffer)) {
             resp = DialogF(DF_ERR, window->shell, 2, "Error while opening File",
                     "Too much binary data in file.  You may view\n"
                     "it, but not modify or re-save its contents.", "View",
@@ -867,11 +867,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
                     *c = (char) 0xfe;
                 }
             }
-            window->buffer->nullSubsChar = (char) 0xfe;
+            window->editorInfo->buffer->nullSubsChar = (char) 0xfe;
         }
-        window->ignoreModify = True;
-        BufSetAll(window->buffer, content.content);
-        window->ignoreModify = False;
+        window->editorInfo->ignoreModify = True;
+        BufSetAll(window->editorInfo->buffer, content.content);
+        window->editorInfo->ignoreModify = False;
     }
 
     /* Release the memory that holds fileString */
@@ -883,11 +883,11 @@ static int doOpen(WindowInfo *window, const char *name, const char *path,
         SET_ENCODING_LOCKED(window->lockReasons, lock_enc_error);
     }
     if (IS_PERM_LOCKED(window->lockReasons)) {
-    window->fileChanged = FALSE;
+	window->fileChanged = FALSE;
     UpdateWindowTitle(window);
     } else {
     SetWindowModified(window, FALSE);
-    if (IS_ANY_LOCKED(window->lockReasons)) {
+	if (IS_ANY_LOCKED(window->lockReasons)) {
         UpdateWindowTitle(window);
         }
     }
@@ -1311,17 +1311,17 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
      
     if(!err) {
         /* If the file contained ascii nulls, re-map them */
-        if (!BufSubstituteNullChars(content.content, content.length, window->buffer))
+        if (!BufSubstituteNullChars(content.content, content.length, window->editorInfo->buffer))
         {
             DialogF(DF_ERR, window->shell, 1, "Error opening File",
                     "Too much binary data in file", "OK");
         } else {
             /* insert the contents of the file in the selection or at the insert
                 position in the window if no selection exists */
-            if (window->buffer->primary.selected) {
-                BufReplaceSelected(window->buffer, content.content);
+            if (window->editorInfo->buffer->primary.selected) {
+                BufReplaceSelected(window->editorInfo->buffer, content.content);
             } else {
-                BufInsert(window->buffer, TextGetCursorPos(window->lastFocus), content.content);
+                BufInsert(window->editorInfo->buffer, TextGetCursorPos(window->lastFocus), content.content);
             }  
         }
     }
@@ -1338,7 +1338,7 @@ int IncludeFile(WindowInfo *window, const char *name, const char *encoding, cons
 int CloseAllFilesAndWindows(void)
 {
     while (WindowList->next != NULL || 
-            WindowList->filenameSet || WindowList->fileChanged) {
+    		WindowList->filenameSet || WindowList->fileChanged) {
         /*
          * When we're exiting through a macro, the document running the 
          * macro does not disappear from the list, so we could get stuck
@@ -1374,7 +1374,10 @@ int CloseFileAndWindow(WindowInfo *window, int preResponse)
     /* If the window is a normal & unmodified file or an empty new file, 
        or if the user wants to ignore external modifications then
        just close it.  Otherwise ask for confirmation first. */
-    if (!window->fileChanged && 
+    if (window->editorInfo->master->nextSlave) {
+    	CloseWindow(window);
+    }
+    else if (!window->fileChanged && 
             /* Normal File */
             ((!window->fileMissing && window->lastModTime > 0) || 
             /* New File*/
@@ -1486,7 +1489,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
     if (response != GFN_OK)
             return FALSE;
         window->bom = newFile.writebom;
-    window->fileFormat = newFile.format;
+	window->fileFormat = newFile.format;
         SetFilter(window, newFile.filter);
         size_t pathlen = strlen(newFile.path);
         if(pathlen >= MAXPATHLEN) {
@@ -1535,7 +1538,7 @@ int SaveWindowAs(WindowInfo *window, FileSelection *file)
 
     /* If the requested file is this file, just save it and return */
     if (!strcmp(window->filename, filename) &&
-            !strcmp(window->path, pathname)) {
+    	    !strcmp(window->path, pathname)) {
     if (writeBckVersion(window))
             return FALSE;
     return doSave(window, file->setxattr);
@@ -1676,13 +1679,13 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
              changes. If the file is created for the first time, it has
              zero size on disk, and the check would falsely conclude that the
              file has changed on disk, and would pop up a warning dialog */
-    if (BufGetCharacter(window->buffer, window->buffer->length - 1) != '\n'
-            && window->buffer->length != 0
+    if (BufGetCharacter(window->editorInfo->buffer, window->editorInfo->buffer->length - 1) != '\n'
+            && window->editorInfo->buffer->length != 0
             && GetPrefAppendLF())
     {
         Boolean filenameSet = window->filenameSet;
         window->filenameSet = False; /* Temp. prevent check for changes. */
-        BufInsert(window->buffer, window->buffer->length, "\n");
+        BufInsert(window->editorInfo->buffer, window->editorInfo->buffer->length, "\n");
         window->filenameSet = filenameSet;
     }
     
@@ -1703,11 +1706,11 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     }
     
     /* get the text buffer contents and its length */
-    fileString = BufGetAll(window->buffer);
-    fileLen = window->buffer->length;
+    fileString = BufGetAll(window->editorInfo->buffer);
+    fileLen = window->editorInfo->buffer->length;
     
     /* If null characters are substituted for, put them back */
-    BufUnsubstituteNullChars(fileString, window->buffer);
+    BufUnsubstituteNullChars(fileString, window->editorInfo->buffer);
     
     /* If the file is to be saved in DOS or Macintosh format, reconvert */
     if (window->fileFormat == DOS_FILE_FORMAT)
@@ -1905,14 +1908,14 @@ static int doSave(WindowInfo *window, Boolean setEncAttr)
     
     /* update the modification time */
     if (stat(fullname, &statbuf) == 0) {
-    window->lastModTime = statbuf.st_mtime;
+        window->lastModTime = statbuf.st_mtime;
         window->fileMissing = FALSE;
         window->device = statbuf.st_dev;
         window->inode = statbuf.st_ino;
     } else {
         /* This needs to produce an error message -- the file can't be 
             accessed! */
-    window->lastModTime = 0;
+        window->lastModTime = 0;
         window->fileMissing = TRUE;
         window->device = 0;
         window->inode = 0;
@@ -1959,11 +1962,11 @@ int WriteBackupFile(WindowInfo *window)
     }
 
     /* get the text buffer contents and its length */
-    fileString = BufGetAll(window->buffer);
-    fileLen = window->buffer->length;
+    fileString = BufGetAll(window->editorInfo->buffer);
+    fileLen = window->editorInfo->buffer->length;
     
     /* If null characters are substituted for, put them back */
-    BufUnsubstituteNullChars(fileString, window->buffer);
+    BufUnsubstituteNullChars(fileString, window->editorInfo->buffer);
     
     /* add a terminating newline if the file doesn't already have one */
     if (fileLen != 0 && fileString[fileLen-1] != '\n')
@@ -2154,7 +2157,7 @@ static int bckError(WindowInfo *window, const char *errString, const char *file)
     if (resp == 1)
         return TRUE;
     if (resp == 2) {
-        window->saveOldVersion = FALSE;
+    	window->saveOldVersion = FALSE;
         SetToggleButtonState(window, window->saveLastItem, FALSE, FALSE);
     }
     return FALSE;
@@ -2162,7 +2165,7 @@ static int bckError(WindowInfo *window, const char *errString, const char *file)
 
 void PrintWindow(WindowInfo *window, int selectedOnly)
 {
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     selection *sel = &buf->primary;
     char *fileString = NULL;
     int fileLen;
@@ -2203,7 +2206,7 @@ void PrintWindow(WindowInfo *window, int selectedOnly)
 */
 void PrintString(const char *string, int length, Widget parent, const char *jobName)
 {
-    char tmpFileName[L_tmpnam];    /* L_tmpnam defined in stdio.h */
+    char *tmpFileName=strdup("/tmp/xneditXXXXXX");
     FILE *fp;
     int fd;
 
@@ -2271,7 +2274,7 @@ int PromptForExistingFile(WindowInfo *window, char *prompt, FileSelection *file)
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
     if (*window->path != '\0')
-        SetFileDialogDefaultDirectory(window->path);
+    	SetFileDialogDefaultDirectory(window->path);
     retVal = GetExistingFilename(window->shell, prompt, file);
     if (retVal != GFN_OK)
         SetFileDialogDefaultDirectory(savedDefaultDir);
@@ -2299,7 +2302,7 @@ int PromptForNewFile(WindowInfo *window, char *prompt, FileSelection *file,
        directory */
     savedDefaultDir = GetFileDialogDefaultDirectory();
     if (*window->path != '\0')
-        SetFileDialogDefaultDirectory(window->path);
+    	SetFileDialogDefaultDirectory(window->path);
     
     char *prevPath = NULL;
     if(window->path[0] != '\0' && window->filename[0] != '\0' && window->filenameSet) {
@@ -2345,7 +2348,7 @@ void UniqueUntitledName(char *name)
         else
             sprintf(name, "Untitled_%d", i);
     for (w=WindowList; w!=NULL; w=w->next)
-             if (!strcmp(w->filename, name))
+     	    if (!strcmp(w->filename, name))
                 break;
         if (w == NULL)
             break;
@@ -2555,7 +2558,7 @@ void CheckForChangesToFile(WindowInfo *window)
         if (GetPrefWarnRealFileMods() &&
         !cmpWinAgainstFile(window, fullname)) {
         /* Contents hasn't changed. Update the modification time. */
-        window->lastModTime = statbuf.st_mtime;
+	    window->lastModTime = statbuf.st_mtime;
         return;
     }
         XUngrabPointer(XtDisplay(window->shell), timestamp);
@@ -2681,8 +2684,8 @@ static void addWrapNewlines(WindowInfo *window)
 
     /* Modify the buffer to add wrapping */
     fileString = TextGetWrapped(window->textArea, 0,
-            window->buffer->length, &fileLen);
-    BufSetAll(window->buffer, fileString);
+    	    window->editorInfo->buffer->length, &fileLen);
+    BufSetAll(window->editorInfo->buffer, fileString);
     NEditFree(fileString);
 
     /* restore the insert and scroll positions of each pane */
@@ -2717,9 +2720,9 @@ static int cmpWinAgainstFile(WindowInfo *window, const char *fileName)
     struct  stat statbuf;
     int     fileLen, restLen, nRead, bufPos, rv, offset, filePos;
     char    pendingCR = 0;
-    int     fileFormat = window->fileFormat;
+    int	    fileFormat = window->fileFormat;
     char    message[MAXPATHLEN+50];
-    textBuffer *buf = window->buffer;
+    textBuffer *buf = window->editorInfo->buffer;
     FILE   *fp;
 
     fp = fopen(fileName, "r");

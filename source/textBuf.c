@@ -824,7 +824,7 @@ void BufClearRect(textBuffer *buf, int start, int end, int rectStart,
     char *newlineString;
     
     nLines = BufCountLines(buf, start, end);
-    newlineString = (char*)NEditMalloc(nLines+1);
+    newlineString = NEditMalloc(nLines+1);
     for (i=0; i<nLines; i++)
         newlineString[i] = '\n';
     newlineString[i] = '\0';

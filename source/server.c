@@ -344,7 +344,7 @@ static void processServerCommandString(char *string)
        (or just pop one up if it already exists) */
     if (string[0] == '\0') {
         for (window=WindowList; window!=NULL; window=window->next)
-            if (!window->filenameSet && !window->fileChanged &&
+    	    if (!window->filenameSet && !window->fileChanged &&
                 isLocatedOnDesktop(window, currentDesktop))
                 break;
         if (window == NULL) {

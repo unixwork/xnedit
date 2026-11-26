@@ -1019,7 +1019,7 @@ static int fakeRegExSearch(WindowInfo *window, char *in_buffer,
     
     if (in_buffer == NULL) {
         /* get the entire (sigh) text buffer from the text area widget */
-        fileString = BufAsString(window->buffer);
+        fileString = BufAsString(window->editorInfo->buffer);
     } else {
         fileString = in_buffer;
     }
@@ -1035,7 +1035,7 @@ static int fakeRegExSearch(WindowInfo *window, char *in_buffer,
         ctagsMode=1;
     } else if (searchString[0] == '?') {
         dir = SEARCH_BACKWARD;
-        /* searchStartPos = window->buffer->length; */
+        /* searchStartPos = window->editorInfo->buffer->length; */
         searchStartPos = strlen(fileString);
         ctagsMode=1;
     } else {
@@ -1470,12 +1470,12 @@ static void editTaggedLocation( Widget parent, int i )
     }
 
     /* select the matched string */
-    BufSelect(windowToSearch->buffer, startPos, endPos);
+    BufSelect(windowToSearch->editorInfo->buffer, startPos, endPos);
     RaiseFocusDocumentWindow(windowToSearch, True);
 
     /* Position it nicely in the window, 
        about 1/4 of the way down from the top */
-    lineNum = BufCountLines(windowToSearch->buffer, 0, startPos);
+    lineNum = BufCountLines(windowToSearch->editorInfo->buffer, 0, startPos);
     XtVaGetValues(windowToSearch->lastFocus, textNrows, &rows, NULL);
     TextSetScroll(windowToSearch->lastFocus, lineNum - rows/4, 0);
     TextSetCursorPos(windowToSearch->lastFocus, endPos);

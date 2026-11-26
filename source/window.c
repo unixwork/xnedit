@@ -210,6 +210,7 @@ static unsigned char isrcClear_l_bits[] = {
 extern void _XmDismissTearOff(Widget, XtPointer, XtPointer);
 
 static void hideTooltip(Widget tab);
+static void shareBufferOnCloning(WindowInfo *window, WindowInfo *orgWin);
 static Pixmap createBitmapWithDepth(Widget w, char *data, unsigned int width,
     unsigned int height);
 static void createSearchForm(WindowInfo *window);
@@ -230,6 +231,7 @@ static void showStats(WindowInfo *window, int state);
 static void showISearch(WindowInfo *window, int state);
 static void showStatsForm(WindowInfo *window);
 static void addToWindowList(WindowInfo *window);
+static void addToCloneList(WindowInfo *window);
 static void removeFromWindowList(WindowInfo *window);
 static void focusCB(Widget w, WindowInfo *window, XtPointer callData);
 static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
@@ -251,7 +253,7 @@ static void patchRowCol(Widget w);
 static void patchedRemoveChild(Widget child);
 #endif
 static void refreshMenuBar(WindowInfo *window);
-static void cloneDocument(WindowInfo *window, WindowInfo *orgWin);
+static void mirrorDocumentStates(WindowInfo *window, WindowInfo *orgWin);
 static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin);
 static UndoInfo *cloneUndoItems(UndoInfo *orgList);
 static Widget containingPane(Widget w);
@@ -340,7 +342,8 @@ static Pixmap closeTabPixmap = 0;
 /*
 ** Create a new editor window
 */
-WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
+WindowInfo *CreateWindow(const char *name, char *geometry, int iconic, 
+        EditorInfo *editorInfo)
 {
     Widget winShell, mainWin, menuBar, pane, text, stats, statsAreaForm;
     Widget closeTabBtn, tabForm;
@@ -373,6 +376,48 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
       memset(window, 0, sizeof(WindowInfo));
          be added here ?
     */
+    window->fileChanged = FALSE;       
+    window->filenameSet = FALSE;       
+    strcpy(window->filename, name);    
+    window->undo = NULL;      
+    window->redo = NULL;      
+    window->autoSaveCharCount = 0;    
+    window->autoSaveOpCount = 0;      
+    window->undoOpCount = 0;      
+    window->undoMemUsed = 0;      
+    window->autoSave = GetPrefAutoSave();     
+    window->saveOldVersion = GetPrefSaveOldVersion();
+    window->overstrike = False;      
+    CLEAR_ALL_LOCKS(window->lockReasons);     
+    window->fileMode = 0;     
+    window->fileUid = 0;     
+    window->fileGid = 0;     
+    window->fileFormat = UNIX_FILE_FORMAT;     
+    window->lastModTime = 0;     
+    window->fileMissing = True;      
+    window->device = 0;      
+    window->inode = 0;     
+    window->saveOldVersion = GetPrefSaveOldVersion();
+    window->autoSave = GetPrefAutoSave();     
+    window->smartIndentData = NULL;
+    window->fileClosedAtom = None;
+
+    if(editorInfo) {
+        /* share editorInfo among clones */
+        window->editorInfo = editorInfo;
+    }
+    else {
+        window->editorInfo = (EditorInfo *)NEditMalloc(sizeof(EditorInfo));
+        window->editorInfo->master = window;    
+        window->editorInfo->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
+        window->editorInfo->wrapMode = GetPrefWrap(PLAIN_LANGUAGE_MODE);
+        window->editorInfo->ignoreModify = FALSE;
+        window->editorInfo->flashTimeoutID = 0;
+        window->editorInfo->showMatchingStyle = GetPrefShowMatching();
+        window->editorInfo->matchSyntaxBased = GetPrefMatchSyntaxBased();
+    }
+    
+    window->nextSlave = NULL;
     window->replaceDlog = NULL;
     window->replaceText = NULL;
     window->replaceWithText = NULL;
@@ -391,15 +436,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->multiFileBusy = FALSE;
     window->writableWindows = NULL;
     window->nWritableWindows = 0;
-    window->fileChanged = FALSE;
-    window->fileMode = 0;
-    window->fileUid = 0;
-    window->fileGid = 0;
-    window->filenameSet = FALSE;
-    window->fileFormat = UNIX_FILE_FORMAT;
-    window->lastModTime = 0;
-    window->fileMissing = True;
-    strcpy(window->filename, name);
     
     window->encErrors = NULL;
     window->numEncErrors = 0;
@@ -416,24 +452,11 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     }
     
     window->bom = FALSE;
-    window->undo = NULL;
-    window->redo = NULL;
     window->undo_batch_begin = NULL;
     window->undo_batch_count = 0;
     window->undo_op_batch_size = 0;
     window->nPanes = 0;
-    window->autoSaveCharCount = 0;
-    window->autoSaveOpCount = 0;
-    window->undoOpCount = 0;
-    window->undoMemUsed = 0;
-    CLEAR_ALL_LOCKS(window->lockReasons);
-    window->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
-    window->autoSave = GetPrefAutoSave();
-    window->saveOldVersion = GetPrefSaveOldVersion();
-    window->wrapMode = GetPrefWrap(PLAIN_LANGUAGE_MODE);
-    window->overstrike = False;
-    window->showMatchingStyle = GetPrefShowMatching();
-    window->matchSyntaxBased = GetPrefMatchSyntaxBased();
+
     window->showStats = GetPrefStatsLine();
     window->showISearchLine = GetPrefISearchLine();
     window->showLineNumbers = GetPrefLineNums();
@@ -456,10 +479,7 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     }
     window->modeMessageDisplayed = FALSE;
     window->modeMessage = NULL;
-    window->ignoreModify = FALSE;
     window->windowMenuValid = FALSE;
-    window->flashTimeoutID = 0;
-    window->fileClosedAtom = None;
     window->wasSelected = FALSE;
 
     strcpy(window->fontName, GetPrefFontName());
@@ -480,7 +500,6 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
     window->highlightData = NULL;
     window->shellCmdData = NULL;
     window->macroCmdData = NULL;
-    window->smartIndentData = NULL;
     window->languageMode = PLAIN_LANGUAGE_MODE;
     window->iSearchHistIndex = 0;
     window->iSearchStartPos = -1;
@@ -912,24 +931,33 @@ WindowInfo *CreateWindow(const char *name, char *geometry, int iconic)
        with the text area widget.  This is done so the syntax highlighting
        modify callback can be called to synchronize the style buffer BEFORE
        the text display's callback is called upon to display a modification */
-    window->buffer = BufCreate();
-    BufAddModifyCB(window->buffer, SyntaxHighlightModifyCB, window);
+    if (!editorInfo)
+       window->editorInfo->buffer = BufCreate();
+    BufAddModifyCB(window->editorInfo->buffer, SyntaxHighlightModifyCB, window);
     
     /* Attach the buffer to the text widget, and add callbacks for modify */
-    TextSetBuffer(text, window->buffer);
-    BufAddModifyCB(window->buffer, modifiedCB, window);
-    BufAddBeginModifyCB(window->buffer, beginModifyCB, window);
-    BufAddEndModifyCB(window->buffer, endModifyCB, window);
+    TextSetBuffer(text, window->editorInfo->buffer);
+    BufAddModifyCB(window->editorInfo->buffer, modifiedCB, window);
+    BufAddBeginModifyCB(window->editorInfo->buffer, beginModifyCB, window);
+    BufAddEndModifyCB(window->editorInfo->buffer, endModifyCB, window);
     
     /* Designate the permanent text area as the owner for selections */
+    if (!editorInfo)
     HandleXSelections(text);
     
     /* Set the requested hardware tab distance and useTabs in the text buffer */
-    BufSetTabDistance(window->buffer, GetPrefTabDist(PLAIN_LANGUAGE_MODE));
-    window->buffer->useTabs = GetPrefInsertTabs();
+    if (!editorInfo) {
+        window->editorInfo->ignoreModify = True;
+        BufSetTabDistance(window->editorInfo->buffer,
+                GetPrefTabDist(PLAIN_LANGUAGE_MODE));
+        window->editorInfo->ignoreModify = False;
+        window->editorInfo->buffer->useTabs = GetPrefInsertTabs();
+    }
 
     /* add the window to the global window list, update the Windows menus */
     addToWindowList(window);
+    if (editorInfo)
+        addToCloneList(window);
     InvalidateWindowMenus();
 
     showTabBar = GetShowTabBar(window);
@@ -1145,6 +1173,45 @@ static int motion_y;
 static int pressed_x;
 static int pressed_y;
 static int drag_enabled = 0;
+
+/*
+** create a clone in new window 
+*/
+WindowInfo *CreateCloneWindow(WindowInfo *window)
+{
+    WindowInfo *cloneWin;
+    Dimension windowHeight, windowWidth;
+    char *dim, geometry[MAX_GEOM_STRING_LEN];
+    
+    /* create new window in roughly the size of original window,
+       to reduce flicker when the window is resized later */
+    getGeometryString(window, geometry);
+    dim = strtok(geometry, "+-");
+    cloneWin = CreateWindow(window->filename, dim, 
+               False, window->editorInfo);
+    
+    /* duplicate the shell window setting. this, as well as the
+       statistic line and incr search line,  must be done
+       before cloning window, else the height of split panes 
+       may not come out correctly */
+    XtVaGetValues(window->shell, XmNheight, &windowHeight,
+          XmNwidth, &windowWidth, NULL);
+    XtVaSetValues(cloneWin->shell, XmNheight, windowHeight,
+          XmNwidth, windowWidth, NULL);
+
+    /* these settings should follow the detached buffer */
+    ShowISearchLine(cloneWin, window->showISearchLine);
+    ShowStatsLine(cloneWin, window->showStats);
+
+    /* clone the buffer & its pref settings */
+    shareBufferOnCloning(cloneWin, window);
+    
+    /* this should keep the new buffer window fresh */
+    RefreshWindowStates(cloneWin);
+    RefreshTabState(cloneWin);
+
+    return cloneWin;
+}
 
 /*
 ** ButtonPress event handler for tabs.
@@ -1371,6 +1438,19 @@ WindowInfo *TabToWindow(Widget tab)
     return NULL;
 }
 
+int NCloned(WindowInfo *window)
+{
+    WindowInfo *win;
+    int count = 0;
+    
+    for (win=WindowList; win; win=win->next) {
+       if (window->editorInfo->buffer == win->editorInfo->buffer)
+       count++;
+    }
+
+    return count;
+}
+
 /*
 ** Close a document, or an editor window
 */
@@ -1378,7 +1458,8 @@ void CloseWindow(WindowInfo *window)
 {
     int keepWindow, state;
     char name[MAXPATHLEN];
-    WindowInfo *win, *topBuf = NULL, *nextBuf = NULL;
+    EditorInfo *editorInfo = window->editorInfo;
+    WindowInfo *win, *nextSlave, *topBuf = NULL, *nextBuf = NULL;
 
     /* Free smart indent macro programs */
     EndSmartIndent(window);
@@ -1407,7 +1488,7 @@ void CloseWindow(WindowInfo *window)
 
     /* Remove any possibly pending callback which might fire after the 
        widget is gone. */
-    cancelTimeOut(&window->flashTimeoutID);
+    cancelTimeOut(&window->editorInfo->flashTimeoutID);
     cancelTimeOut(&window->markTimeoutID);
 
     /* if this is the last window, or must be kept alive temporarily because
@@ -1421,9 +1502,9 @@ void CloseWindow(WindowInfo *window)
         window->fileGid = 0;
         strcpy(window->filename, name);
         strcpy(window->path, "");
-        window->ignoreModify = TRUE;
-        BufSetAll(window->buffer, "");
-        window->ignoreModify = FALSE;
+        window->editorInfo->ignoreModify = TRUE;
+        BufSetAll(window->editorInfo->buffer, "");
+        window->editorInfo->ignoreModify = FALSE;
         window->nMarks = 0;
         window->filenameSet = FALSE;
         window->fileMissing = TRUE;
@@ -1451,21 +1532,68 @@ void CloseWindow(WindowInfo *window)
         return;
     }
     
+    /* Update the slave window linked list */
+    if(window == editorInfo->master) {
+        /* If we are the master then make the next slave the master. */
+        nextSlave = editorInfo->master = editorInfo->master->nextSlave;
+    }
+    else {
+        /* If we are a slave then remove ourself from the slave list. */
+        WindowInfo *w;
+        for(w = editorInfo->master; w->nextSlave; w = w->nextSlave) {
+           if(w->nextSlave == window) {
+             nextSlave = w;
+             w->nextSlave = window->nextSlave;
+             break;
+           }
+        }
+    }
+    
+    /* refresh the clone indexes on the tabs, window and icon titles */
+    if (nextSlave) {
+        selection sel;
+        Widget w = nextSlave->editorInfo->master->textArea;
+          Time time = XtLastTimestampProcessed(XtDisplay((Widget)w));
+
+        /* transfer the primary selection, in case we are closing
+           the selection owner */
+        memcpy(&sel, &window->editorInfo->buffer->primary, sizeof(selection));
+
+        XtDisownSelection((Widget)window->textArea, XA_PRIMARY, time);
+          HandleXSelections(w);
+
+        if (sel.selected) {
+            if (sel.rectangular)
+                BufRectSelect(nextSlave->editorInfo->buffer, sel.start, sel.end,
+                        sel.rectStart, sel.rectEnd);
+            else
+                BufSelect(nextSlave->editorInfo->buffer, sel.start, sel.end);
+        } else
+            BufUnselect(nextSlave->editorInfo->buffer);
+       
+       /* update assorted titles */
+       RefreshWindowStates(nextSlave);
+       RefreshTabState(nextSlave);
+    }
+
     /* Free syntax highlighting patterns, if any. w/o redisplaying */
     FreeHighlightingData(window);
         
+    /* if a marker is already drawn, erase it and cancel the timeout */
+    if (window->editorInfo->flashTimeoutID != 0) {
+        BufUnhighlight(window->editorInfo->buffer);
+        XtRemoveTimeOut(window->editorInfo->flashTimeoutID);
+        window->editorInfo->flashTimeoutID = 0;
+    }
+    
     /* remove the buffer modification callbacks so the buffer will be
        deallocated when the last text widget is destroyed */
-    BufRemoveModifyCB(window->buffer, modifiedCB, window);
-    BufRemoveModifyCB(window->buffer, SyntaxHighlightModifyCB, window);
+    BufRemoveModifyCB(window->editorInfo->buffer, modifiedCB, window);
+    BufRemoveModifyCB(window->editorInfo->buffer, SyntaxHighlightModifyCB, window);
 
 #ifdef ROWCOLPATCH
     patchRowCol(window->menuBar);
 #endif
-    
-    /* free the undo and redo lists */
-    ClearUndoList(window);
-    ClearRedoList(window);
     
     /* close the document/window */
     if (NDocuments(window) > 1) {
@@ -1514,6 +1642,13 @@ void CloseWindow(WindowInfo *window)
             XtSetSensitive(win->moveDocumentItem, state);
             XtSetSensitive(win->contextMoveDocumentItem, state);
     }
+    }
+
+    if(editorInfo->master == NULL) {
+        /* free the undo and redo lists */
+        ClearUndoList(window);
+        ClearRedoList(window);
+        NEditFree((char *)editorInfo);
     }
 
     /* free background menu cache for document */
@@ -1652,7 +1787,7 @@ void SplitPane(WindowInfo *window)
     text = createTextArea(window->splitPane, window, 1, 1, emTabDist,
             delimiters, wrapMargin, lineNumCols);
     
-    TextSetBuffer(text, window->buffer);
+    TextSetBuffer(text, window->editorInfo->buffer);
     if (window->highlightData != NULL)
         AttachHighlightToWidget(text, window);
     if (window->backlightChars)
@@ -1961,13 +2096,13 @@ void SetEncodingInfoBarLabel(WindowInfo *window, char *message)
 
 void SetTabDist(WindowInfo *window, int tabDist)
 {
-    if (window->buffer->tabDist != tabDist) {
+    if (window->editorInfo->buffer->tabDist != tabDist) {
         int saveCursorPositions[MAX_PANES + 1];
         int saveVScrollPositions[MAX_PANES + 1];
         int saveHScrollPositions[MAX_PANES + 1];
         int paneIndex;
         
-        window->ignoreModify = True;
+        window->editorInfo->ignoreModify = True;
         
         for (paneIndex = 0; paneIndex <= window->nPanes; ++paneIndex) {
             Widget w = GetPaneByIndex(window, paneIndex);
@@ -1978,7 +2113,7 @@ void SetTabDist(WindowInfo *window, int tabDist)
             textD->modifyingTabDist = 1;
         }
         
-        BufSetTabDistance(window->buffer, tabDist);
+        BufSetTabDistance(window->editorInfo->buffer, tabDist);
 
         for (paneIndex = 0; paneIndex <= window->nPanes; ++paneIndex) {
             Widget w = GetPaneByIndex(window, paneIndex);
@@ -1989,7 +2124,7 @@ void SetTabDist(WindowInfo *window, int tabDist)
             TextSetScroll(w, saveVScrollPositions[paneIndex], saveHScrollPositions[paneIndex]);
         }
         
-        window->ignoreModify = False;
+        window->editorInfo->ignoreModify = False;
     }
 }
 
@@ -2230,24 +2365,29 @@ int NWindows(void)
 void SetAutoIndent(WindowInfo *window, IndentStyle state)
 {
     int autoIndent = state == AUTO_INDENT, smartIndent = state == SMART_INDENT;
+    WindowInfo *w;
     int i;
     
-    if (window->indentStyle == SMART_INDENT && !smartIndent)
+    if (window->editorInfo->indentStyle == SMART_INDENT && !smartIndent)
         EndSmartIndent(window);
-    else if (smartIndent && window->indentStyle != SMART_INDENT)
+    else if (smartIndent && window->editorInfo->indentStyle != SMART_INDENT)
         BeginSmartIndent(window, True);
-    window->indentStyle = state;
-    XtVaSetValues(window->textArea, textNautoIndent, autoIndent,
+    window->editorInfo->indentStyle = state;
+    
+    /* indent style is common among clones */
+    for(w = window->editorInfo->master; w; w = w->nextSlave) {
+        XtVaSetValues(w->textArea, textNautoIndent, autoIndent,
             textNsmartIndent, smartIndent, NULL);
-    for (i=0; i<window->nPanes; i++)
-        XtVaSetValues(window->textPanes[i], textNautoIndent, autoIndent,
+        for (i=0; i<w->nPanes; i++)
+            XtVaSetValues(w->textPanes[i], textNautoIndent, autoIndent,
                 textNsmartIndent, smartIndent, NULL);
-    if (IsTopDocument(window)) {
-    XmToggleButtonSetState(window->smartIndentItem, smartIndent, False);
-    XmToggleButtonSetState(window->autoIndentItem, autoIndent, False);
-    XmToggleButtonSetState(window->autoIndentOffItem,
+        if (IsTopDocument(w)) {
+            XmToggleButtonSetState(w->smartIndentItem, smartIndent, False);
+            XmToggleButtonSetState(w->autoIndentItem, autoIndent, False);
+            XmToggleButtonSetState(w->autoIndentOffItem,
             state == NO_AUTO_INDENT, False);
     }
+}
 }
 
 /*
@@ -2256,15 +2396,20 @@ void SetAutoIndent(WindowInfo *window, IndentStyle state)
 */
 void SetShowMatching(WindowInfo *window, ShowMatchingStyle state)
 {
-    window->showMatchingStyle = state;
-    if (IsTopDocument(window)) {
-    XmToggleButtonSetState(window->showMatchingOffItem, 
+    WindowInfo *w;
+    window->editorInfo->showMatchingStyle = state;
+    
+    /* matching style is common among clones */
+    for(w = window->editorInfo->master; w; w = w->nextSlave) {
+        if (IsTopDocument(w)) {
+            XmToggleButtonSetState(w->showMatchingOffItem, 
             state == NO_FLASH, False);
-    XmToggleButtonSetState(window->showMatchingDelimitItem, 
+            XmToggleButtonSetState(w->showMatchingDelimitItem, 
             state == FLASH_DELIMIT, False);
-    XmToggleButtonSetState(window->showMatchingRangeItem, 
+            XmToggleButtonSetState(w->showMatchingRangeItem, 
             state == FLASH_RANGE, False);
     }
+}
 }
 
 /* 
@@ -2583,7 +2728,7 @@ void SetAutoWrap(WindowInfo *window, WrapStyle state)
     for (i=0; i<window->nPanes; i++)
         XtVaSetValues(window->textPanes[i], textNautoWrap, autoWrap,
                 textNcontinuousWrap, contWrap, NULL);
-    window->wrapMode = state;
+    window->editorInfo->wrapMode = state;
     
     if (IsTopDocument(window)) {
     XmToggleButtonSetState(window->newlineWrapItem, autoWrap, False);
@@ -2651,6 +2796,22 @@ WindowInfo *WidgetToWindow(Widget w)
     return window;
 }
 
+int GetCloneIndex(const WindowInfo *window)
+{
+    WindowInfo *w;
+    int num = 0;
+    
+    if (!window->editorInfo->master->nextSlave)
+       return 0;
+        
+    for(w = window->editorInfo->master; w; w = w->nextSlave) {
+        num++;
+        if(w == window)
+            break;
+    }
+    return num;
+}
+
 /*
 ** Change the window appearance and the window data structure to show
 ** that the file it contains has been modified
@@ -2658,7 +2819,9 @@ WindowInfo *WidgetToWindow(Widget w)
 void SetWindowModified(WindowInfo *window, int modified)
 {
     if (window->fileChanged == FALSE && modified == TRUE) {
-        SetSensitive(window, window->closeItem, TRUE);
+        WindowInfo *w;
+        for(w = window->editorInfo->master; w; w = w->nextSlave)
+            SetSensitive(window, w->closeItem, TRUE);
         window->fileChanged = TRUE;
         UpdateWindowTitle(window);
     RefreshTabState(window);
@@ -2695,14 +2858,28 @@ static void setUtf8Title(Widget shell, const char *title) {
 ** Update the window title to reflect the filename, read-only, and modified
 ** status of the window data structure
 */
-void UpdateWindowTitle(const WindowInfo *window)
+void _updateWindowTitle(const WindowInfo *window)
 {
     char *iconTitle, *title;
+    char *filename;
     
     if (!IsTopDocument(window))
         return;
 
-    title = FormatWindowTitle(window->filename,
+    if (GetCloneIndex(window) > 0) {
+       char buf[10];
+       sprintf(buf, "<%d>", GetCloneIndex(window));
+       filename = NEditMalloc(strlen(window->filename) 
+                           + strlen(buf) + 2); /* strlen("*")+1 */
+       strcpy(filename, window->filename);
+       strcat(filename, buf);
+    }
+    else {
+       filename = NEditMalloc(strlen(window->filename) + 2); /* strlen("*")+1 */
+       strcpy(filename, window->filename);
+    }                  
+       
+    title = FormatWindowTitle(     filename,
                                     window->path,
                                     GetClearCaseViewTag(),
                                     GetPrefServerName(),
@@ -2713,9 +2890,9 @@ void UpdateWindowTitle(const WindowInfo *window)
                                     window->fileChanged,
                                     GetPrefTitleFormat());
                    
-    iconTitle = (char*)NEditMalloc(strlen(window->filename) + 2); /* strlen("*")+1 */
+    iconTitle = (char*)NEditMalloc(strlen(filename) + 2); /* strlen("*")+1 */
 
-    strcpy(iconTitle, window->filename);
+    strcpy(iconTitle, filename);
     if (window->fileChanged) {
         strcat(iconTitle, "*");
     }
@@ -2735,9 +2912,17 @@ void UpdateWindowTitle(const WindowInfo *window)
         XtVaSetValues(XtParent(window->replaceDlog), XmNtitle, title, NULL);
     }
     NEditFree(iconTitle);
+    NEditFree(filename);
 
     /* Update the Windows menus with the new name */
     InvalidateWindowMenus();
+}
+
+void UpdateWindowTitle(const WindowInfo *window)
+{
+    WindowInfo *w;
+    for(w = window->editorInfo->master; w; w = w->nextSlave)
+       _updateWindowTitle(w);
 }
 
 /*
@@ -2745,7 +2930,7 @@ void UpdateWindowTitle(const WindowInfo *window)
 ** the ReadOnly toggle button in the File menu to agree with the state in
 ** the window data structure.
 */
-void UpdateWindowReadOnly(WindowInfo *window)
+void _updateWindowReadOnly(WindowInfo *window)
 {
     int i, state;
     
@@ -2760,6 +2945,14 @@ void UpdateWindowReadOnly(WindowInfo *window)
     XtSetSensitive(window->readOnlyItem,
         !IS_ANY_LOCKED_IGNORING_USER(window->lockReasons));
 }
+
+void UpdateWindowReadOnly(WindowInfo *window)
+{
+    WindowInfo *w;
+    for(w = window->editorInfo->master; w; w = w->nextSlave)
+       _updateWindowReadOnly(w);
+}
+
 
 /*
 ** Find the start and end of a single line selection.  Hides rectangular
@@ -2805,7 +2998,7 @@ void MakeSelectionVisible(WindowInfo *window, Widget textPane)
     Dimension width;
 
     /* find out where the selection is */
-    if (!BufGetSelectionPos(window->buffer, &left, &right, &isRect,
+    if (!BufGetSelectionPos(window->editorInfo->buffer, &left, &right, &isRect,
             &rectStart, &rectEnd)) {
         left = right = TextGetCursorPos(textPane);
         isRect = False;
@@ -2918,10 +3111,10 @@ static Widget createTextArea(Widget parent, WindowInfo *window, int rows,
             textNreadOnly, IS_ANY_LOCKED(window->lockReasons),
             textNwordDelimiters, delimiters,
             textNwrapMargin, wrapMargin,
-            textNautoIndent, window->indentStyle == AUTO_INDENT,
-            textNsmartIndent, window->indentStyle == SMART_INDENT,
-            textNautoWrap, window->wrapMode == NEWLINE_WRAP,
-            textNcontinuousWrap, window->wrapMode == CONTINUOUS_WRAP,
+            textNautoIndent, window->editorInfo->indentStyle == AUTO_INDENT,
+            textNsmartIndent, window->editorInfo->indentStyle == SMART_INDENT,
+            textNautoWrap, window->editorInfo->wrapMode == NEWLINE_WRAP,
+            textNcontinuousWrap, window->editorInfo->wrapMode == CONTINUOUS_WRAP,
             textNoverstrike, window->overstrike,
             textNhidePointer, (Boolean) GetPrefTypingHidesPointer(),
             textNcursorVPadding, GetVerticalAutoScroll(),
@@ -2967,7 +3160,7 @@ static void movedCB(Widget w, WindowInfo *window, XtPointer callData)
 {
     TextWidget textWidget = (TextWidget) w;
 
-    if (window->ignoreModify)
+    if (window->editorInfo->ignoreModify)
         return;
 
     /* update line and column nubers in statistics line */
@@ -2995,10 +3188,11 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
         const char *deletedText, void *cbArg) 
 {
     WindowInfo *window = (WindowInfo *)cbArg;
-    int selected = window->buffer->primary.selected;
+    int selected = window->editorInfo->buffer->primary.selected;
+    int isUndo = (window->undo != NULL && window->undo->inUndo);
     
     /* update the table of bookmarks */
-    if (!window->ignoreModify) {
+    if (!window->editorInfo->ignoreModify) {
         UpdateMarkTable(window, pos, nInserted, nDeleted);
     }
     
@@ -3031,7 +3225,7 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
 
     /* When the program needs to make a change to a text area without without
        recording it for undo or marking file as changed it sets ignoreModify */
-    if (window->ignoreModify || (nDeleted == 0 && nInserted == 0))
+    if (window->editorInfo->ignoreModify || (nDeleted == 0 && nInserted == 0))
         return;
 
     /* Make sure line number display is sufficient for new data */
@@ -3051,6 +3245,9 @@ static void modifiedCB(int pos, int nInserted, int nDeleted, int nRestyled,
     }
     
     /* Indicate that the window has now been modified */ 
+    if (isUndo && window->undo->restoresToSaved)
+        SetWindowModified(window, False);
+    else
     SetWindowModified(window, TRUE);
 
     /* Update # of bytes, and line and col statistics */
@@ -3100,13 +3297,13 @@ static void focusCB(Widget w, WindowInfo *window, XtPointer callData)
 static void dragStartCB(Widget w, WindowInfo *window, XtPointer callData) 
 {
     /* don't record all of the intermediate drag steps for undo */
-    window->ignoreModify = True;
+    window->editorInfo->ignoreModify = True;
 }
 
 static void dragEndCB(Widget w, WindowInfo *window, dragEndCBStruct *callData) 
 {
     /* restore recording of undo information */
-    window->ignoreModify = False;
+    window->editorInfo->ignoreModify = False;
     
     /* Do nothing if drag operation was canceled */
     if (callData->nCharsInserted == 0)
@@ -3198,14 +3395,14 @@ static void saveYourselfCB(Widget w, Widget appShell, XtPointer callData)
         win = TabToWindow(tabs[i]);
             if (win->filenameSet) {
         /* add filename */
-            argv[argc] = (char*)NEditMalloc(strlen(win->path) +
-                    strlen(win->filename) + 1);
-            sprintf(argv[argc++], "%s%s", win->path, win->filename);
+                argv[argc] = NEditMalloc(strlen(win->path) +
+                        strlen(win->filename) + 1);
+                sprintf(argv[argc++], "%s%s", win->path, win->filename);
             }
     }
     }
 
-    NEditFree(revWindowList);
+    NEditFree((char *)revWindowList);
 
     /* Set the window's WM_COMMAND property to the created command line */
     XSetCommand(TheDisplay, XtWindow(appShell), argv, argc);
@@ -3254,6 +3451,17 @@ int IsIconic(WindowInfo *window)
     result = *property == IconicState;
     NEditFree(property);
     return result;
+}
+
+static void addToCloneList(WindowInfo *window)
+{
+    WindowInfo *w;
+    
+    /* Add window to end of slave list */
+    for(w = window->editorInfo->master; w->nextSlave != NULL; w = w->nextSlave)
+       ;
+    w->nextSlave = window;
+    window->nextSlave = NULL;
 }
 
 /*
@@ -3421,7 +3629,7 @@ void UpdateStatsLine(WindowInfo *window)
     int nCursors = TextNumCursors(window->lastFocus);
     if (!TextPosToLineAndCol(window->lastFocus, pos, &line, &colNum)) {
         sprintf(string, "%s%s%s %d bytes", window->path, window->filename,
-                format, window->buffer->length);
+                format, window->editorInfo->buffer->length);
         if(nCursors == 1) {
             snprintf(slinecol, 42, "S: --- L: ---  C: ---");
         } else {
@@ -3429,7 +3637,7 @@ void UpdateStatsLine(WindowInfo *window)
         }
     } else {
         if(nCursors == 1) {
-            selection = BufGetSelectionText(window->buffer);   
+            selection = BufGetSelectionText(window->editorInfo->buffer);   
             if (selection != NULL) {
                 byteLength = strlen(selection);
                 while (offset < byteLength) {
@@ -3457,10 +3665,10 @@ void UpdateStatsLine(WindowInfo *window)
         if (window->showLineNumbers)
             sprintf(string, "%s%s%s byte %d of %d", window->path,
                     window->filename, format, pos, 
-                    window->buffer->length);
+                    window->editorInfo->buffer->length);
         else
             sprintf(string, "%s%s%s %d bytes", window->path,
-                    window->filename, format, window->buffer->length);
+                    window->filename, format, window->editorInfo->buffer->length);
     }
     
     /* Update the line/column number */
@@ -4014,7 +4222,8 @@ static void getTextPaneDimension(WindowInfo *window, int *nRows, int *nCols)
 ** unnecessarily; hence speeding up the process of opening 
 ** multiple files.
 */
-WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
+WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name,
+        EditorInfo *editorInfo)
 {
     Widget pane, text;
     WindowInfo *window;
@@ -4028,6 +4237,41 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     /* inherit settings and later reset those required */
     memcpy(window, shellWindow, sizeof(WindowInfo));
     
+    window->fileChanged = FALSE;
+    window->filenameSet = FALSE;
+    strcpy(window->filename, name);
+    window->undo = NULL;
+    window->redo = NULL;
+    window->autoSaveCharCount = 0;
+    window->autoSaveOpCount = 0;
+    window->undoOpCount = 0;
+    window->undoMemUsed = 0;
+    window->saveOldVersion = GetPrefSaveOldVersion();
+    window->autoSave = GetPrefAutoSave();
+    window->overstrike = False;
+    CLEAR_ALL_LOCKS(window->lockReasons); 
+    window->smartIndentData = NULL; 
+    window->fileClosedAtom = None; 
+    window->fileMode = 0; 
+    window->fileFormat = UNIX_FILE_FORMAT; 
+    window->lastModTime = 0; 
+    window->fileMissing = True; 
+
+    if(editorInfo) {
+        /* share editorInfo among clones */
+        window->editorInfo = editorInfo;
+    }
+    else {
+        window->editorInfo = (EditorInfo *)NEditMalloc(sizeof(EditorInfo));
+        window->editorInfo->master = window;    
+        window->editorInfo->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
+        window->editorInfo->wrapMode = GetPrefWrap(PLAIN_LANGUAGE_MODE);
+        window->editorInfo->ignoreModify = FALSE;
+        window->editorInfo->flashTimeoutID = 0;
+        window->editorInfo->showMatchingStyle = GetPrefShowMatching();
+        window->editorInfo->matchSyntaxBased = GetPrefMatchSyntaxBased();
+    }
+
 #if 0
     /* share these dialog items with parent shell */
     window->replaceDlog = NULL;
@@ -4049,6 +4293,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->showISearchLine = GetPrefISearchLine();
 #endif
     
+    window->nextSlave = NULL;
     window->showInfoBar = FALSE;
     window->encErrors = NULL;
     window->numEncErrors = 0;
@@ -4057,15 +4302,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->multiFileBusy = FALSE;
     window->writableWindows = NULL;
     window->nWritableWindows = 0;
-    window->fileChanged = FALSE;
-    window->fileMissing = True;
-    window->fileMode = 0;
-    window->fileUid = 0;
-    window->fileGid = 0;
-    window->filenameSet = FALSE;
-    window->fileFormat = UNIX_FILE_FORMAT;
-    window->lastModTime = 0;
-    strcpy(window->filename, name);
     
     window->encoding[0] = '\0';
     window->filter = NULL;
@@ -4077,22 +4313,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
         }
     }
     
-    window->undo = NULL;
-    window->redo = NULL;
-    window->nPanes = 0;
-    window->autoSaveCharCount = 0;
-    window->autoSaveOpCount = 0;
-    window->undoOpCount = 0;
-    window->undoMemUsed = 0;
     window->undo_op_batch_size = 0;
-    CLEAR_ALL_LOCKS(window->lockReasons);
-    window->indentStyle = GetPrefAutoIndent(PLAIN_LANGUAGE_MODE);
-    window->autoSave = GetPrefAutoSave();
-    window->saveOldVersion = GetPrefSaveOldVersion();
-    window->wrapMode = GetPrefWrap(PLAIN_LANGUAGE_MODE);
-    window->overstrike = False;
-    window->showMatchingStyle = GetPrefShowMatching();
-    window->matchSyntaxBased = GetPrefMatchSyntaxBased();
     window->highlightSyntax = GetPrefHighlightSyntax();
     window->highlightCursorLine = GetPrefHighlightCursorLine();
     window->showRightMargin = GetPrefShowRightMargin();
@@ -4111,10 +4332,7 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     }
     window->modeMessageDisplayed = FALSE;
     window->modeMessage = NULL;
-    window->ignoreModify = FALSE;
     window->windowMenuValid = FALSE;
-    window->flashTimeoutID = 0;
-    window->fileClosedAtom = None;
     window->wasSelected = FALSE;
     strcpy(window->fontName, GetPrefFontName());
     strcpy(window->italicFontName, GetPrefItalicFontName());
@@ -4132,7 +4350,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->highlightData = NULL;
     window->shellCmdData = NULL;
     window->macroCmdData = NULL;
-    window->smartIndentData = NULL;
     window->languageMode = PLAIN_LANGUAGE_MODE;
     window->iSearchHistIndex = 0;
     window->iSearchStartPos = -1;
@@ -4145,8 +4362,6 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
     window->tab = NULL;
     window->bgMenuUndoItem = NULL;
     window->bgMenuRedoItem = NULL;
-    window->device = 0;
-    window->inode = 0;
 
     getTextPaneDimension(shellWindow, &nRows, &nCols);
     
@@ -4213,24 +4428,30 @@ WindowInfo* CreateDocument(WindowInfo* shellWindow, const char* name)
        with the text area widget.  This is done so the syntax highlighting
        modify callback can be called to synchronize the style buffer BEFORE
        the text display's callback is called upon to display a modification */
-    window->buffer = BufCreate();
-    BufAddModifyCB(window->buffer, SyntaxHighlightModifyCB, window);
+    if (!editorInfo)
+        window->editorInfo->buffer = BufCreate();
+    BufAddModifyCB(window->editorInfo->buffer, SyntaxHighlightModifyCB, window);
     
     /* Attach the buffer to the text widget, and add callbacks for modify */
-    TextSetBuffer(text, window->buffer);
-    BufAddModifyCB(window->buffer, modifiedCB, window);
+    TextSetBuffer(text, window->editorInfo->buffer);
+    BufAddModifyCB(window->editorInfo->buffer, modifiedCB, window);
     
     /* Designate the permanent text area as the owner for selections */
+    if (!editorInfo)
     HandleXSelections(text);
     
     /* Set the requested hardware tab distance and useTabs in the text buffer */
-    BufSetTabDistance(window->buffer, GetPrefTabDist(PLAIN_LANGUAGE_MODE));
-    window->buffer->useTabs = GetPrefInsertTabs();
+    window->editorInfo->ignoreModify = True;
+    BufSetTabDistance(window->editorInfo->buffer, GetPrefTabDist(PLAIN_LANGUAGE_MODE));
+    window->editorInfo->ignoreModify = False;
+    window->editorInfo->buffer->useTabs = GetPrefInsertTabs();
     window->tab = addTab(window->tabBar, name);
 
     /* add the window to the global window list, update the Windows menus */
     InvalidateWindowMenus();
     addToWindowList(window);
+    if (editorInfo)
+        addToCloneList(window);
 
 #ifdef LESSTIF_VERSION
     /* FIXME: Temporary workaround for disappearing-text-window bug
@@ -4370,12 +4591,21 @@ static int getTabPosition(Widget tab)
 /*
 ** update the tab label, etc. of a tab, per the states of it's document.
 */
-void RefreshTabState(WindowInfo *win)
+void _RefreshTabState(WindowInfo *win)
 {
     XmString s1, tipString;
     char labelString[2*MAXPATHLEN+4];
     char *tag = XmFONTLIST_DEFAULT_TAG;
     unsigned char alignment;
+
+    char cloneIndex[10];
+    
+    if (GetCloneIndex(win) > 0) {
+       sprintf(cloneIndex, "<%d>", GetCloneIndex(win));
+    } else {
+       cloneIndex[0] = '\0';
+    }
+    
 
     /* Set tab label to document's filename. Position of
        "*" (modified) will change per label alignment setting */
@@ -4385,8 +4615,9 @@ void RefreshTabState(WindowInfo *win)
                win->fileChanged? "*" : "",
                win->filename);
     } else {
-       snprintf(labelString, sizeof(labelString),"%s%s", 
+       sprintf(labelString, "%s%s%s",
                win->filename,
+              cloneIndex,
                win->fileChanged? "*" : "");
     }
 
@@ -4439,6 +4670,12 @@ void savefiles_cancel(Widget w, SaveFilesData *data, XtPointer d)
 #define WIDGET_SPACING 5
 #define WINDOW_SPACING 8
 
+void RefreshTabState(WindowInfo *win)
+{
+    WindowInfo *w;
+    for(w = win->editorInfo->master; w; w = w->nextSlave)
+        _RefreshTabState(w);
+}
 /*
  * Shows a dialog, where all files, that should be saved, can be selected
  * If 'save' is clicked, all selected files will be saved
@@ -4819,15 +5056,15 @@ void RefreshMenuToggleStates(WindowInfo *window)
     XmToggleButtonSetState(window->saveLastItem, window->saveOldVersion, False);
     XmToggleButtonSetState(window->autoSaveItem, window->autoSave, False);
     XmToggleButtonSetState(window->overtypeModeItem, window->overstrike, False);
-    XmToggleButtonSetState(window->matchSyntaxBasedItem, window->matchSyntaxBased, False);
+    XmToggleButtonSetState(window->matchSyntaxBasedItem, window->editorInfo->matchSyntaxBased, False);
     XmToggleButtonSetState(window->readOnlyItem, IS_USER_LOCKED(window->lockReasons), False);
 
     XtSetSensitive(window->smartIndentItem, 
             SmartIndentMacrosAvailable(LanguageModeName(window->languageMode)));
 
-    SetAutoIndent(window, window->indentStyle);
-    SetAutoWrap(window, window->wrapMode);
-    SetShowMatching(window, window->showMatchingStyle);
+    SetAutoIndent(window, window->editorInfo->indentStyle);
+    SetAutoWrap(window, window->editorInfo->wrapMode);
+    SetShowMatching(window, window->editorInfo->showMatchingStyle);
     SetLanguageMode(window, window->languageMode, FALSE);
     
     /* Windows Menu */
@@ -5255,16 +5492,16 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
     textDisp *textD, *newTextD;
     
     /* transfer the primary selection */
-    memcpy(&sel, &orgWin->buffer->primary, sizeof(selection));
+    memcpy(&sel, &orgWin->editorInfo->buffer->primary, sizeof(selection));
         
     if (sel.selected) {
         if (sel.rectangular)
-            BufRectSelect(window->buffer, sel.start, sel.end,
+            BufRectSelect(window->editorInfo->buffer, sel.start, sel.end,
             sel.rectStart, sel.rectEnd);
         else
-            BufSelect(window->buffer, sel.start, sel.end);
+            BufSelect(window->editorInfo->buffer, sel.start, sel.end);
     } else
-        BufUnselect(window->buffer);
+        BufUnselect(window->editorInfo->buffer);
 
     /* Record the current heights, scroll positions, and insert positions
        of the existing panes, keyboard focus */
@@ -5304,7 +5541,7 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
     for(i=0; i<orgWin->nPanes; i++) {
         text = createTextArea(window->splitPane, window, 1, 1, emTabDist,
                 delimiters, wrapMargin, lineNumCols);
-        TextSetBuffer(text, window->buffer);
+            TextSetBuffer(text, window->editorInfo->buffer);
 
         if (window->highlightData != NULL)
             AttachHighlightToWidget(text, window);
@@ -5365,7 +5602,7 @@ static void cloneTextPanes(WindowInfo *window, WindowInfo *orgWin)
 /*
 ** clone a document's states and settings into the other.
 */
-static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
+static void mirrorDocumentStates(WindowInfo *window, WindowInfo *orgWin)
 {
     const char *orgDocument;
     char *params[4];
@@ -5382,19 +5619,19 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
 
     ShowLineNumbers(window, orgWin->showLineNumbers);
 
-    window->ignoreModify = True;
+    window->editorInfo->ignoreModify = True;
 
     /* copy the text buffer */
-    orgDocument = BufAsString(orgWin->buffer);
-    BufSetAll(window->buffer, orgDocument);
+    orgDocument = BufAsString(orgWin->editorInfo->buffer);
+    BufSetAll(window->editorInfo->buffer, orgDocument);
 
     /* copy the tab preferences (here!) */
-    BufSetTabDistance(window->buffer, orgWin->buffer->tabDist);
-    window->buffer->useTabs = orgWin->buffer->useTabs;
+    BufSetTabDistance(window->editorInfo->buffer, orgWin->editorInfo->buffer->tabDist);
+    window->editorInfo->buffer->useTabs = orgWin->editorInfo->buffer->useTabs;
     XtVaGetValues(orgWin->textArea, textNemulateTabs, &emTabDist, NULL);
     SetEmTabDist(window, emTabDist);
     
-    window->ignoreModify = False;
+    window->editorInfo->ignoreModify = False;
 
     /* transfer text fonts */
     params[0] = orgWin->fontName;
@@ -5417,8 +5654,8 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
        else the rangesets do not be highlighted (colored) properly
        if syntax highlighting is on.
     */
-    window->buffer->rangesetTable =
-        RangesetTableClone(orgWin->buffer->rangesetTable, window->buffer);
+    window->editorInfo->buffer->rangesetTable =
+            RangesetTableClone(orgWin->editorInfo->buffer->rangesetTable, window->editorInfo->buffer);
 
     /* Syntax highlighting */    
     window->languageMode = orgWin->languageMode;
@@ -5427,28 +5664,29 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
         StartHighlighting(window, False);
 
     /* copy states of original document */
-    window->filenameSet = orgWin->filenameSet;
-    window->fileFormat = orgWin->fileFormat;
-    window->lastModTime = orgWin->lastModTime;
-    window->fileChanged = orgWin->fileChanged;
-    window->fileMissing = orgWin->fileMissing;
-    window->lockReasons = orgWin->lockReasons;
-    window->autoSaveCharCount = orgWin->autoSaveCharCount;
-    window->autoSaveOpCount = orgWin->autoSaveOpCount;
-    window->undoOpCount = orgWin->undoOpCount;
-    window->undoMemUsed = orgWin->undoMemUsed;
-    window->autoSave = orgWin->autoSave;
-    window->saveOldVersion = orgWin->saveOldVersion;
-    window->wrapMode = orgWin->wrapMode;
-    SetOverstrike(window, orgWin->overstrike);
-    window->showMatchingStyle = orgWin->showMatchingStyle;
-    window->matchSyntaxBased = orgWin->matchSyntaxBased;
+     window->filenameSet = orgWin->filenameSet;
+     window->fileFormat = orgWin->fileFormat;
+     window->lastModTime = orgWin->lastModTime;
+     window->fileChanged = orgWin->fileChanged;
+     window->fileMissing = orgWin->fileMissing;
+     window->lockReasons = orgWin->lockReasons;
+     window->autoSaveCharCount = orgWin->autoSaveCharCount;
+     window->autoSaveOpCount = orgWin->autoSaveOpCount;
+     window->undoOpCount = orgWin->undoOpCount;
+     window->undoMemUsed = orgWin->undoMemUsed;
+     window->lockReasons = orgWin->lockReasons;
+     window->autoSave = orgWin->autoSave;
+     window->saveOldVersion = orgWin->saveOldVersion;
+     window->editorInfo->wrapMode = orgWin->editorInfo->wrapMode;
+     SetOverstrike(window, orgWin->overstrike);
+     window->editorInfo->showMatchingStyle = orgWin->editorInfo->showMatchingStyle;
+     window->editorInfo->matchSyntaxBased = orgWin->editorInfo->matchSyntaxBased;
 #if 0    
     window->showStats = orgWin->showStats;
     window->showISearchLine = orgWin->showISearchLine;
     window->showLineNumbers = orgWin->showLineNumbers;
     window->modeMessageDisplayed = orgWin->modeMessageDisplayed;
-    window->ignoreModify = orgWin->ignoreModify;
+    window->editorInfo->ignoreModify = orgWin->ignoreModify;
     window->windowMenuValid = orgWin->windowMenuValid;
     window->flashTimeoutID = orgWin->flashTimeoutID;
     window->wasSelected = orgWin->wasSelected;
@@ -5463,7 +5701,7 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     window->highlightData = orgWin->highlightData;
     window->shellCmdData = orgWin->shellCmdData;
     window->macroCmdData = orgWin->macroCmdData;
-    window->smartIndentData = orgWin->smartIndentData;
+    window->editorInfo->smartIndentData = orgWin->editorInfo->smartIndentData;
 #endif    
     window->iSearchHistIndex = orgWin->iSearchHistIndex;
     window->iSearchStartPos = orgWin->iSearchStartPos;
@@ -5473,8 +5711,6 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
     window->iSearchLastLiteralCase = orgWin->iSearchLastLiteralCase;
     window->findLastRegexCase = orgWin->findLastRegexCase;
     window->findLastLiteralCase = orgWin->findLastLiteralCase;
-    window->device = orgWin->device;
-    window->inode = orgWin->inode;
     window->fileClosedAtom = orgWin->fileClosedAtom;
     orgWin->fileClosedAtom = None;
     
@@ -5496,10 +5732,58 @@ static void cloneDocument(WindowInfo *window, WindowInfo *orgWin)
             sizeof(Bookmark)*window->nMarks);
 
     /* kick start the auto-indent engine */
-    window->indentStyle = NO_AUTO_INDENT;
-    SetAutoIndent(window, orgWin->indentStyle);
+    window->editorInfo->indentStyle = NO_AUTO_INDENT;
+    SetAutoIndent(window, orgWin->editorInfo->indentStyle);
 
     /* synchronize window state to this document */
+    RefreshWindowStates(window);
+}
+
+static void shareBufferOnCloning(WindowInfo *window, WindowInfo *orgWin)
+{
+    char *params[4];
+    
+    strcpy(window->path, orgWin->path);
+    strcpy(window->filename, orgWin->filename);
+
+    ShowLineNumbers(window, orgWin->showLineNumbers);
+
+    /* transfer text fonts */
+    params[0] = orgWin->fontName;
+    params[1] = orgWin->italicFontName;
+    params[2] = orgWin->boldFontName;
+    params[3] = orgWin->boldItalicFontName;
+    XtCallActionProc(window->textArea, "set_fonts", NULL, params, 4);
+
+    SetBacklightChars(window, orgWin->backlightCharTypes);
+    
+    /* Syntax highlighting. Clones may use different language mode */    
+    window->languageMode = orgWin->languageMode;
+    window->highlightSyntax = orgWin->highlightSyntax;
+    if (window->highlightSyntax)
+        StartHighlighting(window, False);
+
+    /* clone original buffer's states */
+    window->nPanes = orgWin->nPanes;
+    window->highlightSyntax = orgWin->highlightSyntax;
+    window->iSearchHistIndex = orgWin->iSearchHistIndex;
+    window->iSearchStartPos = orgWin->iSearchStartPos;
+    window->replaceLastRegexCase = orgWin->replaceLastRegexCase;
+    window->replaceLastLiteralCase = orgWin->replaceLastLiteralCase;
+    window->iSearchLastRegexCase = orgWin->iSearchLastRegexCase;
+    window->iSearchLastLiteralCase = orgWin->iSearchLastLiteralCase;
+    window->findLastRegexCase = orgWin->findLastRegexCase;
+    window->findLastLiteralCase = orgWin->findLastLiteralCase;
+    
+    /* copy the text/split panes settings, cursor pos & selection */
+    cloneTextPanes(window, orgWin);
+    
+    /* copy bookmarks */
+    window->nMarks = orgWin->nMarks;
+    memcpy(&window->markTable, &orgWin->markTable, 
+            sizeof(Bookmark)*window->nMarks);
+
+    /* synchronize window state to this buffer */
     RefreshWindowStates(window);
 }
 
@@ -5588,7 +5872,13 @@ WindowInfo *DetachDocument(WindowInfo *window)
     XtVaGetValues(window->shell, XmNwidth, &width, XmNheight, &height, NULL);
     
     /* Create a new window */
-    cloneWin = CreateWindow(window->filename, NULL, False);  
+    if (window->editorInfo->master->nextSlave) {
+        cloneWin = CreateWindow(window->filename, NULL, 
+                False, window->editorInfo);
+    } else {
+        cloneWin = CreateWindow(window->filename, NULL,
+                False, NULL);
+    }
     
     /* apply old window size to the new window */
     XtVaSetValues(cloneWin->shell, XmNwidth, width, XmNheight, height, NULL);
@@ -5610,10 +5900,14 @@ WindowInfo *DetachDocument(WindowInfo *window)
     ShowStatsLine(cloneWin, window->showStats);
 
     /* clone the document & its pref settings */
-    cloneDocument(cloneWin, window);
+    if (window->editorInfo->master->nextSlave)
+        shareBufferOnCloning(cloneWin, window);
+    else
+        mirrorDocumentStates(cloneWin, window);
 
     /* remove the document from the old window */
-    window->fileChanged = False;
+    if (window->editorInfo->master->nextSlave == NULL)
+        window->fileChanged = False;
     CloseFileAndWindow(window, NO_SBC_DIALOG_RESPONSE);
     
     /* refresh former host window */
@@ -5629,6 +5923,21 @@ WindowInfo *DetachDocument(WindowInfo *window)
     return cloneWin;
 }
 
+int isSafeToMove(WindowInfo *toWindow, WindowInfo *window)
+{
+    /* FIXME: moving a clone can be very complicated, so
+              for now we just don't do it. */
+    if (window->editorInfo->master->nextSlave) {
+        WindowInfo *w;
+        for(w = WindowList; w; w = w->next) {
+            if (w->shell == toWindow->shell && w->editorInfo == window->editorInfo)
+                return False;
+        }
+    }
+ 
+    return True;
+}
+    
 /*
 ** Move document to an other window.
 **
@@ -5651,9 +5960,19 @@ WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window)
     }
     
     /* relocate the document to target window */
-    cloneWin = CreateDocument(toWindow, window->filename);
+    if (window->editorInfo->master->nextSlave) {
+        cloneWin = CreateDocument(toWindow, window->filename, window->editorInfo);
+    } else {
+        cloneWin = CreateDocument(toWindow, window->filename, NULL);
+    }
     ShowTabBar(cloneWin, GetShowTabBar(cloneWin));
-    cloneDocument(cloneWin, window);
+
+    if (window->editorInfo->master->nextSlave) {
+        shareBufferOnCloning(cloneWin, window);
+    }
+    else {
+        mirrorDocumentStates(cloneWin, window);
+    }
     
     /* CreateDocument() simply adds the new window's pointer to the
        head of WindowList. We need to adjust the detached window's 
@@ -5666,7 +5985,8 @@ WindowInfo *MoveDocument(WindowInfo *toWindow, WindowInfo *window)
     window->next = cloneWin;
 
     /* remove the document from the old window */
-    window->fileChanged = False;
+    if (window->editorInfo->master->nextSlave == NULL)
+        window->fileChanged = False;
     CloseFileAndWindow(window, NO_SBC_DIALOG_RESPONSE);
     
     /* some menu states might have changed when deleting document */
@@ -5714,7 +6034,7 @@ void MoveDocumentDialog(WindowInfo *window)
         continue;
     
     snprintf(tmpStr, sizeof(tmpStr), "%s%s",
-        win->filenameSet? win->path : "", win->filename);
+                win->filenameSet? win->path : "", win->filename);
 
     list[nList] = XmStringCreateSimple(tmpStr);
     shellWinList[nList] = win;
@@ -6144,7 +6464,7 @@ static void jumpToEncErrorCB(Widget w, Widget mainWin, XmComboBoxCallbackStruct 
     if(window->encErrorsOnSave) {
         end_pos = e.pos + Utf8CharLen((const unsigned char*)e.str);
     }
-    BufSelect(window->buffer, e.pos, end_pos);
+    BufSelect(window->editorInfo->buffer, e.pos, end_pos);
     MakeSelectionVisible(window, window->lastFocus);
     TextSetCursorPos(window->lastFocus, e.pos);
 }
